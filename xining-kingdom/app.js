@@ -1376,15 +1376,23 @@ class KingdomCloudSync {
   loadConfig() {
     const defaultCfg = {
       enabled: true,
-      syncKey: "xining502",
-      endpoint: "https://kvdb.io/4yHjXz8Qp7rWzVq5g8mY8C/",
+      googleAccount: "xining502@gmail.com",
+      syncKey: "xining502@gmail.com",
+      googleScriptUrl: "",
       autoPull: true,
-      intervalSec: 40
+      intervalSec: 25
     };
     try {
       if (typeof localStorage !== 'undefined') {
         const saved = localStorage.getItem(this.configKey);
-        if (saved) return { ...defaultCfg, ...JSON.parse(saved) };
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return {
+            ...defaultCfg,
+            ...parsed,
+            googleAccount: parsed.googleAccount || parsed.syncKey || defaultCfg.googleAccount
+          };
+        }
       }
     } catch (e) {
       console.warn("讀取雲端同步設定失敗", e);
@@ -1394,6 +1402,9 @@ class KingdomCloudSync {
 
   saveConfig(newConfig) {
     this.config = { ...this.config, ...newConfig };
+    if (this.config.googleAccount) {
+      this.config.syncKey = this.config.googleAccount;
+    }
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(this.configKey, JSON.stringify(this.config));
@@ -1409,35 +1420,38 @@ class KingdomCloudSync {
     if (typeof window === 'undefined' || !window.location || !window.location.search) return;
     try {
       const params = new URLSearchParams(window.location.search);
-      const syncParam = params.get('sync') || params.get('key');
-      if (syncParam) {
-        this.config.syncKey = syncParam.trim();
+      const googleParam = params.get('google') || params.get('account') || params.get('email') || params.get('sync') || params.get('key');
+      const gasParam = params.get('gas') || params.get('script') || params.get('url');
+      let changed = false;
+
+      if (googleParam) {
+        this.config.googleAccount = googleParam.trim();
+        this.config.syncKey = googleParam.trim();
         this.config.enabled = true;
+        changed = true;
+      }
+      if (gasParam) {
+        this.config.googleScriptUrl = gasParam.trim();
+        changed = true;
+      }
+      if (changed) {
         this.saveConfig(this.config);
-        console.log(`[CloudSync] 網址自動帶入同步金鑰: ${this.config.syncKey}`);
+        console.log(`[CloudSync] 網址自動綁定 Google 帳號同步: ${this.config.googleAccount}`);
       }
     } catch (e) {
       console.warn("解析網址同步參數失敗", e);
     }
   }
 
-  getEndpointUrl() {
-    const isLocalHost = typeof window !== 'undefined' && 
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
-    
-    if (isLocalHost) {
-      return `/api/sync?key=${encodeURIComponent(this.config.syncKey || 'xining502')}`;
-    }
-
-    let base = (this.config.endpoint || "https://kvdb.io/4yHjXz8Qp7rWzVq5g8mY8C/").trim();
-    if (!base.endsWith('/')) base += '/';
-    return base + encodeURIComponent(this.config.syncKey || 'xining502');
+  getLocalApiUrl() {
+    const account = encodeURIComponent(this.config.googleAccount || 'xining502@gmail.com');
+    return `/api/sync?account=${account}`;
   }
 
   startPolling() {
     if (this.pollInterval) clearInterval(this.pollInterval);
     if (!this.config.enabled || !this.config.autoPull) return;
-    const intervalMs = Math.max(15, this.config.intervalSec || 40) * 1000;
+    const intervalMs = Math.max(15, this.config.intervalSec || 25) * 1000;
     this.pollInterval = setInterval(() => {
       this.pull({ silent: true });
     }, intervalMs);
@@ -1458,13 +1472,18 @@ class KingdomCloudSync {
   }
 
   getStatus() {
+    const isLocalHost = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+
     return {
       status: this.syncStatus,
       lastSyncTime: this.lastSyncTime,
       lastError: this.lastError,
       enabled: this.config.enabled,
-      syncKey: this.config.syncKey,
-      endpoint: this.getEndpointUrl()
+      googleAccount: this.config.googleAccount || 'xining502@gmail.com',
+      syncKey: this.config.googleAccount || 'xining502@gmail.com',
+      googleScriptUrl: this.config.googleScriptUrl || '',
+      isLocalHost: isLocalHost
     };
   }
 
@@ -1481,34 +1500,56 @@ class KingdomCloudSync {
     this.syncStatus = 'syncing';
     this.notify();
 
-    const targetUrl = this.getEndpointUrl();
+    let pushedToAny = false;
+    let pushError = null;
     const payload = JSON.stringify(this.store.data);
+    const account = this.config.googleAccount || 'xining502@gmail.com';
 
-    try {
-      let response = await fetch(targetUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload
-      });
-
-      if (!response.ok) {
-        response = await fetch(targetUrl, {
-          method: 'PUT',
+    // 1. 若運行於本機伺服器或區網 (localhost / 192.168.x.x)，推送到 local /api/sync
+    const isLocal = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+    
+    if (isLocal) {
+      try {
+        const localRes = await fetch(this.getLocalApiUrl(), {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: payload
         });
-        if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+        if (localRes.ok) pushedToAny = true;
+      } catch (err) {
+        console.warn('[CloudSync] 本地區網推送失敗:', err);
       }
+    }
 
+    // 2. 若有設定 Google Apps Script Web App 網址，推送到 Google 雲端
+    if (this.config.googleScriptUrl) {
+      try {
+        await fetch(this.config.googleScriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            account: account,
+            data: this.store.data
+          })
+        });
+        pushedToAny = true;
+      } catch (err) {
+        pushError = err.message;
+        console.warn('[CloudSync] Google 雲端推送失敗:', err);
+      }
+    }
+
+    if (pushedToAny || !pushError) {
       this.syncStatus = 'success';
       this.lastSyncTime = new Date();
       this.lastError = null;
       this.notify();
       return { success: true, timestamp: this.lastSyncTime };
-    } catch (err) {
-      console.warn('[CloudSync] 推送失敗:', err);
+    } else {
       this.syncStatus = 'error';
-      this.lastError = err.message || '連線錯誤';
+      this.lastError = pushError || '連線錯誤';
       this.notify();
       return { success: false, error: this.lastError };
     }
@@ -1519,31 +1560,46 @@ class KingdomCloudSync {
     this.syncStatus = 'syncing';
     this.notify();
 
-    const targetUrl = this.getEndpointUrl();
-    try {
-      const response = await fetch(targetUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        cache: 'no-cache'
-      });
+    const account = this.config.googleAccount || 'xining502@gmail.com';
+    let remoteData = null;
+    let pullError = null;
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          // 雲端無資料時自動推送現有資料作為初始存檔
-          await this.push({ silent: true });
-          this.syncStatus = 'success';
-          this.lastSyncTime = new Date();
-          this.notify();
-          return { success: true, message: '雲端初次同步初始化完成' };
+    // 1. 優先嘗試 Google Apps Script Web App (跨裝置、跨外網最佳)
+    if (this.config.googleScriptUrl) {
+      try {
+        const gasUrl = `${this.config.googleScriptUrl}?account=${encodeURIComponent(account)}&action=pull`;
+        const res = await fetch(gasUrl, { cache: 'no-cache' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.students && Array.isArray(json.students)) {
+            remoteData = json;
+          }
         }
-        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      } catch (err) {
+        pullError = err.message;
+        console.warn('[CloudSync] Google 雲端拉取失敗:', err);
       }
+    }
 
-      const remoteData = await response.json();
-      if (!remoteData || !remoteData.students || !Array.isArray(remoteData.students)) {
-        throw new Error('雲端資料格式不合規');
+    // 2. 若在本地區網環境且尚未取得遠端資料，從本地 /api/sync 讀取
+    const isLocal = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+
+    if (!remoteData && isLocal) {
+      try {
+        const localRes = await fetch(this.getLocalApiUrl(), { cache: 'no-cache' });
+        if (localRes.ok) {
+          const json = await localRes.json();
+          if (json && json.students && Array.isArray(json.students)) {
+            remoteData = json;
+          }
+        }
+      } catch (err) {
+        console.warn('[CloudSync] 本地區網拉取失敗:', err);
       }
+    }
 
+    if (remoteData) {
       const remoteTime = remoteData.lastModified || 0;
       const localTime = this.store.data.lastModified || 0;
 
@@ -1562,9 +1618,13 @@ class KingdomCloudSync {
       this.lastError = null;
       this.notify();
       return { success: true, timestamp: this.lastSyncTime, updated: remoteTime > localTime };
-    } catch (err) {
-      this.syncStatus = 'error';
-      this.lastError = err.message || '連線錯誤';
+    } else {
+      if (this.config.googleScriptUrl || isLocal) {
+        this.syncStatus = 'error';
+        this.lastError = pullError || '尚無同步存檔';
+      } else {
+        this.syncStatus = 'idle';
+      }
       this.notify();
       return { success: false, error: this.lastError };
     }
@@ -1614,7 +1674,12 @@ class KingdomCloudSync {
     if (typeof window === 'undefined' || !window.location) return '';
     const origin = window.location.origin;
     const pathname = window.location.pathname;
-    return `${origin}${pathname}?sync=${encodeURIComponent(this.config.syncKey || 'xining502')}`;
+    const account = encodeURIComponent(this.config.googleAccount || 'xining502@gmail.com');
+    let url = `${origin}${pathname}?google=${account}`;
+    if (this.config.googleScriptUrl) {
+      url += `&gas=${encodeURIComponent(this.config.googleScriptUrl)}`;
+    }
+    return url;
   }
 }
 

@@ -3937,8 +3937,11 @@ function openCloudSyncModal() {
   const sync = window.KingdomApp.cloudSync;
   if (!sync) return;
 
-  const keyInput = document.getElementById("syncKeyInput");
-  if (keyInput) keyInput.value = sync.config.syncKey || "xining502";
+  const googleInput = document.getElementById("googleAccountInput");
+  if (googleInput) googleInput.value = sync.config.googleAccount || "xining502@gmail.com";
+
+  const scriptInput = document.getElementById("googleScriptUrlInput");
+  if (scriptInput) scriptInput.value = sync.config.googleScriptUrl || "";
 
   const urlInput = document.getElementById("syncShareUrlInput");
   if (urlInput) urlInput.value = sync.getShareableSyncUrl();
@@ -3983,7 +3986,7 @@ function updateCloudSyncModalStatus(status) {
 
   if (modeText) {
     const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || /^192\.168\./.test(window.location.hostname));
-    modeText.textContent = isLocal ? "區域網路直連同步 (Local API)" : "GitHub Pages 雲端金鑰同步";
+    modeText.textContent = isLocal ? "教室 Wi-Fi 區網同步" : (status.googleScriptUrl ? "Google 官方雲端庫" : "Google 帳號同步模式");
   }
 }
 
@@ -3997,35 +4000,89 @@ function updateCloudSyncBadge(status) {
     if (label) label.textContent = "同步中...";
   } else if (status.status === 'success') {
     dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block";
-    if (label) label.textContent = "雲端同步";
+    if (label) label.textContent = "雲端已同步";
   } else if (status.status === 'error') {
     dot.className = "w-2.5 h-2.5 rounded-full bg-rose-400 inline-block";
-    if (label) label.textContent = "同步中斷";
+    if (label) label.textContent = "連線中斷";
   } else {
     dot.className = "w-2.5 h-2.5 rounded-full bg-slate-400 inline-block";
-    if (label) label.textContent = "雲端待命";
+    if (label) label.textContent = "雲端同步";
   }
 
   updateCloudSyncModalStatus(status);
 }
 
-function saveSyncKeySetting() {
-  const keyInput = document.getElementById("syncKeyInput");
-  if (!keyInput) return;
-  const newKey = keyInput.value.trim();
-  if (!newKey) {
-    alert("請輸入有效的班級同步碼！");
+function saveGoogleAccountSync() {
+  const input = document.getElementById("googleAccountInput");
+  if (!input) return;
+  const email = input.value.trim();
+  if (!email || !email.includes('@')) {
+    alert("請輸入有效的 Google 帳號 (例如：yourname@gmail.com)！");
     return;
   }
 
   const sync = window.KingdomApp.cloudSync;
-  sync.saveConfig({ syncKey: newKey, enabled: true });
+  sync.saveConfig({
+    googleAccount: email,
+    syncKey: email,
+    enabled: true
+  });
 
   const urlInput = document.getElementById("syncShareUrlInput");
   if (urlInput) urlInput.value = sync.getShareableSyncUrl();
 
-  showToast(`班級同步碼已設定為「${newKey}」，正在連線雲端...`, "☁️");
+  showToast(`已綁定 Google 帳號「${email}」！正在同步資料...`, "☁️");
   sync.pull();
+}
+
+function saveGoogleScriptUrl() {
+  const input = document.getElementById("googleScriptUrlInput");
+  if (!input) return;
+  const url = input.value.trim();
+  const sync = window.KingdomApp.cloudSync;
+  sync.saveConfig({ googleScriptUrl: url });
+
+  const shareInput = document.getElementById("syncShareUrlInput");
+  if (shareInput) shareInput.value = sync.getShareableSyncUrl();
+
+  showToast("Google 雲端應用程式網址已儲存！", "👑");
+  if (url) {
+    sync.push();
+  }
+}
+
+function copyGoogleAppsScriptCode() {
+  const code = `// === 西寧小小兵王國 ‧ Google 雲端專屬同步腳本 ===
+function doGet(e) {
+  var account = (e.parameter.account || 'default').toLowerCase().trim();
+  var action = e.parameter.action || 'pull';
+  var prop = PropertiesService.getScriptProperties();
+
+  if (action === 'push' && e.parameter.payload) {
+    prop.setProperty('data_' + account, e.parameter.payload);
+    return ContentService.createTextOutput(JSON.stringify({ success: true, timestamp: new Date().getTime() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var data = prop.getProperty('data_' + account);
+  return ContentService.createTextOutput(data || '{}')
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var prop = PropertiesService.getScriptProperties();
+  var body = JSON.parse(e.postData.contents);
+  var account = (body.account || 'default').toLowerCase().trim();
+  prop.setProperty('data_' + account, JSON.stringify(body.data));
+  return ContentService.createTextOutput(JSON.stringify({ success: true, timestamp: new Date().getTime() }))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+  navigator.clipboard.writeText(code).then(() => {
+    showToast("📋 已複製 15 行 Google 雲端腳本！請至 script.google.com 貼上並部署。", "🎉");
+  }).catch(() => {
+    alert("複製成功！請至 script.google.com 貼上部署。");
+  });
 }
 
 function copyShareableSyncUrl() {

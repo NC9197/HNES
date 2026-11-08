@@ -50,12 +50,18 @@ const server = http.createServer((req, res) => {
   const reqUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   let pathname = decodeURIComponent(reqUrl.pathname);
 
-  // 跨裝置雲端/區網同步 REST API
+  // 跨裝置雲端/區網同步 REST API (支援 Google 帳號與自訂金鑰)
   if (pathname === '/api/sync') {
-    const syncFilePath = path.join(ROOT_DIR, 'data_sync.json');
+    const accountParam = reqUrl.searchParams.get('account') || reqUrl.searchParams.get('key') || '';
+    const safeAccount = accountParam.replace(/[^a-zA-Z0-9_\-@.]/g, '_');
+    const specificPath = safeAccount ? path.join(ROOT_DIR, `data_sync_${safeAccount}.json`) : null;
+    const defaultSyncFilePath = path.join(ROOT_DIR, 'data_sync.json');
+    const primaryFilePath = specificPath || defaultSyncFilePath;
 
     if (req.method === 'GET') {
-      fs.readFile(syncFilePath, 'utf8', (err, data) => {
+      // 優先讀取特定帳號檔，若無則讀取預設存檔
+      const fileToRead = (specificPath && fs.existsSync(specificPath)) ? specificPath : defaultSyncFilePath;
+      fs.readFile(fileToRead, 'utf8', (err, data) => {
         if (err) {
           res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({ success: false, message: '目前尚無同步存檔' }));
@@ -73,15 +79,13 @@ const server = http.createServer((req, res) => {
       req.on('end', () => {
         try {
           const parsed = JSON.parse(body);
-          fs.writeFile(syncFilePath, JSON.stringify(parsed, null, 2), 'utf8', (err) => {
-            if (err) {
-              res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-              res.end(JSON.stringify({ success: false, error: err.message }));
-            } else {
-              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-              res.end(JSON.stringify({ success: true, lastModified: Date.now() }));
-            }
-          });
+          // 同步寫入特定帳號與預設存檔
+          fs.writeFileSync(defaultSyncFilePath, JSON.stringify(parsed, null, 2), 'utf8');
+          if (specificPath) {
+            fs.writeFileSync(specificPath, JSON.stringify(parsed, null, 2), 'utf8');
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true, lastModified: Date.now() }));
         } catch (e) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({ success: false, error: '無效的 JSON 格式' }));

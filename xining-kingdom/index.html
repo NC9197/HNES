@@ -2300,14 +2300,14 @@
   </div>
 
   <!-- =============================================================== -->
-  <!-- MODAL: 跨裝置雲端資料同步中心 (Cloud & LAN Sync Center) -->
+  <!-- MODAL: 跨裝置雲端資料同步中心 (Google 帳號直連同步) -->
   <!-- =============================================================== -->
   <div id="cloudSyncModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="parchment-card max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+    <div class="parchment-card max-w-lg w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-amber-300 pb-3">
         <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
           <span>☁️</span>
-          <span>跨裝置雲端同步中心 (GitHub & 區網通用)</span>
+          <span>Google 帳號跨裝置雲端同步中心</span>
         </h3>
         <button onclick="closeCloudSyncModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -2323,7 +2323,7 @@
           <div>
             <div class="flex items-center space-x-1.5">
               <span id="syncStatusBadge" class="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white">正常連線</span>
-              <span id="syncModeText" class="text-[11px] text-amber-900 font-bold hidden sm:inline">GitHub Pages 雲端庫</span>
+              <span id="syncModeText" class="text-[11px] text-amber-900 font-bold hidden sm:inline">Google 帳號同步模式</span>
             </div>
             <div id="syncLastTimeText" class="text-xs text-amber-950 font-bold mt-0.5">最後同步：剛剛</div>
           </div>
@@ -2334,24 +2334,28 @@
         </button>
       </div>
 
-      <!-- 同步金鑰與連線設定 -->
-      <div class="space-y-3 bg-white border border-amber-200 p-4 rounded-2xl text-xs">
+      <!-- 核心功能：Google 帳號輸入與綁定 -->
+      <div class="space-y-3 bg-white border-2 border-amber-300 p-4 rounded-2xl text-xs shadow-sm">
+        <div class="flex items-center space-x-2 border-b border-amber-100 pb-2">
+          <span class="text-lg">📧</span>
+          <span class="font-black text-sm text-amber-950">設定同步的 Google 帳號 (Gmail)</span>
+        </div>
         <div>
-          <label class="block font-black text-amber-950 mb-1">班級專屬同步碼 (Sync Key)：</label>
+          <label class="block font-bold text-amber-950 mb-1">請輸入您的 Google 帳號 (Gmail)：</label>
           <div class="flex space-x-2">
-            <input type="text" id="syncKeyInput" value="xining502" placeholder="例如：xining502" class="flex-1 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 font-black text-amber-950">
-            <button onclick="saveSyncKeySetting()" class="btn-royal-gold px-4 py-2 rounded-lg font-black shadow flex-shrink-0">
-              儲存並連線
+            <input type="email" id="googleAccountInput" value="xining502@gmail.com" placeholder="例如：yourname@gmail.com" class="flex-1 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 font-black text-amber-950 text-xs sm:text-sm">
+            <button onclick="saveGoogleAccountSync()" class="btn-royal-gold px-4 py-2 rounded-lg font-black shadow flex-shrink-0">
+              儲存並同步
             </button>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1">
-            💡 不同裝置（手機、平板、電子白板）只要填寫相同同步碼，即可隨時共享同一份最新班級資料！
+          <p class="text-[11px] text-amber-900 font-bold mt-1.5">
+            👑 <strong>核心規則</strong>：無論手機、平板、教室大螢幕，只要在設定中輸入<strong>同一個 Google 帳號</strong>，就能隨時互通同步同一份班級資料！
           </p>
         </div>
 
-        <!-- 一鍵複製跨裝置同步網址 -->
-        <div>
-          <label class="block font-black text-amber-950 mb-1">專屬跨裝置同步網址 (已包含同步碼)：</label>
+        <!-- 一鍵複製帶有 Google 帳號的手機同步網址 -->
+        <div class="pt-2 border-t border-amber-100">
+          <label class="block font-bold text-amber-950 mb-1">專屬手機同步網址 (已自動包含 Google 帳號)：</label>
           <div class="flex space-x-2">
             <input type="text" id="syncShareUrlInput" readonly class="flex-1 px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-[11px] text-slate-600 font-mono">
             <button onclick="copyShareableSyncUrl()" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-bold shadow flex-shrink-0 flex items-center space-x-1">
@@ -2360,10 +2364,37 @@
             </button>
           </div>
           <p class="text-[11px] text-slate-500 mt-1">
-            📱 複製此網址並在手機或平板開啟，免輸入任何設定即可自動綁定並即時同步。
+            📱 <strong>最輕鬆同步法</strong>：將此網址發送到 LINE，在手機點開即可直接同步，手機端完全免打字！
           </p>
         </div>
       </div>
+
+      <!-- 進階：Google 官方免費雲端硬碟資料庫 (Apps Script) -->
+      <details class="bg-amber-50/70 border border-amber-200 rounded-xl p-3 text-xs">
+        <summary class="font-black text-amber-950 cursor-pointer flex items-center space-x-1 select-none">
+          <span>🛠️ 進階：綁定 Google Apps Script 官方雲端庫 (1分鐘設定，永久免費)</span>
+        </summary>
+        <div class="mt-3 space-y-2.5 text-slate-700 leading-relaxed">
+          <p>
+            Google 提供每位帳號免費的 <strong>Apps Script</strong>，可將班級存檔直接存在您自己的 Google 雲端中，永遠不怕遺失：
+          </p>
+          <div class="bg-white p-2.5 rounded-lg border border-amber-200 text-[11px] space-y-1">
+            <div><strong>步驟 1</strong>：前往 <a href="https://script.google.com/" target="_blank" class="text-blue-600 underline font-bold">script.google.com</a> 點擊「+ 新專案」。</div>
+            <div><strong>步驟 2</strong>：清空原內容，點擊下方按鈕複製專屬腳本貼上：</div>
+            <button onclick="copyGoogleAppsScriptCode()" class="mt-1 px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded font-black text-xs flex items-center space-x-1">
+              <span>📋 一鍵複製 15 行 Google 雲端腳本代碼</span>
+            </button>
+            <div class="pt-1"><strong>步驟 3</strong>：右上角點擊「部署」➔「新增部署作業」➔ 類型選「網頁應用程式」，存取權選「任何人」，點擊部署後複製網址貼入下方：</div>
+          </div>
+
+          <div class="flex space-x-2 pt-1">
+            <input type="url" id="googleScriptUrlInput" placeholder="貼上 Google 網頁應用程式網址 (https://script.google.com/.../exec)" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-[11px] font-mono">
+            <button onclick="saveGoogleScriptUrl()" class="px-3.5 py-1.5 bg-amber-800 text-amber-100 hover:bg-amber-900 rounded-lg font-bold flex-shrink-0">
+              儲存網址
+            </button>
+          </div>
+        </div>
+      </details>
 
       <!-- 手動備份與還原 -->
       <div class="border-t border-amber-200 pt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
