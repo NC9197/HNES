@@ -1528,7 +1528,7 @@ class KingdomCloudSync {
         await fetch(this.config.googleScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             account: account,
             data: this.store.data
@@ -1567,7 +1567,7 @@ class KingdomCloudSync {
     // 1. 優先嘗試 Google Apps Script Web App (跨裝置、跨外網最佳)
     if (this.config.googleScriptUrl) {
       try {
-        const gasUrl = `${this.config.googleScriptUrl}?account=${encodeURIComponent(account)}&action=pull`;
+        const gasUrl = `${this.config.googleScriptUrl}?account=${encodeURIComponent(account)}&action=pull&_t=${Date.now()}`;
         const res = await fetch(gasUrl, { cache: 'no-cache' });
         if (res.ok) {
           const json = await res.json();

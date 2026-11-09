@@ -3943,8 +3943,14 @@ function openCloudSyncModal() {
   const scriptInput = document.getElementById("googleScriptUrlInput");
   if (scriptInput) scriptInput.value = sync.config.googleScriptUrl || "";
 
+  const shareUrl = sync.getShareableSyncUrl();
   const urlInput = document.getElementById("syncShareUrlInput");
-  if (urlInput) urlInput.value = sync.getShareableSyncUrl();
+  if (urlInput) urlInput.value = shareUrl;
+
+  const qrImg = document.getElementById("cloudSyncQrCode");
+  if (qrImg && shareUrl) {
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(shareUrl)}`;
+  }
 
   updateCloudSyncModalStatus(sync.getStatus());
 }
@@ -3963,15 +3969,20 @@ function updateCloudSyncModalStatus(status) {
     if (status.status === 'syncing') {
       badge.textContent = "同步傳輸中...";
       badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-500 text-white animate-pulse";
-    } else if (status.status === 'success') {
-      badge.textContent = "正常連線";
+    } else if (status.isLocalHost) {
+      badge.textContent = "🟢 教室區網連線中";
       badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white";
-    } else if (status.status === 'error') {
-      badge.textContent = "連線異常";
-      badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-600 text-white";
+    } else if (status.googleScriptUrl) {
+      if (status.status === 'error') {
+        badge.textContent = "連線異常";
+        badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-600 text-white";
+      } else {
+        badge.textContent = "🟢 Google 雲端連線中";
+        badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white";
+      }
     } else {
-      badge.textContent = "待命中";
-      badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-slate-500 text-white";
+      badge.textContent = "⚠️ 尚未連線 Google 雲端庫";
+      badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-600 text-white";
     }
   }
 
@@ -3980,13 +3991,18 @@ function updateCloudSyncModalStatus(status) {
       const d = new Date(status.lastSyncTime);
       timeText.textContent = `最後同步：${d.toLocaleTimeString()}`;
     } else {
-      timeText.textContent = "最後同步：尚未連線";
+      timeText.textContent = status.googleScriptUrl || status.isLocalHost ? "最後同步：剛剛" : "最後同步：等待綁定雲端庫";
     }
   }
 
   if (modeText) {
-    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || /^192\.168\./.test(window.location.hostname));
-    modeText.textContent = isLocal ? "教室 Wi-Fi 區網同步" : (status.googleScriptUrl ? "Google 官方雲端庫" : "Google 帳號同步模式");
+    if (status.isLocalHost) {
+      modeText.textContent = "教室 Wi-Fi 區網同步";
+    } else if (status.googleScriptUrl) {
+      modeText.textContent = "Google 官方雲端庫 (即時雙向同步)";
+    } else {
+      modeText.textContent = "請完成下方 3 步驟啟用";
+    }
   }
 }
 
@@ -4042,9 +4058,16 @@ function saveGoogleScriptUrl() {
   const sync = window.KingdomApp.cloudSync;
   sync.saveConfig({ googleScriptUrl: url });
 
+  const shareUrl = sync.getShareableSyncUrl();
   const shareInput = document.getElementById("syncShareUrlInput");
-  if (shareInput) shareInput.value = sync.getShareableSyncUrl();
+  if (shareInput) shareInput.value = shareUrl;
 
+  const qrImg = document.getElementById("cloudSyncQrCode");
+  if (qrImg && shareUrl) {
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(shareUrl)}`;
+  }
+
+  updateCloudSyncModalStatus(sync.getStatus());
   showToast("Google 雲端應用程式網址已儲存！", "👑");
   if (url) {
     sync.push();
@@ -4053,33 +4076,70 @@ function saveGoogleScriptUrl() {
 
 function copyGoogleAppsScriptCode() {
   const code = `// === 西寧小小兵王國 ‧ Google 雲端專屬同步腳本 ===
+// 本腳本支援分塊儲存，容量高達 500KB，完全免費且安全！
+
 function doGet(e) {
-  var account = (e.parameter.account || 'default').toLowerCase().trim();
-  var action = e.parameter.action || 'pull';
+  var p = (e && e.parameter) || {};
+  var account = (p.account || 'default').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  var action = p.action || 'pull';
   var prop = PropertiesService.getScriptProperties();
 
-  if (action === 'push' && e.parameter.payload) {
-    prop.setProperty('data_' + account, e.parameter.payload);
+  if (action === 'push' && p.payload) {
+    saveData(prop, account, p.payload);
     return ContentService.createTextOutput(JSON.stringify({ success: true, timestamp: new Date().getTime() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  var data = prop.getProperty('data_' + account);
-  return ContentService.createTextOutput(data || '{}')
+  var jsonStr = loadData(prop, account);
+  return ContentService.createTextOutput(jsonStr || '{}')
     .setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
   var prop = PropertiesService.getScriptProperties();
-  var body = JSON.parse(e.postData.contents);
-  var account = (body.account || 'default').toLowerCase().trim();
-  prop.setProperty('data_' + account, JSON.stringify(body.data));
+  var raw = (e && e.postData && e.postData.contents) ? e.postData.contents : '{}';
+  var body = {};
+  try {
+    body = JSON.parse(raw);
+  } catch (err) {
+    body = { data: raw };
+  }
+  var account = (body.account || 'default').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  var payloadStr = typeof body.data === 'string' ? body.data : JSON.stringify(body.data || {});
+
+  saveData(prop, account, payloadStr);
   return ContentService.createTextOutput(JSON.stringify({ success: true, timestamp: new Date().getTime() }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function saveData(prop, account, str) {
+  var CHUNK_SIZE = 8000;
+  var totalChunks = Math.ceil(str.length / CHUNK_SIZE);
+  var oldTotal = parseInt(prop.getProperty('chunk_cnt_' + account) || '0', 10);
+  for (var i = totalChunks; i < oldTotal; i++) {
+    prop.deleteProperty('data_' + account + '_' + i);
+  }
+  for (var i = 0; i < totalChunks; i++) {
+    prop.setProperty('data_' + account + '_' + i, str.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+  }
+  prop.setProperty('chunk_cnt_' + account, String(totalChunks));
+  prop.setProperty('time_' + account, String(new Date().getTime()));
+}
+
+function loadData(prop, account) {
+  var count = parseInt(prop.getProperty('chunk_cnt_' + account) || '0', 10);
+  if (count <= 0) {
+    return prop.getProperty('data_' + account) || '{}';
+  }
+  var parts = [];
+  for (var i = 0; i < count; i++) {
+    parts.push(prop.getProperty('data_' + account + '_' + i) || '');
+  }
+  return parts.join('');
 }`;
 
   navigator.clipboard.writeText(code).then(() => {
-    showToast("📋 已複製 15 行 Google 雲端腳本！請至 script.google.com 貼上並部署。", "🎉");
+    showToast("📋 已複製 Google 雲端腳本代碼！請至 script.google.com 貼上並部署。", "🎉");
   }).catch(() => {
     alert("複製成功！請至 script.google.com 貼上部署。");
   });
