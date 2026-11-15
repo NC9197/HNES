@@ -38,6 +38,33 @@ let activeRedeemCardId = null;
 let activeRewardCardId = null;
 let isRedemptionHistoryOpen = false;
 
+// 導師密碼通行驗證狀態 (保障班級隱私與防竄改)
+let isTeacherAuthenticated = false;
+
+function checkTeacherAuth(actionName = "進入導師管理室") {
+  if (isTeacherAuthenticated) return true;
+  const currentPassword = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data.queenPassword) || "queen";
+  const input = prompt(`👑 請輸入導師專屬通行密碼以${actionName}（預設為 queen）：`);
+  if (input === null) return false;
+  if (input.trim() === currentPassword) {
+    isTeacherAuthenticated = true;
+    showToast("👑 導師身分驗證成功！", "🎉");
+    return true;
+  } else {
+    alert("❌ 密碼錯誤！此區域為西寧國小五年二班導師專屬管理權限。");
+    return false;
+  }
+}
+
+function promptChangeQueenPassword() {
+  if (!checkTeacherAuth("修改導師密碼")) return;
+  const newPass = prompt("請輸入新的導師通行密碼（不可為空）：");
+  if (!newPass || !newPass.trim()) return;
+  window.KingdomApp.store.data.queenPassword = newPass.trim();
+  window.KingdomApp.store.save();
+  showToast("🔑 導師通行密碼修改成功！請妥善保管。", "👑");
+}
+
 // ===================================================================
 // 1. 初始化與事件監聽 (Initialization)
 // ===================================================================
@@ -69,6 +96,25 @@ document.addEventListener("DOMContentLoaded", () => {
   initLucideIcons();
 
   if (isParentMode) {
+    // 嚴格家長專屬隱私防護：全面隱藏導師管理與排座按鈕
+    const navMorning = document.getElementById("btnNavMorning");
+    const navTraffic = document.getElementById("btnNavTraffic");
+    const navSeating = document.getElementById("btnNavSeating");
+    const navTeacher = document.getElementById("btnNavTeacher");
+    const sysDropdownWrapper = document.getElementById("systemDropdown") ? document.getElementById("systemDropdown").parentElement : null;
+    const syncBtn = document.getElementById("btnCloudSyncStatus");
+    const silenceBtn = document.querySelector("button[onclick='openSilenceModal()']");
+    const timerBtn = document.querySelector("button[onclick='openTimerModal()']");
+
+    if (navMorning) navMorning.classList.add("hidden");
+    if (navTraffic) navTraffic.classList.add("hidden");
+    if (navSeating) navSeating.classList.add("hidden");
+    if (navTeacher) navTeacher.classList.add("hidden");
+    if (sysDropdownWrapper) sysDropdownWrapper.classList.add("hidden");
+    if (syncBtn) syncBtn.classList.add("hidden");
+    if (silenceBtn) silenceBtn.classList.add("hidden");
+    if (timerBtn) timerBtn.classList.add("hidden");
+
     switchMainView('parent');
     if (paramSeat) {
       setTimeout(() => {
@@ -151,6 +197,7 @@ function switchMainView(view) {
     if (btnSeating) btnSeating.className = activeBtnClass;
     renderSeatingChart();
   } else if (view === 'teacher') {
+    if (!checkTeacherAuth("進入導師管理室")) return;
     if (teacherView) teacherView.classList.remove("hidden");
     if (btnTeacher) btnTeacher.className = activeBtnClass;
     renderCurrentTeacherTab();
@@ -219,14 +266,54 @@ function startMorningClock() {
     const h = String(now.getHours()).padStart(2, '0');
     const m = String(now.getMinutes()).padStart(2, '0');
     const s = String(now.getSeconds()).padStart(2, '0');
+    const timeStr = `${h}:${m}:${s}`;
+    const timeHM = `${h}:${m}`;
+
     const clockEl = document.getElementById("morningClockDisplay");
-    if (clockEl) {
-      clockEl.textContent = `${h}:${m}:${s}`;
+    if (clockEl) clockEl.textContent = timeStr;
+
+    const alarmModalClock = document.getElementById("alarmModalCurrentClock");
+    if (alarmModalClock) alarmModalClock.textContent = timeStr;
+
+    const navDateEl = document.getElementById("navTodayDate");
+    if (navDateEl) navDateEl.textContent = window.KingdomApp.getTodayDateString();
+
+    // 比對課堂定時鬧鐘
+    if (typeof isAlarmActive !== 'undefined' && isAlarmActive && alarmTargetTime === timeHM) {
+      if (typeof lastAlarmRungMinute !== 'undefined' && lastAlarmRungMinute !== timeHM) {
+        lastAlarmRungMinute = timeHM;
+        triggerAlarmRing();
+      }
     }
   }
 
   updateClock();
   clockInterval = setInterval(updateClock, 1000);
+}
+
+let currentContactDate = window.KingdomApp.getTodayDateString();
+
+function changeContactDateDelta(delta) {
+  const parts = currentContactDate.split('-');
+  const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  d.setDate(d.getDate() + delta);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  currentContactDate = `${y}-${m}-${day}`;
+  renderMorningBoard();
+}
+
+function changeContactDateToToday() {
+  currentContactDate = window.KingdomApp.getTodayDateString();
+  renderMorningBoard();
+}
+
+function handleContactDatePickerChange(val) {
+  if (val) {
+    currentContactDate = val;
+    renderMorningBoard();
+  }
 }
 
 function renderMorningBoard() {
@@ -235,7 +322,7 @@ function renderMorningBoard() {
   const attendanceData = window.KingdomApp.store.data.attendance[todayStr] || {};
   const lateThreshold = window.KingdomApp.store.data.lateThreshold || "07:40";
 
-  // 1. 渲染左側 30% 打卡座號網格 (1 ~ 27 號，純顯示座號與打卡狀態)
+  // 1. 渲染左側 30% 打卡座號網格 (無須打勾，僅記時間與紅綠燈標示：綠燈準時、黃燈遲到、紅燈缺席、粉色請假)
   const checkInGrid = document.getElementById("checkInGrid");
   let checkedCount = 0;
 
@@ -243,41 +330,42 @@ function renderMorningBoard() {
     checkInGrid.innerHTML = students.map(st => {
       const rec = attendanceData[st.id] || null;
       let statusClass = "seat-uncheck";
-      let statusIcon = "";
+      let statusBadge = "🔴 未到";
       let timeText = "";
 
       if (rec && rec.checkInTime) {
         checkedCount++;
         if (rec.status === 'present') {
           statusClass = "seat-present";
-          statusIcon = "✓";
+          statusBadge = "🟢 準時";
           timeText = rec.checkInTime;
         } else if (rec.status === 'late') {
           statusClass = "seat-late";
-          statusIcon = "⏳";
+          statusBadge = "🟡 遲到";
           timeText = rec.checkInTime;
         } else if (rec.status === 'leave') {
           statusClass = "seat-leave";
-          statusIcon = "🏖️";
+          statusBadge = "🏖️ 請假";
           timeText = "告假";
         }
       } else if (rec && rec.status === 'leave') {
         statusClass = "seat-leave";
-        statusIcon = "🏖️";
+        statusBadge = "🏖️ 請假";
         timeText = "告假";
       }
 
       return `
         <button onclick="handleMorningSeatCheckIn(${st.id}, ${st.seatNo})" 
-          class="checkin-seat-btn ${statusClass} py-2.5 px-1.5 rounded-xl text-center flex flex-col items-center justify-center border-2 transition shadow-sm"
-          title="${st.seatNo}號 ${st.name}（點擊打卡）">
+          class="checkin-seat-btn ${statusClass} py-2 px-1 rounded-xl text-center flex flex-col items-center justify-center border-2 transition shadow-sm"
+          title="${st.seatNo}號 ${st.name}（點擊直接記錄打卡時間）">
           <div class="flex items-center space-x-1">
             <span class="font-mono text-base font-black">${String(st.seatNo).padStart(2, '0')}</span>
-            ${statusIcon ? `<span class="text-xs font-bold">${statusIcon}</span>` : ''}
+            <span class="text-xs font-black truncate max-w-[55px]">${st.name}</span>
           </div>
-          <span class="text-[10px] font-mono font-bold mt-0.5 leading-none">
-            ${timeText ? timeText : '未打卡'}
-          </span>
+          <div class="text-[10px] font-mono font-bold mt-0.5 leading-none flex items-center space-x-0.5">
+            <span>${statusBadge}</span>
+            <span>${timeText && timeText !== '告假' ? timeText : ''}</span>
+          </div>
         </button>
       `;
     }).join('');
@@ -289,17 +377,22 @@ function renderMorningBoard() {
     countBadge.textContent = `${checkedCount} / ${students.length} 人`;
   }
 
-  // 2. 渲染右側 70% 聯絡簿超大字體看板
-  const contactBook = window.KingdomApp.store.data.contactBook || window.KingdomApp.DEFAULT_CONTACT_BOOK;
+  // 2. 渲染右側 70% 聯絡簿超大字體看板 (依據 currentContactDate 按日歷史查閱與編輯)
+  const contactBook = window.KingdomApp.store.getContactBook(currentContactDate);
   
   const dateDisplay = document.getElementById("contactBookDateDisplay");
   if (dateDisplay) {
-    dateDisplay.textContent = `朝會日期：${todayStr}`;
+    dateDisplay.textContent = currentContactDate;
+  }
+  const datePicker = document.getElementById("contactBookDatePicker");
+  if (datePicker) {
+    datePicker.value = currentContactDate;
   }
 
   const hwList = document.getElementById("contactHomeworkList");
   if (hwList) {
-    hwList.innerHTML = contactBook.homeworkItems.map((item, idx) => `
+    const items = contactBook.homeworkItems || [];
+    hwList.innerHTML = items.map((item, idx) => `
       <li class="flex items-start space-x-2 py-1 border-b border-amber-200/60 last:border-0">
         <span class="bg-amber-400 text-amber-950 w-8 h-8 rounded-full flex items-center justify-center text-base sm:text-lg font-black flex-shrink-0 shadow-sm">
           ${idx + 1}
@@ -311,7 +404,8 @@ function renderMorningBoard() {
 
   const reminderList = document.getElementById("contactReminderList");
   if (reminderList) {
-    reminderList.innerHTML = contactBook.reminders.map(item => `
+    const reminders = contactBook.reminders || [];
+    reminderList.innerHTML = reminders.map(item => `
       <li class="leading-relaxed py-0.5">${item}</li>
     `).join('');
   }
@@ -322,7 +416,6 @@ function renderMorningBoard() {
   }
 }
 
-// 學生點擊座號打卡 (記錄當下時間，超過 07:40 標遲到)
 function handleMorningSeatCheckIn(studentId, seatNo) {
   const todayStr = window.KingdomApp.getTodayDateString();
   const lateThreshold = window.KingdomApp.store.data.lateThreshold || "07:40";
@@ -334,40 +427,40 @@ function handleMorningSeatCheckIn(studentId, seatNo) {
   const student = window.KingdomApp.store.data.students.find(s => s.id === studentId);
   const existing = window.KingdomApp.store.data.attendance[todayStr][studentId];
 
-  // 若已經打過卡，提示確認
-  if (existing && existing.checkInTime) {
-    const change = confirm(`【${String(seatNo).padStart(2, '0')}號 ${student.name}】已於 ${existing.checkInTime} 完成打卡！\n\n是否要以「現在時間」重新覆蓋打卡紀錄？`);
-    if (!change) return;
-  }
-
   // 獲取當下真實時間 HH:mm
   const now = new Date();
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const timeStr = `${hours}:${minutes}`;
 
+  if (existing && existing.checkInTime) {
+    const change = confirm(`【${String(seatNo).padStart(2, '0')}號 ${student.name}】已於 ${existing.checkInTime} 打卡！\n\n是否要以現在時間 (${timeStr}) 重新更新打卡紀錄？`);
+    if (!change) return;
+  }
+
   const isLate = timeStr > lateThreshold;
 
   window.KingdomApp.store.data.attendance[todayStr][studentId] = {
     status: isLate ? 'late' : 'present',
     checkInTime: timeStr,
-    note: isLate ? `${timeStr} 到校（超過門檻 ${lateThreshold}）` : '準時到校'
+    note: isLate ? `晨檢遲到 (${timeStr})` : ''
   };
 
   window.KingdomApp.store.save();
   window.KingdomApp.sound.playCoin();
 
   if (isLate) {
-    showToast(`⏳ ${String(seatNo).padStart(2, '0')}號 ${student.name} 於 ${timeStr} 打卡，標記為遲到 (超過${lateThreshold})`);
+    showToast(`⚠️ ${student.name} 大臣於 ${timeStr} 遲到打卡 (超過 ${lateThreshold})`, "⏳");
   } else {
-    showToast(`✅ ${String(seatNo).padStart(2, '0')}號 ${student.name} 於 ${timeStr} 準時打卡在朝！`);
+    showToast(`🟢 ${student.name} 大臣於 ${timeStr} 準時打卡成功！`, "✨");
   }
 
   renderMorningBoard();
-  renderTrafficView(); // 連動下課紅綠燈與愛班卡判定
+  if (currentMainView === 'teacher' && currentTeacherTab === 'attendance') {
+    renderAttendanceView();
+  }
 }
 
-// 投影機全螢幕切換
 function toggleFullscreen() {
   const container = document.getElementById("contactBoardContainer");
   if (!container) return;
@@ -397,31 +490,29 @@ function closeEditContactModal() {
 
 function saveContactBookData(e) {
   e.preventDefault();
-  const rawHw = document.getElementById("editContactHwItems").value;
-  const rawReminders = document.getElementById("editContactReminders").value;
-  const motto = document.getElementById("editContactMotto").value.trim();
+  if (!checkTeacherAuth("編輯聯絡簿奏章")) return;
 
-  const homeworkItems = rawHw.split('\n').map(i => i.trim()).filter(i => i.length > 0);
-  const reminders = rawReminders.split('\n').map(i => i.trim()).filter(i => i.length > 0);
+  const hwRaw = document.getElementById("editContactHwInput").value;
+  const remRaw = document.getElementById("editContactRemindersInput").value;
+  const motto = document.getElementById("editContactMottoInput").value;
 
-  window.KingdomApp.store.data.contactBook = {
-    date: window.KingdomApp.getTodayDateString(),
-    homeworkItems,
-    reminders,
-    queenMotto: motto
-  };
+  const homeworkItems = hwRaw.split('\n').map(s => s.trim()).filter(Boolean);
+  const reminders = remRaw.split('\n').map(s => s.trim()).filter(Boolean);
 
-  window.KingdomApp.store.save();
-  window.KingdomApp.sound.playCoin();
-  showToast("📜 教室大螢幕聯絡簿已成功發布更新！");
+  const targetDate = currentContactDate || window.KingdomApp.getTodayDateString();
+
+  window.KingdomApp.store.saveContactBook(targetDate, {
+    homeworkItems: homeworkItems.length > 0 ? homeworkItems : ["1. 今日各科無指定作業，請溫習課堂筆記"],
+    reminders: reminders.length > 0 ? reminders : ["攜帶水壺與正常文具學用品"],
+    queenMotto: motto.trim() || "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
+  });
+
+  window.KingdomApp.sound.playFanfare();
+  showToast(`📜 ${targetDate} 聯絡簿奏章已成功修訂發布！`, "👑");
   closeEditContactModal();
   renderMorningBoard();
-  renderTrafficView(); // 連動下課紅綠燈與愛班卡判定
 }
 
-// ===================================================================
-// 4. 皇室點名簿功能 (Attendance Management)
-// ===================================================================
 function getSelectedAttendanceDate() {
   const dateInput = document.getElementById("attendanceDatePicker");
   return dateInput ? dateInput.value : window.KingdomApp.getTodayDateString();
@@ -797,13 +888,22 @@ function renderHomeworkSummaryBoard() {
   const container = document.getElementById("homeworkSummaryBoardContainer");
   if (!container) return;
 
-  const homeworkList = window.KingdomApp.store.data.homework || [];
+  const allHwList = window.KingdomApp.store.data.homework || [];
   const students = window.KingdomApp.store.data.students || [];
+
+  // 日期過濾
+  let homeworkList = allHwList;
+  if (typeof currentHwFilterDate !== 'undefined' && currentHwFilterDate && currentHwFilterDate !== 'ALL') {
+    homeworkList = allHwList.filter(h => h.date === currentHwFilterDate);
+  }
 
   if (homeworkList.length === 0) {
     container.innerHTML = `
-      <div class="parchment-card p-8 text-center text-slate-600 font-bold">
-        目前尚無指派的作業奏章，點擊右上角「頒發新奏章」即可開始統整！
+      <div class="parchment-card p-8 text-center text-slate-600 font-bold space-y-2">
+        <p>目前在指定日期 (${currentHwFilterDate || '今日'}) 尚無登記的作業奏章。</p>
+        <button onclick="showAllHomeworkHistory()" class="px-4 py-1.5 rounded-xl btn-royal-gold text-xs font-black shadow">
+          查看所有歷史作業
+        </button>
       </div>
     `;
     renderHomeworkSettlementTable();
@@ -811,7 +911,6 @@ function renderHomeworkSummaryBoard() {
   }
 
   container.innerHTML = homeworkList.map(hw => {
-    // 四大分類：準時已交 (submitted / excellent)、遲交 (late)、需訂正 (revision)、未交 (pending)
     const submittedList = [];
     const lateList = [];
     const revisionList = [];
@@ -832,141 +931,85 @@ function renderHomeworkSummaryBoard() {
 
     return `
       <div class="bg-white rounded-2xl border-2 border-amber-300 p-5 space-y-4 shadow-sm">
-        
-        <!-- 作業抬頭與快捷按鈕 -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-amber-200">
           <div>
             <div class="flex items-center space-x-2">
               <span class="bg-amber-200 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-md">
-                ${hw.subject}
+                ${hw.subject || '作業'}
               </span>
               <h3 class="text-lg font-black text-amber-950">
                 ${hw.title}
               </h3>
+              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold">
+                📅 ${hw.date || '今日'}
+              </span>
             </div>
             <p class="text-xs text-slate-600 mt-1">${hw.desc || '無補充說明'}</p>
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <!-- 老師端直接設置需訂正名單快捷鈕 -->
-            <button onclick="openSetRevisionModal('${hw.id}')" class="px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-xs shadow-sm flex items-center space-x-1">
-              <span>⚠️ 設置需訂正名單</span>
+            <button onclick="openSetRevisionModal('${hw.id}')" class="px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-xs shadow-xs flex items-center space-x-1">
+              <span>⚠️</span>
+              <span>設置需訂正名冊</span>
             </button>
-            <button onclick="batchMarkAllHwSubmitted('${hw.id}')" class="px-3 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 font-black text-xs shadow-sm flex items-center space-x-1">
-              <span>✓ 全員標記已交</span>
+            <button onclick="batchMarkAllHwSubmitted('${hw.id}')" class="px-3 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 font-black text-xs shadow-xs flex items-center space-x-1">
+              <span>✅</span>
+              <span>全班全數繳齊</span>
             </button>
-            <button onclick="deleteHomework('${hw.id}')" class="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs" title="刪除此作業">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <button onclick="deleteHomework('${hw.id}')" class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold text-xs">
+              刪除
             </button>
           </div>
         </div>
 
-        <!-- ★★★ 當天繳交情形四欄看板 (準時已交 / 遲交 / 需訂正 / 未交) ★★★ -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          
-          <!-- 1. 準時已交名單欄 (綠色) -->
-          <div class="bg-emerald-50/80 rounded-xl border-2 border-emerald-300 p-3 space-y-2">
-            <div class="flex items-center justify-between pb-1.5 border-b border-emerald-200">
-              <span class="font-black text-emerald-900 text-xs flex items-center space-x-1">
-                <span>✅ 準時已交 (${submittedList.length}人)</span>
-              </span>
-              <span class="text-[10px] text-emerald-700 font-bold">點擊切換</span>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-2">
+            <div class="flex justify-between font-black text-emerald-900">
+              <span>✅ 準時已繳交</span>
+              <span>${submittedList.length} 人</span>
             </div>
-            <div class="flex flex-wrap gap-1.5 min-h-[46px]">
-              ${submittedList.length === 0 ? '<span class="text-xs text-slate-400">目前尚無已交</span>' : 
-                submittedList.map(st => `
-                  <button onclick="cycleHwStatus('${hw.id}', ${st.id})" 
-                    class="px-2 py-1 rounded-lg bg-white border border-emerald-400 text-emerald-950 font-black text-xs hover:bg-emerald-100 transition shadow-2xs flex items-center space-x-1"
-                    title="點擊切換為【遲交】">
-                    <span class="font-mono text-[11px] text-emerald-700">${String(st.seatNo).padStart(2, '0')}</span>
-                    <span>${st.name}</span>
-                  </button>
-                `).join('')
-              }
+            <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+              ${submittedList.map(s => `<span class="bg-white border border-emerald-300 px-1.5 py-0.5 rounded text-[11px] font-bold">${s.seatNo}.${s.name}</span>`).join('')}
             </div>
           </div>
 
-          <!-- 2. 遲交名單欄 (橙黃色，學期結算評分依據) -->
-          <div class="bg-amber-50/90 rounded-xl border-2 border-amber-400 p-3 space-y-2">
-            <div class="flex items-center justify-between pb-1.5 border-b border-amber-200">
-              <span class="font-black text-amber-950 text-xs flex items-center space-x-1">
-                <span>⏰ 遲交 (${lateList.length}人)</span>
-              </span>
-              <span class="text-[10px] text-amber-700 font-bold">已補交</span>
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
+            <div class="flex justify-between font-black text-amber-900">
+              <span>⏰ 遲交已補</span>
+              <span>${lateList.length} 人</span>
             </div>
-            <div class="flex flex-wrap gap-1.5 min-h-[46px]">
-              ${lateList.length === 0 ? '<span class="text-xs text-slate-400">全員準時無遲交</span>' : 
-                lateList.map(st => `
-                  <button onclick="cycleHwStatus('${hw.id}', ${st.id})" 
-                    class="px-2 py-1 rounded-lg bg-amber-500 text-white font-black text-xs hover:bg-amber-600 transition shadow-2xs flex items-center space-x-1"
-                    title="點擊切換為【需訂正】">
-                    <span class="font-mono text-[11px] text-amber-100">${String(st.seatNo).padStart(2, '0')}</span>
-                    <span>${st.name}</span>
-                    <span class="text-[10px] bg-amber-700 px-1 rounded">遲</span>
-                  </button>
-                `).join('')
-              }
+            <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+              ${lateList.map(s => `<span class="bg-white border border-amber-300 px-1.5 py-0.5 rounded text-[11px] font-bold">${s.seatNo}.${s.name}</span>`).join('')}
             </div>
           </div>
 
-          <!-- 3. 需訂正名單欄 (紫色高醒目，小學老師最核心關注) -->
-          <div class="bg-purple-50/90 rounded-xl border-2 border-purple-400 p-3 space-y-2 shadow-2xs">
-            <div class="flex items-center justify-between pb-1.5 border-b border-purple-200">
-              <span class="font-black text-purple-950 text-xs flex items-center space-x-1">
-                <span>⚠️ 需訂正 (${revisionList.length}人)</span>
-              </span>
-              <button onclick="openSetRevisionModal('${hw.id}')" class="text-[11px] text-purple-700 font-black hover:underline">
-                + 快速勾選
-              </button>
+          <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 space-y-2">
+            <div class="flex justify-between font-black text-purple-900">
+              <span>⚠️ 需訂正</span>
+              <span>${revisionList.length} 人</span>
             </div>
-            <div class="flex flex-wrap gap-1.5 min-h-[46px]">
-              ${revisionList.length === 0 ? '<span class="text-xs text-slate-400">全數無須訂正，優良！</span>' : 
-                revisionList.map(st => `
-                  <button onclick="cycleHwStatus('${hw.id}', ${st.id})" 
-                    class="px-2 py-1 rounded-lg bg-purple-700 text-white font-black text-xs hover:bg-purple-800 transition shadow-2xs flex items-center space-x-1"
-                    title="點擊切換為【未交】">
-                    <span class="font-mono text-[11px] text-purple-200">${String(st.seatNo).padStart(2, '0')}</span>
-                    <span>${st.name}</span>
-                    <span class="text-[10px]">改</span>
-                  </button>
-                `).join('')
-              }
+            <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+              ${revisionList.map(s => `<span class="bg-white border border-purple-300 px-1.5 py-0.5 rounded text-[11px] font-bold text-purple-900">${s.seatNo}.${s.name}</span>`).join('')}
             </div>
           </div>
 
-          <!-- 4. 未繳交名單欄 (紅色醒目) -->
-          <div class="bg-rose-50/80 rounded-xl border-2 border-rose-300 p-3 space-y-2">
-            <div class="flex items-center justify-between pb-1.5 border-b border-rose-200">
-              <span class="font-black text-rose-900 text-xs flex items-center space-x-1">
-                <span>❌ 未繳交 (${pendingList.length}人)</span>
-              </span>
-              <span class="text-[10px] text-rose-700 font-bold">待催繳</span>
+          <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 space-y-2">
+            <div class="flex justify-between font-black text-rose-900">
+              <span>❌ 未繳交</span>
+              <span>${pendingList.length} 人</span>
             </div>
-            <div class="flex flex-wrap gap-1.5 min-h-[46px]">
-              ${pendingList.length === 0 ? '<span class="text-xs text-slate-400">已全數繳交！</span>' : 
-                pendingList.map(st => `
-                  <button onclick="cycleHwStatus('${hw.id}', ${st.id})" 
-                    class="px-2 py-1 rounded-lg bg-white border border-rose-300 text-rose-900 font-black text-xs hover:bg-rose-100 transition shadow-2xs flex items-center space-x-1"
-                    title="點擊切換為【準時已交】">
-                    <span class="font-mono text-[11px] text-rose-600">${String(st.seatNo).padStart(2, '0')}</span>
-                    <span>${st.name}</span>
-                  </button>
-                `).join('')
-              }
+            <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+              ${pendingList.map(s => `<span class="bg-white border border-rose-300 px-1.5 py-0.5 rounded text-[11px] font-bold text-rose-900">${s.seatNo}.${s.name}</span>`).join('')}
             </div>
           </div>
-
         </div>
-
       </div>
     `;
   }).join('');
 
   renderHomeworkSettlementTable();
-  initLucideIcons();
 }
 
-// 點擊學生徽章快速在「準時已交 ⇄ 遲交 ⇄ 需訂正 ⇄ 未交」之間一鍵輪替
 function cycleHwStatus(hwId, studentId) {
   const hw = window.KingdomApp.store.data.homework.find(h => h.id === hwId);
   if (!hw) return;
@@ -1757,6 +1800,9 @@ function openTrafficDetailModal(studentId) {
     `;
   }).join('');
 
+  const refCount = status.reflectionCount || (status.hasReflection ? 1 : 0);
+  const srvCount = status.serviceCount || (status.hasService ? 1 : 0);
+
   content.innerHTML = `
     <!-- 當前判定結果 -->
     <div class="p-3.5 rounded-xl border-2 ${status.cardClass || ''} space-y-1">
@@ -1769,42 +1815,60 @@ function openTrafficDetailModal(studentId) {
     <!-- 作業清單 -->
     <div class="space-y-1.5">
       <span class="font-black text-amber-950 block">📝 今日各項作業進度：</span>
-      <div class="space-y-1 max-h-36 overflow-y-auto pr-1">
+      <div class="space-y-1 max-h-32 overflow-y-auto pr-1">
         ${hwList}
       </div>
     </div>
 
-    <!-- 特殊卡牌狀態 -->
-    <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-300 space-y-2">
-      <span class="font-black text-amber-950 block">🏷️ 紀律卡牌狀態：</span>
-      <div class="flex items-center justify-between">
-        <span class="font-bold text-slate-800">🪑 座位自省卡：</span>
-        <span class="font-black ${status.hasReflection ? 'text-rose-600' : 'text-slate-400'}">
-          ${status.hasReflection ? `領取中 (${status.reflectionReason})` : '無'}
-        </span>
+    <!-- 行為卡累計次數與微調 (自省卡 & 愛班服務卡) -->
+    <div class="p-3 rounded-xl bg-amber-50 border border-amber-300 space-y-3">
+      <span class="font-black text-amber-950 block text-xs">🏷️ 紀律卡牌累計與調整：</span>
+      
+      <!-- 自省卡 -->
+      <div class="bg-white p-2.5 rounded-xl border border-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <span class="font-black text-slate-900 block">🪑 座位自省卡</span>
+          <span class="text-[11px] font-bold text-rose-700">
+            目前累計：${refCount} 次 ${status.reflectionReason ? `(${status.reflectionReason})` : ''}
+          </span>
+        </div>
+        <div class="flex items-center space-x-1 text-xs font-bold">
+          <button type="button" onclick="removeStudentReflectionOne(${st.id})" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300" title="自省卡減 1 次">-1 次</button>
+          <button type="button" onclick="addStudentReflectionOne(${st.id})" class="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300" title="自省卡加 1 次">+1 次</button>
+          <button type="button" onclick="pardonStudentCard(${st.id}, 'reflection')" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-black" title="自省卡特赦歸零">🕊️ 特赦歸零</button>
+        </div>
       </div>
-      <div class="flex items-center justify-between">
-        <span class="font-bold text-slate-800">🧹 愛班服務卡：</span>
-        <span class="font-black ${status.hasService ? 'text-orange-600' : 'text-slate-400'}">
-          ${status.hasService ? `進行中 (${status.serviceReason})` : '無'}
-        </span>
+
+      <!-- 愛班卡 -->
+      <div class="bg-white p-2.5 rounded-xl border border-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <span class="font-black text-slate-900 block">🧹 愛班服務卡</span>
+          <span class="text-[11px] font-bold text-orange-700">
+            目前累計：${srvCount} 次 ${status.serviceReason ? `(${status.serviceReason})` : ''}
+          </span>
+        </div>
+        <div class="flex items-center space-x-1 text-xs font-bold">
+          <button type="button" onclick="removeStudentServiceOne(${st.id})" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300" title="愛班卡減 1 次">-1 次</button>
+          <button type="button" onclick="addStudentServiceOne(${st.id})" class="px-2 py-1 rounded bg-orange-100 hover:bg-orange-200 text-orange-900 border border-orange-300" title="愛班卡加 1 次">+1 次</button>
+          <button type="button" onclick="pardonStudentCard(${st.id}, 'service')" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-black" title="愛班卡特赦歸零">🧹 特赦歸零</button>
+        </div>
       </div>
     </div>
 
-    <!-- 導師手動覆寫通行燈號 -->
-    <div class="pt-2 border-t border-amber-200 space-y-2">
-      <span class="font-black text-amber-950 block">👑 導師手動快速裁定：</span>
+    <!-- 導師手動快速裁定 -->
+    <div class="pt-2 border-t border-amber-200 space-y-1.5">
+      <span class="font-black text-amber-950 block">👑 導師手動快速覆寫：</span>
       <div class="grid grid-cols-4 gap-1.5 font-black text-xs">
         <button onclick="setTrafficOverrideFromModal(${st.id}, 'green')" class="py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow">🟢 特赦綠燈</button>
         <button onclick="setTrafficOverrideFromModal(${st.id}, 'yellow')" class="py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-amber-950 shadow">🟡 指定黃燈</button>
         <button onclick="setTrafficOverrideFromModal(${st.id}, 'red')" class="py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow">🔴 指定紅燈</button>
-        <button onclick="setTrafficOverrideFromModal(${st.id}, 'auto')" class="py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300">🔄 系統自動</button>
+        <button onclick="setTrafficOverrideFromModal(${st.id}, 'auto')" class="py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800">🔄 自動判定</button>
       </div>
     </div>
   `;
 
-  document.getElementById("trafficDetailModal").classList.remove("hidden");
-  initLucideIcons();
+  const modal = document.getElementById("trafficDetailModal");
+  if (modal) modal.classList.remove("hidden");
 }
 
 function closeTrafficDetailModal() {
@@ -2371,6 +2435,7 @@ function promptSingleResetPoints(studentId) {
 
 // 批次重置全班點數 Modal
 function openBatchResetPointsModal() {
+  if (!checkTeacherAuth("批次重設全班點數")) return;
   document.getElementById("batchResetPointsModal").classList.remove("hidden");
   initLucideIcons();
 }
@@ -2630,40 +2695,49 @@ function renderPetsOverview() {
   const students = window.KingdomApp.store.data.students;
 
   grid.innerHTML = students.map(st => {
-    const petStatus = window.KingdomApp.getPetStatus(st.petType, st.points);
-    const svgCode = window.KingdomApp.renderPetSVG(st.petType, petStatus.stageIndex);
+    const aType = st.animalType || st.petType || 'lion';
+    const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0);
+    const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
+    const svgCode = window.KingdomApp.renderAnimalSVG(aType, petStatus.stageIndex);
 
     return `
-      <div class="parchment-card p-4 minister-card flex flex-col justify-between text-center">
+      <div class="parchment-card p-4 minister-card flex flex-col justify-between text-center ${petStatus.isGolden ? 'ring-2 ring-amber-400 bg-amber-50/90' : ''}">
         <div>
           <div class="flex items-center justify-between text-xs">
             <span class="font-mono font-black text-amber-950 bg-amber-200 px-2 py-0.5 rounded">
               座號 ${String(st.seatNo).padStart(2, '0')}
             </span>
-            <span class="font-bold px-2 py-0.5 rounded-full" style="background-color: ${petStatus.stageColor}20; color: ${petStatus.stageColor}">
-              階級 ${petStatus.stageIndex}/4
+            <span class="font-black px-2 py-0.5 rounded-full ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 border border-amber-500 shadow-xs' : 'bg-amber-100 text-amber-900'}">
+              ${petStatus.stageTitle}
             </span>
           </div>
 
-          <div class="mt-2 text-sm font-black text-slate-800">${st.name}</div>
+          <div class="mt-2 text-sm font-black text-slate-800 flex items-center justify-center space-x-1">
+            <span>${st.name}</span>
+            <span class="text-xs">${petStatus.animalIcon}</span>
+          </div>
           <div class="text-[11px] text-amber-800 font-bold">${st.title}</div>
 
-          <div class="w-32 h-32 mx-auto my-2 pet-animated">
+          <div class="w-28 h-28 mx-auto my-2 pet-animated relative">
             ${svgCode}
+            ${petStatus.isGolden ? '<span class="absolute -top-1 -right-1 text-xs bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-full font-black animate-bounce shadow">金化神聖</span>' : ''}
           </div>
 
-          <h4 class="font-black text-slate-900 text-sm mt-1">${petStatus.stageTitle}</h4>
-          <p class="text-[10px] text-slate-600 line-clamp-2 px-1">${petStatus.desc}</p>
+          <p class="text-[10px] text-slate-600 line-clamp-2 px-1">${petStatus.stageDesc}</p>
         </div>
 
-        <div class="mt-3 pt-2 border-t border-amber-200">
-          <div class="flex justify-between text-[11px] font-bold text-amber-900 mb-1">
-            <span>累積金幣</span>
-            <span>${st.points} 🪙</span>
+        <div class="mt-3 pt-2 border-t border-amber-200 space-y-1.5">
+          <div class="flex justify-between text-[11px] font-black text-amber-900">
+            <span>可用金幣: ${st.points || 0} 🪙</span>
+            <span>生涯總額: ${lifetime} 🌟</span>
           </div>
-          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-            <div class="h-full bg-amber-500 rounded-full" style="width: ${petStatus.progressPercent}%"></div>
+          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden" title="金化進化進度：${petStatus.progressPct}%">
+            <div class="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full" style="width: ${petStatus.progressPct}%"></div>
           </div>
+          <button type="button" onclick="openChangeAnimalModal(${st.id})" class="w-full py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-xs flex items-center justify-center space-x-1 transition">
+            <span>🔄</span>
+            <span>更換守護動物</span>
+          </button>
         </div>
       </div>
     `;
@@ -2672,9 +2746,6 @@ function renderPetsOverview() {
   initLucideIcons();
 }
 
-// ===================================================================
-// 8. 內閣大臣名冊與批次管理中心 (姓名、幹部名稱、生日密碼 3合1)
-// ===================================================================
 function renderRosterView() {
   const tbody = document.getElementById("studentRosterTableBody");
   if (!tbody) return;
@@ -2724,6 +2795,7 @@ function renderRosterView() {
 
 // 批次管理中心 Modal (姓名、幹部、生日密碼 3合1)
 function openBatchCenterModal(initialTab = 'names') {
+  if (!checkTeacherAuth("進行批次名冊設定")) return;
   currentBatchTab = initialTab;
   switchBatchTab(initialTab);
   document.getElementById("batchCenterModal").classList.remove("hidden");
@@ -3313,6 +3385,7 @@ function importDataJSON(event) {
 }
 
 function confirmResetData() {
+  if (!checkTeacherAuth("重設王國資料")) return;
   if (confirm("確定要將所有學生名冊重置為預設的 27 位大臣示範名單嗎？")) {
     window.KingdomApp.store.reset();
     showToast("🔄 王國資料已重置為 27 位大臣預設名單！");
@@ -3368,42 +3441,59 @@ function renderSeatingChart() {
   const container = document.getElementById("seatingGridContainer");
   if (!container) return;
 
+  const layout = window.KingdomApp.store.getSeatingLayout();
   const chart = window.KingdomApp.store.getSeatingChart();
   const students = window.KingdomApp.store.data.students;
   const todayStr = window.KingdomApp.getTodayDateString();
   const attendanceToday = (window.KingdomApp.store.data.attendance && window.KingdomApp.store.data.attendance[todayStr]) || {};
 
+  // 動態調整 CSS Grid 列數
+  container.style.gridTemplateColumns = `repeat(${layout.cols}, minmax(0, 1fr))`;
+
+  const statusLabel = document.getElementById("seatingLayoutStatusLabel");
+  if (statusLabel) {
+    statusLabel.textContent = `目前格局：${layout.rows}排 x ${layout.cols}列 (共 ${chart.length} 席位)`;
+  }
+
+  const rowsInput = document.getElementById("seatingRowsInput");
+  const colsInput = document.getElementById("seatingColsInput");
+  if (rowsInput) rowsInput.value = layout.rows;
+  if (colsInput) colsInput.value = layout.cols;
+
   let html = "";
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < chart.length; i++) {
     const seatNo = chart[i];
     const student = seatNo ? students.find(s => s.seatNo === seatNo) : null;
     const isSelected = selectedSeatIndex === i;
 
-    const row = Math.floor(i / 5) + 1;
-    const col = (i % 5) + 1;
+    const row = Math.floor(i / layout.cols) + 1;
+    const col = (i % layout.cols) + 1;
 
     if (student) {
-      const traffic = window.KingdomApp.store.evaluateStudentTraffic(student.id);
+      const traffic = window.KingdomApp.store.evaluateTrafficStatus(student.id);
       const att = attendanceToday[student.id];
 
       let attBadge = "";
       if (att) {
         if (att.status === "present") attBadge = `<span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">到 ${att.checkInTime || ''}</span>`;
-        else if (att.status === "late") attBadge = `<span class="text-[10px] bg-orange-100 text-orange-800 font-bold px-1.5 py-0.5 rounded">⚠️ 遲到</span>`;
+        else if (att.status === "late") attBadge = `<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">⚠️ 遲到</span>`;
         else if (att.status === "leave") attBadge = `<span class="text-[10px] bg-sky-100 text-sky-800 font-bold px-1.5 py-0.5 rounded">🏖️ 請假</span>`;
       } else {
         attBadge = `<span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-1.5 py-0.5 rounded">未打卡</span>`;
       }
 
       let lightBadge = "";
-      if (traffic.light === "green") lightBadge = `<span class="text-xs" title="准許下課">🟢</span>`;
-      else if (traffic.light === "yellow") lightBadge = `<span class="text-xs" title="待訂正">🟡</span>`;
+      if (traffic && traffic.light === "green") lightBadge = `<span class="text-xs" title="准許下課">🟢</span>`;
+      else if (traffic && traffic.light === "yellow") lightBadge = `<span class="text-xs" title="待訂正">🟡</span>`;
       else lightBadge = `<span class="text-xs" title="禁止下課">🔴</span>`;
 
-      let serviceChip = traffic.hasServiceCard ? `<span class="text-[9px] bg-orange-600 text-white font-bold px-1 rounded shadow-xs">🧹愛班</span>` : "";
+      const refCount = traffic ? traffic.reflectionCount : 0;
+      const srvCount = traffic ? traffic.serviceCount : 0;
+      let refChip = refCount > 0 ? `<span class="text-[9px] bg-rose-600 text-white font-bold px-1 rounded shadow-xs">自省${refCount > 1 ? `x${refCount}` : ''}</span>` : "";
+      let serviceChip = srvCount > 0 ? `<span class="text-[9px] bg-orange-600 text-white font-bold px-1 rounded shadow-xs">愛班${srvCount > 1 ? `x${srvCount}` : ''}</span>` : "";
 
       html += `
-        <div class="seat-desk-card ${isSelected ? 'seat-selected' : ''}" 
+        <div class="seat-desk-card ${isSelected ? 'seat-selected ring-4 ring-amber-500' : ''}" 
              id="seatDesk-${i}"
              draggable="true"
              ondragstart="handleSeatDragStart(event, ${i})"
@@ -3412,39 +3502,35 @@ function renderSeatingChart() {
              ondrop="handleSeatDrop(event, ${i})"
              ondragend="handleSeatDragEnd(event)"
              onclick="handleSeatClick(${i})">
-          
-          <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold text-amber-900/70">席位 ${i + 1} (${row}排${col}列)</span>
+          <div class="flex items-center justify-between text-xs w-full">
+            <span class="font-mono font-bold text-slate-400 text-[10px]">${row}-${col}</span>
             <div class="flex items-center space-x-1">
-              ${serviceChip}
               ${lightBadge}
+              ${attBadge}
             </div>
           </div>
-
-          <div class="my-1 flex items-baseline justify-between">
-            <div class="flex items-baseline space-x-1.5">
-              <span class="font-digital text-lg font-black text-amber-950">${student.seatNo}號</span>
-              <span class="text-base font-black text-slate-900">${student.name}</span>
-            </div>
-            ${attBadge}
+          <div class="my-1 text-center">
+            <span class="seat-badge">${String(student.seatNo).padStart(2, '0')}號</span>
+            <div class="font-black text-amber-950 text-sm mt-0.5 truncate max-w-[85px] mx-auto">${student.name}</div>
           </div>
-
-          <div class="flex items-center justify-between text-[10px] text-amber-950/70 border-t border-amber-200/60 pt-1">
-            <span class="truncate max-w-[100px] font-medium">${student.title || '大臣'}</span>
-            <span class="font-bold text-amber-900">🪙 ${student.points}</span>
+          <div class="flex items-center justify-center space-x-1">
+            ${refChip}
+            ${serviceChip}
           </div>
         </div>
       `;
     } else {
+      // 空位
       html += `
-        <div class="seat-empty-card ${isSelected ? 'seat-selected' : ''}" 
+        <div class="seat-desk-card seat-desk-empty ${isSelected ? 'seat-selected ring-4 ring-amber-500' : ''}"
              id="seatDesk-${i}"
              ondragover="handleSeatDragOver(event, ${i})"
              ondragleave="handleSeatDragLeave(event, ${i})"
              ondrop="handleSeatDrop(event, ${i})"
              onclick="handleSeatClick(${i})">
-          <span class="text-xs font-bold text-slate-400">席位 ${i + 1}</span>
-          <span class="text-xs font-bold text-amber-700/80 mt-1">+ 空席</span>
+          <div class="text-[10px] text-slate-400 font-mono">${row}-${col}</div>
+          <div class="text-xs font-bold text-slate-400 mt-2">🈳 走道空位</div>
+          <div class="text-[9px] text-slate-300">點擊指派大臣</div>
         </div>
       `;
     }
@@ -3930,6 +4016,7 @@ function updateDecibelThreshold(val) {
 // 11. 跨裝置雲端資料同步中心 (Cloud Sync UI Controller)
 // ===================================================================
 function openCloudSyncModal() {
+  if (!checkTeacherAuth("管理跨裝置雲端同步設定")) return;
   const modal = document.getElementById("cloudSyncModal");
   if (!modal) return;
   modal.classList.remove("hidden");
@@ -3997,11 +4084,29 @@ function updateCloudSyncModalStatus(status) {
 
   if (modeText) {
     if (status.isLocalHost) {
-      modeText.textContent = "教室 Wi-Fi 區網同步";
+      modeText.textContent = status.lanIp ? `教室 Wi-Fi 區網同步 (${status.lanIp})` : "教室 Wi-Fi 區網同步";
     } else if (status.googleScriptUrl) {
       modeText.textContent = "Google 官方雲端庫 (即時雙向同步)";
     } else {
       modeText.textContent = "請完成下方 3 步驟啟用";
+    }
+  }
+
+  // 自動更新 QR Code 與分享網址 (若 LAN IP 解析完成)
+  const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+  if (sync) {
+    const shareUrl = sync.getShareableSyncUrl();
+    const urlInput = document.getElementById("syncShareUrlInput");
+    if (urlInput && urlInput.value !== shareUrl) {
+      urlInput.value = shareUrl;
+    }
+    const qrImg = document.getElementById("cloudSyncQrCode");
+    if (qrImg && shareUrl) {
+      const targetSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(shareUrl)}`;
+      if (qrImg.getAttribute("data-last-url") !== shareUrl) {
+        qrImg.setAttribute("data-last-url", shareUrl);
+        qrImg.src = targetSrc;
+      }
     }
   }
 }
@@ -4165,7 +4270,7 @@ function copyShareableSyncUrl() {
 async function triggerManualSync() {
   const sync = window.KingdomApp.cloudSync;
   showToast("正在與雲端同步資料...", "🔄");
-  const pullRes = await sync.pull();
+  const pullRes = await sync.pull({ force: true });
   if (pullRes.success) {
     showToast("📥 已成功自雲端下載最新班級存檔！", "🟢");
   } else {
@@ -4208,3 +4313,533 @@ if (typeof window !== 'undefined') {
     openCloudSyncModal
   };
 }
+
+
+// ===================================================================
+// 課堂定時鬧鐘與計時器標籤頁 (Alarm Clock & Activity Timer)
+// ===================================================================
+let currentTimerTab = 'countdown'; // 'countdown' | 'alarm'
+let alarmTargetTime = "10:10";
+let alarmActivityLabel = "第二節下課 (大下課)";
+let isAlarmActive = false;
+let lastAlarmRungMinute = "";
+
+function switchTimerTab(tab) {
+  currentTimerTab = tab;
+  const btnCountdown = document.getElementById("btnTabCountdown");
+  const btnAlarm = document.getElementById("btnTabAlarm");
+  const panelCountdown = document.getElementById("panelCountdown");
+  const panelAlarm = document.getElementById("panelAlarm");
+
+  if (tab === 'countdown') {
+    if (btnCountdown) btnCountdown.className = "flex-1 py-2 text-center text-xs sm:text-sm font-black rounded-lg transition bg-amber-950 text-amber-300 shadow";
+    if (btnAlarm) btnAlarm.className = "flex-1 py-2 text-center text-xs sm:text-sm font-black rounded-lg transition text-amber-950 hover:bg-amber-200";
+    if (panelCountdown) panelCountdown.classList.remove("hidden");
+    if (panelAlarm) panelAlarm.classList.add("hidden");
+  } else {
+    if (btnCountdown) btnCountdown.className = "flex-1 py-2 text-center text-xs sm:text-sm font-black rounded-lg transition text-amber-950 hover:bg-amber-200";
+    if (btnAlarm) btnAlarm.className = "flex-1 py-2 text-center text-xs sm:text-sm font-black rounded-lg transition bg-amber-950 text-amber-300 shadow";
+    if (panelCountdown) panelCountdown.classList.add("hidden");
+    if (panelAlarm) panelAlarm.classList.remove("hidden");
+    updateAlarmUI();
+  }
+}
+
+function setAlarmPreset(timeStr, label) {
+  alarmTargetTime = timeStr;
+  alarmActivityLabel = label;
+  const timeInput = document.getElementById("alarmTimeInput");
+  const labelInput = document.getElementById("alarmLabelInput");
+  if (timeInput) timeInput.value = timeStr;
+  if (labelInput) labelInput.value = label;
+  isAlarmActive = true;
+  updateAlarmUI();
+  showToast(`⏰ 已設定課堂定時鬧鐘：${timeStr}【${label}】`, "⏰");
+}
+
+function toggleAlarmEnabled() {
+  const timeInput = document.getElementById("alarmTimeInput");
+  const labelInput = document.getElementById("alarmLabelInput");
+  if (timeInput && timeInput.value) alarmTargetTime = timeInput.value;
+  if (labelInput && labelInput.value) alarmActivityLabel = labelInput.value;
+
+  isAlarmActive = !isAlarmActive;
+  updateAlarmUI();
+  if (isAlarmActive) {
+    showToast(`⏰ 定時鬧鐘已啟用！將於 ${alarmTargetTime} 鳴響鐘聲`, "🔔");
+  } else {
+    showToast("⏰ 定時鬧鐘已停用", "ℹ️");
+  }
+}
+
+function updateAlarmUI() {
+  const badge = document.getElementById("alarmStatusBadge");
+  const btn = document.getElementById("btnToggleAlarm");
+  const toggleIcon = document.getElementById("alarmToggleIcon");
+  const toggleText = document.getElementById("alarmToggleText");
+
+  if (badge) {
+    if (isAlarmActive) {
+      badge.textContent = `⏰ 鬧鐘已啟用 (${alarmTargetTime})`;
+      badge.className = "text-xs font-black px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pulse";
+    } else {
+      badge.textContent = "鬧鐘未啟用";
+      badge.className = "text-xs font-black px-2.5 py-1 rounded-full bg-slate-200 text-slate-700";
+    }
+  }
+
+  if (btn) {
+    if (isAlarmActive) {
+      btn.className = "px-6 py-2.5 rounded-xl font-black text-sm shadow-md bg-rose-600 hover:bg-rose-500 text-white flex items-center space-x-1.5 transition";
+      if (toggleIcon) toggleIcon.textContent = "🔕";
+      if (toggleText) toggleText.textContent = "關閉定時鬧鐘";
+    } else {
+      btn.className = "px-6 py-2.5 rounded-xl font-black text-sm shadow-md bg-emerald-600 hover:bg-emerald-500 text-white flex items-center space-x-1.5 transition";
+      if (toggleIcon) toggleIcon.textContent = "⏰";
+      if (toggleText) toggleText.textContent = "啟用定時鬧鐘";
+    }
+  }
+
+  updateFloatingTimerBar();
+}
+
+function triggerAlarmRing() {
+  window.KingdomApp.sound.playBreakBell();
+  window.KingdomApp.triggerConfetti();
+
+  const overlay = document.getElementById("alarmAlertOverlay");
+  const overlayTime = document.getElementById("alarmAlertOverlayTime");
+  const overlayLabel = document.getElementById("alarmAlertOverlayLabel");
+
+  if (overlayTime) overlayTime.textContent = alarmTargetTime;
+  if (overlayLabel) overlayLabel.textContent = alarmActivityLabel || "課堂活動時間到！";
+  if (overlay) overlay.classList.remove("hidden");
+}
+
+function dismissAlarmAlert() {
+  const overlay = document.getElementById("alarmAlertOverlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+// ===================================================================
+// 可愛守護動物更換與 5 階金化展示 (Change Guardian Animal)
+// ===================================================================
+let activeChangeAnimalStudentId = null;
+
+function openChangeAnimalModal(studentId) {
+  activeChangeAnimalStudentId = studentId;
+  const student = window.KingdomApp.store.data.students.find(s => s.id === studentId || s.seatNo === studentId);
+  if (!student) return;
+
+  const modal = document.getElementById("changeAnimalModal");
+  const targetLabel = document.getElementById("changeAnimalTargetStudent");
+  const lifetimeLabel = document.getElementById("changeAnimalLifetimePts");
+  const grid = document.getElementById("animalChoicesGrid");
+
+  if (targetLabel) targetLabel.textContent = `${String(student.seatNo).padStart(2, '0')}號 ${student.name} 大臣`;
+  if (lifetimeLabel) lifetimeLabel.textContent = `${student.lifetimePoints || student.points || 0} 點`;
+
+  if (grid) {
+    const currentAnimal = (student.animalType || student.petType || 'lion').toLowerCase();
+    const animals = Object.values(window.KingdomApp.ANIMAL_DEFINITIONS);
+
+    grid.innerHTML = animals.map(anim => {
+      const isSelected = anim.id === currentAnimal;
+      const previewStatus = window.KingdomApp.getAnimalStatus(anim.id, student.lifetimePoints || student.points || 0);
+      const svgPreview = window.KingdomApp.renderAnimalSVG(anim.id, previewStatus.stageIndex);
+
+      return `
+        <div onclick="selectNewAnimalForStudent('${anim.id}')"
+          class="parchment-card p-3 rounded-2xl border-2 transition-all cursor-pointer text-center flex flex-col justify-between hover:scale-105 ${isSelected ? 'border-amber-600 bg-amber-100/90 shadow-md ring-2 ring-amber-400' : 'border-amber-300 hover:border-amber-500 bg-white/90'}">
+          <div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-xl">${anim.icon}</span>
+              ${isSelected ? '<span class="bg-amber-950 text-amber-200 px-2 py-0.5 rounded-full text-[10px] font-black">目前守護</span>' : '<span class="text-[10px] font-bold text-slate-500">點擊挑選</span>'}
+            </div>
+            <h4 class="font-black text-sm text-amber-950 mt-1">${anim.name}</h4>
+            <div class="w-20 h-20 mx-auto my-1">
+              ${svgPreview}
+            </div>
+            <div class="text-[10px] text-amber-900 font-bold bg-amber-50 p-1 rounded-lg border border-amber-200">
+              ${previewStatus.stageTitle}
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-600 mt-1 line-clamp-2">${anim.desc}</p>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (modal) modal.classList.remove("hidden");
+}
+
+function selectNewAnimalForStudent(animalId) {
+  if (!activeChangeAnimalStudentId) return;
+  const ok = window.KingdomApp.store.setStudentAnimal(activeChangeAnimalStudentId, animalId);
+  if (ok) {
+    const student = window.KingdomApp.store.data.students.find(s => s.id === activeChangeAnimalStudentId || s.seatNo === activeChangeAnimalStudentId);
+    const def = window.KingdomApp.ANIMAL_DEFINITIONS[animalId];
+    showToast(`🐾 已成功為【${student.name}】更換守護動物為【${def ? def.name : animalId}】！`, "✨");
+    closeChangeAnimalModal();
+    refreshCurrentView();
+  }
+}
+
+function closeChangeAnimalModal() {
+  const modal = document.getElementById("changeAnimalModal");
+  if (modal) modal.classList.add("hidden");
+  activeChangeAnimalStudentId = null;
+}
+
+// ===================================================================
+// 批次更改金幣與生涯累積總額 (Batch Adjust Points & Reset)
+// ===================================================================
+let activeAdjustStudentIds = new Set();
+let currentAdjustMode = 'adjust';
+
+function openBatchAdjustPointsModal() {
+  if (!checkTeacherAuth("批次更改金幣")) return;
+  const modal = document.getElementById("batchAdjustPointsModal");
+  if (!modal) return;
+
+  const students = window.KingdomApp.store.data.students;
+  activeAdjustStudentIds = new Set(students.map(s => s.id));
+
+  renderAdjustStudentsGrid();
+  handleAdjustModeChange('adjust');
+
+  modal.classList.remove("hidden");
+}
+
+function closeBatchAdjustPointsModal() {
+  const modal = document.getElementById("batchAdjustPointsModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function renderAdjustStudentsGrid() {
+  const grid = document.getElementById("adjustStudentsGrid");
+  const countLabel = document.getElementById("adjustSelectedCountLabel");
+  const students = window.KingdomApp.store.data.students;
+
+  if (grid) {
+    grid.innerHTML = students.map(st => {
+      const isChecked = activeAdjustStudentIds.has(st.id);
+      return `
+        <label class="flex items-center space-x-1.5 p-1 rounded hover:bg-amber-100 cursor-pointer text-xs">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAdjustStudent(${st.id}, this.checked)" class="rounded text-amber-600">
+          <span class="font-mono font-bold">${String(st.seatNo).padStart(2, '0')}.</span>
+          <span class="font-bold truncate">${st.name}</span>
+        </label>
+      `;
+    }).join('');
+  }
+
+  if (countLabel) {
+    countLabel.textContent = `已選取 ${activeAdjustStudentIds.size} / ${students.length} 位大臣`;
+  }
+}
+
+function toggleAdjustStudent(studentId, isChecked) {
+  if (isChecked) activeAdjustStudentIds.add(studentId);
+  else activeAdjustStudentIds.delete(studentId);
+  const countLabel = document.getElementById("adjustSelectedCountLabel");
+  if (countLabel) {
+    countLabel.textContent = `已選取 ${activeAdjustStudentIds.size} / ${window.KingdomApp.store.data.students.length} 位大臣`;
+  }
+}
+
+function selectAllAdjustStudents(select) {
+  const students = window.KingdomApp.store.data.students;
+  if (select) {
+    activeAdjustStudentIds = new Set(students.map(s => s.id));
+  } else {
+    activeAdjustStudentIds.clear();
+  }
+  renderAdjustStudentsGrid();
+}
+
+function invertAdjustStudents() {
+  const students = window.KingdomApp.store.data.students;
+  students.forEach(st => {
+    if (activeAdjustStudentIds.has(st.id)) activeAdjustStudentIds.delete(st.id);
+    else activeAdjustStudentIds.add(st.id);
+  });
+  renderAdjustStudentsGrid();
+}
+
+function handleAdjustModeChange(mode) {
+  currentAdjustMode = mode;
+  const inputGroup = document.getElementById("adjustValueInputGroup");
+  const valueLabel = document.getElementById("adjustValueLabel");
+  const pointsInput = document.getElementById("adjustPointsInput");
+  const syncLabel = document.getElementById("adjustSyncLifetimeCheckLabel");
+
+  if (!inputGroup || !valueLabel || !pointsInput) return;
+
+  if (mode === 'adjust') {
+    inputGroup.classList.remove("hidden");
+    valueLabel.textContent = "增減點數 (正數加點、負數扣點)：";
+    pointsInput.value = "5";
+    if (syncLabel) syncLabel.classList.remove("hidden");
+  } else if (mode === 'set_points') {
+    inputGroup.classList.remove("hidden");
+    valueLabel.textContent = "直接設定可用金幣數值 (points)：";
+    pointsInput.value = "50";
+    if (syncLabel) syncLabel.classList.add("hidden");
+  } else if (mode === 'set_lifetime') {
+    inputGroup.classList.remove("hidden");
+    valueLabel.textContent = "直接設定生涯累積總額 (lifetimePoints，動物金化相關)：";
+    pointsInput.value = "100";
+    if (syncLabel) syncLabel.classList.add("hidden");
+  } else {
+    inputGroup.classList.add("hidden");
+    if (syncLabel) syncLabel.classList.add("hidden");
+  }
+}
+
+function submitBatchAdjustPoints(e) {
+  e.preventDefault();
+  if (activeAdjustStudentIds.size === 0) {
+    alert("請至少選擇一位大臣！");
+    return;
+  }
+
+  const ids = Array.from(activeAdjustStudentIds);
+  const pointsVal = parseInt(document.getElementById("adjustPointsInput")?.value, 10) || 0;
+  const syncLifetime = document.getElementById("adjustSyncLifetimeCheck")?.checked ?? true;
+  const reason = document.getElementById("adjustReasonInput")?.value.trim() || "導師批次金幣調度";
+
+  if (currentAdjustMode.startsWith('reset_')) {
+    const confirmReset = confirm(`確定要執行【${currentAdjustMode}】嗎？此操作將重置已選 ${ids.length} 位大臣的點數！`);
+    if (!confirmReset) return;
+  }
+
+  window.KingdomApp.store.batchAdjustPoints(ids, {
+    mode: currentAdjustMode,
+    deltaPoints: pointsVal,
+    targetPoints: pointsVal,
+    targetLifetime: pointsVal,
+    syncLifetime,
+    reason
+  });
+
+  window.KingdomApp.sound.playCoin();
+  showToast(`💰 批次金幣調度成功！已更新 ${ids.length} 位大臣資料。`, "👑");
+  closeBatchAdjustPointsModal();
+  refreshCurrentView();
+}
+
+// ===================================================================
+// 加點快捷設定庫管理 (Point Presets Manager)
+// ===================================================================
+function openPointPresetsModal() {
+  if (!checkTeacherAuth("加點快捷設定")) return;
+  const modal = document.getElementById("pointPresetsModal");
+  if (!modal) return;
+  renderPointPresetsManageList();
+  modal.classList.remove("hidden");
+}
+
+function closePointPresetsModal() {
+  const modal = document.getElementById("pointPresetsModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function renderPointPresetsManageList() {
+  const list = document.getElementById("presetItemsManageList");
+  if (!list) return;
+  const presets = window.KingdomApp.store.data.pointPresets || [];
+
+  list.innerHTML = presets.map(p => {
+    const isPlus = p.type === 'plus';
+    return `
+      <div class="flex items-center justify-between p-2 rounded-lg ${isPlus ? 'bg-emerald-50 border border-emerald-200' : 'bg-rose-50 border border-rose-200'}">
+        <div class="flex items-center space-x-2">
+          <span class="text-base">${p.icon || (isPlus ? '💡' : '⚠️')}</span>
+          <span class="font-black text-slate-800">${p.label}</span>
+          <span class="font-digital font-black ${isPlus ? 'text-emerald-700' : 'text-rose-700'}">
+            ${isPlus ? '+' : ''}${p.points} 點
+          </span>
+        </div>
+        <button type="button" onclick="deletePointPresetItem('${p.id}')" class="text-rose-600 hover:text-rose-800 p-1" title="刪除規則">
+          ✕
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function submitNewPointPresetItem(e) {
+  e.preventDefault();
+  const type = document.getElementById("newPresetTypeInput")?.value || 'plus';
+  const points = parseInt(document.getElementById("newPresetPointsInput")?.value, 10) || (type === 'minus' ? -1 : 2);
+  const label = document.getElementById("newPresetLabelInput")?.value.trim();
+  const icon = document.getElementById("newPresetIconInput")?.value.trim() || '💡';
+
+  if (!label) return;
+
+  window.KingdomApp.store.addPointPreset({ type, label, points, icon });
+  showToast(`已新增快捷規則【${label}】！`, "✨");
+
+  document.getElementById("newPresetLabelInput").value = "";
+  renderPointPresetsManageList();
+  renderPointPresets();
+}
+
+function deletePointPresetItem(id) {
+  if (!confirm("確定要刪除此項快捷規則嗎？")) return;
+  window.KingdomApp.store.deletePointPreset(id);
+  renderPointPresetsManageList();
+  renderPointPresets();
+}
+
+// ===================================================================
+// 全班特赦與自省卡/愛班卡單次移除 (Pardon & Disciplinary Actions)
+// ===================================================================
+function confirmPardonAll(type) {
+  if (!checkTeacherAuth("全班特赦")) return;
+  const typeName = type === 'reflection' ? '座位自省卡' : (type === 'service' ? '愛班服務卡' : '全部自省與愛班卡');
+  const ok = confirm(`🕊️ 皇室恩典特赦令：\n\n確定要對全班大臣執行【${typeName}全部特赦（歸零）】嗎？`);
+  if (!ok) return;
+
+  window.KingdomApp.store.pardonAll(type);
+  window.KingdomApp.sound.playFanfare();
+  window.KingdomApp.triggerConfetti();
+  showToast(`🕊️ 已頒布特赦令！全班【${typeName}】全部歸零赦免！`, "👑");
+  refreshCurrentView();
+}
+
+function addStudentReflectionOne(studentId) {
+  window.KingdomApp.store.addReflectionCard(studentId, '課堂自省');
+  refreshCurrentView();
+  openTrafficDetailModal(studentId);
+}
+
+function removeStudentReflectionOne(studentId) {
+  window.KingdomApp.store.removeReflectionCardOne(studentId);
+  refreshCurrentView();
+  openTrafficDetailModal(studentId);
+}
+
+function addStudentServiceOne(studentId) {
+  window.KingdomApp.store.addServiceCard(studentId, '愛班勞動');
+  refreshCurrentView();
+  openTrafficDetailModal(studentId);
+}
+
+function removeStudentServiceOne(studentId) {
+  window.KingdomApp.store.removeServiceCardOne(studentId);
+  refreshCurrentView();
+  openTrafficDetailModal(studentId);
+}
+
+function pardonStudentCard(studentId, type) {
+  window.KingdomApp.store.pardonStudent(studentId, type);
+  refreshCurrentView();
+  openTrafficDetailModal(studentId);
+}
+
+// ===================================================================
+// 教室座位表格局調整與席位指派 (Seating Layout & Direct Assignment)
+// ===================================================================
+let activeAssignSeatIndex = null;
+
+function setPredefinedSeatingLayout(rows, cols) {
+  if (!checkTeacherAuth("調整座位表格局")) return;
+  window.KingdomApp.store.setSeatingLayout(rows, cols);
+  const rowsInput = document.getElementById("seatingRowsInput");
+  const colsInput = document.getElementById("seatingColsInput");
+  if (rowsInput) rowsInput.value = rows;
+  if (colsInput) colsInput.value = cols;
+  showToast(`💺 已套用座位格局：${rows} 排 x ${cols} 列`, "💺");
+  renderSeatingChart();
+}
+
+function applyCustomSeatingLayout() {
+  if (!checkTeacherAuth("調整座位表格局")) return;
+  const rows = parseInt(document.getElementById("seatingRowsInput")?.value, 10) || 5;
+  const cols = parseInt(document.getElementById("seatingColsInput")?.value, 10) || 6;
+  window.KingdomApp.store.setSeatingLayout(rows, cols);
+  showToast(`💺 已套用座位格局：${rows} 排 x ${cols} 列`, "💺");
+  renderSeatingChart();
+}
+
+function openAssignSeatModal(seatIdx) {
+  activeAssignSeatIndex = seatIdx;
+  const modal = document.getElementById("assignSeatModal");
+  if (!modal) return;
+
+  const layout = window.KingdomApp.store.getSeatingLayout();
+  const chart = window.KingdomApp.store.getSeatingChart();
+  const students = window.KingdomApp.store.data.students;
+
+  const row = Math.floor(seatIdx / layout.cols) + 1;
+  const col = (seatIdx % layout.cols) + 1;
+  const currentSeatNo = chart[seatIdx];
+  const currentStudent = currentSeatNo ? students.find(s => s.seatNo === currentSeatNo) : null;
+
+  const coordsLabel = document.getElementById("assignSeatCoordsLabel");
+  const currentLabel = document.getElementById("assignSeatCurrentStudent");
+  const grid = document.getElementById("assignStudentButtonsGrid");
+
+  if (coordsLabel) coordsLabel.textContent = `第 ${row} 排 第 ${col} 列 (席位 ${seatIdx + 1})`;
+  if (currentLabel) {
+    currentLabel.textContent = currentStudent ? `${currentStudent.name} (${String(currentStudent.seatNo).padStart(2, '0')}號)` : '🈳 走道空位';
+  }
+
+  if (grid) {
+    grid.innerHTML = students.map(st => {
+      const isCurrentOccupant = currentSeatNo === st.seatNo;
+      return `
+        <button type="button" onclick="assignStudentToActiveSeat(${st.seatNo})"
+          class="p-2 rounded-lg border text-center transition ${isCurrentOccupant ? 'bg-amber-950 text-amber-200 border-amber-900 font-black' : 'bg-amber-50 hover:bg-amber-200 text-amber-950 border-amber-300 font-bold'}">
+          <div class="font-mono text-xs">${String(st.seatNo).padStart(2, '0')}號</div>
+          <div class="truncate text-xs">${st.name}</div>
+        </button>
+      `;
+    }).join('');
+  }
+
+  modal.classList.remove("hidden");
+}
+
+function closeAssignSeatModal() {
+  const modal = document.getElementById("assignSeatModal");
+  if (modal) modal.classList.add("hidden");
+  activeAssignSeatIndex = null;
+}
+
+function assignStudentToActiveSeat(seatNo) {
+  if (activeAssignSeatIndex === null) return;
+  window.KingdomApp.store.setSeatStudent(activeAssignSeatIndex, seatNo);
+  const st = window.KingdomApp.store.data.students.find(s => s.seatNo === seatNo);
+  showToast(`💺 已指派【${st ? st.name : seatNo}】入座！`, "✨");
+  closeAssignSeatModal();
+  renderSeatingChart();
+}
+
+function setSeatToEmpty() {
+  if (activeAssignSeatIndex === null) return;
+  window.KingdomApp.store.setSeatStudent(activeAssignSeatIndex, null);
+  showToast("💺 已將該席位設為走道空位", "ℹ️");
+  closeAssignSeatModal();
+  renderSeatingChart();
+}
+
+// ===================================================================
+// 歷史作業查詢與篩選 (Homework History Filter)
+// ===================================================================
+let currentHwFilterDate = null;
+
+function filterHomeworkByDate(dateVal) {
+  currentHwFilterDate = dateVal;
+  renderHomeworkSummaryBoard();
+}
+
+function showAllHomeworkHistory() {
+  currentHwFilterDate = 'ALL';
+  const picker = document.getElementById("hwHistoryDatePicker");
+  if (picker) picker.value = "";
+  renderHomeworkSummaryBoard();
+}
+

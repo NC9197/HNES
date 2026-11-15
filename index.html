@@ -54,11 +54,14 @@
             <span class="text-xs tracking-wider uppercase bg-amber-950 text-amber-200 px-2.5 py-0.5 rounded-full font-bold shadow-sm">
               西寧國小五年二班 (27人)
             </span>
-            <span id="navTodayDate" class="text-xs text-amber-900 font-bold hidden sm:inline"></span>
           </div>
-          <h1 class="text-xl sm:text-2xl font-black tracking-wide text-amber-950 drop-shadow-sm flex items-center space-x-1.5">
+          <h1 class="text-xl sm:text-2xl font-black tracking-wide text-amber-950 drop-shadow-sm flex items-center space-x-1.5 mt-0.5">
             <span>🏰 西寧小小兵王國</span>
           </h1>
+          <div class="text-xs text-amber-900 font-bold mt-0.5 flex items-center space-x-1">
+            <span>📅 朝會日期：</span>
+            <span id="navTodayDate"></span>
+          </div>
         </div>
       </div>
 
@@ -146,6 +149,10 @@
               <span>導入王國備份檔</span>
               <input type="file" id="importFileInput" onchange="importDataJSON(event)" class="hidden" accept=".json">
             </label>
+            <button onclick="promptChangeQueenPassword()" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-amber-950 flex items-center space-x-2">
+              <i data-lucide="shield" class="w-4 h-4 text-amber-600"></i>
+              <span>🔑 修改導師通行密碼</span>
+            </button>
             <div class="border-t border-amber-200 my-1"></div>
             <button onclick="openCloudSyncModal()" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-amber-950 flex items-center space-x-2">
               <i data-lucide="cloud" class="w-4 h-4 text-amber-600"></i>
@@ -250,23 +257,27 @@
             <!-- 動態由 JavaScript 渲染 1 ~ 27 號按鈕 -->
           </div>
 
-          <div class="pt-2 border-t border-amber-200 text-[11px] text-amber-900 space-y-1 font-bold">
-            <div class="flex items-center justify-between">
-              <span class="flex items-center space-x-1">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
-                <span>準時在朝 (07:40前)</span>
+          <div class="pt-2 border-t border-amber-200 text-[11px] text-amber-900 space-y-1.5 font-bold">
+            <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+              <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-xs"></span>
+                <span>🟢 準時 (07:40前)</span>
               </span>
-              <span class="flex items-center space-x-1">
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
-                <span>遲到 (07:40後)</span>
+              <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs"></span>
+                <span>🟡 遲到 (07:40後)</span>
               </span>
-              <span class="flex items-center space-x-1">
-                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
-                <span>告假</span>
+              <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs"></span>
+                <span>🔴 缺席 (尚未打卡)</span>
+              </span>
+              <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shadow-xs"></span>
+                <span>🏖️ 請假在府</span>
               </span>
             </div>
-            <p class="text-[10px] text-slate-500 font-normal">
-              依真實點擊時間記錄打卡。老師可至「皇室點名簿」隨時修改覆寫。
+            <p class="text-[10px] text-slate-600 font-bold">
+              💡 晨檢打卡免打勾，點擊即記錄時間並以紅綠燈自動標記狀態！
             </p>
           </div>
         </div>
@@ -279,13 +290,24 @@
             <div>
               <div class="flex items-center space-x-2">
                 <span class="bg-amber-950 text-amber-200 text-xs px-3 py-1 rounded-full font-black tracking-wider">
-                  📜 今日聯絡簿奏章
+                  📜 每日回家奏章
                 </span>
-                <span id="contactBookDateDisplay" class="text-sm font-black text-amber-900"></span>
               </div>
               <h3 class="text-2xl sm:text-3xl font-black text-amber-950 mt-1 tracking-wide">
-                西寧小小兵王國 ‧ 每日回家奏章
+                西寧小小兵王國 ‧ 聯絡簿看板
               </h3>
+              <!-- 朝會日期獨立跳至下一行，並附歷史切換與日曆選擇器 -->
+              <div class="mt-2 flex flex-wrap items-center gap-2">
+                <span class="text-xs font-black bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-300 shadow-xs">
+                  📅 朝會日期：<span id="contactBookDateDisplay"></span>
+                </span>
+                <div class="flex items-center space-x-1 bg-white/90 p-0.5 rounded-xl border border-amber-300 shadow-sm text-xs font-bold">
+                  <button type="button" onclick="changeContactDateDelta(-1)" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="前一天">⬅ 前一天</button>
+                  <input type="date" id="contactBookDatePicker" onchange="handleContactDatePickerChange(this.value)" class="px-2 py-0.5 text-xs bg-amber-50 border border-amber-200 rounded-lg text-amber-900 font-bold cursor-pointer">
+                  <button type="button" onclick="changeContactDateToToday()" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="回到今日">今日</button>
+                  <button type="button" onclick="changeContactDateDelta(1)" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="後一天">後一天 ➡</button>
+                </div>
+              </div>
             </div>
             
             <div class="flex items-center space-x-2">
@@ -385,7 +407,22 @@
         </div>
 
         <!-- 快捷功能按鈕 (大屏極簡切換、下課鐘聲、全螢幕、發放卡牌) -->
-        <div class="flex items-center space-x-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- 特赦按鈕群 -->
+          <div class="flex items-center space-x-1 bg-amber-100/90 p-1 rounded-xl border border-amber-300 shadow-sm text-xs font-bold">
+            <button onclick="confirmPardonAll('reflection')" class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-800 border border-rose-300 shadow-xs flex items-center space-x-1" title="全班自省卡全部歸零清除">
+              <span>🕊️</span>
+              <span>自省卡全班特赦</span>
+            </button>
+            <button onclick="confirmPardonAll('service')" class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-orange-50 text-orange-800 border border-orange-300 shadow-xs flex items-center space-x-1" title="全班愛班服務卡全部歸零清除">
+              <span>🧹</span>
+              <span>愛班卡全班特赦</span>
+            </button>
+            <button onclick="confirmPardonAll('all')" class="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white shadow-xs flex items-center space-x-1 font-black" title="自省卡與愛班服務卡全部歸零">
+              <span>✨</span>
+              <span>全班完全特赦</span>
+            </button>
+          </div>
           <button onclick="toggleTrafficDisplayMode()" id="btnTrafficDisplayMode" class="px-3 py-2 rounded-xl bg-amber-950 text-amber-300 text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow" title="切換大屏極簡大字模式或詳細大臣卡片">
             <span>🖥️</span>
             <span id="trafficDisplayModeLabel">極簡大屏模式</span>
@@ -458,7 +495,7 @@
               <span class="bg-amber-950 text-amber-200 text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">
                 內閣座席格局
               </span>
-              <span class="text-xs text-amber-900 font-bold hidden sm:inline">5排 x 6列 ‧ 共27位大臣席位</span>
+              <span id="seatingLayoutStatusLabel" class="text-xs text-amber-900 font-bold hidden sm:inline">目前格局：5排 x 6列</span>
             </div>
             <h2 class="text-xl sm:text-2xl font-black text-amber-950 flex items-center space-x-2 mt-0.5">
               <span>教室座位表與抽籤點名</span>
@@ -468,6 +505,18 @@
 
         <!-- 操作按鈕群 -->
         <div class="flex flex-wrap items-center gap-2">
+          <!-- 格局微調選單 -->
+          <div class="flex items-center space-x-1 bg-white/90 px-2 py-1 rounded-xl border border-amber-300 shadow-sm text-xs font-bold">
+            <span class="text-amber-900">格局：</span>
+            <button onclick="setPredefinedSeatingLayout(5, 6)" class="px-2 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-950">5x6</button>
+            <button onclick="setPredefinedSeatingLayout(6, 5)" class="px-2 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-950">6x5</button>
+            <button onclick="setPredefinedSeatingLayout(4, 7)" class="px-2 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-950">4x7</button>
+            <span class="text-slate-300">|</span>
+            <input type="number" id="seatingRowsInput" value="5" min="2" max="10" class="w-10 px-1 py-0.5 text-center border border-amber-300 rounded font-bold" title="排數 (行)">
+            <span>x</span>
+            <input type="number" id="seatingColsInput" value="6" min="2" max="10" class="w-10 px-1 py-0.5 text-center border border-amber-300 rounded font-bold" title="列數 (欄)">
+            <button onclick="applyCustomSeatingLayout()" class="px-2 py-0.5 rounded bg-amber-500 hover:bg-amber-600 text-amber-950 font-black">套用</button>
+          </div>
           <button onclick="startLuckyDraw()" id="btnStartLuckyDraw" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs sm:text-sm shadow-md flex items-center space-x-1.5 transform hover:scale-105 active:scale-95 transition">
             <span>🎲</span>
             <span>幸運大臣抽籤點名</span>
@@ -667,8 +716,13 @@
                 一覽每項作業之「已交」、「需訂正」及「未交」名單。老師可直接點擊「設置需訂正」快速指定！
               </p>
             </div>
-            <div class="flex items-center space-x-2">
-              <button onclick="openNewHomeworkModal()" class="btn-royal-gold px-4 py-2 rounded-xl text-sm font-black flex items-center space-x-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center space-x-1.5 bg-white px-3 py-1.5 rounded-xl border-2 border-amber-300 shadow-sm text-xs font-bold text-amber-950">
+                <span>📅 歷史作業日期：</span>
+                <input type="date" id="hwHistoryDatePicker" onchange="filterHomeworkByDate(this.value)" class="bg-transparent font-bold cursor-pointer">
+                <button type="button" onclick="showAllHomeworkHistory()" class="px-2 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 ml-1">全部歷史</button>
+              </div>
+              <button onclick="openNewHomeworkModal()" class="btn-royal-gold px-4 py-2 rounded-xl text-sm font-black flex items-center space-x-2 shadow">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 <span>頒發新奏章 (新增作業)</span>
               </button>
@@ -739,17 +793,17 @@
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <!-- 批次重置點數按鈕 -->
-              <button onclick="openBatchResetPointsModal()" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 shadow-sm flex items-center space-x-1.5">
-                <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-700"></i>
-                <span>批次重置全班點數</span>
+              <button onclick="openBatchAdjustPointsModal()" class="btn-royal-gold px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black shadow flex items-center space-x-1.5">
+                <span>💰</span>
+                <span>批次更改金幣與重置</span>
               </button>
-              <button onclick="openAddPointPresetModal()" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white hover:bg-amber-100 text-amber-950 border-2 border-amber-400 shadow-sm flex items-center space-x-1.5">
-                <i data-lucide="plus" class="w-4 h-4 text-amber-600"></i>
-                <span>新增加分/扣分規則</span>
+              <button onclick="openPointPresetsModal()" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white hover:bg-amber-100 text-amber-950 border-2 border-amber-400 shadow-sm flex items-center space-x-1.5">
+                <span>⚙️</span>
+                <span>加點快捷設定</span>
               </button>
-              <button onclick="openBatchPointModal()" class="btn-royal-gold px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5">
-                <i data-lucide="gift" class="w-4 h-4"></i>
-                <span>頒發聖旨 (批次集點)</span>
+              <button onclick="openBatchPointModal()" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 shadow-sm flex items-center space-x-1.5">
+                <span>📜</span>
+                <span>國王聖旨批次賞賜</span>
               </button>
             </div>
           </div>
@@ -776,65 +830,6 @@
         </div>
 
         <!-- 多選大臣快速加扣點工具列 (方便同時選擇多位大臣加扣點) -->
-        <div id="multiPointsToolbar" class="bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 text-amber-200 p-3.5 sm:p-4 rounded-2xl shadow-xl border-2 border-amber-400 space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div class="flex items-center space-x-2.5">
-              <span class="text-xl">⚡</span>
-              <div>
-                <h3 class="font-black text-sm sm:text-base text-amber-300 flex items-center space-x-1.5">
-                  <span>多位大臣同時加扣點模式</span>
-                  <span id="multiSelectedCountBadge" class="bg-amber-400 text-amber-950 text-xs px-2 py-0.5 rounded-full font-black">
-                    已選取 0 位
-                  </span>
-                </h3>
-                <p class="text-[11px] text-amber-200/80">
-                  可直接點擊下方大臣金幣卡片進行多選勾選，亦可利用右側快捷鍵一鍵選取！
-                </p>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-1.5 text-xs font-bold">
-              <button type="button" onclick="selectAllStudentsPoints(true)" class="px-2.5 py-1 rounded-lg bg-amber-200 text-amber-950 hover:bg-amber-300 shadow">
-                全選 (27人)
-              </button>
-              <button type="button" onclick="selectAllStudentsPoints(false)" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-600">
-                清除選取
-              </button>
-              <button type="button" onclick="invertStudentPointsSelection()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-600">
-                反向選取
-              </button>
-            </div>
-          </div>
-
-          <!-- 快捷點數派發列 -->
-          <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-800/80">
-            <span class="text-xs font-black text-amber-300">為已選大臣批次派發：</span>
-            <button onclick="awardSelectedStudents(1, '課堂積極投入')" class="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-sm flex items-center space-x-1">
-              <span>+1 點</span>
-            </button>
-            <button onclick="awardSelectedStudents(2, '遵守班級常規')" class="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-sm flex items-center space-x-1">
-              <span>+2 點</span>
-            </button>
-            <button onclick="awardSelectedStudents(3, '團隊合作優秀')" class="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-sm flex items-center space-x-1">
-              <span>+3 點</span>
-            </button>
-            <button onclick="awardSelectedStudents(5, '卓越貢獻獎賞')" class="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs shadow-sm flex items-center space-x-1">
-              <span>+5 點 👑</span>
-            </button>
-            <div class="h-4 w-px bg-amber-700 mx-1"></div>
-            <button onclick="awardSelectedStudents(-1, '課堂分心提醒')" class="px-3 py-1 rounded-xl bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs shadow-sm">
-              <span>-1 點 ⚠️</span>
-            </button>
-            <button onclick="awardSelectedStudents(-2, '違規常規扣點')" class="px-3 py-1 rounded-xl bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs shadow-sm">
-              <span>-2 點 ⚠️</span>
-            </button>
-            <button onclick="openCustomMultiPointsModal()" class="px-3 py-1 rounded-xl btn-royal-gold text-xs font-black shadow flex items-center space-x-1">
-              <i data-lucide="edit" class="w-3.5 h-3.5"></i>
-              <span>自訂事由與點數</span>
-            </button>
-          </div>
-        </div>
-
         <!-- 🎁 皇家藏寶閣 ‧ 獎勵卡牌兌換所 (點數換獎勵) -->
         <div class="parchment-card p-5 sm:p-6 space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-amber-300">
@@ -2139,16 +2134,28 @@
   <!-- MODAL: 魔法沙漏 ‧ 課堂倒數計時器 (Classroom Activity Timer) -->
   <!-- =============================================================== -->
   <div id="timerModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="parchment-card max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+    <div class="parchment-card max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
       <div class="flex items-center justify-between border-b border-amber-300 pb-3">
         <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
-          <span>⏱️</span>
-          <span>魔法沙漏 ‧ 課堂活動倒數計時器</span>
+          <span>⏱️ 課堂活動計時與定時鬧鐘</span>
         </h3>
         <button onclick="closeTimerModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
+
+      <!-- 分頁標籤切換：⏱️ 課堂活動倒數計時 vs ⏰ 課堂定時鬧鐘 -->
+      <div class="flex border-b-2 border-amber-300 bg-amber-100/60 p-1 rounded-xl">
+        <button id="btnTabCountdown" type="button" onclick="switchTimerTab('countdown')" class="flex-1 py-2 text-center text-xs sm:text-sm font-black rounded-lg transition bg-amber-950 text-amber-300 shadow">
+          ⏱️ 課堂活動倒數計時
+        </button>
+        <button id="btnTabAlarm" type="button" onclick="switchTimerTab('alarm')" class="flex-1 py-2 text-center text-xs sm:text-sm font-black rounded-lg transition text-amber-950 hover:bg-amber-200">
+          ⏰ 課堂定時鬧鐘
+        </button>
+      </div>
+
+      <!-- 標籤 1: 課堂活動倒數計時容器 -->
+      <div id="panelCountdown" class="space-y-4">
 
       <!-- 活動情境快捷標籤 -->
       <div>
@@ -2201,6 +2208,65 @@
           </button>
         </div>
       </div>
+      </div> <!-- 結束 panelCountdown -->
+
+      <!-- 標籤 2: 課堂定時鬧鐘容器 (Alarm Clock) -->
+      <div id="panelAlarm" class="hidden space-y-4">
+        <!-- 當前真實時鐘 -->
+        <div class="bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 text-center p-4 rounded-2xl border-2 border-amber-400 shadow-md">
+          <span class="text-xs font-bold text-amber-300 block">👑 目前即時時間</span>
+          <span id="alarmModalCurrentClock" class="font-digital text-4xl sm:text-5xl font-black text-amber-300 tracking-wider">
+            08:00:00
+          </span>
+        </div>
+
+        <!-- 鬧鐘時間設定 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="bg-white p-3 rounded-xl border border-amber-300 space-y-1">
+            <label class="block text-xs font-black text-amber-950">設定定時時間 (時:分)：</label>
+            <input type="time" id="alarmTimeInput" value="10:10" class="w-full text-2xl font-digital font-black px-2.5 py-1 border border-amber-400 rounded-lg text-amber-950 bg-amber-50">
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-amber-300 space-y-1">
+            <label class="block text-xs font-black text-amber-950">鬧鐘提醒備註事由：</label>
+            <input type="text" id="alarmLabelInput" value="第二節大下課活動" placeholder="例如：第二節下課、午餐集合" class="w-full text-xs font-bold px-2.5 py-2 border border-amber-300 rounded-lg bg-amber-50">
+          </div>
+        </div>
+
+        <!-- 國小常用作息快捷鍵 -->
+        <div>
+          <label class="block text-xs font-bold text-amber-900 mb-1.5">常用課堂作息鐘聲快捷：</label>
+          <div class="grid grid-cols-3 gap-1.5 text-xs font-bold">
+            <button type="button" onclick="setAlarmPreset('08:40', '第一節上課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">08:40 一上</button>
+            <button type="button" onclick="setAlarmPreset('09:20', '第一節下課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">09:20 一休</button>
+            <button type="button" onclick="setAlarmPreset('10:10', '第二節下課 (大下課)')" class="px-2 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 text-center font-black">10:10 大下課 🌟</button>
+            <button type="button" onclick="setAlarmPreset('11:10', '第三節下課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">11:10 三休</button>
+            <button type="button" onclick="setAlarmPreset('12:00', '午餐御膳時間')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">12:00 午餐 🍱</button>
+            <button type="button" onclick="setAlarmPreset('13:20', '午休結束醒盹')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">13:20 午休畢</button>
+            <button type="button" onclick="setAlarmPreset('14:10', '第五節下課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">14:10 五休</button>
+            <button type="button" onclick="setAlarmPreset('15:00', '第六節下課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">15:00 六休</button>
+            <button type="button" onclick="setAlarmPreset('15:55', '放學鐘聲回家')" class="px-2 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 text-center font-black">15:55 放學 🎒</button>
+          </div>
+        </div>
+
+        <!-- 鬧鐘啟用開關與鐘聲試聽 -->
+        <div class="flex items-center justify-between pt-2 border-t border-amber-200">
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="sound.playBreakBell()" class="px-3 py-1.5 rounded-xl bg-white border border-amber-300 hover:bg-amber-50 text-amber-950 text-xs font-bold shadow-xs flex items-center space-x-1">
+              <span>🔔</span>
+              <span>試聽下課鐘</span>
+            </button>
+            <span id="alarmStatusBadge" class="text-xs font-black px-2.5 py-1 rounded-full bg-slate-200 text-slate-700">
+              鬧鐘未啟用
+            </span>
+          </div>
+
+          <button type="button" id="btnToggleAlarm" onclick="toggleAlarmEnabled()" class="px-6 py-2.5 rounded-xl font-black text-sm shadow-md bg-emerald-600 hover:bg-emerald-500 text-white flex items-center space-x-1.5 transition">
+            <span id="alarmToggleIcon">⏰</span>
+            <span id="alarmToggleText">啟用定時鬧鐘</span>
+          </button>
+        </div>
+      </div> <!-- 結束 panelAlarm -->
+
     </div>
   </div>
 
@@ -2448,5 +2514,259 @@
 
   <script src="app.js"></script>
   <script src="ui.js"></script>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: 更換可愛守護動物 (9大可愛神獸 ‧ 5階金化進化) -->
+  <!-- =============================================================== -->
+  <div id="changeAnimalModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3">
+        <div>
+          <span class="text-xs font-black text-amber-800">🐾 王國守護靈獸神殿</span>
+          <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
+            <span>更換守護動物 ‧ 9大可愛動物</span>
+          </h3>
+        </div>
+        <button onclick="closeChangeAnimalModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="bg-amber-100/90 border border-amber-300 p-3 rounded-xl flex items-center justify-between">
+        <div>
+          <span class="text-xs text-amber-800 font-bold block">正在為以下大臣挑選：</span>
+          <span id="changeAnimalTargetStudent" class="text-base font-black text-amber-950">王品捷 大臣</span>
+        </div>
+        <div class="text-right">
+          <span class="text-xs text-amber-800 font-bold block">生涯累積金幣</span>
+          <span id="changeAnimalLifetimePts" class="text-base font-digital font-black text-amber-900">85 點</span>
+        </div>
+      </div>
+
+      <!-- 9 種可愛動物選擇卡網格 (3x3) -->
+      <div id="animalChoicesGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- 由 ui.js 動態渲染 9 款動物卡 -->
+      </div>
+
+      <div class="pt-3 border-t border-amber-200 text-center text-xs text-amber-800 font-bold">
+        🌟 守護動物會隨著大臣「生涯累積總金幣」經歷 5 階段金化蛻變（150點達到純金神聖期）！
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: 批次更改金幣與重置 (雙軌金幣制度) -->
+  <!-- =============================================================== -->
+  <div id="batchAdjustPointsModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-lg w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3">
+        <div>
+          <span class="text-xs font-black text-amber-800">💰 國庫金幣批次調度廳</span>
+          <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
+            <span>批次更改金幣與生涯累積總額</span>
+          </h3>
+        </div>
+        <button onclick="closeBatchAdjustPointsModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="submitBatchAdjustPoints(event)" class="space-y-4 text-xs font-bold">
+        <!-- 選擇對象 -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="font-black text-amber-950">選擇調度大臣對象：</label>
+            <div class="space-x-1">
+              <button type="button" onclick="selectAllAdjustStudents(true)" class="px-2 py-0.5 rounded bg-amber-200 hover:bg-amber-300 text-amber-950">全選 27 人</button>
+              <button type="button" onclick="selectAllAdjustStudents(false)" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800">清空</button>
+              <button type="button" onclick="invertAdjustStudents()" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800">反選</button>
+            </div>
+          </div>
+          <div id="adjustStudentsGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-36 overflow-y-auto p-2 bg-white rounded-xl border border-amber-300">
+            <!-- 動態注入 27 位大臣核取方塊 -->
+          </div>
+          <span id="adjustSelectedCountLabel" class="text-amber-800 font-bold block text-right">已選取 27 位大臣</span>
+        </div>
+
+        <!-- 調度模式 -->
+        <div class="space-y-1.5">
+          <label class="font-black text-amber-950 block">選擇調整模式：</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center space-x-2 p-2 rounded-xl border-2 border-amber-300 bg-amber-50 cursor-pointer">
+              <input type="radio" name="adjustModeRadio" value="adjust" checked onchange="handleAdjustModeChange(this.value)">
+              <span>➕ 增減可用金幣</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl border border-amber-300 bg-white cursor-pointer">
+              <input type="radio" name="adjustModeRadio" value="set_points" onchange="handleAdjustModeChange(this.value)">
+              <span>🎯 指定可用金幣值</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl border border-amber-300 bg-white cursor-pointer">
+              <input type="radio" name="adjustModeRadio" value="set_lifetime" onchange="handleAdjustModeChange(this.value)">
+              <span>🌟 指定生涯累積總額</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl border border-amber-300 bg-white cursor-pointer">
+              <input type="radio" name="adjustModeRadio" value="reset_points" onchange="handleAdjustModeChange(this.value)">
+              <span>🔄 僅重置可用金幣(歸零)</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl border border-amber-300 bg-white cursor-pointer">
+              <input type="radio" name="adjustModeRadio" value="reset_lifetime" onchange="handleAdjustModeChange(this.value)">
+              <span>🔄 僅重置生涯總額(歸零)</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl border border-rose-300 bg-rose-50 text-rose-900 cursor-pointer">
+              <input type="radio" name="adjustModeRadio" value="reset_both" onchange="handleAdjustModeChange(this.value)">
+              <span>⚠️ 兩者全部歸零重置</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 數值輸入區 -->
+        <div id="adjustValueInputGroup" class="space-y-1.5">
+          <label id="adjustValueLabel" class="font-black text-amber-950 block">增減點數 (正數加點、負數扣點)：</label>
+          <input type="number" id="adjustPointsInput" value="5" class="w-full text-xl font-digital font-black px-3 py-1.5 border-2 border-amber-400 rounded-xl bg-white text-center">
+          <label id="adjustSyncLifetimeCheckLabel" class="flex items-center space-x-2 text-xs font-bold text-amber-900 mt-1 cursor-pointer">
+            <input type="checkbox" id="adjustSyncLifetimeCheck" checked class="w-4 h-4 rounded text-amber-600">
+            <span>加點時同步增加「生涯累積總額」(守護動物金化進化)</span>
+          </label>
+        </div>
+
+        <!-- 原因備註 -->
+        <div class="space-y-1">
+          <label class="font-black text-amber-950 block">調整事由備註：</label>
+          <input type="text" id="adjustReasonInput" value="導師批次金幣調度" class="w-full px-3 py-1.5 border border-amber-300 rounded-xl bg-white font-bold">
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-amber-200">
+          <button type="button" onclick="closeBatchAdjustPointsModal()" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold">
+            取消
+          </button>
+          <button type="submit" class="btn-royal-gold px-6 py-2 rounded-xl font-black shadow-md">
+            確認批次執行
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: 席位指派與座位更換 (點擊座位直接換人) -->
+  <!-- =============================================================== -->
+  <div id="assignSeatModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-md w-full p-5 space-y-4 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-2">
+        <h3 class="text-base font-black text-amber-950 flex items-center space-x-1.5">
+          <span>💺 席位指派 ‧ 調整座位大臣</span>
+        </h3>
+        <button onclick="closeAssignSeatModal()" class="text-slate-500 hover:text-slate-800 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="bg-amber-100 p-2.5 rounded-xl border border-amber-300 text-xs font-bold flex items-center justify-between">
+        <div>
+          <span class="text-slate-600 block">目前席位：</span>
+          <span id="assignSeatCoordsLabel" class="text-amber-950 font-black">第 1 排 第 1 列 (座位 1)</span>
+        </div>
+        <div class="text-right">
+          <span class="text-slate-600 block">現坐大臣：</span>
+          <span id="assignSeatCurrentStudent" class="text-amber-950 font-black">王品捷 (01號)</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-black text-amber-950 mb-1.5">點擊指定大臣入席 (已在別位者將自動互換)：</label>
+        <div id="assignStudentButtonsGrid" class="grid grid-cols-4 gap-1.5 max-h-48 overflow-y-auto p-1.5 bg-white rounded-xl border border-amber-300 text-xs font-bold">
+          <!-- 動態渲染 1 ~ 27 號按鈕 -->
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-amber-200">
+        <button type="button" onclick="setSeatToEmpty()" class="px-3 py-1.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 font-black text-xs hover:bg-rose-100">
+          🈳 設為走道空位
+        </button>
+        <button type="button" onclick="closeAssignSeatModal()" class="px-4 py-1.5 rounded-xl bg-slate-200 text-slate-700 font-bold text-xs">
+          關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: 加點快捷設定 (自訂常用規則管理) -->
+  <!-- =============================================================== -->
+  <div id="pointPresetsModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-lg w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3">
+        <h3 class="text-base font-black text-amber-950 flex items-center space-x-2">
+          <span>⚙️ 加點快捷設定庫 ‧ 常用規則管理</span>
+        </h3>
+        <button onclick="closePointPresetsModal()" class="text-slate-500 hover:text-slate-800 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 現有規則清單 -->
+      <div class="space-y-2">
+        <span class="text-xs font-black text-amber-950 block">目前快捷按鈕清單：</span>
+        <div id="presetItemsManageList" class="space-y-1.5 max-h-44 overflow-y-auto p-2 bg-white rounded-xl border border-amber-300 text-xs font-bold">
+          <!-- 動態渲染加分與扣分規則項目 -->
+        </div>
+      </div>
+
+      <!-- 新增規則表單 -->
+      <form onsubmit="submitNewPointPresetItem(event)" class="space-y-3 pt-3 border-t border-amber-200 text-xs font-bold">
+        <span class="text-xs font-black text-amber-950 block">➕ 新增快捷規則項目：</span>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-700 mb-1">類型：</label>
+            <select id="newPresetTypeInput" class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold">
+              <option value="plus">加分嘉獎 (Plus)</option>
+              <option value="minus">扣分處罰 (Minus)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-700 mb-1">點數：</label>
+            <input type="number" id="newPresetPointsInput" value="2" class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold text-center">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div class="col-span-2">
+            <label class="block text-slate-700 mb-1">規則名稱 (例如：積極舉手、主動打掃)：</label>
+            <input type="text" id="newPresetLabelInput" required placeholder="例如：課堂積極發問" class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold">
+          </div>
+          <div>
+            <label class="block text-slate-700 mb-1">圖示/Emoji：</label>
+            <input type="text" id="newPresetIconInput" value="💡" class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold text-center">
+          </div>
+        </div>
+        <button type="submit" class="w-full btn-royal-gold py-2 rounded-xl font-black text-xs shadow-sm">
+          ➕ 新增至快捷庫
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: 課堂定時鬧鐘響起大橫幅 (Alarm Ringing Alert Overlay) -->
+  <!-- =============================================================== -->
+  <div id="alarmAlertOverlay" class="hidden fixed inset-0 z-50 bg-amber-950/85 backdrop-blur-md flex items-center justify-center p-6 animate-pulse">
+    <div class="bg-gradient-to-b from-amber-100 via-white to-yellow-100 border-4 border-amber-400 max-w-lg w-full p-8 rounded-3xl shadow-2xl text-center space-y-4">
+      <div class="text-6xl animate-bounce">⏰</div>
+      <h2 class="text-2xl sm:text-3xl font-black text-amber-950 tracking-wider">
+        課堂定時鬧鐘響起！
+      </h2>
+      <div id="alarmAlertOverlayTime" class="font-digital text-4xl sm:text-5xl font-black text-amber-800">
+        10:10
+      </div>
+      <p id="alarmAlertOverlayLabel" class="text-lg font-black text-amber-900 bg-amber-200/80 py-2 px-4 rounded-xl border border-amber-400">
+        第二節下課 (大下課)
+      </p>
+      <div class="pt-2">
+        <button onclick="dismissAlarmAlert()" class="btn-royal-gold px-8 py-3 rounded-2xl font-black text-base shadow-xl transform hover:scale-105 active:scale-95 transition">
+          🔕 收到！停止鬧鈴
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

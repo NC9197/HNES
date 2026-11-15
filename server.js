@@ -50,6 +50,19 @@ const server = http.createServer((req, res) => {
   const reqUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   let pathname = decodeURIComponent(reqUrl.pathname);
 
+  // 取得本機區網 IP 與連線資訊 API
+  if (pathname === '/api/network-info' || pathname === '/api/info') {
+    const ips = getLocalIpAddresses();
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      success: true,
+      port: PORT,
+      ips: ips,
+      primaryIp: ips[0] || 'localhost'
+    }));
+    return;
+  }
+
   // 跨裝置雲端/區網同步 REST API (支援 Google 帳號與自訂金鑰)
   if (pathname === '/api/sync') {
     const accountParam = reqUrl.searchParams.get('account') || reqUrl.searchParams.get('key') || '';

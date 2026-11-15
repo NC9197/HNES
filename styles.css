@@ -126,16 +126,18 @@ body {
   transform: scale(0.96);
 }
 
-/* 未打卡狀態 (清爽米白底，金黃邊框) */
-.seat-uncheck {
-  background: #ffffff;
-  border: 2px solid #fcd34d;
-  color: #78350f;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.1);
+/* 未打卡/缺席狀態 (紅燈，高對比粉白底，紅邊框，醒目警示) */
+.seat-uncheck,
+.seat-absent {
+  background: #fff5f5;
+  border: 2px solid #f87171;
+  color: #b91c1c;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.15);
 }
-.seat-uncheck:hover {
-  border-color: #f59e0b;
-  background: #fefce8;
+.seat-uncheck:hover,
+.seat-absent:hover {
+  border-color: #ef4444;
+  background: #fee2e2;
 }
 
 /* 準時在朝狀態 (清亮翡翠綠，高對比) */
