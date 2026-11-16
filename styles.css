@@ -496,26 +496,88 @@ body {
   animation: silence-glow 2s infinite ease-in-out;
 }
 
-/* 列印專用格式 (A4 座位表優化) */
+/* 列印專用格式優化 */
 @media print {
   body {
     background: white !important;
     color: black !important;
+    font-size: 12pt;
   }
-  .no-print, header, #toastNotification, .floating-timer-bar {
+  .no-print, header, #toastNotification, .floating-timer-bar, nav, button {
     display: none !important;
   }
-  #seatingView {
+
+  /* 模式 1：專用列印 A4 座位表 */
+  body.print-mode-seating #morningView,
+  body.print-mode-seating #trafficView,
+  body.print-mode-seating #teacherView,
+  body.print-mode-seating #parentView {
+    display: none !important;
+  }
+  body.print-mode-seating #seatingView {
     display: block !important;
   }
-  .seat-desk-card {
-    border: 1px solid #666 !important;
+  body.print-mode-seating .seat-desk-card {
+    border: 1.5px solid #444 !important;
     box-shadow: none !important;
     page-break-inside: avoid;
     background: #fff !important;
   }
+
+  /* 模式 2：專用列印作業繳交與平時成績結算表 (解決按下列印顯示座位表之問題) */
+  body.print-mode-homework #morningView,
+  body.print-mode-homework #trafficView,
+  body.print-mode-homework #seatingView,
+  body.print-mode-homework #parentView {
+    display: none !important;
+  }
+  body.print-mode-homework #teacherView {
+    display: block !important;
+  }
+  body.print-mode-homework #teacherTab-homework {
+    display: block !important;
+  }
+  body.print-mode-homework #teacherTab-attendance,
+  body.print-mode-homework #teacherTab-points,
+  body.print-mode-homework #teacherTab-pets,
+  body.print-mode-homework #teacherTab-roster,
+  body.print-mode-homework #teacherTab-announcements {
+    display: none !important;
+  }
+  body.print-mode-homework #homeworkSummaryBoardContainer,
+  body.print-mode-homework #teacherContactHistoryList,
+  body.print-mode-homework .hw-dropzone {
+    display: none !important;
+  }
+  body.print-mode-homework #homeworkSettlementSection {
+    display: block !important;
+    page-break-inside: avoid;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    border-top: none !important;
+  }
+  body.print-mode-homework #homeworkSettlementTableBody tr {
+    page-break-inside: avoid;
+  }
+  body.print-mode-homework table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  body.print-mode-homework th,
+  body.print-mode-homework td {
+    border: 1px solid #333 !important;
+    padding: 6px 8px !important;
+    color: #000 !important;
+  }
+
+  /* 模式 3：一般列印模式 (若未帶特定類別，則僅列印當前可見的視圖) */
+  body:not(.print-mode-seating):not(.print-mode-homework) .hidden {
+    display: none !important;
+  }
+
   .parchment-card, .contact-book-board {
     box-shadow: none !important;
     border: 1px solid #ccc !important;
+    background: white !important;
   }
 }

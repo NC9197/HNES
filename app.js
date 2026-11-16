@@ -12,7 +12,7 @@ const DEFAULT_STUDENTS_27 = [
   { id: 3, seatNo: 3, name: "林冠廷", gender: "M", title: "國庫財政大臣", birthday: "0812", points: 210, lifetimePoints: 210, animalType: "cat", petType: "cat", petExp: 210 },
   { id: 4, seatNo: 4, name: "張宸睿", gender: "M", title: "宮廷禮儀大臣", birthday: "1104", points: 65, lifetimePoints: 65, animalType: "rabbit", petType: "rabbit", petExp: 65 },
   { id: 5, seatNo: 5, name: "陳奕安", gender: "M", title: "皇家文書大臣", birthday: "0228", points: 130, lifetimePoints: 130, animalType: "bear", petType: "bear", petExp: 130 },
-  { id: 6, seatNo: 6, name: "黃柏瀚", gender: "M", title: "奇蹟魔法大臣", birthday: "0709", points: 310, lifetimePoints: 310, animalType: "penguin", petType: "penguin", petExp: 310 },
+  { id: 6, seatNo: 6, name: "黃柏瀚", gender: "M", title: "奇蹟魔法大臣", birthday: "0709", points: 520, lifetimePoints: 520, animalType: "penguin", petType: "penguin", petExp: 520, secondPetType: null, secondPetExp: 20 },
   { id: 7, seatNo: 7, name: "楊子賢", gender: "M", title: "守護壁壘大將", birthday: "0923", points: 95, lifetimePoints: 95, animalType: "owl", petType: "owl", petExp: 95 },
   { id: 8, seatNo: 8, name: "趙偉豪", gender: "M", title: "皇家圖書大臣", birthday: "0416", points: 145, lifetimePoints: 145, animalType: "fox", petType: "fox", petExp: 145 },
   { id: 9, seatNo: 9, name: "劉承佑", gender: "M", title: "生態綠意大臣", birthday: "1205", points: 50, lifetimePoints: 50, animalType: "hamster", petType: "hamster", petExp: 50 },
@@ -21,7 +21,7 @@ const DEFAULT_STUDENTS_27 = [
   { id: 12, seatNo: 12, name: "許翔宇", gender: "M", title: "智慧科技大臣", birthday: "1010", points: 240, lifetimePoints: 240, animalType: "cat", petType: "cat", petExp: 240 },
   { id: 13, seatNo: 13, name: "鄭予涵", gender: "F", title: "體育競技女將軍", birthday: "0403", points: 190, lifetimePoints: 190, animalType: "rabbit", petType: "rabbit", petExp: 190 },
   { id: 14, seatNo: 14, name: "謝孟庭", gender: "F", title: "藝術壁畫大臣", birthday: "0825", points: 155, lifetimePoints: 155, animalType: "bear", petType: "bear", petExp: 155 },
-  { id: 15, seatNo: 15, name: "周語晴", gender: "F", title: "皇家音樂總監", birthday: "0614", points: 320, lifetimePoints: 320, animalType: "penguin", petType: "penguin", petExp: 320 },
+  { id: 15, seatNo: 15, name: "周語晴", gender: "F", title: "皇家音樂總監", birthday: "0614", points: 535, lifetimePoints: 535, animalType: "penguin", petType: "penguin", petExp: 535, secondPetType: "cat", secondPetExp: 35 },
   { id: 16, seatNo: 16, name: "郭心妍", gender: "F", title: "晨曦敲鐘官", birthday: "0329", points: 80, lifetimePoints: 80, animalType: "owl", petType: "owl", petExp: 80 },
   { id: 17, seatNo: 17, name: "曾詩涵", gender: "F", title: "皇家糧餉大臣", birthday: "1119", points: 125, lifetimePoints: 125, animalType: "fox", petType: "fox", petExp: 125 },
   { id: 18, seatNo: 18, name: "洪若菲", gender: "F", title: "萬國外交特使", birthday: "0508", points: 205, lifetimePoints: 205, animalType: "hamster", petType: "hamster", petExp: 205 },
@@ -555,6 +555,10 @@ class KingdomStore {
       st.animalType = a;
       st.petType = a;
 
+      // 確保第二隻守護萌寵結構 (滿 500 點可認養)
+      if (st.secondPetType === undefined) st.secondPetType = null;
+      if (st.secondPetExp === undefined) st.secondPetExp = Math.max(0, (st.lifetimePoints || 0) - 500);
+
       // 確保行為卡結構
       if (!parsed.behaviorCards[st.id]) {
         parsed.behaviorCards[st.id] = {
@@ -832,6 +836,39 @@ class KingdomStore {
     return true;
   }
 
+  // --- 認養與更換第二隻守護動物 (滿 500 點皇家特權) ---
+  adoptSecondPet(studentId, animalType) {
+    const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
+    if (!student) return false;
+    const lifetime = student.lifetimePoints !== undefined ? student.lifetimePoints : (student.points || 0);
+    if (lifetime < 500) {
+      alert(`累積總飽食度需滿 500 點才可認養第二隻萌寵！目前累積為 ${lifetime} 點。`);
+      return false;
+    }
+    let aKey = (animalType || 'cat').toLowerCase();
+    if (aKey === 'dragon') aKey = 'lion';
+    if (aKey === 'unicorn') aKey = 'rabbit';
+    if (!ANIMAL_DEFINITIONS[aKey]) aKey = 'cat';
+
+    student.secondPetType = aKey;
+    student.secondPetExp = Math.max(0, lifetime - 500);
+    this.save();
+    return true;
+  }
+
+  setSecondPet(studentId, animalType) {
+    const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
+    if (!student) return false;
+    let aKey = (animalType || 'cat').toLowerCase();
+    if (aKey === 'dragon') aKey = 'lion';
+    if (aKey === 'unicorn') aKey = 'rabbit';
+    if (!ANIMAL_DEFINITIONS[aKey]) aKey = 'cat';
+
+    student.secondPetType = aKey;
+    this.save();
+    return true;
+  }
+
   // --- 動物園餵食投餵飼料讓動物長大 (Zoo Feeding) ---
   feedStudentAnimal(studentId, foodAmount = 1, foodName = "🍎 營養蘋果") {
     const pts = parseInt(foodAmount, 10);
@@ -846,6 +883,9 @@ class KingdomStore {
     student.points = (student.points || 0) + pts;
     student.lifetimePoints = (student.lifetimePoints || 0) + pts;
     student.petExp = student.lifetimePoints;
+    if (student.secondPetType) {
+      student.secondPetExp = Math.max(0, student.lifetimePoints - 500);
+    }
 
     const newStatus = getAnimalStatus(aKey, student.lifetimePoints);
 
@@ -883,6 +923,9 @@ class KingdomStore {
       student.points = (student.points || 0) + pts;
       student.lifetimePoints = (student.lifetimePoints || 0) + pts;
       student.petExp = student.lifetimePoints;
+      if (student.secondPetType) {
+        student.secondPetExp = Math.max(0, student.lifetimePoints - 500);
+      }
     } else {
       student.points = Math.max(0, (student.points || 0) + pts);
     }
@@ -914,6 +957,9 @@ class KingdomStore {
           student.points = (student.points || 0) + pts;
           student.lifetimePoints = (student.lifetimePoints || 0) + pts;
           student.petExp = student.lifetimePoints;
+          if (student.secondPetType) {
+            student.secondPetExp = Math.max(0, student.lifetimePoints - 500);
+          }
         } else {
           student.points = Math.max(0, (student.points || 0) + pts);
         }
