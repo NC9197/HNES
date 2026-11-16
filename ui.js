@@ -556,7 +556,7 @@ function renderMorningBoard() {
     const reminders = (contactBook && contactBook.reminders) ? contactBook.reminders : [];
     if (reminders.length === 0) {
       reminderList.innerHTML = `
-        <li class="text-amber-900/70 text-base sm:text-lg font-bold list-none">（今日無特殊提醒或攜帶物品）</li>
+        <li class="text-amber-900/70 text-base sm:text-lg font-bold list-none">（今日無特殊早自修或重要提醒）</li>
       `;
     } else {
       reminderList.innerHTML = reminders.map(item => `
@@ -600,11 +600,9 @@ function handleMorningSeatCheckIn(studentId, seatNo) {
   const isLate = timeStr > lateThreshold;
 
   // 愛班卡由系統判定打卡自動加入 (系統自動新增事由直接設定為「遲到」)
+  // 自動派發的自省卡和愛班卡皆由導師手動移除，系統無須自動移除
   if (isLate) {
     window.KingdomApp.store.addServiceCard(studentId, "遲到");
-  } else if (existing && existing.status === 'late') {
-    // 若原先為遲到、後續更正為準時，減免一張遲到愛班卡
-    window.KingdomApp.store.removeServiceCardOne(studentId);
   }
 
   window.KingdomApp.store.data.attendance[todayStr][studentId] = {
@@ -1130,10 +1128,9 @@ function setStudentAttendance(studentId, status, customNote) {
   const prev = window.KingdomApp.store.data.attendance[date][studentId] || {};
 
   // 愛班卡系統判定：若登記為遲到且為今日，系統自動增加一張愛班服務卡（事由直接設定為「遲到」）
+  // 自動派發的自省卡和愛班卡皆由導師手動移除，系統無須自動移除
   if (status === 'late' && prev.status !== 'late' && date === todayStr) {
     window.KingdomApp.store.addServiceCard(studentId, "遲到");
-  } else if (status === 'present' && prev.status === 'late' && date === todayStr) {
-    window.KingdomApp.store.removeServiceCardOne(studentId);
   }
 
   window.KingdomApp.store.data.attendance[date][studentId] = {
@@ -1341,7 +1338,14 @@ function setStudentHomeworkStatus(hwId, studentId, targetStatus) {
 
   hw.records[studentId] = targetStatus;
 
-  // 作業未交自動同步自省卡（一項未交自動新增一張自省卡，標示哪項作業；補交則自動清除）
+  if (targetStatus === 'pending' || targetStatus === 'missing') {
+    const b = window.KingdomApp.store.data.behaviorCards && window.KingdomApp.store.data.behaviorCards[studentId];
+    if (b && b.dismissedHwCards) {
+      delete b.dismissedHwCards[String(hwId)];
+    }
+  }
+
+  // 作業未交自動同步自省卡（一項未交自動新增一張自省卡，標示哪項作業；導師全手動移除，系統無須自動移除）
   window.KingdomApp.store.syncHomeworkReflectionCards(studentId);
 
   window.KingdomApp.store.save();
@@ -1667,7 +1671,7 @@ function renderContactBookHistoryList() {
 
           ${remItems.length > 0 ? `
             <div class="pt-1 border-t border-dashed border-amber-200">
-              <span class="font-bold text-amber-950 text-[11px]">🔔 重要提醒：</span>
+              <span class="font-bold text-amber-950 text-[11px]">🔔 早自修和重要提醒：</span>
               <ul class="list-disc list-inside text-[11px] text-slate-700 pl-1 space-y-0.5">
                 ${remItems.slice(0, 2).map(r => `<li class="truncate">${r}</li>`).join('')}
                 ${remItems.length > 2 ? `<li class="text-[10px] text-slate-400">…等共 ${remItems.length} 項提醒</li>` : ''}
@@ -1709,6 +1713,15 @@ function cycleHwStatus(hwId, studentId) {
   }
 
   hw.records[studentId] = nextStatus;
+
+  if (nextStatus === 'pending' || nextStatus === 'missing') {
+    const b = window.KingdomApp.store.data.behaviorCards && window.KingdomApp.store.data.behaviorCards[studentId];
+    if (b && b.dismissedHwCards) {
+      delete b.dismissedHwCards[String(hwId)];
+    }
+  }
+
+  // 作業未交自動同步自省卡（一項未交自動新增一張自省卡，標示哪項作業；導師全手動移除，系統無須自動移除）
   window.KingdomApp.store.syncHomeworkReflectionCards(studentId);
   window.KingdomApp.store.save();
   window.KingdomApp.sound.playCoin();
@@ -2594,6 +2607,7 @@ function openTrafficDetailModal(studentId) {
 
   const refCount = status.reflectionCount || (status.hasReflection ? 1 : 0);
   const srvCount = status.serviceCount || (status.hasService ? 1 : 0);
+  const bCard = (window.KingdomApp.store.data.behaviorCards && (window.KingdomApp.store.data.behaviorCards[st.id] || window.KingdomApp.store.data.behaviorCards[st.seatNo])) || {};
 
   content.innerHTML = `
     <!-- 當前判定結果 -->
@@ -2616,24 +2630,45 @@ function openTrafficDetailModal(studentId) {
     <div class="p-3 rounded-xl bg-amber-50 border border-amber-300 space-y-3">
       <span class="font-black text-amber-950 block text-xs">🏷️ 紀律卡牌累計與調整：</span>
       
-      <!-- 自省卡 (作業未交自動新增 / 導師手動控制) -->
+      <!-- 自省卡 (作業未交自動新增 / 導師全手動移除) -->
       <div class="bg-white p-2.5 rounded-xl border border-amber-200 space-y-2">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <span class="font-black text-slate-900 block flex items-center space-x-1.5">
               <span>🪑 座位自省卡</span>
-              <span class="text-[10px] font-bold bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded border border-rose-300">作業未交自動 / 導師手動</span>
+              <span class="text-[10px] font-bold bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded border border-rose-300">作業未交自動派發 / 導師手動核銷</span>
             </span>
             <span class="text-[11px] font-bold text-rose-700">
               目前累計：${refCount} 次 ${status.reflectionReason ? `(${status.reflectionReason})` : ''}
             </span>
           </div>
           <div class="flex items-center space-x-1 text-xs font-bold">
-            <button type="button" onclick="removeStudentReflectionOne(${st.id})" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300" title="自省卡減 1 次">-1 次</button>
+            <button type="button" onclick="removeStudentReflectionOne(${st.id})" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300" title="導師手動減免 1 次自省卡">-1 次</button>
             <button type="button" onclick="addStudentReflectionOne(${st.id})" class="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300" title="自省卡加 1 次">+1 次</button>
             <button type="button" onclick="pardonStudentCard(${st.id}, 'reflection')" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-black" title="自省卡特赦歸零">🕊️ 特赦歸零</button>
           </div>
         </div>
+
+        <!-- 現存自省卡清單 (導師逐筆手動移除) -->
+        ${(bCard.reflectionReasons && bCard.reflectionReasons.length > 0) ? `
+          <div class="space-y-1 pt-1.5 border-t border-rose-100">
+            <span class="text-[10px] font-black text-rose-800 block">📋 現存自省卡清單（導師手動移除專區）：</span>
+            <div class="space-y-1 max-h-28 overflow-y-auto pr-0.5">
+              ${bCard.reflectionReasons.map((r, rIdx) => `
+                <div class="flex items-center justify-between p-1 rounded-lg bg-rose-50 border border-rose-200 text-xs">
+                  <div class="flex items-center space-x-1 truncate mr-2">
+                    <span class="font-bold text-rose-950">${rIdx + 1}. ${r.text}</span>
+                    ${r.isAutoHw ? `<span class="text-[9px] bg-rose-200 text-rose-900 px-1 py-0.2 rounded font-mono">系統派發</span>` : `<span class="text-[9px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded">導師手動</span>`}
+                  </div>
+                  <button type="button" onclick="removeStudentReflectionReasonByIndex(${st.id}, ${rIdx})" class="px-1.5 py-0.5 rounded text-[10px] font-black bg-white hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-300 transition shadow-2xs flex-shrink-0" title="導師手動核銷移除此張自省卡">
+                    ❌ 移除
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
         <div class="pt-1.5 border-t border-rose-100">
           <div class="flex items-center justify-between text-[10px] text-rose-900 font-bold mb-1">
             <span>⚡ 自省事由快捷（點擊一鍵核發，附編輯/刪除）：</span>
@@ -2653,24 +2688,45 @@ function openTrafficDetailModal(studentId) {
         </div>
       </div>
 
-      <!-- 愛班卡 (打卡遲到自動設定為「遲到」 / 導師手動控制) -->
+      <!-- 愛班卡 (打卡遲到自動設定為「遲到」 / 導師全手動移除) -->
       <div class="bg-white p-2.5 rounded-xl border border-amber-200 space-y-2">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <span class="font-black text-slate-900 block flex items-center space-x-1.5">
               <span>🧹 愛班服務卡</span>
-              <span class="text-[10px] font-bold bg-orange-100 text-orange-800 px-1.5 py-0.2 rounded border border-orange-300">打卡遲到自動 / 導師手動</span>
+              <span class="text-[10px] font-bold bg-orange-100 text-orange-800 px-1.5 py-0.2 rounded border border-orange-300">遲到自動派發 / 導師手動核銷</span>
             </span>
             <span class="text-[11px] font-bold text-orange-700">
               目前累計：${srvCount} 次 ${status.serviceReason ? `(${status.serviceReason})` : ''}
             </span>
           </div>
           <div class="flex items-center space-x-1 text-xs font-bold">
-            <button type="button" onclick="removeStudentServiceOne(${st.id})" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300" title="愛班卡減 1 次">-1 次</button>
+            <button type="button" onclick="removeStudentServiceOne(${st.id})" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300" title="導師手動減免 1 次愛班卡">-1 次</button>
             <button type="button" onclick="addStudentServiceOne(${st.id})" class="px-2 py-1 rounded bg-orange-100 hover:bg-orange-200 text-orange-900 border border-orange-300" title="愛班卡加 1 次">+1 次</button>
             <button type="button" onclick="pardonStudentCard(${st.id}, 'service')" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-black" title="愛班卡特赦歸零">🧹 特赦歸零</button>
           </div>
         </div>
+
+        <!-- 現存愛班卡清單 (導師逐筆手動移除) -->
+        ${(bCard.serviceReasons && bCard.serviceReasons.length > 0) ? `
+          <div class="space-y-1 pt-1.5 border-t border-orange-100">
+            <span class="text-[10px] font-black text-orange-800 block">📋 現存愛班卡清單（導師手動移除專區）：</span>
+            <div class="space-y-1 max-h-28 overflow-y-auto pr-0.5">
+              ${bCard.serviceReasons.map((r, sIdx) => `
+                <div class="flex items-center justify-between p-1 rounded-lg bg-orange-50 border border-orange-200 text-xs">
+                  <div class="flex items-center space-x-1 truncate mr-2">
+                    <span class="font-bold text-orange-950">${sIdx + 1}. ${r.text}</span>
+                    ${r.text === '遲到' ? `<span class="text-[9px] bg-orange-200 text-orange-900 px-1 py-0.2 rounded font-mono">遲到派發</span>` : `<span class="text-[9px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded">導師指派</span>`}
+                  </div>
+                  <button type="button" onclick="removeStudentServiceReasonByIndex(${st.id}, ${sIdx})" class="px-1.5 py-0.5 rounded text-[10px] font-black bg-white hover:bg-orange-600 hover:text-white text-orange-700 border border-orange-300 transition shadow-2xs flex-shrink-0" title="導師手動核銷移除此張愛班卡">
+                    ❌ 移除
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
         <div class="pt-1.5 border-t border-orange-100">
           <div class="flex items-center justify-between text-[10px] text-orange-900 font-bold mb-1">
             <span>⚡ 愛班事由快捷（點擊一鍵指派，附編輯/刪除）：</span>
@@ -6026,6 +6082,22 @@ function removeStudentServiceOne(studentId) {
   openTrafficDetailModal(studentId);
 }
 
+function removeStudentReflectionReasonByIndex(studentId, index) {
+  if (!checkTeacherAuth("導師手動移除大臣座位自省卡")) return;
+  window.KingdomApp.store.removeReflectionReasonByIndex(studentId, index);
+  showToast("👑 導師已手動移除該筆座位自省卡！");
+  refreshCurrentView();
+  openTrafficDetailModal(studentId);
+}
+
+function removeStudentServiceReasonByIndex(studentId, index) {
+  if (!checkTeacherAuth("導師手動移除大臣愛班服務卡")) return;
+  window.KingdomApp.store.removeServiceReasonByIndex(studentId, index);
+  showToast("👑 導師已手動移除該筆愛班服務卡！");
+  refreshCurrentView();
+  openTrafficDetailModal(studentId);
+}
+
 function pardonStudentCard(studentId, type) {
   if (!checkTeacherAuth("特赦大臣紀律卡牌（導師手動特赦）")) return;
   window.KingdomApp.store.pardonStudent(studentId, type);
@@ -6236,5 +6308,7 @@ if (typeof window !== 'undefined') {
   window.renderBehaviorReasonShortcuts = renderBehaviorReasonShortcuts;
   window.addCustomReflectionCardToStudent = addCustomReflectionCardToStudent;
   window.addCustomServiceCardToStudent = addCustomServiceCardToStudent;
+  window.removeStudentReflectionReasonByIndex = removeStudentReflectionReasonByIndex;
+  window.removeStudentServiceReasonByIndex = removeStudentServiceReasonByIndex;
 }
 

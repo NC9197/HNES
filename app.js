@@ -97,8 +97,8 @@ const DEFAULT_CONTACT_BOOK = {
     "4. 明日晨讀書籍準備完畢"
   ],
   reminders: [
-    "明天有體育課，請穿著西寧王國運動服",
-    "帶水壺、跳繩與個人潔牙用具"
+    "早自修：國語隨堂造詞練習與生字成語複習",
+    "重要提醒：明天有體育課，請穿著西寧王國運動服與運動鞋"
   ],
   queenMotto: "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
 };
@@ -1233,7 +1233,7 @@ class KingdomStore {
     return b.serviceCount !== undefined ? b.serviceCount : (b.serviceCard ? 1 : 0);
   }
 
-  // --- 作業未交自動派發座位自省卡同步 (一項未交自動新增一張自省卡，標示哪項作業) ---
+  // --- 作業未交自動派發座位自省卡同步 (一項未交自動新增一張自省卡，標示哪項作業；導師全手動移除，系統無須自動移除) ---
   syncHomeworkReflectionCards(studentId) {
     if (!this.data.behaviorCards) this.data.behaviorCards = {};
     if (!this.data.behaviorCards[studentId]) {
@@ -1245,11 +1245,13 @@ class KingdomStore {
         serviceCount: 0,
         serviceCard: false,
         serviceReason: '',
-        serviceReasons: []
+        serviceReasons: [],
+        dismissedHwCards: {}
       };
     }
     const b = this.data.behaviorCards[studentId];
     if (!Array.isArray(b.reflectionReasons)) b.reflectionReasons = [];
+    if (!b.dismissedHwCards || typeof b.dismissedHwCards !== 'object') b.dismissedHwCards = {};
 
     const student = (this.data.students || []).find(s => s.id === studentId || s.seatNo === studentId);
     if (!student) return;
@@ -1260,22 +1262,18 @@ class KingdomStore {
       return rec === 'pending' || rec === 'missing';
     });
 
-    const currentMissingHwIds = new Set(missingHws.map(h => String(h.id)));
-
-    // 1. 移除已補交或已刪除作業的自動作業自省卡 (保留導師手動核發的自省卡)
-    b.reflectionReasons = b.reflectionReasons.filter(r => {
-      if (!r.isAutoHw) return true;
-      return currentMissingHwIds.has(String(r.hwId));
-    });
-
-    // 2. 為每一項未交作業確保具備一張自省卡 (標示哪項作業)
+    // 依使用者指示：自動派發的自省卡由導師手動移除，系統無須自動移除！
+    // 因此絕不自動刪除已補交作業的自省卡，完整保留待導師手動核銷。
+    // 僅為尚未派發且未被導師手動消除的未交作業派發新自省卡：
     missingHws.forEach(hw => {
-      const exists = b.reflectionReasons.some(r => r.isAutoHw && String(r.hwId) === String(hw.id));
-      if (!exists) {
+      const hwIdStr = String(hw.id);
+      const exists = b.reflectionReasons.some(r => r.isAutoHw && String(r.hwId) === hwIdStr);
+      const dismissed = b.dismissedHwCards && b.dismissedHwCards[hwIdStr];
+      if (!exists && !dismissed) {
         const hwName = hw.title || hw.presetName || '日常作業';
         b.reflectionReasons.push({
           text: `作業未交（${hwName}）`,
-          hwId: String(hw.id),
+          hwId: hwIdStr,
           isAutoHw: true,
           date: getTodayDateString(),
           time: new Date().toTimeString().slice(0, 5)
@@ -1283,7 +1281,7 @@ class KingdomStore {
       }
     });
 
-    // 3. 重新計算累計自省卡數量與事由摘要
+    // 重新計算累計自省卡數量與事由摘要
     b.reflectionCount = b.reflectionReasons.length;
     b.reflectionCard = b.reflectionCount > 0;
     b.reflectionReason = b.reflectionReasons.map(r => r.text).join('、');
@@ -1299,7 +1297,7 @@ class KingdomStore {
   addReflectionCard(studentId, reason = "") {
     if (!this.data.behaviorCards) this.data.behaviorCards = {};
     if (!this.data.behaviorCards[studentId]) {
-      this.data.behaviorCards[studentId] = { reflectionCount: 0, serviceCount: 0, reflectionReasons: [], serviceReasons: [] };
+      this.data.behaviorCards[studentId] = { reflectionCount: 0, serviceCount: 0, reflectionReasons: [], serviceReasons: [], dismissedHwCards: {} };
     }
     const b = this.data.behaviorCards[studentId];
     if (!Array.isArray(b.reflectionReasons)) b.reflectionReasons = [];
@@ -1316,12 +1314,36 @@ class KingdomStore {
     return b.reflectionCount;
   }
 
+  // 導師手動移除自省卡一張（由最新一筆移除）
   removeReflectionCardOne(studentId) {
     if (!this.data.behaviorCards || !this.data.behaviorCards[studentId]) return 0;
     const b = this.data.behaviorCards[studentId];
     if (!Array.isArray(b.reflectionReasons)) b.reflectionReasons = [];
+    if (!b.dismissedHwCards || typeof b.dismissedHwCards !== 'object') b.dismissedHwCards = {};
     if (b.reflectionReasons.length > 0) {
-      b.reflectionReasons.pop();
+      const removed = b.reflectionReasons.pop();
+      if (removed && removed.isAutoHw && removed.hwId) {
+        b.dismissedHwCards[String(removed.hwId)] = true;
+      }
+    }
+    b.reflectionCount = b.reflectionReasons.length;
+    b.reflectionCard = b.reflectionCount > 0;
+    b.reflectionReason = b.reflectionReasons.map(r => r.text).join('、');
+    this.save();
+    return b.reflectionCount;
+  }
+
+  // 導師手動指定索引移除特定自省卡
+  removeReflectionReasonByIndex(studentId, index) {
+    if (!this.data.behaviorCards || !this.data.behaviorCards[studentId]) return 0;
+    const b = this.data.behaviorCards[studentId];
+    if (!Array.isArray(b.reflectionReasons)) b.reflectionReasons = [];
+    if (!b.dismissedHwCards || typeof b.dismissedHwCards !== 'object') b.dismissedHwCards = {};
+    if (index >= 0 && index < b.reflectionReasons.length) {
+      const [removed] = b.reflectionReasons.splice(index, 1);
+      if (removed && removed.isAutoHw && removed.hwId) {
+        b.dismissedHwCards[String(removed.hwId)] = true;
+      }
     }
     b.reflectionCount = b.reflectionReasons.length;
     b.reflectionCard = b.reflectionCount > 0;
@@ -1333,7 +1355,7 @@ class KingdomStore {
   addServiceCard(studentId, reason = "遲到") {
     if (!this.data.behaviorCards) this.data.behaviorCards = {};
     if (!this.data.behaviorCards[studentId]) {
-      this.data.behaviorCards[studentId] = { reflectionCount: 0, serviceCount: 0, reflectionReasons: [], serviceReasons: [] };
+      this.data.behaviorCards[studentId] = { reflectionCount: 0, serviceCount: 0, reflectionReasons: [], serviceReasons: [], dismissedHwCards: {} };
     }
     const b = this.data.behaviorCards[studentId];
     if (!Array.isArray(b.serviceReasons)) b.serviceReasons = [];
@@ -1349,6 +1371,7 @@ class KingdomStore {
     return b.serviceCount;
   }
 
+  // 導師手動移除愛班卡一張（由最新一筆移除）
   removeServiceCardOne(studentId) {
     if (!this.data.behaviorCards || !this.data.behaviorCards[studentId]) return 0;
     const b = this.data.behaviorCards[studentId];
@@ -1363,10 +1386,33 @@ class KingdomStore {
     return b.serviceCount;
   }
 
+  // 導師手動指定索引移除特定愛班卡
+  removeServiceReasonByIndex(studentId, index) {
+    if (!this.data.behaviorCards || !this.data.behaviorCards[studentId]) return 0;
+    const b = this.data.behaviorCards[studentId];
+    if (!Array.isArray(b.serviceReasons)) b.serviceReasons = [];
+    if (index >= 0 && index < b.serviceReasons.length) {
+      b.serviceReasons.splice(index, 1);
+    }
+    b.serviceCount = b.serviceReasons.length;
+    b.serviceCard = b.serviceCount > 0;
+    b.serviceReason = b.serviceReasons.map(r => r.text).join('、');
+    this.save();
+    return b.serviceCount;
+  }
+
   pardonStudent(studentId, type = "all") {
     if (!this.data.behaviorCards || !this.data.behaviorCards[studentId]) return;
     const b = this.data.behaviorCards[studentId];
+    if (!b.dismissedHwCards || typeof b.dismissedHwCards !== 'object') b.dismissedHwCards = {};
     if (type === 'all' || type === 'reflection') {
+      if (Array.isArray(b.reflectionReasons)) {
+        b.reflectionReasons.forEach(r => {
+          if (r && r.isAutoHw && r.hwId) {
+            b.dismissedHwCards[String(r.hwId)] = true;
+          }
+        });
+      }
       b.reflectionCount = 0;
       b.reflectionCard = false;
       b.reflectionReason = "";
@@ -1385,7 +1431,15 @@ class KingdomStore {
     if (!this.data.behaviorCards) this.data.behaviorCards = {};
     this.data.students.forEach(st => {
       const b = this.data.behaviorCards[st.id] || (this.data.behaviorCards[st.id] = {});
+      if (!b.dismissedHwCards || typeof b.dismissedHwCards !== 'object') b.dismissedHwCards = {};
       if (type === 'all' || type === 'reflection') {
+        if (Array.isArray(b.reflectionReasons)) {
+          b.reflectionReasons.forEach(r => {
+            if (r && r.isAutoHw && r.hwId) {
+              b.dismissedHwCards[String(r.hwId)] = true;
+            }
+          });
+        }
         b.reflectionCount = 0;
         b.reflectionCard = false;
         b.reflectionReason = "";
