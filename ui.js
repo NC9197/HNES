@@ -474,32 +474,29 @@ function renderMorningBoard() {
       let statusBadge = "🔴 未到";
       let timeText = "";
 
-      if (rec && rec.checkInTime) {
-        checkedCount++;
+      if (rec) {
         if (rec.status === 'present') {
+          checkedCount++;
           statusClass = "seat-present";
           statusBadge = "🟢 準時";
-          timeText = rec.checkInTime;
+          timeText = rec.checkInTime || "準時";
         } else if (rec.status === 'late') {
+          checkedCount++;
           statusClass = "seat-late";
           statusBadge = "🟡 遲到";
-          timeText = rec.checkInTime;
+          timeText = rec.checkInTime || "遲到";
         } else if (rec.status === 'leave') {
           statusClass = "seat-leave";
           statusBadge = "🏖️ 請假";
           timeText = "告假";
         }
-      } else if (rec && rec.status === 'leave') {
-        statusClass = "seat-leave";
-        statusBadge = "🏖️ 請假";
-        timeText = "告假";
       }
 
       return `
         <button onclick="handleMorningSeatCheckIn(${st.id}, ${st.seatNo})" 
           class="checkin-seat-btn ${statusClass} h-11 w-full rounded-xl text-center flex items-center justify-center border-2 transition shadow-xs hover:scale-105 active:scale-95"
-          title="${st.seatNo}號 ${st.name} | ${statusBadge} ${timeText ? '(' + timeText + ')' : ''}（點擊打卡）">
-          <span class="font-mono text-base sm:text-lg font-black tracking-wider">${String(st.seatNo).padStart(2, '0')}</span>
+          title="${st.seatNo}號 ${st.name} | ${statusBadge} ${timeText ? '(' + timeText + ')' : ''}（點擊打卡 / 更改狀態）">
+          <span class="font-mono text-lg sm:text-xl font-black tracking-wider">${String(st.seatNo).padStart(2, '0')}</span>
         </button>
       `;
     }).join('');
@@ -567,8 +564,9 @@ function renderMorningBoard() {
   renderContactBookHistoryList();
 }
 
+let activeMorningChangeStudentId = null;
+
 function handleMorningSeatCheckIn(studentId, seatNo) {
-  if (!checkTeacherAuth("進行晨檢大臣出席打卡")) return;
   const todayStr = window.KingdomApp.getTodayDateString();
   const lateThreshold = window.KingdomApp.store.data.lateThreshold || "07:40";
 
@@ -579,40 +577,155 @@ function handleMorningSeatCheckIn(studentId, seatNo) {
   const student = window.KingdomApp.store.data.students.find(s => s.id === studentId);
   const existing = window.KingdomApp.store.data.attendance[todayStr][studentId];
 
-  // 獲取當下真實時間 HH:mm
+  // 若該生尚未打卡（或狀態為未到/缺席），點擊直接以當前真實時間完成打卡！免密碼！
+  if (!existing || (!existing.checkInTime && existing.status !== 'present' && existing.status !== 'late' && existing.status !== 'leave')) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const timeStr = `${hours}:${minutes}`;
+    const isLate = timeStr > lateThreshold;
+
+    if (isLate) {
+      window.KingdomApp.store.addServiceCard(studentId, "遲到");
+    }
+
+    window.KingdomApp.store.data.attendance[todayStr][studentId] = {
+      status: isLate ? 'late' : 'present',
+      checkInTime: timeStr,
+      note: isLate ? `晨檢遲到 (${timeStr})` : '晨檢準時'
+    };
+
+    window.KingdomApp.store.save();
+    window.KingdomApp.sound.playCoin();
+
+    if (isLate) {
+      showToast(`⚠️ ${student.name} 大臣於 ${timeStr} 遲到打卡（已自動派發愛班卡）`, "⏳");
+    } else {
+      showToast(`🟢 ${student.name} 大臣於 ${timeStr} 準時打卡成功！`, "✨");
+    }
+
+    renderMorningBoard();
+    if (currentMainView === 'teacher' && currentTeacherTab === 'attendance') {
+      renderAttendanceView();
+    }
+    renderTrafficView();
+    return;
+  }
+
+  // 若該生已經打卡，點擊時開啟【大臣朝會打卡狀態快速更改】彈窗，方便老師隨時更改狀態！
+  openMorningCheckInChangeModal(studentId);
+}
+
+function openMorningCheckInChangeModal(studentId) {
+  activeMorningChangeStudentId = studentId;
+  const student = window.KingdomApp.store.data.students.find(s => s.id === studentId);
+  if (!student) return;
+
+  const todayStr = window.KingdomApp.getTodayDateString();
+  const rec = (window.KingdomApp.store.data.attendance[todayStr] && window.KingdomApp.store.data.attendance[todayStr][studentId]) || null;
+
+  const titleEl = document.getElementById("morningModalStudentTitle");
+  if (titleEl) {
+    titleEl.textContent = `⏱️ ${String(student.seatNo).padStart(2, '0')}號 ${student.name}`;
+  }
+
+  const statusEl = document.getElementById("morningModalCurrentStatus");
+  if (statusEl) {
+    if (!rec) {
+      statusEl.className = "font-black text-sm text-rose-700";
+      statusEl.textContent = "🔴 尚未打卡 (缺席)";
+    } else if (rec.status === 'present') {
+      statusEl.className = "font-black text-sm text-emerald-700";
+      statusEl.textContent = `🟢 準時出席 (${rec.checkInTime || '準時'})`;
+    } else if (rec.status === 'late') {
+      statusEl.className = "font-black text-sm text-amber-700";
+      statusEl.textContent = `🟡 遲到覲見 (${rec.checkInTime || '遲到'})`;
+    } else if (rec.status === 'leave') {
+      statusEl.className = "font-black text-sm text-rose-700";
+      statusEl.textContent = `🏖️ 告假在府 (${rec.leaveType || '事假'})`;
+    } else {
+      statusEl.className = "font-black text-sm text-rose-700";
+      statusEl.textContent = "🔴 尚未打卡 (缺席)";
+    }
+  }
+
   const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const timeStr = `${hours}:${minutes}`;
-
-  if (existing && existing.checkInTime) {
-    const change = confirm(`【${String(seatNo).padStart(2, '0')}號 ${student.name}】已於 ${existing.checkInTime} 打卡！\n\n是否要以現在時間 (${timeStr}) 重新更新打卡紀錄？`);
-    if (!change) return;
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const nowBtn = document.getElementById("morningModalNowBtnText");
+  if (nowBtn) {
+    nowBtn.textContent = `以現在時間重新打卡 (${timeStr})`;
   }
 
-  const isLate = timeStr > lateThreshold;
+  const modal = document.getElementById("morningCheckInChangeModal");
+  if (modal) modal.classList.remove("hidden");
+  initLucideIcons();
+}
 
-  // 愛班卡由系統判定打卡自動加入 (系統自動新增事由直接設定為「遲到」)
-  // 自動派發的自省卡和愛班卡皆由導師手動移除，系統無須自動移除
-  if (isLate) {
-    window.KingdomApp.store.addServiceCard(studentId, "遲到");
+function closeMorningCheckInChangeModal() {
+  const modal = document.getElementById("morningCheckInChangeModal");
+  if (modal) modal.classList.add("hidden");
+  activeMorningChangeStudentId = null;
+}
+
+function changeMorningAttendanceStatus(targetStatus) {
+  if (!activeMorningChangeStudentId) return;
+  const studentId = activeMorningChangeStudentId;
+  const student = window.KingdomApp.store.data.students.find(s => s.id === studentId);
+  const todayStr = window.KingdomApp.getTodayDateString();
+  const lateThreshold = window.KingdomApp.store.data.lateThreshold || "07:40";
+
+  if (!window.KingdomApp.store.data.attendance[todayStr]) {
+    window.KingdomApp.store.data.attendance[todayStr] = {};
   }
+  const prev = window.KingdomApp.store.data.attendance[todayStr][studentId] || {};
 
-  window.KingdomApp.store.data.attendance[todayStr][studentId] = {
-    status: isLate ? 'late' : 'present',
-    checkInTime: timeStr,
-    note: isLate ? `晨檢遲到 (${timeStr})` : ''
-  };
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  if (targetStatus === 'uncheck') {
+    delete window.KingdomApp.store.data.attendance[todayStr][studentId];
+    showToast(`🔴 已清除【${student.name}】的打卡紀錄，恢復為未到狀態！`);
+  } else if (targetStatus === 'present') {
+    window.KingdomApp.store.data.attendance[todayStr][studentId] = {
+      status: 'present',
+      checkInTime: prev.checkInTime || '07:35',
+      note: '導師更改為準時'
+    };
+    showToast(`🟢 已將【${student.name}】更改為：準時出席！`, "✨");
+  } else if (targetStatus === 'late') {
+    if (prev.status !== 'late') {
+      window.KingdomApp.store.addServiceCard(studentId, "遲到");
+    }
+    window.KingdomApp.store.data.attendance[todayStr][studentId] = {
+      status: 'late',
+      checkInTime: prev.checkInTime || '07:45',
+      note: '導師更改為遲到'
+    };
+    showToast(`🟡 已將【${student.name}】更改為：遲到（已派發愛班卡）！`, "⏳");
+  } else if (targetStatus === 'leave') {
+    window.KingdomApp.store.data.attendance[todayStr][studentId] = {
+      status: 'leave',
+      leaveType: 'personal',
+      leaveScope: 'day',
+      note: '導師更改為告假在府'
+    };
+    showToast(`🏖️ 已將【${student.name}】更改為：告假在府！`, "🏖️");
+  } else if (targetStatus === 'now') {
+    const isLate = timeStr > lateThreshold;
+    if (isLate && prev.status !== 'late') {
+      window.KingdomApp.store.addServiceCard(studentId, "遲到");
+    }
+    window.KingdomApp.store.data.attendance[todayStr][studentId] = {
+      status: isLate ? 'late' : 'present',
+      checkInTime: timeStr,
+      note: isLate ? `晨檢遲到 (${timeStr})` : '晨檢準時'
+    };
+    showToast(`⏱️ 【${student.name}】已重新以當前時間 (${timeStr}) 完成打卡！`);
+  }
 
   window.KingdomApp.store.save();
   window.KingdomApp.sound.playCoin();
-
-  if (isLate) {
-    showToast(`⚠️ ${student.name} 大臣於 ${timeStr} 遲到打卡（系統已自動核發愛班服務卡）`, "⏳");
-  } else {
-    showToast(`🟢 ${student.name} 大臣於 ${timeStr} 準時打卡成功！`, "✨");
-  }
-
+  closeMorningCheckInChangeModal();
   renderMorningBoard();
   if (currentMainView === 'teacher' && currentTeacherTab === 'attendance') {
     renderAttendanceView();
@@ -3003,7 +3116,7 @@ function renderPointsZooHabitat() {
 
         <!-- 飽食度與可用金幣狀態 -->
         <div class="mt-1 flex items-center justify-center space-x-1 text-[10px] font-mono font-bold text-slate-700 bg-emerald-50/80 w-full py-0.5 rounded-lg border border-emerald-200">
-          <span title="可用金幣">🪙${st.points || 0}</span>
+          <span onclick="openEditStudentPointsModal(${st.id})" class="cursor-pointer hover:text-amber-600 hover:underline font-black" title="點擊修改金幣數量">🪙${st.points || 0}</span>
           <span class="text-slate-300">|</span>
           <span class="text-emerald-800" title="累積總飽食度">🍎${lifetime}</span>
         </div>
@@ -3119,17 +3232,20 @@ function renderPointsView() {
               <span class="text-xs font-bold text-amber-800">${petStatus.animalName}</span>
             </div>
 
-            <div class="mt-3 flex items-center justify-between bg-white p-2.5 rounded-xl border border-amber-300">
+            <div onclick="openEditStudentPointsModal(${st.id})" class="mt-3 flex items-center justify-between bg-white hover:bg-amber-50 cursor-pointer p-2.5 rounded-xl border-2 border-amber-300 hover:border-amber-400 transition shadow-xs group" title="點擊直接更改此大臣金幣數量">
               <div class="flex items-center space-x-1.5">
-                <span class="text-xl">🪙</span>
+                <span class="text-xl group-hover:scale-110 transition-transform">🪙</span>
                 <div>
-                  <span class="text-[10px] text-amber-800 font-bold block">可用金幣 (換卡)</span>
-                  <span class="text-base font-black text-amber-600">${st.points || 0} 點</span>
+                  <div class="flex items-center space-x-1">
+                    <span class="text-[10px] text-amber-800 font-bold block">可用金幣</span>
+                    <span class="text-[9px] bg-amber-200 text-amber-900 px-1 rounded font-black">✏️更改</span>
+                  </div>
+                  <span class="text-base font-black text-amber-600 font-digital">${st.points || 0} 點</span>
                 </div>
               </div>
               <div class="text-right">
-                <span class="text-[10px] text-amber-800 font-bold block">✨ 生涯金化累積</span>
-                <span class="text-xs font-black text-amber-950">${lifetime} 🌟</span>
+                <span class="text-[10px] text-amber-800 font-bold block">🍎 寵物飽食度</span>
+                <span class="text-xs font-black text-amber-950 font-digital">${lifetime} 點</span>
               </div>
             </div>
 
@@ -3138,7 +3254,7 @@ function renderPointsView() {
             </div>
           </div>
 
-          <!-- 快速個人加減分、兌換獎勵與重置 -->
+          <!-- 快速個人加減分、兌換獎勵與更改金幣 -->
           <div class="mt-3 pt-2 border-t border-amber-200 flex items-center space-x-1">
             <button onclick="awardSingleStudent(${st.id}, 1, '課堂嘉獎')" class="flex-1 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-black text-xs transition border border-amber-300">
               +1
@@ -3152,8 +3268,8 @@ function renderPointsView() {
             <button onclick="openRedeemCardForStudent(${st.id})" class="py-1 px-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-black text-xs transition border border-amber-400 shadow-sm" title="以金幣兌換獎勵卡">
               🎁換卡
             </button>
-            <button onclick="promptSingleResetPoints(${st.id})" class="py-1 px-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition border border-slate-300" title="單獨重置此學生點數">
-              🔄
+            <button onclick="openEditStudentPointsModal(${st.id})" class="py-1 px-2 rounded-lg bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-300 hover:to-amber-400 text-amber-950 font-black text-xs transition border border-amber-400 shadow-sm flex items-center space-x-0.5" title="更改此大臣金幣數量">
+              <span>✏️</span><span>改金幣</span>
             </button>
           </div>
         </div>
@@ -3613,23 +3729,92 @@ function renderPointPresets() {
   }
 }
 
-// 單獨重置點數
-function promptSingleResetPoints(studentId) {
-  const student = window.KingdomApp.store.data.students.find(s => s.id === studentId);
+// ===================================================================
+// 單獨大臣更改金幣數量 Modal 控制器 (Teacher Edit Student Points)
+// ===================================================================
+function openEditStudentPointsModal(studentId) {
+  if (!checkTeacherAuth("更改大臣金幣數量")) return;
+  const student = window.KingdomApp.store.data.students.find(s => s.id == studentId || s.seatNo == studentId);
   if (!student) return;
 
-  const targetStr = prompt(`請輸入要將【${student.name} 大臣】的金幣重置為多少點？\n(輸入 0 即可歸零)`, "0");
-  if (targetStr === null) return;
+  const aType = student.animalType || student.petType || 'lion';
+  const aDef = (window.KingdomApp && window.KingdomApp.ANIMAL_DEFINITIONS && window.KingdomApp.ANIMAL_DEFINITIONS[aType]) || { icon: '🦁', name: '守護動物' };
 
-  const target = parseInt(targetStr, 10);
+  const modal = document.getElementById("editStudentPointsModal");
+  if (!modal) return;
+
+  document.getElementById("editPointsStudentId").value = student.id;
+  document.getElementById("editPointsStudentSeat").textContent = `${String(student.seatNo).padStart(2, '0')}號`;
+  document.getElementById("editPointsStudentName").textContent = student.name;
+  document.getElementById("editPointsStudentTitle").textContent = `${student.title} (${aDef.icon} ${aDef.name})`;
+  document.getElementById("editPointsStudentIcon").textContent = aDef.icon;
+  document.getElementById("editPointsCurrentBalance").textContent = `${student.points || 0} 🪙`;
+  document.getElementById("editPointsTargetInput").value = student.points || 0;
+  document.getElementById("editPointsReasonInput").value = "導師手動調整金幣";
+
+  modal.classList.remove("hidden");
+  initLucideIcons();
+}
+
+function closeEditStudentPointsModal() {
+  const modal = document.getElementById("editStudentPointsModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function setEditPointsQuick(val) {
+  const input = document.getElementById("editPointsTargetInput");
+  if (input) input.value = val;
+}
+
+function adjustEditPointsInput(delta) {
+  const input = document.getElementById("editPointsTargetInput");
+  if (!input) return;
+  const cur = parseInt(input.value, 10) || 0;
+  input.value = Math.max(0, cur + delta);
+}
+
+function submitEditStudentPoints(e) {
+  e.preventDefault();
+  const id = parseInt(document.getElementById("editPointsStudentId").value, 10);
+  const target = parseInt(document.getElementById("editPointsTargetInput").value, 10);
+  const reason = document.getElementById("editPointsReasonInput").value.trim() || "導師手動調整金幣";
+
   if (isNaN(target) || target < 0) {
-    alert("請輸入有效的正整數或 0！");
+    alert("請輸入有效的金幣數值（0 或正整數）！");
     return;
   }
 
-  window.KingdomApp.store.resetSingleStudentPoints(studentId, target);
-  showToast(`🔄 已將 ${student.name} 的金幣重置為 ${target} 點！`);
+  const updated = window.KingdomApp.store.setStudentPoints(id, target, reason);
+  if (updated) {
+    if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+      window.KingdomApp.sound.playCoin();
+    }
+    showToast(`💰 成功將【${updated.name}】的金幣更新為 ${target} 點！`, "👑");
+    closeEditStudentPointsModal();
+    renderPointsView();
+    renderRosterView();
+  }
+}
+
+// 相容舊函式呼叫
+function promptSingleResetPoints(studentId) {
+  openEditStudentPointsModal(studentId);
+}
+
+// 全班寵物飽食度歸零
+function confirmResetAllPetsSatiety() {
+  if (!checkTeacherAuth("全班飽食度歸零")) return;
+  const confirmed = confirm("⚠️ 確定要將全班 27 位大臣的萌寵飽食度全數歸零嗎？\n\n・全班萌寵將重回初生幼崽期 (0點)\n・可用金幣將完整保留不受影響\n\n請確認是否執行？");
+  if (!confirmed) return;
+
+  window.KingdomApp.store.resetAllPetsSatiety();
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+    window.KingdomApp.sound.playFanfare();
+  }
+  showToast("🍎 全班 27 位大臣萌寵飽食度已全數歸零！重返初生幼崽期！", "🍼");
   renderPointsView();
+  renderPointsZooHabitat();
+  renderPetsView();
   renderRosterView();
 }
 
@@ -4089,7 +4274,7 @@ function renderRosterView() {
         </td>
         <!-- 可用金幣 -->
         <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap">
-          <span class="font-black text-amber-600 text-sm block">${st.points || 0} 🪙</span>
+          <span onclick="openEditStudentPointsModal(${st.id})" class="font-black text-amber-600 text-sm block cursor-pointer hover:underline" title="點擊更改金幣數量">${st.points || 0} 🪙 ✏️</span>
         </td>
         <!-- 操作按鈕列 -->
         <td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
@@ -4102,8 +4287,8 @@ function renderRosterView() {
           <button onclick="openEditStudentModal(${st.id})" class="px-1.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-xs font-bold">
             修改
           </button>
-          <button onclick="promptSingleResetPoints(${st.id})" class="px-1.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold border border-slate-300" title="重置點數">
-            🔄
+          <button onclick="openEditStudentPointsModal(${st.id})" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded text-xs font-black border border-amber-400 shadow-xs" title="更改此大臣金幣數量">
+            ✏️ 改金幣
           </button>
           <button onclick="deleteStudent(${st.id})" class="px-1.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded text-xs font-bold">
             除名
@@ -4131,7 +4316,7 @@ function closeBatchCenterModal() {
 
 function switchBatchTab(tab) {
   currentBatchTab = tab;
-  const tabs = ['names', 'titles', 'birthdays'];
+  const tabs = ['names', 'titles', 'birthdays', 'points'];
   tabs.forEach(t => {
     const btn = document.getElementById(`tabBtnBatch-${t}`);
     if (btn) {
@@ -4159,6 +4344,10 @@ function switchBatchTab(tab) {
     hintEl.innerHTML = "請直接複製 27 位學生國曆生日 4 碼貼在下方（<strong>一行一個生日</strong>，如：0101、0520、1104），家長登入時將與座號自動組合成 6 碼（例如 1 號生日 0101 密碼即為 010101）：";
     textarea.value = students.map(s => s.birthday).join('\n');
     textarea.placeholder = "0101\n0520\n1104\n... (共27行)";
+  } else if (tab === 'points') {
+    hintEl.innerHTML = "請直接輸入或複製貼上 27 位大臣的金幣數量（<strong>一行一個金幣數字</strong>，如：50、100、80），依序對應 1 號至 27 號：";
+    textarea.value = students.map(s => s.points !== undefined ? s.points : 50).join('\n');
+    textarea.placeholder = "50\n80\n100\n... (共27行)";
   }
 }
 
@@ -4185,6 +4374,10 @@ function submitBatchCenterData(e) {
   } else if (currentBatchTab === 'birthdays') {
     window.KingdomApp.store.batchUpdateBirthdays(lines);
     showToast(`🔑 成功更新全班 ${lines.length} 位大臣國曆生日！（家長密碼自動組合為座號+生日共6碼）`);
+  } else if (currentBatchTab === 'points') {
+    window.KingdomApp.store.batchUpdatePoints(lines);
+    showToast(`🪙 成功更新全班 ${lines.length} 位大臣金幣數量！`);
+    renderPointsView();
   }
 
   window.KingdomApp.sound.playCoin();
@@ -4225,7 +4418,9 @@ function openAddStudentModal() {
   document.getElementById("editStudentName").value = "";
   document.getElementById("editStudentTitle").value = "皇家大臣";
   document.getElementById("editStudentBirthday").value = "0101";
-  document.getElementById("editStudentPetType").value = "lion";
+  document.getElementById("editStudentPetType").value = "dog";
+  const pInput = document.getElementById("editStudentPoints");
+  if (pInput) pInput.value = 50;
 
   document.getElementById("studentModal").classList.remove("hidden");
   initLucideIcons();
@@ -4241,14 +4436,17 @@ function openEditStudentModal(studentId) {
   document.getElementById("editStudentName").value = student.name;
   document.getElementById("editStudentTitle").value = student.title;
   document.getElementById("editStudentBirthday").value = student.birthday;
-  document.getElementById("editStudentPetType").value = student.animalType || student.petType || "lion";
+  document.getElementById("editStudentPetType").value = student.animalType || student.petType || "dog";
+  const pInput = document.getElementById("editStudentPoints");
+  if (pInput) pInput.value = student.points !== undefined ? student.points : 50;
 
   document.getElementById("studentModal").classList.remove("hidden");
   initLucideIcons();
 }
 
 function closeStudentModal() {
-  document.getElementById("studentModal").classList.add("hidden");
+  const modal = document.getElementById("studentModal");
+  if (modal) modal.classList.add("hidden");
 }
 
 function saveStudentData(e) {
@@ -4259,6 +4457,9 @@ function saveStudentData(e) {
   const title = document.getElementById("editStudentTitle").value.trim();
   const birthday = document.getElementById("editStudentBirthday").value.trim();
   const petType = document.getElementById("editStudentPetType").value;
+  const pInput = document.getElementById("editStudentPoints");
+  const pointsVal = pInput ? parseInt(pInput.value, 10) : 50;
+  const points = Math.max(0, isNaN(pointsVal) ? 50 : pointsVal);
 
   if (idVal) {
     const student = window.KingdomApp.store.data.students.find(s => s.id === parseInt(idVal, 10));
@@ -4269,6 +4470,18 @@ function saveStudentData(e) {
       student.birthday = birthday;
       student.animalType = petType;
       student.petType = petType;
+      const oldPts = student.points || 0;
+      student.points = points;
+      if (oldPts !== points) {
+        window.KingdomApp.store.data.pointLogs.unshift({
+          id: Date.now(),
+          studentId: student.id,
+          points: points - oldPts,
+          reason: `導師修改大臣資料：金幣設為 ${points} 點 (原 ${oldPts} 點)`,
+          date: getTodayDateString(),
+          time: new Date().toTimeString().slice(0, 5)
+        });
+      }
     }
     showToast(`👑 大臣【${name}】資料已更新！`);
   } else {
@@ -4280,9 +4493,11 @@ function saveStudentData(e) {
       birthday,
       animalType: petType,
       petType,
-      points: 50,
-      lifetimePoints: 50,
-      petExp: 50
+      points,
+      lifetimePoints: 0,
+      petExp: 0,
+      secondPetType: null,
+      secondPetExp: 0
     };
     window.KingdomApp.store.data.students.push(newStudent);
     window.KingdomApp.store.data.students.sort((a, b) => a.seatNo - b.seatNo);
@@ -4292,6 +4507,7 @@ function saveStudentData(e) {
   window.KingdomApp.store.save();
   closeStudentModal();
   renderRosterView();
+  renderPointsView();
   renderMorningBoard();
   renderTrafficView(); // 連動下課紅綠燈與愛班卡判定
 }
@@ -6467,5 +6683,8 @@ if (typeof window !== 'undefined') {
   window.removeStudentReflectionReasonByIndex = removeStudentReflectionReasonByIndex;
   window.removeStudentServiceReasonByIndex = removeStudentServiceReasonByIndex;
   window.switchTrafficDetailTab = switchTrafficDetailTab;
+  window.openMorningCheckInChangeModal = openMorningCheckInChangeModal;
+  window.closeMorningCheckInChangeModal = closeMorningCheckInChangeModal;
+  window.changeMorningAttendanceStatus = changeMorningAttendanceStatus;
 }
 

@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>西寧國小五年二班 ‧ 西寧小小兵王國</title>
   
   <!-- Tailwind CSS -->
@@ -141,6 +144,10 @@
               <i data-lucide="key" class="w-4 h-4 text-amber-600"></i>
               <span>批次輸入學生密碼(生日)</span>
             </button>
+            <button onclick="openBatchCenterModal('points')" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-amber-950 flex items-center space-x-2">
+              <i data-lucide="coins" class="w-4 h-4 text-amber-600"></i>
+              <span>批次輸入學生金幣數量</span>
+            </button>
             <div class="border-t border-amber-200 my-1"></div>
             <button onclick="openBatchResetPointsModal()" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-amber-950 flex items-center space-x-2">
               <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-600"></i>
@@ -249,16 +256,18 @@
         <div class="lg:col-span-4 parchment-card p-4 space-y-3 shadow-md">
           <div class="flex items-center justify-between pb-2 border-b-2 border-amber-300">
             <div>
-              <span class="text-[11px] text-amber-800 font-bold block">點擊座號即完成打卡</span>
+              <span class="text-[11px] text-amber-800 font-bold block">點擊座號打卡 / 再次點擊快速更改</span>
               <h3 class="text-base font-black text-amber-950 flex items-center space-x-1.5">
                 <span>⏱️ 大臣晨檢打卡</span>
               </h3>
             </div>
-            <div class="text-right">
-              <span class="text-[10px] text-slate-500 font-bold block">到校人數</span>
-              <span id="morningCheckedCount" class="text-sm font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+            <div class="flex items-center space-x-1.5">
+              <span id="morningCheckedCount" class="text-xs sm:text-sm font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
                 0 / 27 人
               </span>
+              <button type="button" onclick="location.reload(true)" class="p-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-2xs" title="強制重新整理載入最新版本">
+                <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+              </button>
             </div>
           </div>
 
@@ -1061,6 +1070,10 @@
                 <span>🎉</span>
                 <span>動物開趴跳舞</span>
               </button>
+              <button onclick="confirmResetAllPetsSatiety()" class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-black text-xs shadow-sm flex items-center space-x-1 transform active:scale-95 transition" title="將全班 27 位大臣的萌寵飽食度全部歸零重置 (重返幼幼期)">
+                <span>🔄</span>
+                <span>飽食度歸零</span>
+              </button>
             </div>
           </div>
 
@@ -1148,9 +1161,15 @@
                 <span>🐾 萌寵動物園 ‧ 全班 27 位大臣認養動物與飼育成長區</span>
               </h2>
             </div>
-            <div class="text-xs text-amber-950 bg-amber-100 p-2.5 rounded-xl border border-amber-300 font-bold space-y-1">
-              <div>🍎 <strong>動物園投餵飼料 ‧ 長大五大成長期 (依累積總飽食度)：</strong></div>
-              <div class="text-[11px] text-amber-900">🍼 0~29點 喝奶小幼崽 ➔ 🌿 30~59點 活潑小萌童 ➔ 🏃 60~99點 健壯少年期 ➔ 🦁 100~149點 威風大成體 ➔ 👑 150點以上 動物園人氣巨星！</div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div class="text-xs text-amber-950 bg-amber-100 p-2.5 rounded-xl border border-amber-300 font-bold space-y-1">
+                <div>🍎 <strong>動物園投餵飼料 ‧ 長大五大成長期 (依累積總飽食度)：</strong></div>
+                <div class="text-[11px] text-amber-900">🍼 0~29點 喝奶小幼崽 ➔ 🌿 30~59點 活潑小萌童 ➔ 🏃 60~99點 健壯少年期 ➔ 🦁 100~149點 威風大成體 ➔ 👑 150點以上 動物園人氣巨星！</div>
+              </div>
+              <button onclick="confirmResetAllPetsSatiety()" class="px-3 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-black text-xs shadow-sm flex items-center space-x-1 whitespace-nowrap self-stretch sm:self-auto justify-center" title="將全班 27 位大臣的萌寵飽食度全部歸零重置">
+                <span>🔄</span>
+                <span>全班飽食度歸零</span>
+              </button>
             </div>
           </div>
 
@@ -1233,6 +1252,9 @@
               <button onclick="openBatchCenterModal('birthdays')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 flex items-center space-x-1">
                 <span>🔑 批次密碼(生日)</span>
               </button>
+              <button onclick="openBatchCenterModal('points')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-500 shadow-sm flex items-center space-x-1 font-black" title="批次貼上或輸入 27 位大臣金幣數量">
+                <span>🪙 批次金幣</span>
+              </button>
               <button onclick="openChangePasswordModal()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 flex items-center space-x-1" title="更改導師專屬通行密碼">
                 <span>👑 導師密碼</span>
               </button>
@@ -1247,7 +1269,7 @@
             <i data-lucide="info" class="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5"></i>
             <div>
               <strong>名冊管理技巧：</strong>
-              您可以隨時點擊上方「<strong>批次姓名</strong>」、「<strong>批次幹部</strong>」或「<strong>批次密碼(生日)</strong>」，直接整欄複製貼上更新！家長端通行密碼將自動組合為「座號(2碼)+國曆生日(4碼)」（例：1號 1月1日為 010101）。點擊「📋 家長連結」可一鍵複製專屬查閱訊息至 LINE。也可以在個別大臣操作欄直接點擊「🔄重置點數」為單一學生歸零。
+              您可以隨時點擊上方「<strong>批次姓名</strong>」、「<strong>批次幹部</strong>」、「<strong>批次密碼(生日)</strong>」或「<strong>批次金幣</strong>」，直接整欄複製貼上更新！家長端通行密碼將自動組合為「座號(2碼)+國曆生日(4碼)」（例：1號 1月1日為 010101）。點擊「📋 家長連結」可一鍵複製專屬查閱訊息至 LINE。也可以在個別大臣操作欄直接點擊「✏️ 改金幣」為單一學生自訂修改金幣。
             </div>
           </div>
 
@@ -1665,15 +1687,18 @@
       </div>
 
       <!-- 批次類別切換標籤 -->
-      <div class="grid grid-cols-3 gap-1 bg-amber-100 p-1 rounded-xl border border-amber-300 text-xs font-black">
+      <div class="grid grid-cols-4 gap-1 bg-amber-100 p-1 rounded-xl border border-amber-300 text-xs font-black">
         <button type="button" onclick="switchBatchTab('names')" id="tabBtnBatch-names" class="py-1.5 rounded-lg bg-amber-950 text-amber-300 shadow">
-          1. 學生姓名
+          1. 姓名
         </button>
         <button type="button" onclick="switchBatchTab('titles')" id="tabBtnBatch-titles" class="py-1.5 rounded-lg text-amber-950 hover:bg-amber-200">
-          2. 幹部/官職名稱
+          2. 幹部職稱
         </button>
         <button type="button" onclick="switchBatchTab('birthdays')" id="tabBtnBatch-birthdays" class="py-1.5 rounded-lg text-amber-950 hover:bg-amber-200">
-          3. 國曆生日 (家長密碼)
+          3. 密碼(生日)
+        </button>
+        <button type="button" onclick="switchBatchTab('points')" id="tabBtnBatch-points" class="py-1.5 rounded-lg text-amber-950 hover:bg-amber-200">
+          4. 金幣數量
         </button>
       </div>
 
@@ -1700,6 +1725,109 @@
               確認批次儲存更新
             </button>
           </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: 更改大臣金幣數量 (單獨大臣金幣設定與自由調整) -->
+  <!-- =============================================================== -->
+  <div id="editStudentPointsModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-md w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3">
+        <div>
+          <span class="text-xs font-black text-amber-800">🪙 國庫金幣專屬調度</span>
+          <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
+            <span>更改大臣金幣數量</span>
+          </h3>
+        </div>
+        <button onclick="closeEditStudentPointsModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="submitEditStudentPoints(event)" class="space-y-4 text-xs font-bold">
+        <input type="hidden" id="editPointsStudentId">
+
+        <!-- 大臣身分資訊條 -->
+        <div class="bg-amber-100/80 p-3 rounded-xl border border-amber-300 flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <span id="editPointsStudentIcon" class="text-3xl">🦁</span>
+            <div>
+              <div class="flex items-center space-x-1.5">
+                <span id="editPointsStudentSeat" class="text-xs font-mono font-black text-amber-950 bg-amber-200 px-1.5 py-0.5 rounded">01號</span>
+                <span id="editPointsStudentName" class="text-base font-black text-slate-900">王品捷</span>
+              </div>
+              <span id="editPointsStudentTitle" class="text-[11px] font-bold text-amber-800">內閣首輔大臣</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-amber-800 block">目前可用金幣</span>
+            <span id="editPointsCurrentBalance" class="text-xl font-black text-amber-600 font-digital">85 🪙</span>
+          </div>
+        </div>
+
+        <!-- 金幣數量直接設定輸入框 -->
+        <div class="space-y-1.5">
+          <label class="block font-black text-amber-950 text-sm">
+            設定全新金幣數量 (points)：
+          </label>
+          <div class="relative">
+            <input type="number" id="editPointsTargetInput" min="0" max="99999" required
+              class="w-full text-2xl font-digital font-black px-4 py-2.5 border-2 border-amber-400 rounded-xl bg-white text-center text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner">
+            <span class="absolute right-4 top-3 text-sm font-black text-amber-700">🪙 點</span>
+          </div>
+          <span class="text-[11px] text-slate-500 block">導師可直接手動輸入想要賦予的最終金幣點數，或點選下方快捷微調。</span>
+        </div>
+
+        <!-- 快捷輔助設定按鈕 -->
+        <div class="space-y-1.5 pt-1">
+          <label class="block font-black text-slate-700 text-[11px]">⚡ 快捷數值微調：</label>
+          <div class="grid grid-cols-4 gap-1.5">
+            <button type="button" onclick="setEditPointsQuick(0)" class="py-1.5 px-2 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-black text-xs">
+              歸零 (0)
+            </button>
+            <button type="button" onclick="setEditPointsQuick(50)" class="py-1.5 px-2 rounded-lg bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 font-bold text-xs">
+              基礎 (50)
+            </button>
+            <button type="button" onclick="setEditPointsQuick(100)" class="py-1.5 px-2 rounded-lg bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 font-bold text-xs">
+              進階 (100)
+            </button>
+            <button type="button" onclick="adjustEditPointsInput(10)" class="py-1.5 px-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 font-black text-xs">
+              +10 點
+            </button>
+            <button type="button" onclick="adjustEditPointsInput(20)" class="py-1.5 px-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 font-black text-xs">
+              +20 點
+            </button>
+            <button type="button" onclick="adjustEditPointsInput(50)" class="py-1.5 px-2 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 font-black text-xs">
+              +50 點
+            </button>
+            <button type="button" onclick="adjustEditPointsInput(-10)" class="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs">
+              -10 點
+            </button>
+            <button type="button" onclick="adjustEditPointsInput(-20)" class="py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs">
+              -20 點
+            </button>
+          </div>
+        </div>
+
+        <!-- 調整事由 -->
+        <div class="space-y-1">
+          <label class="block font-black text-amber-950">調整事由說明：</label>
+          <input type="text" id="editPointsReasonInput" value="導師手動調整金幣" required
+            class="w-full px-3 py-2 border border-amber-300 rounded-xl bg-white font-bold text-slate-800">
+        </div>
+
+        <!-- 按鈕操作區 -->
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-amber-200">
+          <button type="button" onclick="closeEditStudentPointsModal()" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold hover:bg-slate-50">
+            取消
+          </button>
+          <button type="submit" class="btn-royal-gold px-6 py-2 rounded-xl font-black shadow-md flex items-center space-x-1.5">
+            <span>💾</span>
+            <span>確認更改金幣</span>
+          </button>
         </div>
       </form>
     </div>
@@ -2090,6 +2218,20 @@
           </div>
         </div>
 
+        <div class="p-3 bg-amber-50/80 rounded-xl border border-amber-300 space-y-1">
+          <label class="block font-black text-amber-950 flex items-center justify-between">
+            <span class="flex items-center space-x-1">
+              <span>🪙</span>
+              <span>可用金幣數量 (points)：</span>
+            </span>
+            <span class="text-[10px] text-amber-700 font-bold">可用於換卡商城</span>
+          </label>
+          <div class="flex items-center space-x-2">
+            <input type="number" id="editStudentPoints" min="0" max="99999" value="0" class="w-full px-3 py-1.5 rounded-lg border-2 border-amber-400 bg-white font-black text-lg text-amber-600 text-center font-digital">
+            <span class="text-xs font-black text-amber-950 whitespace-nowrap">點金幣</span>
+          </div>
+        </div>
+
         <div class="flex items-center justify-end space-x-2 pt-2 border-t border-amber-200">
           <button type="button" onclick="closeStudentModal()" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold">
             取消
@@ -2285,6 +2427,63 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: 晨間朝會大臣打卡狀態快速更改 (Morning Check-in Quick Edit Modal) -->
+  <div id="morningCheckInChangeModal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-sm w-full p-5 sm:p-6 rounded-2xl shadow-2xl border-2 border-amber-400 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-amber-300">
+        <div>
+          <span class="text-xs font-bold text-amber-800">晨檢打卡快速更改</span>
+          <h3 id="morningModalStudentTitle" class="text-lg font-black text-amber-950 flex items-center space-x-1.5">
+            <span>⏱️ 01號 王小明</span>
+          </h3>
+        </div>
+        <button onclick="closeMorningCheckInChangeModal()" class="w-8 h-8 rounded-full bg-white/80 hover:bg-rose-100 text-slate-700 hover:text-rose-700 flex items-center justify-center border border-amber-300 transition shadow-xs">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="text-xs font-bold text-slate-700 space-y-1 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+        <div class="flex items-center justify-between">
+          <span>目前打卡狀態：</span>
+          <span id="morningModalCurrentStatus" class="font-black text-sm text-emerald-700">🟢 準時 (07:32)</span>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <span class="text-xs font-black text-amber-950 block">選擇要更改為的出席狀態：</span>
+        <div class="grid grid-cols-2 gap-2 text-xs font-black">
+          <button type="button" onclick="changeMorningAttendanceStatus('present')" class="p-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs flex flex-col items-center justify-center space-y-1 transition">
+            <span class="text-lg">🟢</span>
+            <span>準時出席</span>
+            <span class="text-[10px] opacity-80 font-normal">07:35 打卡</span>
+          </button>
+          <button type="button" onclick="changeMorningAttendanceStatus('late')" class="p-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 shadow-xs flex flex-col items-center justify-center space-y-1 transition">
+            <span class="text-lg">🟡</span>
+            <span>遲到覲見</span>
+            <span class="text-[10px] opacity-80 font-normal">加愛班卡</span>
+          </button>
+          <button type="button" onclick="changeMorningAttendanceStatus('leave')" class="p-3 rounded-xl bg-rose-500 hover:bg-rose-400 text-white shadow-xs flex flex-col items-center justify-center space-y-1 transition">
+            <span class="text-lg">🏖️</span>
+            <span>告假在府</span>
+            <span class="text-[10px] opacity-80 font-normal">請假休養</span>
+          </button>
+          <button type="button" onclick="changeMorningAttendanceStatus('uncheck')" class="p-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 shadow-xs flex flex-col items-center justify-center space-y-1 transition">
+            <span class="text-lg">🔴</span>
+            <span>清除打卡</span>
+            <span class="text-[10px] opacity-80 font-normal">設為未到</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-amber-200 text-center">
+        <button type="button" onclick="changeMorningAttendanceStatus('now')" class="w-full py-2 px-3 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-xs transition flex items-center justify-center space-x-1.5">
+          <span>⏱️</span>
+          <span id="morningModalNowBtnText">以現在時間重新打卡</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -3263,8 +3462,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111623"></script>
-  <script src="ui.js?v=2026111623"></script>
+  <script src="app.js?v=2026111627"></script>
+  <script src="ui.js?v=2026111627"></script>
 
 </body>
 </html>
