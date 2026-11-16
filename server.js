@@ -36,10 +36,13 @@ function getLocalIpAddresses() {
 }
 
 const server = http.createServer((req, res) => {
-  // CORS & Security Headers
+  // CORS & Security & Cache-Busting Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   
   if (req.method === 'OPTIONS') {
     res.writeHead(204);

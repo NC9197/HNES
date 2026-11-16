@@ -34,7 +34,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2026111603">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -93,16 +93,22 @@
 
         <!-- 課堂常規與實用神器快捷組 -->
         <div class="flex items-center space-x-1.5">
-          <!-- 安靜提醒快捷鈕 -->
-          <button onclick="openSilenceModal()" class="px-2.5 py-1.5 rounded-xl bg-white/90 border border-amber-500 text-amber-950 font-bold hover:bg-white transition shadow-sm flex items-center space-x-1 text-xs" title="安靜提醒與音量守護者">
-            <span>🤫</span>
-            <span class="hidden md:inline">安靜提醒</span>
+          <!-- 課堂定時鬧鐘快捷鈕 -->
+          <button onclick="openAlarmDirectModal()" id="btnNavAlarm" class="px-2.5 py-1.5 rounded-xl bg-amber-100/90 border border-amber-500 text-amber-950 font-black hover:bg-amber-200 transition shadow-sm flex items-center space-x-1 text-xs" title="課堂作息定時鬧鐘與下課鐘聲">
+            <span>⏰</span>
+            <span class="hidden md:inline">定時鬧鐘</span>
           </button>
 
           <!-- 倒數計時快捷鈕 -->
           <button onclick="openTimerModal()" class="px-2.5 py-1.5 rounded-xl bg-white/90 border border-amber-500 text-amber-950 font-bold hover:bg-white transition shadow-sm flex items-center space-x-1 text-xs" title="課堂活動倒數計時器">
             <span>⏱️</span>
             <span class="hidden md:inline">倒數計時</span>
+          </button>
+
+          <!-- 安靜提醒快捷鈕 -->
+          <button onclick="openSilenceModal()" class="px-2.5 py-1.5 rounded-xl bg-white/90 border border-amber-500 text-amber-950 font-bold hover:bg-white transition shadow-sm flex items-center space-x-1 text-xs" title="安靜提醒與音量守護者">
+            <span>🤫</span>
+            <span class="hidden md:inline">安靜提醒</span>
           </button>
 
           <!-- 雲端同步狀態徽章按鈕 -->
@@ -566,9 +572,11 @@
         <button onclick="cancelSeatSelection()" class="text-amber-800 hover:text-rose-600 underline">取消選取</button>
       </div>
 
-      <!-- 5列 x 6排 座位網格容器 (共30格) -->
-      <div id="seatingGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 p-3 bg-amber-50/70 rounded-2xl border-2 border-amber-300/80 shadow-inner min-h-[460px]">
-        <!-- 由 ui.js renderSeatingChart() 動態填入 -->
+      <!-- 5列 x 6排 座位網格容器 (共30格，支援手機平板滑動防擠壓) -->
+      <div class="w-full overflow-x-auto pb-4">
+        <div id="seatingGridContainer" class="grid gap-3 p-3 bg-amber-50/70 rounded-2xl border-2 border-amber-300/80 shadow-inner min-h-[460px] min-w-[680px]">
+          <!-- 由 ui.js renderSeatingChart() 動態填入 -->
+        </div>
       </div>
 
       <!-- 底部走廊與後門提示 -->
@@ -601,7 +609,7 @@
         </button>
         <button onclick="switchTeacherTab('pets')" id="tabBtn-pets" class="px-4 py-2 rounded-xl transition flex items-center space-x-2 text-amber-950 hover:bg-amber-300/80">
           <i data-lucide="sparkles" class="w-4 h-4"></i>
-          <span>皇家神獸閣</span>
+          <span>🐾 萌寵動物園 (飼育成長)</span>
         </button>
         <button onclick="switchTeacherTab('roster')" id="tabBtn-roster" class="px-4 py-2 rounded-xl transition flex items-center space-x-2 text-amber-950 hover:bg-amber-300/80">
           <i data-lucide="users" class="w-4 h-4"></i>
@@ -895,51 +903,70 @@
       </section>
 
       <!-- ------------------------------------------------------------- -->
-      <!-- TAB 4: 皇家神獸閣 (Pet Evolution Overview) -->
+      <!-- TAB 4: 可愛守護動物 (Cute Animal Gold Evolution Overview) -->
       <!-- ------------------------------------------------------------- -->
       <section id="teacherTab-pets" class="hidden space-y-6">
         
         <div class="parchment-card p-5 sm:p-6">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-amber-300">
             <div>
-              <span class="text-amber-800 text-xs font-bold">🐾 王國守護靈獸圖鑑</span>
+              <span class="text-amber-800 text-xs font-bold">🐾 五年二班 ‧ 萌寵動物園認養舍</span>
               <h2 class="text-2xl font-black text-amber-950 flex items-center space-x-2">
-                <span>皇家神獸閣 ‧ 全班 27 位大臣靈獸進度</span>
+                <span>🐾 萌寵動物園 ‧ 全班 27 位大臣認養動物與飼育成長區</span>
               </h2>
             </div>
-            <div class="text-xs text-amber-950 bg-amber-100 p-2 rounded-xl border border-amber-300 font-bold">
-              💡 累積金幣可進化：50點破殼萌獸、150點戰鬥形態、300點完全體聖獸！
+            <div class="text-xs text-amber-950 bg-amber-100 p-2.5 rounded-xl border border-amber-300 font-bold space-y-1">
+              <div>🍎 <strong>動物園投餵飼料 ‧ 長大五大成長期 (依累積總飽食度)：</strong></div>
+              <div class="text-[11px] text-amber-900">🍼 0~29點 喝奶小幼崽 ➔ 🌿 30~59點 活潑小萌童 ➔ 🏃 60~99點 健壯少年期 ➔ 🦁 100~149點 威風大成體 ➔ 👑 150點以上 動物園人氣巨星！</div>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-            <div class="bg-orange-50 border border-orange-200 p-3 rounded-xl flex items-center space-x-3">
-              <span class="text-3xl">🐲</span>
-              <div>
-                <h4 class="font-black text-orange-950 text-sm">烈焰守護神龍</h4>
-                <p class="text-xs text-orange-700">勇氣與力量</p>
-              </div>
+          <!-- 9大可愛守護動物圖鑑展示區 -->
+          <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2 mt-4 text-center">
+            <div class="bg-amber-50 border border-amber-300 p-2 rounded-xl flex flex-col items-center">
+              <span class="text-2xl">🦁</span>
+              <h4 class="font-black text-amber-950 text-xs mt-1">威嚴戰獅</h4>
+              <p class="text-[10px] text-amber-800">勇氣領導</p>
             </div>
-            <div class="bg-pink-50 border border-pink-200 p-3 rounded-xl flex items-center space-x-3">
-              <span class="text-3xl">🦄</span>
-              <div>
-                <h4 class="font-black text-pink-950 text-sm">星月天角聖獸</h4>
-                <p class="text-xs text-pink-700">仁愛與純潔</p>
-              </div>
+            <div class="bg-orange-50 border border-orange-300 p-2 rounded-xl flex flex-col items-center">
+              <span class="text-2xl">🐶</span>
+              <h4 class="font-black text-orange-950 text-xs mt-1">忠誠柴犬</h4>
+              <p class="text-[10px] text-orange-800">忠誠守望</p>
             </div>
-            <div class="bg-purple-50 border border-purple-200 p-3 rounded-xl flex items-center space-x-3">
-              <span class="text-3xl">🐱</span>
-              <div>
-                <h4 class="font-black text-purple-950 text-sm">智慧符文靈貓</h4>
-                <p class="text-xs text-purple-700">智慧與敏捷</p>
-              </div>
+            <div class="bg-purple-50 border border-purple-300 p-2 rounded-xl flex flex-col items-center">
+              <span class="text-2xl">🐱</span>
+              <h4 class="font-black text-purple-950 text-xs mt-1">敏捷靈貓</h4>
+              <p class="text-[10px] text-purple-800">智慧敏銳</p>
             </div>
-            <div class="bg-amber-100 border border-amber-300 p-3 rounded-xl flex items-center space-x-3">
-              <span class="text-3xl">🦁</span>
-              <div>
-                <h4 class="font-black text-amber-950 text-sm">太陽聖王金獅</h4>
-                <p class="text-xs text-amber-800">忠誠與正義</p>
-              </div>
+            <div class="bg-pink-50 border border-pink-300 p-2 rounded-xl flex flex-col items-center">
+              <span class="text-2xl">🐰</span>
+              <h4 class="font-black text-pink-950 text-xs mt-1">活潑飛兔</h4>
+              <p class="text-[10px] text-pink-800">生機飛躍</p>
+            </div>
+            <div class="bg-amber-100/70 border border-amber-300 p-2 rounded-xl flex flex-col items-center">
+              <span class="text-2xl">🐻</span>
+              <h4 class="font-black text-amber-950 text-xs mt-1">沉穩棕熊</h4>
+              <p class="text-[10px] text-amber-800">堅毅後盾</p>
+            </div>
+            <div class="bg-sky-50 border border-sky-300 p-2 rounded-xl flex flex-col items-center">
+              <span class="text-2xl">🐧</span>
+              <h4 class="font-black text-sky-950 text-xs mt-1">冰原企鵝</h4>
+              <p class="text-[10px] text-sky-800">冷靜秩序</p>
+            </div>
+            <div class="bg-teal-50 border border-teal-300 p-2 rounded-xl flex flex-col items-center">
+              <span class="text-2xl">🦉</span>
+              <h4 class="font-black text-teal-950 text-xs mt-1">睿智貓頭鷹</h4>
+              <p class="text-[10px] text-teal-800">學識遠見</p>
+            </div>
+            <div class="bg-amber-50 border border-amber-300 p-2 rounded-xl flex flex-col items-center">
+              <span class="text-2xl">🦊</span>
+              <h4 class="font-black text-amber-950 text-xs mt-1">機智靈狐</h4>
+              <p class="text-[10px] text-amber-800">靈活創造</p>
+            </div>
+            <div class="bg-yellow-50 border border-yellow-300 p-2 rounded-xl flex flex-col items-center">
+              <span class="text-2xl">🐹</span>
+              <h4 class="font-black text-yellow-950 text-xs mt-1">勤奮倉鼠</h4>
+              <p class="text-[10px] text-yellow-800">勤奮自律</p>
             </div>
           </div>
         </div>
@@ -997,9 +1024,9 @@
                   <th class="py-2.5 px-3">姓名</th>
                   <th class="py-2.5 px-3">大臣官職/幹部名稱</th>
                   <th class="py-2.5 px-3">生日 / 家長密碼 (座號+生日)</th>
-                  <th class="py-2.5 px-3">守護靈獸</th>
-                  <th class="py-2.5 px-3">金幣點數</th>
-                  <th class="py-2.5 px-3 text-right">操作</th>
+                  <th class="py-2.5 px-3">🐾 動物園認養萌寵 (長大體態)</th>
+                  <th class="py-2.5 px-3">🪙 零用金幣 / 🍎 累積飽食度</th>
+                  <th class="py-2.5 px-3 text-right">🍎 投餵飼料與操作</th>
                 </tr>
               </thead>
               <tbody id="studentRosterTableBody" class="divide-y divide-amber-200/80 bg-white/60">
@@ -1067,7 +1094,7 @@
           <span class="text-xs tracking-wider text-amber-900 font-bold uppercase">西寧國小五年二班</span>
           <h2 class="text-2xl font-black text-amber-950">家長覲見殿堂</h2>
           <p class="text-xs text-amber-800">
-            請選擇孩子座號並輸入「座號 + 國曆生日」共 6 碼作為通關密碼，即可即時查閱孩子在王國中的每日出缺勤、作業進度與神獸狀態！
+            請選擇孩子座號並輸入「座號 + 國曆生日」共 6 碼作為通關密碼，即可即時查閱孩子在王國中的每日出缺勤、作業進度與動物園認養萌寵成長狀態！
           </p>
         </div>
 
@@ -1158,39 +1185,39 @@
           
           <div class="lg:col-span-5 space-y-6">
             
-            <!-- 守護神獸互動卡 -->
+            <!-- 萌寵動物園認養互動卡 -->
             <div class="parchment-card p-5 space-y-4">
               <div class="flex items-center justify-between pb-2 border-b border-amber-300">
                 <h3 class="font-black text-amber-950 flex items-center space-x-2">
-                  <span>🐾 專屬守護神獸</span>
+                  <span>🐾 動物園認養萌寵成長舍</span>
                 </h3>
                 <span id="parentPetStageTag" class="text-xs font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">
-                  第 3 階 ‧ 成長期
+                  第 3 階 ‧ 探索期
                 </span>
               </div>
 
               <div class="relative bg-gradient-to-b from-white to-amber-100/70 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[220px] border border-amber-300">
                 <div id="parentPetSVGContainer" class="w-40 h-40 pet-animated">
-                  <!-- 動態注入神獸 SVG -->
+                  <!-- 動態注入動物 SVG -->
                 </div>
                 <div class="text-center mt-2">
-                  <h4 id="parentPetName" class="font-black text-slate-800 text-lg">符文夜行魔貓</h4>
-                  <p id="parentPetDesc" class="text-xs text-slate-600 px-2 mt-1">尾巴浮動古代符文，擁有敏銳心智與超強洞察力。</p>
+                  <h4 id="parentPetName" class="font-black text-slate-800 text-lg">敏捷靈貓</h4>
+                  <p id="parentPetDesc" class="text-xs text-slate-600 px-2 mt-1">體態輕盈身手敏捷，正在開心地吃點心長大中。</p>
                 </div>
               </div>
 
               <div class="space-y-1.5">
                 <div class="flex justify-between text-xs font-bold text-amber-900">
-                  <span>進化神獸能量進度</span>
+                  <span>🍎 飼育飽食度與長大進程</span>
                   <span id="parentPetProgressText">210 / 300 點</span>
                 </div>
                 <div class="w-full bg-amber-200 h-3 rounded-full overflow-hidden p-0.5 border border-amber-300">
-                  <div id="parentPetProgressBar" class="bg-gradient-to-r from-amber-500 to-amber-600 h-full rounded-full transition-all duration-500" style="width: 70%"></div>
+                  <div id="parentPetProgressBar" class="bg-gradient-to-r from-emerald-500 to-amber-500 h-full rounded-full transition-all duration-500" style="width: 70%"></div>
                 </div>
               </div>
 
               <button onclick="interactWithPet()" class="w-full btn-royal-gold py-2 rounded-xl text-xs font-black flex items-center justify-center space-x-1.5 shadow">
-                <span>🍖 餵食皇家小餅乾 (撫摸神獸)</span>
+                <span>🍎 投餵愛心小點心 (撫摸動物)</span>
               </button>
             </div>
 
@@ -1782,12 +1809,17 @@
             <span class="text-[10px] text-amber-700">家長登入密碼為：座號(2碼)+生日(4碼)，如 010101</span>
           </div>
           <div>
-            <label class="block font-bold text-amber-950 mb-1">守護神獸系別：</label>
+            <label class="block font-bold text-amber-950 mb-1">可愛守護動物：</label>
             <select id="editStudentPetType" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
-              <option value="dragon">🐲 烈焰守護神龍</option>
-              <option value="unicorn">🦄 星月天角聖獸</option>
-              <option value="cat">🐱 智慧符文靈貓</option>
-              <option value="lion">🦁 太陽聖王金獅</option>
+              <option value="lion">🦁 威嚴戰獅 (勇氣領導)</option>
+              <option value="dog">🐶 忠誠柴犬 (忠誠守望)</option>
+              <option value="cat">🐱 敏捷靈貓 (智慧敏銳)</option>
+              <option value="rabbit">🐰 活潑飛兔 (生機飛躍)</option>
+              <option value="bear">🐻 沉穩棕熊 (堅毅後盾)</option>
+              <option value="penguin">🐧 冰原企鵝 (冷靜秩序)</option>
+              <option value="owl">🦉 睿智貓頭鷹 (學識遠見)</option>
+              <option value="fox">🦊 機智靈狐 (靈活創造)</option>
+              <option value="hamster">🐹 勤奮倉鼠 (勤奮自律)</option>
             </select>
           </div>
         </div>
@@ -2134,7 +2166,7 @@
   <!-- MODAL: 魔法沙漏 ‧ 課堂倒數計時器 (Classroom Activity Timer) -->
   <!-- =============================================================== -->
   <div id="timerModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="parchment-card max-w-lg w-full p-6 space-y-4 shadow-2xl relative">
+    <div class="parchment-card max-w-lg w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-amber-300 pb-3">
         <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
           <span>⏱️ 課堂活動計時與定時鬧鐘</span>
@@ -2512,19 +2544,16 @@
     <div id="toastMessage" class="text-xs sm:text-sm font-bold text-white">王國指令已更新！</div>
   </div>
 
-  <script src="app.js"></script>
-  <script src="ui.js"></script>
-
   <!-- =============================================================== -->
-  <!-- MODAL: 更換可愛守護動物 (9大可愛神獸 ‧ 5階金化進化) -->
+  <!-- MODAL: 更換可愛動物園萌寵 (9大可愛動物 ‧ 陪伴長大) -->
   <!-- =============================================================== -->
   <div id="changeAnimalModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="parchment-card max-w-xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-amber-300 pb-3">
         <div>
-          <span class="text-xs font-black text-amber-800">🐾 王國守護靈獸神殿</span>
+          <span class="text-xs font-black text-amber-800">🐾 五年二班 ‧ 萌寵動物園認養區</span>
           <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
-            <span>更換守護動物 ‧ 9大可愛動物</span>
+            <span>更換認養萌寵 ‧ 9大可愛動物</span>
           </h3>
         </div>
         <button onclick="closeChangeAnimalModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
@@ -2538,7 +2567,7 @@
           <span id="changeAnimalTargetStudent" class="text-base font-black text-amber-950">王品捷 大臣</span>
         </div>
         <div class="text-right">
-          <span class="text-xs text-amber-800 font-bold block">生涯累積金幣</span>
+          <span class="text-xs text-amber-800 font-bold block">累積飽食成長度</span>
           <span id="changeAnimalLifetimePts" class="text-base font-digital font-black text-amber-900">85 點</span>
         </div>
       </div>
@@ -2549,7 +2578,111 @@
       </div>
 
       <div class="pt-3 border-t border-amber-200 text-center text-xs text-amber-800 font-bold">
-        🌟 守護動物會隨著大臣「生涯累積總金幣」經歷 5 階段金化蛻變（150點達到純金神聖期）！
+        💡 點選喜歡的動物即可完成認養，累積的飽食成長度與長大體態將完整保留！
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: 動物園投餵飼料讓動物長大 (Zoo Feeding Modal) -->
+  <!-- =============================================================== -->
+  <div id="zooFeedModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-md w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3">
+        <div class="flex items-center space-x-2">
+          <span class="text-3xl">🍎</span>
+          <div>
+            <span class="text-xs font-black text-amber-800">🐾 五年二班 ‧ 萌寵動物園餵食舍</span>
+            <h3 class="text-lg font-black text-amber-950">
+              <span>投餵飼料 ‧ 陪伴動物長大</span>
+            </h3>
+          </div>
+        </div>
+        <button onclick="closeZooFeedModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 學生與動物當前飽食狀態卡 -->
+      <div class="bg-gradient-to-r from-amber-100 to-yellow-50 border-2 border-amber-300 p-3.5 rounded-2xl flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div id="feedModalAnimalSVG" class="w-16 h-16 bg-white rounded-xl p-1 border border-amber-300 shadow-xs flex-shrink-0">
+            <!-- 動物 SVG -->
+          </div>
+          <div>
+            <div class="flex items-center space-x-1.5">
+              <span id="feedModalStudentName" class="text-base font-black text-amber-950">王品捷</span>
+              <span id="feedModalSeatNo" class="text-xs font-bold text-amber-800 bg-amber-200 px-1.5 py-0.5 rounded">01號</span>
+            </div>
+            <div id="feedModalAnimalName" class="text-xs font-black text-emerald-800 mt-0.5">🦁 威嚴戰獅</div>
+            <div id="feedModalStageTitle" class="text-[11px] font-bold text-slate-600">🏃 健壯少年獅 (探索期)</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-[11px] text-amber-800 font-bold block">目前累積飽食度</span>
+          <span id="feedModalCurrentPts" class="text-xl font-digital font-black text-amber-900">85 🍎</span>
+        </div>
+      </div>
+
+      <!-- 飼料投餵選擇按鈕 (直覺可愛點心) -->
+      <div class="space-y-2">
+        <label class="block text-xs font-black text-amber-950">請選擇要投餵的美味飼料：</label>
+        <div class="grid grid-cols-2 gap-2.5">
+          <button type="button" onclick="executeFeedStudent(1, '🍎 美味鮮脆蘋果')" class="p-3 rounded-xl border-2 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-left transition transform hover:scale-[1.02] active:scale-95 shadow-xs">
+            <div class="flex items-center space-x-2">
+              <span class="text-2xl">🍎</span>
+              <div>
+                <div class="font-black text-emerald-950 text-xs">美味鮮脆蘋果</div>
+                <div class="text-[10px] text-emerald-700 font-bold">+1 飽食度 / +1 金幣</div>
+              </div>
+            </div>
+          </button>
+
+          <button type="button" onclick="executeFeedStudent(2, '🥕 活力鮮胡蘿蔔')" class="p-3 rounded-xl border-2 border-orange-300 bg-orange-50 hover:bg-orange-100 text-left transition transform hover:scale-[1.02] active:scale-95 shadow-xs">
+            <div class="flex items-center space-x-2">
+              <span class="text-2xl">🥕</span>
+              <div>
+                <div class="font-black text-orange-950 text-xs">活力鮮胡蘿蔔</div>
+                <div class="text-[10px] text-orange-700 font-bold">+2 飽食度 / +2 金幣</div>
+              </div>
+            </div>
+          </button>
+
+          <button type="button" onclick="executeFeedStudent(5, '🥩 皇家特製大餐')" class="p-3 rounded-xl border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 text-left transition transform hover:scale-[1.02] active:scale-95 shadow-xs">
+            <div class="flex items-center space-x-2">
+              <span class="text-2xl">🥩</span>
+              <div>
+                <div class="font-black text-amber-950 text-xs">皇家特製大餐</div>
+                <div class="text-[10px] text-amber-800 font-bold">+5 飽食度 / +5 金幣</div>
+              </div>
+            </div>
+          </button>
+
+          <button type="button" onclick="executeFeedStudent(10, '🍖 頂級全飽盛宴')" class="p-3 rounded-xl border-2 border-purple-400 bg-purple-50 hover:bg-purple-100 text-left transition transform hover:scale-[1.02] active:scale-95 shadow-xs">
+            <div class="flex items-center space-x-2">
+              <span class="text-2xl">🍖</span>
+              <div>
+                <div class="font-black text-purple-950 text-xs">頂級全飽盛宴</div>
+                <div class="text-[10px] text-purple-800 font-bold">+10 飽食度 / +10 金幣</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 自訂投餵數量 -->
+      <div class="bg-amber-50/80 p-3 rounded-xl border border-amber-300 flex items-center justify-between gap-2">
+        <div class="text-xs font-bold text-amber-950 whitespace-nowrap">自訂投餵份量：</div>
+        <input type="number" id="feedCustomAmountInput" value="3" min="1" max="100" class="w-20 px-2 py-1 rounded-lg border border-amber-400 text-center font-bold font-mono text-sm">
+        <button type="button" onclick="executeFeedCustomStudent()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-black text-xs shadow-xs">
+          投餵
+        </button>
+      </div>
+
+      <div class="pt-2 text-center">
+        <button type="button" onclick="closeZooFeedModal()" class="px-5 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50">
+          關閉餵食舍
+        </button>
       </div>
     </div>
   </div>
@@ -2767,6 +2900,10 @@
       </div>
     </div>
   </div>
+
+  <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
+  <script src="app.js?v=2026111606"></script>
+  <script src="ui.js?v=2026111606"></script>
 
 </body>
 </html>

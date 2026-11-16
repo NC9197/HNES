@@ -114,13 +114,13 @@ const ANIMAL_DEFINITIONS = {
     icon: "🦁",
     color: "#f59e0b",
     bgGradient: "from-amber-400 to-amber-600",
-    desc: "象徵勇氣、正義與領導力，鬃毛如烈陽般耀眼。",
+    desc: "象徵勇氣、正義與領導力，食量充沛、體格雄偉壯碩。",
     stages: [
-      { min: 0, title: "萌萌幼獅蛋", icon: "🥚", desc: "散發溫暖陽光微熱的金紋神蛋。" },
-      { min: 30, title: "活潑小萌獅", icon: "🦁", desc: "搖頭晃腦的小獅子，練習咆哮時萌翻全場！" },
-      { min: 60, title: "英勇戰盾雄獅", icon: "🛡️", desc: "身披守護鎧甲，鬃毛泛起雷電守護同儕。" },
-      { min: 100, title: "皇家百獸霸王", icon: "👑", desc: "頭戴王者金冠，威震四方的大臣守護神！" },
-      { min: 150, title: "✨ 耀金太陽神聖巨獅", icon: "🌟", desc: "全身綻放純金聖光的無上神獅，達到金化頂點！" }
+      { min: 0, title: "🍼 喝奶小幼獅 (幼幼期)", icon: "🍼", desc: "剛來到動物園的巴掌大初生小獅子寶寶，最喜歡大口大口喝溫牛奶！" },
+      { min: 30, title: "🌿 蹦跳小獅童 (成長期)", icon: "🦁", desc: "在草地上活蹦亂跳，食量逐漸變大，開始吃碎肉泥和營養小點心！" },
+      { min: 60, title: "🏃 健壯少年獅 (探索期)", icon: "🍖", desc: "體格健美、長出帥氣小鬃毛，最喜歡追著小皮球練習奔跑！" },
+      { min: 100, title: "🦁 威風大成雄獅 (成熟期)", icon: "🦁", desc: "體魄魁梧、鬃毛濃密健康，每天吃飽飽、精神奕奕的大成體！" },
+      { min: 150, title: "👑 動物園鎮園獅王 (巨星期)", icon: "🌟", desc: "被全班大臣餵得圓滾滾、體格雄偉健康，佩戴金色榮譽勳章的園區第一招牌巨星！" }
     ]
   },
   dog: {
@@ -131,11 +131,11 @@ const ANIMAL_DEFINITIONS = {
     bgGradient: "from-orange-400 to-amber-600",
     desc: "象徵忠誠、守望與溫暖，永遠陪伴在大臣身旁。",
     stages: [
-      { min: 0, title: "赤紅守望萌蛋", icon: "🥚", desc: "帶著可愛黑豆眉花紋的溫暖彩蛋。" },
-      { min: 30, title: "歡樂搖尾幼柴", icon: "🐶", desc: "踩著快樂步伐，對每位大臣熱情打招呼！" },
-      { min: 60, title: "皇家先鋒守衛犬", icon: "🛡️", desc: "繫著王國紅圍巾，敏銳守護班級每一寸榮譽。" },
-      { min: 100, title: "忠義千總神犬將軍", icon: "👑", desc: "穿戴黃金披風，忠心耿耿的智勇戰將！" },
-      { min: 150, title: "✨ 耀金天啟光明神犬", icon: "🌟", desc: "通體金光燦爛，踏雲而來的金色守護天使！" }
+      { min: 0, title: "🍼 圓滾萌奶柴 (幼幼期)", icon: "🍼", desc: "毛茸茸肉嘟嘟的柴犬幼崽，走起路來東倒西歪，愛喝奶愛撒嬌。" },
+      { min: 30, title: "🌿 搖尾小幼柴 (成長期)", icon: "🐶", desc: "學會搖尾巴打招呼，天天大口嗑磨牙餅乾，耳朵開始立起來囉！" },
+      { min: 60, title: "🏃 敏捷少年柴 (探索期)", icon: "🦴", desc: "活力滿點的接飛盤高手，體態勻稱結實，最愛啃營養潔牙大骨！" },
+      { min: 100, title: "🐶 忠誠成年柴 (成熟期)", icon: "🐶", desc: "英挺帥氣的成熟柴犬，腮幫子肉嘟嘟，是班級最忠心耿耿的守護者！" },
+      { min: 150, title: "👑 動物園超人氣名柴 (巨星期)", icon: "🌟", desc: "被投餵得圓滾滾、笑咪咪的網紅大明星，胸前掛著金色冠軍獎牌！" }
     ]
   },
   cat: {
@@ -146,11 +146,11 @@ const ANIMAL_DEFINITIONS = {
     bgGradient: "from-purple-400 to-indigo-600",
     desc: "象徵敏捷、智慧與冷靜，擁有看穿一切問題的慧眼。",
     stages: [
-      { min: 0, title: "神秘符文毛球蛋", icon: "🥚", desc: "會發出神秘呼嚕呼嚕微光的紫色法術蛋。" },
-      { min: 30, title: "魔法學徒小貓", icon: "🐱", desc: "戴著小巧法師帽，用貓爪監督功課寫作。" },
-      { min: 60, title: "星夜靈動魔貓", icon: "🔮", desc: "眼眸中閃爍星辰秘法，身手矯健迅捷如風。" },
-      { min: 100, title: "大賢者靈貓聖尊", icon: "👑", desc: "參透王國萬物知識的至高長老喵！" },
-      { min: 150, title: "✨ 耀金萬星靈光神貓", icon: "🌟", desc: "全身披覆純金符文流光的永恆智慧神貓！" }
+      { min: 0, title: "🍼 呼嚕小萌貓 (幼幼期)", icon: "🍼", desc: "掌心大小的粉嫩肉球小貓咪，喝完奶就發出舒服的呼嚕呼嚕聲。" },
+      { min: 30, title: "🌿 撲球小貓童 (成長期)", icon: "🐱", desc: "長出尖尖小耳朵，最愛撲逗貓棒和吃美味肉泥點心條！" },
+      { min: 60, title: "🏃 輕盈少年貓 (探索期)", icon: "🐟", desc: "身手矯健敏捷，喜歡在高跳台散步，每天都要吃一罐香噴噴魚肉罐頭！" },
+      { min: 100, title: "🐱 優雅成年貓 (成熟期)", icon: "🐱", desc: "毛皮如絲綢般亮麗順滑，舉止優雅從容，健康又自信的大貓咪。" },
+      { min: 150, title: "👑 動物園人氣招財貓皇 (巨星期)", icon: "🌟", desc: "被大家疼愛投餵得胖嘟嘟圓滾滾、全園最受寵愛的頂流貓皇大巨星！" }
     ]
   },
   rabbit: {
@@ -161,11 +161,11 @@ const ANIMAL_DEFINITIONS = {
     bgGradient: "from-pink-400 to-rose-600",
     desc: "象徵純潔、友善與蓬勃生機，步伐輕盈飛躍。",
     stages: [
-      { min: 0, title: "粉萌彩雲飛兔蛋", icon: "🥚", desc: "散發甜甜草莓香氣與星芒的柔軟彩蛋。" },
-      { min: 30, title: "蹦跳小萌兔", icon: "🐰", desc: "長長的耳朵高高豎起，對王國大小事充滿好奇！" },
-      { min: 60, title: "踏風逐星飛天兔", icon: "✨", desc: "腳踏微風長出夢幻光翼，跳躍速度冠絕王國。" },
-      { min: 100, title: "月華星宮兔仙子", icon: "👑", desc: "手持星月魔杖，能為大臣帶來幸福與幸運！" },
-      { min: 150, title: "✨ 耀金流光星月神兔", icon: "🌟", desc: "綻放純金璀璨光芒的至高金化神兔！" }
+      { min: 0, title: "🍼 垂耳萌兔崽 (幼幼期)", icon: "🍼", desc: "巴掌大的雪白小毛球，抱在手心暖呼呼，正在安心喝幼兔奶。" },
+      { min: 30, title: "🌿 啃草小幼兔 (成長期)", icon: "🐰", desc: "兩顆門牙喀滋喀滋啃新鮮牧草與紅蘿蔔，長耳朵一晃一晃超級萌！" },
+      { min: 60, title: "🏃 飛躍少年兔 (探索期)", icon: "🥕", desc: "後腿肌肉健壯發達，輕輕一躍就能跳過障礙，最愛吃甘甜蘋果丁！" },
+      { min: 100, title: "🐰 健美成年大白兔 (成熟期)", icon: "🐰", desc: "毛茸茸的健美大白兔，眼睛亮晶晶，體能滿分精力充沛！" },
+      { min: 150, title: "👑 動物園人氣福氣巨兔 (巨星期)", icon: "🌟", desc: "像大棉花糖一樣巨大圓潤又毛茸茸的超級明星兔，全園小朋友都搶著看它！" }
     ]
   },
   bear: {
@@ -174,13 +174,13 @@ const ANIMAL_DEFINITIONS = {
     icon: "🐻",
     color: "#854d0e",
     bgGradient: "from-amber-600 to-yellow-800",
-    desc: "象徵穩健、厚重與堅毅，是王國最堅固的後盾。",
+    desc: "象徵穩健、厚重與堅毅，是動物園最厚實強大的大將。",
     stages: [
-      { min: 0, title: "泰山石紋雄蛋", icon: "🥚", desc: "沉穩如泰山、堅不可摧的厚重磐石蛋。" },
-      { min: 30, title: "圓滾小頑熊", icon: "🐻", desc: "喜歡抱著蜂蜜罐打滾的憨厚小萌熊。" },
-      { min: 60, title: "鋼鐵壁壘戰熊", icon: "🛡️", desc: "身披重裝鋼甲，為身邊夥伴擋下一切困難。" },
-      { min: 100, title: "撼地大地熊王", icon: "👑", desc: "踏步地動山搖，威武雄壯的王國守護巨尊！" },
-      { min: 150, title: "✨ 耀金神聖大地金熊", icon: "🌟", desc: "通體化為不滅純金，象徵永恆堅定毅力！" }
+      { min: 0, title: "🍼 抱抱小奶熊 (幼幼期)", icon: "🍼", desc: "抱著小奶瓶打瞌睡的毛茸茸熊寶寶，憨態可掬惹人憐愛。" },
+      { min: 30, title: "🌿 爬樹小熊童 (成長期)", icon: "🐻", desc: "好奇地在草地上翻跟斗，愛吃甜甜蘋果和香濃燕麥蜂蜜粥！" },
+      { min: 60, title: "🏃 壯碩少年熊 (探索期)", icon: "🍎", desc: "體格快速抽高變壯，能輕鬆抓起大木頭，食量驚人最愛鮮魚！" },
+      { min: 100, title: "🐻 沉穩大棕熊 (成熟期)", icon: "🐻", desc: "厚實可靠的森林巨獸，穩如泰山，是五年二班最堅實的依靠！" },
+      { min: 150, title: "👑 動物園榮譽大熊王 (巨星期)", icon: "🌟", desc: "吃飽飽、肚子圓滾滾的招牌巨熊，深受全校師生喜愛的超大隻吉祥物！" }
     ]
   },
   penguin: {
@@ -191,11 +191,11 @@ const ANIMAL_DEFINITIONS = {
     bgGradient: "from-sky-400 to-blue-600",
     desc: "象徵冷靜、秩序與不屈毅力，步伐優雅從容。",
     stages: [
-      { min: 0, title: "冰晶霜雪企鵝蛋", icon: "🥚", desc: "晶瑩剔透如藍寶石般的極地寒冰蛋。" },
-      { min: 30, title: "搖擺小企鵝", icon: "🐧", desc: "肚子圓滾滾、走起路來左右搖擺的極地紳士！" },
-      { min: 60, title: "極光巡防騎士", icon: "❄️", desc: "身披極光冰晶斗篷，能滑翔穿梭於風雪之中。" },
-      { min: 100, title: "南極冰冠帝王", icon: "👑", desc: "統領冰原極境的威嚴帝王企鵝，冷靜睿智！" },
-      { min: 150, title: "✨ 耀金極光萬華神皇", icon: "🌟", desc: "冰晶與純金交織出無盡金色聖光的終極神皇！" }
+      { min: 0, title: "🍼 絨毛企鵝寶寶 (幼幼期)", icon: "🍼", desc: "全身包覆灰色軟綿絨毛的小企鵝，乖乖躲在育兒箱喝營養魚湯。" },
+      { min: 30, title: "🌿 搖擺小企鵝 (成長期)", icon: "🐧", desc: "換上黑白相間的小燕尾服，走路左右搖擺，開始大口吞小沙丁魚！" },
+      { min: 60, title: "🏃 泳速少年企鵝 (探索期)", icon: "🐟", desc: "在水道中像火箭般滑水飛馳，捕魚身手超一流，精神百倍！" },
+      { min: 100, title: "🐧 挺拔帝王企鵝 (成熟期)", icon: "🐧", desc: "胸膛金黃、氣宇軒昂的企鵝紳士，體格健康端莊，秩序第一！" },
+      { min: 150, title: "👑 動物園極地大明星 (巨星期)", icon: "🌟", desc: "肚子被小魚乾餵得圓溜溜、戴著金獎牌的極地大明星企鵝！" }
     ]
   },
   owl: {
@@ -206,11 +206,11 @@ const ANIMAL_DEFINITIONS = {
     bgGradient: "from-teal-400 to-emerald-600",
     desc: "象徵深邃學識、博學與遠見，黑夜中的智慧燈塔。",
     stages: [
-      { min: 0, title: "博學翡翠夜蛋", icon: "🥚", desc: "隱隱浮現古代智慧符文的青翠寶石蛋。" },
-      { min: 30, title: "戴眼鏡小雛鷹", icon: "🦉", desc: "眨著大眼睛認真研讀奏章的博學小天才！" },
-      { min: 60, title: "星夜羽翼導師", icon: "📜", desc: "手持智慧卷軸，隨時為大家指引解惑。" },
-      { min: 100, title: "皇家首席大院士", icon: "👑", desc: "頭戴金絲桂冠，掌管王國圖書館的智慧尊者！" },
-      { min: 150, title: "✨ 耀金全知天眼聖尊", icon: "🌟", desc: "散發不滅金光的洞察全知神鷹，智慧無雙！" }
+      { min: 0, title: "🍼 咕嚕小雛鷹 (幼幼期)", icon: "🍼", desc: "剛換上細軟羽毛的小幼梟，大眼睛圓滾滾地盯著世界看，喝溫流質食物。" },
+      { min: 30, title: "🌿 展翼小鷹童 (成長期)", icon: "🦉", desc: "在低枝頭上練習張開翅膀，開始吃營養綜合堅果與高蛋白餐點！" },
+      { min: 60, title: "🏃 巡弋少年梟 (探索期)", icon: "🍇", desc: "羽翼漸漸豐滿堅硬，飛行悄無聲息，最喜歡在黃昏翱翔巡視！" },
+      { min: 100, title: "🦉 威儀大成貓頭鷹 (成熟期)", icon: "🦉", desc: "雙翼展開氣勢雄偉，目光炯炯有神，是守護班級智慧的博學象徵！" },
+      { min: 150, title: "👑 動物園智慧神鵰校長 (巨星期)", icon: "🌟", desc: "羽毛泛著健康金色光澤、吃得飽足健康的超級智慧明星貓頭鷹！" }
     ]
   },
   fox: {
@@ -221,11 +221,11 @@ const ANIMAL_DEFINITIONS = {
     bgGradient: "from-orange-500 to-red-600",
     desc: "象徵機靈、創造力與靈活變通，思維敏捷如閃電。",
     stages: [
-      { min: 0, title: "火靈九尾朱蛋", icon: "🥚", desc: "燃燒著溫潤朱紅靈焰的神秘靈狐蛋。" },
-      { min: 30, title: "調皮小萌狐", icon: "🦊", desc: "搖晃著大蓬鬆尾巴，機靈點子特別多！" },
-      { min: 60, title: "幻術飛天靈狐", icon: "🔥", desc: "尾端帶有祥瑞靈火，身手飄逸神出鬼沒。" },
-      { min: 100, title: "九天祥瑞九尾天狐", icon: "👑", desc: "九尾綻開若彩雲，象徵至高吉祥與智慧！" },
-      { min: 150, title: "✨ 耀金太陰真靈神狐", icon: "🌟", desc: "通體純金祥雲繚繞的金化天界神狐！" }
+      { min: 0, title: "🍼 蜷曲小狐崽 (幼幼期)", icon: "🍼", desc: "把小鼻子藏在大尾巴裡睡覺的小狐狸，小巧玲瓏，正在喝幼獸奶。" },
+      { min: 30, title: "🌿 靈動小狐童 (成長期)", icon: "🦊", desc: "兩隻耳朵尖尖立起，愛在落葉堆捉迷藏，最愛吃香甜莓果肉片！" },
+      { min: 60, title: "🏃 俊朗少年狐 (探索期)", icon: "🫐", desc: "毛色如紅楓烈火般光鮮亮麗，奔跑如風，食量充沛元氣滿載！" },
+      { min: 100, title: "🦊 健美成年赤狐 (成熟期)", icon: "🦊", desc: "大尾巴蓬鬆如同雲朵，體型修長健美，聰穎機敏的健康成年狐！" },
+      { min: 150, title: "👑 動物園九天仙氣靈狐 (巨星期)", icon: "🌟", desc: "毛髮保養得晶瑩柔順、被愛心投餵得豐滿圓潤的超人氣靈狐！" }
     ]
   },
   hamster: {
@@ -236,11 +236,11 @@ const ANIMAL_DEFINITIONS = {
     bgGradient: "from-yellow-400 to-amber-500",
     desc: "象徵勤奮累積、踏實與自律，一點一滴創造奇蹟。",
     stages: [
-      { min: 0, title: "黃金瓜子幸運蛋", icon: "🥚", desc: "圓滾滾如向日葵種子的金黃色希望之蛋。" },
-      { min: 30, title: "塞滿腮幫小倉鼠", icon: "🐹", desc: "兩頰塞滿滿、努力跑跑滾輪的超可愛倉鼠！" },
-      { min: 60, title: "勤奮農務小管家", icon: "🌾", desc: "戴著麥稈帽，最懂得替王國存糧與規劃！" },
-      { min: 100, title: "萬庫金幣富貴神鼠", icon: "👑", desc: "坐在黃金寶箱上，象徵豐收滿滿的大功臣！" },
-      { min: 150, title: "✨ 耀金百寶豐收金仙", icon: "🌟", desc: "全身鍍滿純金光華的福運招財金化倉鼠！" }
+      { min: 0, title: "🍼 拇指萌鼠崽 (幼幼期)", icon: "🍼", desc: "只有半隻手指頭大的粉紅小毛球，在暖暖木屑堆裡喝特調奶。" },
+      { min: 30, title: "🌿 塞頰小幼鼠 (成長期)", icon: "🐹", desc: "學會用兩隻小爪子捧著葵花子，把腮幫子塞得鼓鼓的！" },
+      { min: 60, title: "🏃 跑輪少年鼠 (探索期)", icon: "🌻", desc: "體態健壯圓實，滾輪轉得飛快，最喜歡吃新鮮高麗菜與黃金核桃！" },
+      { min: 100, title: "🐹 圓胖成年大金絲鼠 (成熟期)", icon: "🐹", desc: "毛色金黃油亮，肚子圓滾滾，糧倉堆得滿滿的健康大倉鼠！" },
+      { min: 150, title: "👑 動物園招牌圓滾滾金鼠 (巨星期)", icon: "🌟", desc: "圓成一顆金黃色大湯圓、吃得超滿足的超級鎮園福氣金鼠大明星！" }
     ]
   }
 };
@@ -375,72 +375,108 @@ class KingdomStore {
     this.data = this.load();
   }
 
+  normalizeData(parsed) {
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (!parsed.queenPassword) parsed.queenPassword = "queen";
+    if (!parsed.lateThreshold) parsed.lateThreshold = "07:40";
+    if (!parsed.pointPresets) parsed.pointPresets = JSON.parse(JSON.stringify(DEFAULT_POINT_PRESETS));
+    if (!parsed.homeworkPresets) parsed.homeworkPresets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
+    if (!parsed.behaviorReasons) parsed.behaviorReasons = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS));
+    if (!parsed.contactBook) parsed.contactBook = JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK));
+    if (!parsed.contactBookHistory) parsed.contactBookHistory = { [getTodayDateString()]: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)) };
+    if (!parsed.attendance) parsed.attendance = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE));
+    if (!parsed.homework) parsed.homework = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK));
+    if (!parsed.pointLogs) parsed.pointLogs = JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS));
+    if (!parsed.announcements) parsed.announcements = JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS));
+    if (!parsed.rewardCards) parsed.rewardCards = JSON.parse(JSON.stringify(DEFAULT_REWARD_CARDS));
+    if (!parsed.rewardRedemptions) parsed.rewardRedemptions = [];
+    if (!parsed.behaviorCards) parsed.behaviorCards = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_CARDS));
+    if (!parsed.trafficOverrides) parsed.trafficOverrides = {};
+    if (!parsed.seatingLayout || !parsed.seatingLayout.rows || !parsed.seatingLayout.cols) {
+      parsed.seatingLayout = { rows: 5, cols: 6 };
+    }
+    const totalSeats = parsed.seatingLayout.rows * parsed.seatingLayout.cols;
+    if (!parsed.seatingChart || !Array.isArray(parsed.seatingChart)) {
+      parsed.seatingChart = [...DEFAULT_SEATING_CHART];
+    }
+    while (parsed.seatingChart.length < totalSeats) {
+      parsed.seatingChart.push(null);
+    }
+    if (!parsed.lastModified) parsed.lastModified = 0;
+
+    // 確保 27 位大臣全員齊備且動物全面金化與合規
+    const ANIMAL_KEYS = ['lion', 'dog', 'cat', 'rabbit', 'bear', 'penguin', 'owl', 'fox', 'hamster'];
+    if (!parsed.students || !Array.isArray(parsed.students) || parsed.students.length < 25) {
+      parsed.students = JSON.parse(JSON.stringify(DEFAULT_STUDENTS_27));
+    } else {
+      // 補齊到 27 位大臣
+      DEFAULT_STUDENTS_27.forEach(defSt => {
+        const found = parsed.students.find(s => s.seatNo === defSt.seatNo || s.id === defSt.id);
+        if (!found) {
+          parsed.students.push(JSON.parse(JSON.stringify(defSt)));
+        }
+      });
+      parsed.students.sort((a, b) => a.seatNo - b.seatNo);
+    }
+
+    parsed.students.forEach((st, idx) => {
+      // 確保可用金幣與生涯累積總額
+      if (st.points === undefined || st.points === null || isNaN(st.points)) st.points = 50;
+      if (st.lifetimePoints === undefined || st.lifetimePoints === null || isNaN(st.lifetimePoints)) {
+        st.lifetimePoints = Math.max(st.points || 0, st.petExp || 0);
+      }
+      st.petExp = st.lifetimePoints;
+
+      // 強制將舊神獸 (dragon, unicorn 等) 或空值徹底遷移至 9 大可愛動物
+      let a = (st.animalType || st.petType || '').toLowerCase();
+      if (!a || a === 'dragon' || a === 'unicorn' || !ANIMAL_DEFINITIONS[a]) {
+        // 依座號分配預設 9 大可愛動物
+        const defaultKey = ANIMAL_KEYS[(st.seatNo - 1) % ANIMAL_KEYS.length] || 'lion';
+        a = defaultKey;
+      }
+      st.animalType = a;
+      st.petType = a;
+
+      // 確保行為卡結構
+      if (!parsed.behaviorCards[st.id]) {
+        parsed.behaviorCards[st.id] = {
+          reflectionCard: false,
+          reflectionCount: 0,
+          reflectionReason: '',
+          serviceCard: false,
+          serviceCount: 0,
+          serviceReason: '',
+          history: []
+        };
+      }
+    });
+
+    return parsed;
+  }
+
   load() {
     try {
       const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed.students && parsed.students.length >= 25) {
-          if (!parsed.pointPresets) parsed.pointPresets = DEFAULT_POINT_PRESETS;
-          if (!parsed.homeworkPresets) parsed.homeworkPresets = DEFAULT_HOMEWORK_PRESETS;
-          if (!parsed.behaviorReasons) parsed.behaviorReasons = DEFAULT_BEHAVIOR_REASONS;
-          if (!parsed.lateThreshold) parsed.lateThreshold = "07:40";
-          if (!parsed.contactBook) parsed.contactBook = DEFAULT_CONTACT_BOOK;
-          if (!parsed.contactBookHistory) parsed.contactBookHistory = { [getTodayDateString()]: DEFAULT_CONTACT_BOOK };
-          if (!parsed.rewardCards) parsed.rewardCards = DEFAULT_REWARD_CARDS;
-          if (!parsed.rewardRedemptions) parsed.rewardRedemptions = [];
-          if (!parsed.behaviorCards) parsed.behaviorCards = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_CARDS));
-          if (!parsed.trafficOverrides) parsed.trafficOverrides = {};
-          if (!parsed.seatingLayout) parsed.seatingLayout = { rows: 5, cols: 6 };
-          if (!parsed.seatingChart || !Array.isArray(parsed.seatingChart)) {
-            parsed.seatingChart = [...DEFAULT_SEATING_CHART];
-          }
-          if (!parsed.lastModified) parsed.lastModified = 0;
-
-          // 確保每位學生具備 lifetimePoints 與 animalType
-          parsed.students.forEach(st => {
-            if (st.lifetimePoints === undefined || st.lifetimePoints === null) {
-              st.lifetimePoints = Math.max(st.points || 0, st.petExp || 0);
-            }
-            if (!st.animalType) {
-              let a = st.petType || 'lion';
-              if (a === 'dragon') a = 'lion';
-              if (a === 'unicorn') a = 'rabbit';
-              st.animalType = a;
-            }
-            st.petType = st.animalType;
-            st.petExp = st.lifetimePoints;
-          });
-
-          return parsed;
-        }
+        const normalized = this.normalizeData(parsed);
+        if (normalized) return normalized;
       }
     } catch (e) {
       console.warn("讀取本機資料失敗，載入預設值", e);
     }
 
-    return {
+    return this.normalizeData({
       queenPassword: "queen",
       lateThreshold: "07:40",
       students: JSON.parse(JSON.stringify(DEFAULT_STUDENTS_27)),
-      pointPresets: JSON.parse(JSON.stringify(DEFAULT_POINT_PRESETS)),
-      homeworkPresets: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS)),
-      behaviorReasons: JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS)),
-      contactBook: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)),
-      contactBookHistory: { [getTodayDateString()]: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)) },
       attendance: JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE)),
       homework: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK)),
       pointLogs: JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS)),
       announcements: JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS)),
-      rewardCards: JSON.parse(JSON.stringify(DEFAULT_REWARD_CARDS)),
-      rewardRedemptions: [],
-      behaviorCards: JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_CARDS)),
-      trafficOverrides: {},
-      seatingLayout: { rows: 5, cols: 6 },
-      seatingChart: [...DEFAULT_SEATING_CHART],
       lastModified: 0,
       _isFreshInit: true
-    };
+    });
   }
 
   save() {
@@ -682,6 +718,44 @@ class KingdomStore {
     student.petType = aKey;
     this.save();
     return true;
+  }
+
+  // --- 動物園餵食投餵飼料讓動物長大 (Zoo Feeding) ---
+  feedStudentAnimal(studentId, foodAmount = 1, foodName = "🍎 營養蘋果") {
+    const pts = parseInt(foodAmount, 10);
+    if (isNaN(pts) || pts <= 0) return null;
+    const student = this.data.students.find(s => s.id === studentId || s.seatNo === studentId);
+    if (!student) return null;
+
+    if (student.lifetimePoints === undefined) student.lifetimePoints = student.points || 0;
+    const aKey = (student.animalType || student.petType || 'lion').toLowerCase();
+    const oldStage = getAnimalStatus(aKey, student.lifetimePoints).stageIndex;
+
+    student.points = (student.points || 0) + pts;
+    student.lifetimePoints = (student.lifetimePoints || 0) + pts;
+    student.petExp = student.lifetimePoints;
+
+    const newStatus = getAnimalStatus(aKey, student.lifetimePoints);
+
+    this.data.pointLogs.unshift({
+      id: Date.now(),
+      studentId: student.id,
+      points: pts,
+      reason: `🍎 動物園投餵飼料：${foodName} (+${pts} 飽食成長)`,
+      date: getTodayDateString(),
+      time: new Date().toTimeString().slice(0, 5)
+    });
+
+    this.save();
+    return {
+      student,
+      oldStage,
+      newStage: newStatus.stageIndex,
+      grewUp: newStatus.stageIndex > oldStage,
+      status: newStatus,
+      foodName,
+      foodAmount: pts
+    };
   }
 
   // --- 雙軌金幣制度：可用金幣 (points) 與生涯累積總額 (lifetimePoints) ---
@@ -1378,27 +1452,6 @@ function renderAnimalSVG(animalKey, stage = 0) {
     goldGlow: true
   } : (colorMap[key] || colorMap.lion);
 
-  if (stageNum === 0) {
-    return `
-      <svg viewBox="0 0 160 160" class="w-full h-full filter drop-shadow-md">
-        <defs>
-          <radialGradient id="eggGlow_${key}" cx="35%" cy="30%" r="70%">
-            <stop offset="0%" stop-color="${pal.light}" />
-            <stop offset="65%" stop-color="${pal.base}" />
-            <stop offset="100%" stop-color="${pal.dark}" />
-          </radialGradient>
-        </defs>
-        <circle cx="80" cy="80" r="70" fill="#fef3c7" opacity="0.4" />
-        <ellipse cx="80" cy="88" rx="42" ry="52" fill="url(#eggGlow_${key})" stroke="${pal.dark}" stroke-width="2.5" />
-        <path d="M50 78 Q80 70 110 78" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.7"/>
-        <path d="M55 98 Q80 90 105 98" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.6"/>
-        <ellipse cx="68" cy="65" rx="8" ry="14" fill="#ffffff" opacity="0.5" transform="rotate(-20 68 65)"/>
-        <circle cx="115" cy="45" r="4" fill="#fbbf24" />
-        <circle cx="45" cy="115" r="3" fill="#fbbf24" />
-        <text x="80" y="102" font-size="24" text-anchor="middle">🐣</text>
-      </svg>
-    `;
-  }
 
   let ears = '';
   let faceDetails = '';
@@ -1528,12 +1581,31 @@ function renderAnimalSVG(animalKey, stage = 0) {
       break;
   }
 
-  if (stageNum === 2) {
+  // 動物園長大體型與飾品配件 (Zoo Growth Scale & Accessories)
+  let scaleTransform = '';
+  if (stageNum === 0) {
+    scaleTransform = 'transform="translate(14, 14) scale(0.82)"';
     accessory = `
+      <text x="110" y="130" font-size="24">🍼</text>
+      <path d="M68 114 Q80 120 92 114" stroke="#f472b6" stroke-width="4" stroke-linecap="round" fill="none" />
+      <circle cx="80" cy="118" r="6" fill="#fbcfe8" stroke="#f472b6" stroke-width="1.5" />
+    `;
+  } else if (stageNum === 1) {
+    scaleTransform = 'transform="translate(6, 6) scale(0.92)"';
+    accessory = `
+      <text x="110" y="130" font-size="24">🍎</text>
+      <path d="M68 114 Q80 122 92 114" stroke="#10b981" stroke-width="5" stroke-linecap="round" fill="none" />
+      <circle cx="80" cy="119" r="6" fill="#a7f3d0" stroke="#10b981" stroke-width="1.5" />
+    `;
+  } else if (stageNum === 2) {
+    scaleTransform = '';
+    accessory = `
+      <text x="110" y="130" font-size="22">✨</text>
       <path d="M60 112 Q80 124 100 112" stroke="${pal.accent}" stroke-width="8" stroke-linecap="round" fill="none" />
       <circle cx="80" cy="120" r="7" fill="#fbbf24" stroke="#d97706" stroke-width="1.5" />
     `;
   } else if (stageNum === 3) {
+    scaleTransform = 'transform="translate(-6, -6) scale(1.08)"';
     accessory = `
       <polygon points="62,34 70,44 80,30 90,44 98,34 94,52 66,52" fill="#fbbf24" stroke="#d97706" stroke-width="2" />
       <circle cx="80" cy="33" r="3.5" fill="#ef4444" />
@@ -1541,6 +1613,7 @@ function renderAnimalSVG(animalKey, stage = 0) {
       <circle cx="80" cy="122" r="8" fill="#fbbf24" stroke="#d97706" stroke-width="2" />
     `;
   } else if (stageNum === 4) {
+    scaleTransform = 'transform="translate(-12, -12) scale(1.15)"';
     accessory = `
       <circle cx="80" cy="80" r="76" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="6,4" opacity="0.8" />
       <circle cx="80" cy="80" r="72" fill="none" stroke="#f59e0b" stroke-width="2" opacity="0.6" />
@@ -1566,15 +1639,17 @@ function renderAnimalSVG(animalKey, stage = 0) {
         </radialGradient>
       </defs>
       <circle cx="80" cy="80" r="68" fill="${isGolden ? '#fef9c3' : '#fef3c7'}" opacity="${isGolden ? 0.9 : 0.5}" />
-      ${ears}
-      <circle cx="80" cy="82" r="42" fill="url(#animGrad_${key}_${stageNum})" stroke="${pal.dark}" stroke-width="3" />
-      ${faceDetails}
-      <circle cx="68" cy="74" r="4.5" fill="#1e293b" />
-      <circle cx="69.5" cy="72.5" r="1.5" fill="#ffffff" />
-      <circle cx="92" cy="74" r="4.5" fill="#1e293b" />
-      <circle cx="93.5" cy="72.5" r="1.5" fill="#ffffff" />
-      <circle cx="60" cy="83" r="5" fill="#f43f5e" opacity="0.35" />
-      <circle cx="100" cy="83" r="5" fill="#f43f5e" opacity="0.35" />
+      <g ${scaleTransform}>
+        ${ears}
+        <circle cx="80" cy="82" r="42" fill="url(#animGrad_${key}_${stageNum})" stroke="${pal.dark}" stroke-width="3" />
+        ${faceDetails}
+        <circle cx="68" cy="74" r="4.5" fill="#1e293b" />
+        <circle cx="69.5" cy="72.5" r="1.5" fill="#ffffff" />
+        <circle cx="92" cy="74" r="4.5" fill="#1e293b" />
+        <circle cx="93.5" cy="72.5" r="1.5" fill="#ffffff" />
+        <circle cx="60" cy="83" r="5" fill="#f43f5e" opacity="0.35" />
+        <circle cx="100" cy="83" r="5" fill="#f43f5e" opacity="0.35" />
+      </g>
       ${accessory}
     </svg>
   `;
@@ -1595,6 +1670,9 @@ class KingdomSound {
     if (!this.ctx) {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (AudioContext) this.ctx = new AudioContext();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
     }
   }
 
@@ -1641,6 +1719,32 @@ class KingdomSound {
     gain.connect(this.ctx.destination);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.2);
+  }
+
+  // 動物園餵食可愛咀嚼聲 (Cute Munch & Happy Eating)
+  playFeedMunch() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const times = [0, 0.09, 0.19];
+    const freqs = [380, 520, 880];
+    times.forEach((t, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = i === 2 ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(freqs[i], this.ctx.currentTime + t);
+      if (i === 2) {
+        osc.frequency.exponentialRampToValueAtTime(1150, this.ctx.currentTime + t + 0.15);
+      }
+      const st = this.ctx.currentTime + t;
+      gain.gain.setValueAtTime(0.22, st);
+      gain.gain.exponentialRampToValueAtTime(0.001, st + 0.12);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(st);
+      osc.stop(st + 0.13);
+    });
   }
 
   playBreakBell() {
@@ -2016,16 +2120,21 @@ class KingdomCloudSync {
     }
 
     if (remoteData) {
-      const remoteTime = remoteData.lastModified || 0;
-      const localTime = this.store.data.lastModified || 0;
+      let isUpdated = false;
+      const normalizedRemote = this.store.normalizeData(remoteData);
+      if (normalizedRemote) {
+        const remoteTime = normalizedRemote.lastModified || 0;
+        const localTime = this.store.data.lastModified || 0;
 
-      if (!silent || remoteTime > localTime) {
-        this.store.data = remoteData;
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.store.data));
-        }
-        if (typeof window !== 'undefined' && window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
-          window.KingdomUI.refreshCurrentView();
+        if (!silent || remoteTime > localTime) {
+          this.store.data = normalizedRemote;
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.store.data));
+          }
+          if (typeof window !== 'undefined' && window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+            window.KingdomUI.refreshCurrentView();
+          }
+          isUpdated = true;
         }
       }
 
@@ -2033,7 +2142,7 @@ class KingdomCloudSync {
       this.lastSyncTime = new Date();
       this.lastError = null;
       this.notify();
-      return { success: true, timestamp: this.lastSyncTime, updated: remoteTime > localTime };
+      return { success: true, timestamp: this.lastSyncTime, updated: isUpdated };
     } else {
       if (this.config.googleScriptUrl || isLocal) {
         this.syncStatus = 'error';
@@ -2114,6 +2223,9 @@ function triggerConfetti() {
 }
 
 if (typeof window !== 'undefined') {
+  window.store = store;
+  window.sound = sound;
+  window.cloudSync = cloudSync;
   window.KingdomApp = {
     store,
     sound,

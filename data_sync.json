@@ -9,9 +9,11 @@
       "gender": "M",
       "title": "內閣首輔大臣",
       "birthday": "0315",
-      "points": 85,
-      "petType": "dragon",
-      "petExp": 85
+      "points": 86,
+      "lifetimePoints": 86,
+      "animalType": "lion",
+      "petType": "lion",
+      "petExp": 86
     },
     {
       "id": 2,
@@ -21,7 +23,9 @@
       "title": "皇家騎士團長",
       "birthday": "0520",
       "points": 160,
-      "petType": "lion",
+      "lifetimePoints": 160,
+      "animalType": "dog",
+      "petType": "dog",
       "petExp": 160
     },
     {
@@ -32,6 +36,8 @@
       "title": "國庫財政大臣",
       "birthday": "0812",
       "points": 210,
+      "lifetimePoints": 210,
+      "animalType": "cat",
       "petType": "cat",
       "petExp": 210
     },
@@ -43,7 +49,9 @@
       "title": "宮廷禮儀大臣",
       "birthday": "1104",
       "points": 65,
-      "petType": "unicorn",
+      "lifetimePoints": 65,
+      "animalType": "rabbit",
+      "petType": "rabbit",
       "petExp": 65
     },
     {
@@ -54,7 +62,9 @@
       "title": "皇家文書大臣",
       "birthday": "0228",
       "points": 130,
-      "petType": "cat",
+      "lifetimePoints": 130,
+      "animalType": "bear",
+      "petType": "bear",
       "petExp": 130
     },
     {
@@ -65,7 +75,9 @@
       "title": "奇蹟魔法大臣",
       "birthday": "0709",
       "points": 310,
-      "petType": "dragon",
+      "lifetimePoints": 310,
+      "animalType": "penguin",
+      "petType": "penguin",
       "petExp": 310
     },
     {
@@ -76,7 +88,9 @@
       "title": "守護壁壘大將",
       "birthday": "0923",
       "points": 95,
-      "petType": "lion",
+      "lifetimePoints": 95,
+      "animalType": "owl",
+      "petType": "owl",
       "petExp": 95
     },
     {
@@ -87,7 +101,9 @@
       "title": "皇家圖書大臣",
       "birthday": "0416",
       "points": 145,
-      "petType": "cat",
+      "lifetimePoints": 145,
+      "animalType": "fox",
+      "petType": "fox",
       "petExp": 145
     },
     {
@@ -98,7 +114,9 @@
       "title": "生態綠意大臣",
       "birthday": "1205",
       "points": 50,
-      "petType": "unicorn",
+      "lifetimePoints": 50,
+      "animalType": "hamster",
+      "petType": "hamster",
       "petExp": 50
     },
     {
@@ -109,7 +127,9 @@
       "title": "國境先鋒騎士",
       "birthday": "0630",
       "points": 175,
-      "petType": "dragon",
+      "lifetimePoints": 175,
+      "animalType": "lion",
+      "petType": "lion",
       "petExp": 175
     },
     {
@@ -120,7 +140,9 @@
       "title": "皇家衛隊隊長",
       "birthday": "0118",
       "points": 115,
-      "petType": "lion",
+      "lifetimePoints": 115,
+      "animalType": "dog",
+      "petType": "dog",
       "petExp": 115
     },
     {
@@ -131,7 +153,9 @@
       "title": "智慧科技大臣",
       "birthday": "1010",
       "points": 240,
-      "petType": "dragon",
+      "lifetimePoints": 240,
+      "animalType": "cat",
+      "petType": "cat",
       "petExp": 240
     },
     {
@@ -142,7 +166,9 @@
       "title": "體育競技女將軍",
       "birthday": "0403",
       "points": 190,
-      "petType": "lion",
+      "lifetimePoints": 190,
+      "animalType": "rabbit",
+      "petType": "rabbit",
       "petExp": 190
     },
     {
@@ -153,7 +179,9 @@
       "title": "藝術壁畫大臣",
       "birthday": "0825",
       "points": 155,
-      "petType": "unicorn",
+      "lifetimePoints": 155,
+      "animalType": "bear",
+      "petType": "bear",
       "petExp": 155
     },
     {
@@ -164,7 +192,9 @@
       "title": "皇家音樂總監",
       "birthday": "0614",
       "points": 320,
-      "petType": "cat",
+      "lifetimePoints": 320,
+      "animalType": "penguin",
+      "petType": "penguin",
       "petExp": 320
     },
     {
@@ -175,7 +205,9 @@
       "title": "晨曦敲鐘官",
       "birthday": "0329",
       "points": 80,
-      "petType": "unicorn",
+      "lifetimePoints": 80,
+      "animalType": "owl",
+      "petType": "owl",
       "petExp": 80
     },
     {
@@ -186,7 +218,9 @@
       "title": "皇家糧餉大臣",
       "birthday": "1119",
       "points": 125,
-      "petType": "lion",
+      "lifetimePoints": 125,
+      "animalType": "fox",
+      "petType": "fox",
       "petExp": 125
     },
     {
@@ -197,7 +231,9 @@
       "title": "萬國外交特使",
       "birthday": "0508",
       "points": 205,
-      "petType": "dragon",
+      "lifetimePoints": 205,
+      "animalType": "hamster",
+      "petType": "hamster",
       "petExp": 205
     },
     {
@@ -208,7 +244,9 @@
       "title": "秩序執法女官",
       "birthday": "0915",
       "points": 140,
-      "petType": "cat",
+      "lifetimePoints": 140,
+      "animalType": "lion",
+      "petType": "lion",
       "petExp": 140
     },
     {
@@ -219,7 +257,9 @@
       "title": "歡樂慶典大臣",
       "birthday": "0722",
       "points": 165,
-      "petType": "unicorn",
+      "lifetimePoints": 165,
+      "animalType": "dog",
+      "petType": "dog",
       "petExp": 165
     },
     {
@@ -230,7 +270,9 @@
       "title": "皇家天文占星官",
       "birthday": "0107",
       "points": 280,
-      "petType": "unicorn",
+      "lifetimePoints": 280,
+      "animalType": "cat",
+      "petType": "cat",
       "petExp": 280
     },
     {
@@ -241,7 +283,9 @@
       "title": "星光守望騎士",
       "birthday": "1224",
       "points": 90,
-      "petType": "dragon",
+      "lifetimePoints": 90,
+      "animalType": "rabbit",
+      "petType": "rabbit",
       "petExp": 90
     },
     {
@@ -252,7 +296,9 @@
       "title": "皇宮環境大臣",
       "birthday": "0214",
       "points": 135,
-      "petType": "cat",
+      "lifetimePoints": 135,
+      "animalType": "bear",
+      "petType": "bear",
       "petExp": 135
     },
     {
@@ -263,7 +309,9 @@
       "title": "皇家廣播宣令官",
       "birthday": "1002",
       "points": 70,
-      "petType": "lion",
+      "lifetimePoints": 70,
+      "animalType": "penguin",
+      "petType": "penguin",
       "petExp": 70
     },
     {
@@ -274,7 +322,9 @@
       "title": "智慧博學顧問",
       "birthday": "0606",
       "points": 225,
-      "petType": "cat",
+      "lifetimePoints": 225,
+      "animalType": "owl",
+      "petType": "owl",
       "petExp": 225
     },
     {
@@ -285,7 +335,9 @@
       "title": "皇家工務大臣",
       "birthday": "0918",
       "points": 110,
-      "petType": "lion",
+      "lifetimePoints": 110,
+      "animalType": "fox",
+      "petType": "fox",
       "petExp": 110
     },
     {
@@ -296,7 +348,9 @@
       "title": "皇家巡察御史",
       "birthday": "0425",
       "points": 140,
-      "petType": "dragon",
+      "lifetimePoints": 140,
+      "animalType": "hamster",
+      "petType": "hamster",
       "petExp": 140
     }
   ],
@@ -374,336 +428,317 @@
   ],
   "homeworkPresets": [
     {
-      "id": "hwp-1",
+      "id": "hw_pre_1",
       "subject": "國語",
       "name": "國習",
-      "fullName": "國語習作",
-      "defaultDesc": "習作錯題請用紅筆打叉確實訂正並簽名"
+      "fullName": "國語習作完成"
     },
     {
-      "id": "hwp-2",
+      "id": "hw_pre_2",
       "subject": "國語",
       "name": "造詞",
-      "fullName": "生字造詞本",
-      "defaultDesc": "每字造二詞並標註注音，字跡端正"
+      "fullName": "生字造詞甲乙本"
     },
     {
-      "id": "hwp-3",
-      "subject": "國語",
-      "name": "生字本",
-      "fullName": "生字甲/乙本",
-      "defaultDesc": "生字筆順部首描寫正確"
-    },
-    {
-      "id": "hwp-4",
+      "id": "hw_pre_3",
       "subject": "國語",
       "name": "圈詞",
-      "fullName": "國語圈詞本",
-      "defaultDesc": "每課圈詞二遍並完成造句"
+      "fullName": "國語圈詞隨堂本"
     },
     {
-      "id": "hwp-5",
+      "id": "hw_pre_4",
       "subject": "數學",
       "name": "數習",
-      "fullName": "數學習作",
-      "defaultDesc": "計算過程完整寫在空白處，記得約分"
+      "fullName": "數學習作進度"
     },
     {
-      "id": "hwp-6",
+      "id": "hw_pre_5",
       "subject": "數學",
       "name": "數練",
-      "fullName": "數學隨堂練習",
-      "defaultDesc": "完成課堂延伸題並用藍筆訂正"
+      "fullName": "數學隨堂練習本"
     },
     {
-      "id": "hwp-7",
-      "subject": "數學",
-      "name": "數作",
-      "fullName": "數學作業簿",
-      "defaultDesc": "直式計算整齊對齊，驗算確實"
-    },
-    {
-      "id": "hwp-8",
+      "id": "hw_pre_6",
       "subject": "自然",
       "name": "自習",
-      "fullName": "自然習作",
-      "defaultDesc": "實驗記錄完整，觀測結果填寫詳實"
+      "fullName": "自然習作觀察記錄"
     },
     {
-      "id": "hwp-9",
+      "id": "hw_pre_7",
       "subject": "社會",
       "name": "社習",
-      "fullName": "社會習作",
-      "defaultDesc": "配合課本閱讀填寫並劃記重點"
+      "fullName": "社會習作重點作業"
     },
     {
-      "id": "hwp-10",
+      "id": "hw_pre_8",
       "subject": "綜合",
       "name": "聯絡簿",
-      "fullName": "每日家庭聯絡簿",
-      "defaultDesc": "抄寫完整，作業清點齊全，家長簽名"
+      "fullName": "家長簽名聯絡簿"
     }
   ],
   "behaviorReasons": [
     {
-      "id": "br-1",
+      "id": "br_ref_1",
       "type": "reflection",
-      "label": "上課分心",
-      "text": "上課分心聊天屢次提醒"
+      "label": "上課分心聊私事",
+      "text": "上課分心聊私事"
     },
     {
-      "id": "br-2",
+      "id": "br_ref_2",
       "type": "reflection",
-      "label": "走廊奔跑",
-      "text": "走廊危險奔跑常規提醒"
+      "label": "未帶課堂學用品",
+      "text": "未帶課堂學用品"
     },
     {
-      "id": "br-3",
+      "id": "br_ref_3",
       "type": "reflection",
-      "label": "作業未帶",
-      "text": "課堂作業未帶留座補寫"
+      "label": "未經許可擅離位",
+      "text": "未經許可擅離位"
     },
     {
-      "id": "br-4",
+      "id": "br_ref_4",
       "type": "reflection",
-      "label": "學用品缺",
-      "text": "未帶課本與必備學用品"
+      "label": "走廊危險奔跑追逐",
+      "text": "走廊危險奔跑追逐"
     },
     {
-      "id": "br-5",
+      "id": "br_ref_5",
       "type": "reflection",
-      "label": "課間推擠",
-      "text": "課間推擠嬉鬧影響安全"
+      "label": "對師長同儕禮貌欠佳",
+      "text": "對師長同儕禮貌欠佳"
     },
     {
-      "id": "br-6",
+      "id": "br_srv_1",
       "type": "service",
-      "label": "07:40未打卡",
+      "label": "超過07:40未打卡",
       "text": "超過07:40未打卡（留班補打掃）"
     },
     {
-      "id": "br-7",
+      "id": "br_srv_2",
       "type": "service",
-      "label": "值日怠惰",
-      "text": "值日生怠惰未清黑板倒垃圾"
+      "label": "個人座位周遭整潔不佳",
+      "text": "個人座位周遭整潔不佳"
     },
     {
-      "id": "br-8",
+      "id": "br_srv_3",
       "type": "service",
-      "label": "桌面雜亂",
-      "text": "座位周邊紙屑髒亂整潔不佳"
+      "label": "打掃責任區未落實",
+      "text": "打掃責任區未落實"
     },
     {
-      "id": "br-9",
+      "id": "br_srv_4",
       "type": "service",
-      "label": "廚餘未分類",
-      "text": "午餐餐具未收拾、廚餘未妥善分類"
+      "label": "忘記抽屜與置物櫃清空",
+      "text": "忘記抽屜與置物櫃清空"
+    },
+    {
+      "id": "br_srv_5",
+      "type": "service",
+      "label": "公物使用後未歸位",
+      "text": "公物使用後未歸位"
     }
   ],
   "contactBook": {
-    "date": "2026-11-09",
+    "date": "2026-11-16",
     "homeworkItems": [
-      "國語習作第八課完成並確實用紅筆打叉訂正 (P.54~P.58)",
-      "數學習作 P.46 ~ P.48 (分數四則運算，約分至最簡分數)",
-      "背誦國語第八課課文第二、三段",
-      "訂正數學習作第七單元錯題並簽名"
+      "1. 國語習作第 八 課完成",
+      "2. 數學習作 P.62 ~ P.65",
+      "3. 訂正國語隨堂生字本",
+      "4. 閱讀課外讀物 20 分鐘並簽名"
     ],
     "reminders": [
-      "明日為校外教學日，請著運動服布鞋，帶水壺、輕便雨衣",
-      "交回自然科「月相連續觀測紀錄表」 (需家長簽章確認)"
+      "明天有體育課，請穿著西寧王國運動服與運動鞋",
+      "請帶自然課觀察記錄本與彩色筆",
+      "記得帶水壺與跳繩"
     ],
     "queenMotto": "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
   },
+  "contactBookHistory": {
+    "2026-11-16": {
+      "date": "2026-11-16",
+      "homeworkItems": [
+        "1. 國語習作第 八 課完成",
+        "2. 數學習作 P.62 ~ P.65",
+        "3. 訂正國語隨堂生字本",
+        "4. 閱讀課外讀物 20 分鐘並簽名"
+      ],
+      "reminders": [
+        "明天有體育課，請穿著西寧王國運動服與運動鞋",
+        "請帶自然課觀察記錄本與彩色筆",
+        "記得帶水壺與跳繩"
+      ],
+      "queenMotto": "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
+    }
+  },
   "attendance": {
-    "2026-11-09": {
+    "2026-11-16": {
       "1": {
         "status": "present",
-        "checkInTime": "07:28"
+        "checkInTime": "07:28",
+        "note": ""
       },
       "2": {
         "status": "present",
-        "checkInTime": "07:31"
+        "checkInTime": "07:31",
+        "note": ""
       },
       "3": {
         "status": "present",
-        "checkInTime": "07:35"
+        "checkInTime": "07:33",
+        "note": ""
       },
       "4": {
-        "status": "leave",
-        "leaveType": "sick",
-        "leaveScope": "full_day",
-        "leavePeriods": [],
-        "note": "腸胃炎發燒看診在家休養"
+        "status": "present",
+        "checkInTime": "07:35",
+        "note": ""
       },
       "5": {
         "status": "present",
-        "checkInTime": "07:25"
+        "checkInTime": "07:38",
+        "note": ""
       },
       "6": {
         "status": "present",
-        "checkInTime": "07:33"
+        "checkInTime": "07:25",
+        "note": ""
       },
       "7": {
         "status": "present",
-        "checkInTime": "07:30"
+        "checkInTime": "07:39",
+        "note": ""
       },
       "8": {
-        "status": "present",
-        "checkInTime": "07:38"
+        "status": "late",
+        "checkInTime": "07:46",
+        "note": "晨讀遲到"
       },
       "9": {
-        "status": "leave",
-        "leaveType": "personal",
-        "leaveScope": "periods",
-        "leavePeriods": [
-          1,
-          2
-        ],
-        "note": "看牙醫門診，預計第3節返校"
+        "status": "present",
+        "checkInTime": "07:36",
+        "note": ""
       },
       "10": {
         "status": "present",
-        "checkInTime": "07:29"
+        "checkInTime": "07:30",
+        "note": ""
       },
       "11": {
         "status": "present",
-        "checkInTime": "07:32"
+        "checkInTime": "07:34",
+        "note": ""
       },
       "12": {
         "status": "present",
-        "checkInTime": "07:20"
+        "checkInTime": "07:22",
+        "note": ""
       },
       "13": {
         "status": "present",
-        "checkInTime": "07:36"
+        "checkInTime": "07:37",
+        "note": ""
       },
       "14": {
-        "status": "present",
-        "checkInTime": "07:34"
+        "status": "leave",
+        "checkInTime": null,
+        "note": "病假（家長已通報）"
       },
       "15": {
         "status": "present",
-        "checkInTime": "07:22"
+        "checkInTime": "07:26",
+        "note": ""
       },
       "16": {
-        "status": "late",
-        "checkInTime": "07:48",
-        "note": "07:48 到校（超過 07:40 門禁）"
+        "status": "present",
+        "checkInTime": "07:32",
+        "note": ""
       },
       "17": {
         "status": "present",
-        "checkInTime": "07:33"
+        "checkInTime": "07:35",
+        "note": ""
       },
       "18": {
         "status": "present",
-        "checkInTime": "07:30"
+        "checkInTime": "07:29",
+        "note": ""
       },
       "19": {
         "status": "present",
-        "checkInTime": "07:37"
+        "checkInTime": "07:33",
+        "note": ""
       },
       "20": {
         "status": "present",
-        "checkInTime": "07:26"
+        "checkInTime": "07:36",
+        "note": ""
       },
       "21": {
         "status": "present",
-        "checkInTime": "07:28"
+        "checkInTime": "07:24",
+        "note": ""
       },
       "22": {
-        "status": "present",
-        "checkInTime": "07:39"
+        "status": "late",
+        "checkInTime": "07:48",
+        "note": "校車延誤"
       },
       "23": {
         "status": "present",
-        "checkInTime": "07:24"
+        "checkInTime": "07:35",
+        "note": ""
       },
       "24": {
         "status": "present",
-        "checkInTime": "07:35"
+        "checkInTime": "07:38",
+        "note": ""
       },
       "25": {
         "status": "present",
-        "checkInTime": "07:31"
+        "checkInTime": "07:27",
+        "note": ""
       },
       "26": {
         "status": "present",
-        "checkInTime": "07:35"
+        "checkInTime": "07:34",
+        "note": ""
       },
       "27": {
         "status": "present",
-        "checkInTime": "07:32"
+        "checkInTime": "07:30",
+        "note": ""
       }
     }
   },
   "homework": [
     {
-      "id": "hw-1",
-      "subject": "國語",
-      "title": "國語習作第八課完成並訂正",
+      "id": 1,
+      "title": "國語習作第 八 課完成",
       "presetName": "國習",
-      "dueDate": "2026-11-09",
-      "desc": "完成習作 P.54~58，字跡端正，寫錯處用紅筆打叉訂正。",
-      "records": {
-        "1": "submitted",
-        "2": "submitted",
-        "3": "late",
-        "4": "pending",
-        "5": "submitted",
-        "6": "submitted",
-        "7": "submitted",
-        "8": "revision",
-        "9": "pending",
-        "10": "submitted",
-        "11": "submitted",
-        "12": "submitted",
-        "13": "submitted",
-        "14": "submitted",
-        "15": "submitted",
-        "16": "late",
-        "17": "revision",
-        "18": "submitted",
-        "19": "submitted",
-        "20": "submitted",
-        "21": "submitted",
-        "22": "revision",
-        "23": "submitted",
-        "24": "pending",
-        "25": "submitted",
-        "26": "submitted",
-        "27": "submitted"
-      }
-    },
-    {
-      "id": "hw-2",
-      "subject": "數學",
-      "title": "數學習作 P.46~48（分數運算）",
-      "presetName": "數習",
-      "dueDate": "2026-11-09",
-      "desc": "記得約分到最簡分數，計算過程要寫完整在空白處。",
+      "type": "國語",
+      "date": "2026-11-16",
       "records": {
         "1": "submitted",
         "2": "submitted",
         "3": "submitted",
-        "4": "revision",
+        "4": "submitted",
         "5": "submitted",
         "6": "submitted",
         "7": "submitted",
-        "8": "submitted",
+        "8": "late",
         "9": "submitted",
-        "10": "revision",
+        "10": "submitted",
         "11": "submitted",
         "12": "submitted",
         "13": "submitted",
-        "14": "submitted",
+        "14": "pending",
         "15": "submitted",
-        "16": "pending",
+        "16": "revision",
         "17": "submitted",
         "18": "submitted",
         "19": "submitted",
         "20": "submitted",
         "21": "submitted",
-        "22": "revision",
+        "22": "missing",
         "23": "submitted",
         "24": "submitted",
         "25": "submitted",
@@ -712,29 +747,64 @@
       }
     },
     {
-      "id": "hw-3",
-      "subject": "自然",
-      "title": "月相連續觀測紀錄單",
-      "presetName": "自習",
-      "dueDate": "2026-11-09",
-      "desc": "帶回紀錄單，請家長在確認簽章欄簽名。",
+      "id": 2,
+      "title": "數學習作 P.62 ~ P.65",
+      "presetName": "數習",
+      "type": "數學",
+      "date": "2026-11-16",
       "records": {
         "1": "submitted",
         "2": "submitted",
         "3": "submitted",
-        "4": "pending",
+        "4": "submitted",
         "5": "submitted",
         "6": "submitted",
         "7": "submitted",
         "8": "submitted",
-        "9": "pending",
+        "9": "submitted",
         "10": "submitted",
         "11": "submitted",
         "12": "submitted",
         "13": "submitted",
-        "14": "submitted",
+        "14": "pending",
         "15": "submitted",
-        "16": "revision",
+        "16": "submitted",
+        "17": "submitted",
+        "18": "submitted",
+        "19": "revision",
+        "20": "submitted",
+        "21": "submitted",
+        "22": "missing",
+        "23": "submitted",
+        "24": "submitted",
+        "25": "submitted",
+        "26": "submitted",
+        "27": "submitted"
+      }
+    },
+    {
+      "id": 3,
+      "title": "生字造詞隨堂筆記",
+      "presetName": "造詞",
+      "type": "國語",
+      "date": "2026-11-16",
+      "records": {
+        "1": "submitted",
+        "2": "submitted",
+        "3": "submitted",
+        "4": "submitted",
+        "5": "submitted",
+        "6": "submitted",
+        "7": "submitted",
+        "8": "submitted",
+        "9": "submitted",
+        "10": "submitted",
+        "11": "submitted",
+        "12": "submitted",
+        "13": "submitted",
+        "14": "pending",
+        "15": "submitted",
+        "16": "submitted",
         "17": "submitted",
         "18": "submitted",
         "19": "submitted",
@@ -742,7 +812,7 @@
         "21": "submitted",
         "22": "submitted",
         "23": "submitted",
-        "24": "pending",
+        "24": "submitted",
         "25": "submitted",
         "26": "submitted",
         "27": "submitted"
@@ -751,113 +821,377 @@
   ],
   "pointLogs": [
     {
-      "id": 1,
+      "id": 1794787806053,
+      "studentId": 1,
+      "points": 1,
+      "reason": "🍎 動物園投餵飼料：🍎 美味鮮脆蘋果 (+1 飽食成長)",
+      "date": "2026-11-16",
+      "time": "08:10"
+    },
+    {
+      "id": 101,
+      "studentId": 15,
+      "points": 5,
+      "reason": "奏章字跡工整端正",
+      "date": "2026-11-16",
+      "time": "08:15"
+    },
+    {
+      "id": 102,
       "studentId": 6,
       "points": 5,
-      "reason": "課堂數學解題清晰有條理，為王國獻策！",
-      "date": "2026-11-09",
-      "time": "09:30"
+      "reason": "課堂主動發表演練",
+      "date": "2026-11-16",
+      "time": "09:05"
     },
     {
-      "id": 2,
-      "studentId": 15,
-      "points": 3,
-      "reason": "音樂直笛練習熱心指導同僚大臣",
-      "date": "2026-11-09",
-      "time": "10:15"
+      "id": 103,
+      "studentId": 21,
+      "points": 5,
+      "reason": "熱心指導同儕算術",
+      "date": "2026-11-16",
+      "time": "10:20"
     },
     {
-      "id": 3,
+      "id": 104,
       "studentId": 3,
       "points": 5,
-      "reason": "管理班級公費帳冊字跡清晰無誤",
-      "date": "2026-11-09",
-      "time": "11:00"
-    },
-    {
-      "id": 4,
-      "studentId": 16,
-      "points": -1,
-      "reason": "上課分心聊天提醒",
-      "date": "2026-11-09",
-      "time": "13:10"
+      "reason": "主動協助整理班級圖書",
+      "date": "2026-11-16",
+      "time": "11:10"
     }
   ],
   "announcements": [
     {
       "id": 1,
-      "title": "👑 皇后給五年二班大臣與家長的一封信",
-      "date": "2026-11-09",
-      "pinned": true,
-      "content": "各位五年二班優秀大臣與家長好！王國朝會每日於 07:40 截止打卡，請大臣們養成規律作息準時覲見！本週進行自然科月相觀測，請攜帶紀錄單。感謝家長們共同守護小小兵王國！"
+      "title": "五年二班班親會將於本週五晚間隆重召開",
+      "content": "歡迎全體皇親國戚（各位家長）蒞臨王國議政廳，共同研商小兵成長大計！",
+      "date": "2026-11-12",
+      "important": true
+    },
+    {
+      "id": 2,
+      "title": "下週即將迎來王國期中學力大評量",
+      "content": "請全體小兵大臣調養精神、溫故知新，發揮平素所學爭取至高榮譽！",
+      "date": "2026-11-10",
+      "important": false
     }
   ],
   "rewardCards": [
     {
-      "id": "rc-1",
-      "title": "免死金牌 (作業遲交豁免券)",
+      "id": "rc_1",
+      "title": "榮譽免死金牌 (免罰卡)",
       "cost": 30,
       "icon": "🛡️",
-      "desc": "當日作業若不慎遲交或忘帶，可向皇后抵免一次登記與紀律處分（限用一次）。",
-      "category": "作業特權"
+      "desc": "可抵銷一次未帶學用品或遲到愛班服務登記",
+      "category": "special"
     },
     {
-      "id": "rc-2",
-      "title": "欽點寶座卡 (自由選位一日券)",
-      "cost": 50,
+      "id": "rc_2",
+      "title": "一日皇家座位特權卡",
+      "cost": 45,
       "icon": "💺",
-      "desc": "可自由選擇一整天的上課座位（需維護課堂專注與秩序）。",
-      "category": "班級特權"
+      "desc": "可自主挑選一日心儀王位（需經導師核可）",
+      "category": "privilege"
     },
     {
-      "id": "rc-3",
-      "title": "御膳甜點券 (皇室精緻點心一份)",
+      "id": "rc_3",
+      "title": "御膳房優先盛飯令",
       "cost": 20,
-      "icon": "🍪",
-      "desc": "向皇后換取精美餅乾、布丁或健康小點心一份。",
-      "category": "生活獎勵"
+      "icon": "🍱",
+      "desc": "享有當日午餐第一順位盛飯與加菜特權",
+      "category": "item"
     },
     {
-      "id": "rc-4",
-      "title": "提早放風卡 (下課提早2分鐘)",
-      "cost": 40,
-      "icon": "🏃",
-      "desc": "鐘聲響起前2分鐘，可獲准提早出發至球場活動或洗手間。",
-      "category": "下課特權"
-    },
-    {
-      "id": "rc-5",
-      "title": "早自習免抄卡 (皇室印章蓋印券)",
+      "id": "rc_4",
+      "title": "御花園特別免差役令",
       "cost": 25,
-      "icon": "📜",
-      "desc": "當日聯絡簿可由小幫手協助蓋章張貼，免手抄作業項目一次。",
-      "category": "課業減免"
+      "icon": "🧹",
+      "desc": "可免除一日外掃或教室值日生職務",
+      "category": "privilege"
     },
     {
-      "id": "rc-6",
-      "title": "一日皇家副班長體驗卡",
-      "cost": 35,
-      "icon": "🎖️",
-      "desc": "擔任一日副班長，協助整隊、喊起立敬禮與協助班務管理。",
-      "category": "榮譽幹部"
+      "id": "rc_5",
+      "title": "宮廷圖書館自由閱覽證",
+      "cost": 15,
+      "icon": "📚",
+      "desc": "午休或早自習可至班級圖書角借閱傳奇秘笈",
+      "category": "study"
+    },
+    {
+      "id": "rc_6",
+      "title": "國王特赦奏章豁免卷",
+      "cost": 50,
+      "icon": "📜",
+      "desc": "可減免一項指定短篇日常作業（不含段考與作文）",
+      "category": "special"
     }
   ],
   "rewardRedemptions": [],
   "behaviorCards": {
-    "16": {
-      "serviceCard": true,
-      "serviceReason": "07:48 晨檢打卡遲到愛班服務",
+    "1": {
       "reflectionCard": false,
-      "reflectionReason": ""
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "2": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "3": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "4": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "5": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "6": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "7": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "8": {
+      "reflectionCount": 0,
+      "serviceCount": 1,
+      "serviceReason": "晨檢遲到留班補打掃",
+      "serviceReasons": [
+        {
+          "text": "晨檢遲到留班補打掃",
+          "date": "2026-11-16",
+          "time": "07:46"
+        }
+      ]
+    },
+    "9": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "10": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "11": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "12": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "13": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "14": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "15": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "16": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "17": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "18": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "19": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "20": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "21": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "22": {
+      "reflectionCount": 1,
+      "serviceCount": 1,
+      "reflectionReason": "作業兩項缺繳",
+      "reflectionReasons": [
+        {
+          "text": "作業兩項缺繳",
+          "date": "2026-11-16",
+          "time": "08:00"
+        }
+      ],
+      "serviceReason": "校車遲到",
+      "serviceReasons": [
+        {
+          "text": "校車遲到",
+          "date": "2026-11-16",
+          "time": "07:48"
+        }
+      ]
+    },
+    "23": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
     },
     "24": {
-      "reflectionCard": true,
-      "reflectionReason": "上課分心屢次交談（座位自省）",
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
       "serviceCard": false,
-      "serviceReason": ""
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "25": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "26": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    },
+    "27": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
     }
   },
   "trafficOverrides": {},
+  "seatingLayout": {
+    "rows": 5,
+    "cols": 6
+  },
   "seatingChart": [
     1,
     2,
@@ -890,5 +1224,6 @@
     null,
     null
   ],
-  "lastModified": 1794155518858
+  "lastModified": 1794787806086,
+  "_isFreshInit": true
 }
