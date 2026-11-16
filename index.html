@@ -242,11 +242,11 @@
         </div>
       </div>
 
-      <!-- ★ 核心 3 : 7 比例版面 (左側 30% 打卡座號網格，右側 70% 聯絡簿超大字看板) ★ -->
-      <div class="grid grid-cols-1 lg:grid-cols-10 gap-5 items-start">
+      <!-- ★ 核心版面 (左側打卡座號網格，右側聯絡簿超大字看板，完美同框免滾輪) ★ -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         
-        <!-- 【左側 30% (3欄寬)】：大臣到校打卡區 (僅顯示座號與即時狀態) -->
-        <div class="lg:col-span-3 parchment-card p-4 space-y-3 shadow-md">
+        <!-- 【左側 (4欄寬)】：大臣到校打卡區 (僅顯示座號與即時狀態，5排全數排完) -->
+        <div class="lg:col-span-4 parchment-card p-4 space-y-3 shadow-md">
           <div class="flex items-center justify-between pb-2 border-b-2 border-amber-300">
             <div>
               <span class="text-[11px] text-amber-800 font-bold block">點擊座號即完成打卡</span>
@@ -262,13 +262,13 @@
             </div>
           </div>
 
-          <!-- 27 位大臣座號打卡按鈕網格 (3 欄排列，按鈕方正清晰易點擊) -->
-          <div id="checkInGrid" class="grid grid-cols-3 gap-2">
+          <!-- 27 位大臣座號打卡按鈕網格 (6 欄排列，僅顯示 01~27 座號，5 排全數排完，省空間免滾輪) -->
+          <div id="checkInGrid" class="grid grid-cols-6 gap-1.5 sm:gap-2">
             <!-- 動態由 JavaScript 渲染 1 ~ 27 號按鈕 -->
           </div>
 
-          <div class="pt-2 border-t border-amber-200 text-[11px] text-amber-900 space-y-1.5 font-bold">
-            <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+          <div class="pt-2 border-t border-amber-200 text-[11px] text-amber-900 space-y-1 font-bold">
+            <div class="grid grid-cols-2 gap-1 text-[11px]">
               <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-xs"></span>
                 <span>🟢 準時 (07:40前)</span>
@@ -292,11 +292,11 @@
           </div>
         </div>
 
-        <!-- 【右側 70% (7欄寬)】：今日聯絡簿超大字體看板 (教室後排看得見) -->
-        <div id="contactBoardContainer" class="lg:col-span-7 contact-book-board p-6 sm:p-8 space-y-6 shadow-xl">
+        <!-- 【右側 (8欄寬)】：今日聯絡簿超大字體看板 (教室後排看得見) -->
+        <div id="contactBoardContainer" class="lg:col-span-8 contact-book-board p-5 sm:p-7 space-y-5 shadow-xl">
           
           <!-- 聯絡簿頂部資訊與編輯按鈕 -->
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b-2 border-amber-400">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b-2 border-amber-400">
             <div>
               <div class="flex items-center space-x-2">
                 <span class="bg-amber-950 text-amber-200 text-xs px-3 py-1 rounded-full font-black tracking-wider">
@@ -329,14 +329,14 @@
           </div>
 
           <!-- 聯絡簿條目 (超大字號 text-xl ~ text-2xl，行距舒適，後排學生看得清清楚楚) -->
-          <div class="space-y-4">
+          <div class="space-y-3">
             <div class="flex items-center space-x-2">
               <span class="text-lg font-black text-amber-900 bg-amber-200 px-3 py-1 rounded-lg border border-amber-400">
                 ✍️ 今日作業抄寫項目：
               </span>
             </div>
 
-            <ol id="contactHomeworkList" class="space-y-3 text-lg sm:text-2xl font-black text-slate-900 tracking-wide leading-relaxed pl-2">
+            <ol id="contactHomeworkList" class="space-y-2.5 text-lg sm:text-2xl font-black text-slate-900 tracking-wide leading-relaxed pl-2">
               <!-- 動態渲染各項作業條目 -->
             </ol>
           </div>
@@ -346,35 +346,35 @@
             <div class="flex items-center space-x-2 text-amber-950 font-black text-base sm:text-xl">
               <span>🔔 早自修和重要提醒：</span>
             </div>
-            <ul id="contactReminderList" class="space-y-1.5 text-base sm:text-xl font-bold text-amber-900 list-disc list-inside">
+            <ul id="contactReminderList" class="space-y-1 text-base sm:text-xl font-bold text-amber-900 list-disc list-inside">
               <!-- 動態渲染提醒項目 -->
             </ul>
           </div>
 
           <!-- 皇后聖諭 / 靜思格言 -->
-          <div class="bg-white/80 border-2 border-amber-300 p-3.5 rounded-xl text-center">
+          <div class="bg-white/80 border-2 border-amber-300 p-3 rounded-xl text-center">
             <p id="contactQueenMotto" class="text-sm sm:text-base font-black text-amber-950 italic">
               👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
             </p>
           </div>
 
-          <!-- 📜 歷日聯絡簿歷史存檔簿 (按日存檔總覽) -->
-          <div class="mt-5 pt-4 border-t-2 border-dashed border-amber-300 space-y-3">
+          <!-- 📜 歷日聯絡簿歷史存檔簿 (按日存檔總覽，預設收合以讓出空間同時顯示打卡與提醒) -->
+          <div class="mt-3 pt-3 border-t-2 border-dashed border-amber-300 space-y-2">
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-2">
-                <span class="text-lg">📜</span>
-                <h4 class="text-base sm:text-lg font-black text-amber-950">
+                <span class="text-base">📜</span>
+                <h4 class="text-sm sm:text-base font-black text-amber-950">
                   歷日聯絡簿存檔紀錄 (各日奏章回溯)
                 </h4>
               </div>
               <button type="button" onclick="toggleContactHistoryAccordion()" class="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 rounded-xl text-xs font-black shadow-xs flex items-center space-x-1">
                 <i data-lucide="history" class="w-3.5 h-3.5 text-amber-700"></i>
-                <span id="btnToggleContactHistoryText">歷史存檔簿 (展開/收合)</span>
+                <span id="btnToggleContactHistoryText">歷史存檔簿 (展開)</span>
               </button>
             </div>
 
-            <!-- 歷史紀錄卡片清單 -->
-            <div id="morningContactHistoryList" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+            <!-- 歷史紀錄卡片清單 (預設 hidden 收合) -->
+            <div id="morningContactHistoryList" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
               <!-- 動態由 renderContactBookHistoryList() 渲染各日聯絡簿 -->
             </div>
           </div>
@@ -504,6 +504,93 @@
           <button onclick="filterTrafficLight('yellow')" id="btnTrafficFilter-yellow" class="px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 text-xs">🟡 黃燈</button>
           <button onclick="filterTrafficLight('red')" id="btnTrafficFilter-red" class="px-2.5 py-1 rounded-lg bg-white border border-rose-300 text-rose-800 hover:bg-rose-50 text-xs">🔴 紅燈</button>
           <button onclick="filterTrafficLight('service')" id="btnTrafficFilter-service" class="px-2.5 py-1 rounded-lg bg-white border border-orange-300 text-orange-800 hover:bg-orange-50 text-xs">🧹 愛班卡</button>
+        </div>
+      </div>
+
+      <!-- ★ 紀律卡牌兩大獨立管理專區：🪑 座位自省卡專區 ＆ 🧹 愛班服務卡專區 ★ -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- 獨立專區 1：🪑 座位自省卡專區 -->
+        <div class="bg-gradient-to-br from-rose-50 via-white to-rose-100/70 p-4 sm:p-5 rounded-2xl border-2 border-rose-400 shadow-sm space-y-3">
+          <div class="flex items-center justify-between pb-2.5 border-b-2 border-rose-200">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-3xl">🪑</span>
+              <div>
+                <h3 class="text-base sm:text-lg font-black text-rose-950 flex items-center space-x-2">
+                  <span>座位自省卡專區</span>
+                  <span class="text-xs bg-rose-200 text-rose-900 px-2 py-0.5 rounded-full font-bold">禁止下課・留座自省</span>
+                </h3>
+                <span class="text-xs text-rose-800 font-bold">作業一項未交自動記1張(標示作業) / 導師手動核發</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-rose-800 font-bold block">全班自省總計</span>
+              <div class="text-rose-700 font-black">
+                <span id="zoneTotalReflectionCount" class="font-digital text-2xl sm:text-3xl">0</span>
+                <span class="text-xs">張</span>
+              </div>
+            </div>
+          </div>
+          <!-- 操作按鈕列 -->
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span class="text-rose-900 font-bold">💡 說明：自省卡由導師手動核銷移除，系統不自動扣除</span>
+            <div class="flex items-center space-x-2">
+              <button type="button" onclick="openBehaviorCardModal('reflection')" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-xs flex items-center space-x-1">
+                <span>+ 派發自省卡</span>
+              </button>
+              <button type="button" onclick="confirmPardonAll('reflection')" class="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-rose-800 border border-rose-300 font-black shadow-xs flex items-center space-x-1">
+                <span>🕊️ 全班自省特赦</span>
+              </button>
+            </div>
+          </div>
+          <!-- 受限制大臣名單 -->
+          <div class="pt-2 border-t border-rose-200/80">
+            <span class="text-xs font-black text-rose-950 block mb-1.5">受限制大臣名單 (點擊開啟通行詳情)：</span>
+            <div id="zoneReflectionStudentPills" class="flex flex-wrap gap-1.5">
+              <!-- 動態由 renderTrafficView() 渲染 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 獨立專區 2：🧹 愛班服務卡專區 -->
+        <div class="bg-gradient-to-br from-orange-50 via-white to-amber-100/70 p-4 sm:p-5 rounded-2xl border-2 border-orange-400 shadow-sm space-y-3">
+          <div class="flex items-center justify-between pb-2.5 border-b-2 border-orange-200">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-3xl">🧹</span>
+              <div>
+                <h3 class="text-base sm:text-lg font-black text-orange-950 flex items-center space-x-2">
+                  <span>愛班服務卡專區</span>
+                  <span class="text-xs bg-orange-200 text-orange-900 px-2 py-0.5 rounded-full font-bold">下課愛班整潔勞動</span>
+                </h3>
+                <span class="text-xs text-orange-800 font-bold">打卡遲到系統自動新增(事由:遲到) / 導師手動指派</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-orange-800 font-bold block">全班愛班總計</span>
+              <div class="text-orange-700 font-black">
+                <span id="zoneTotalServiceCount" class="font-digital text-2xl sm:text-3xl">0</span>
+                <span class="text-xs">張</span>
+              </div>
+            </div>
+          </div>
+          <!-- 操作按鈕列 -->
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span class="text-orange-900 font-bold">💡 說明：愛班卡由導師手動核銷移除，系統不自動扣除</span>
+            <div class="flex items-center space-x-2">
+              <button type="button" onclick="openBehaviorCardModal('service')" class="px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black shadow-xs flex items-center space-x-1">
+                <span>+ 派發愛班卡</span>
+              </button>
+              <button type="button" onclick="confirmPardonAll('service')" class="px-3 py-1.5 rounded-xl bg-white hover:bg-orange-50 text-orange-800 border border-orange-300 font-black shadow-xs flex items-center space-x-1">
+                <span>🧹 全班愛班特赦</span>
+              </button>
+            </div>
+          </div>
+          <!-- 受限制大臣名單 -->
+          <div class="pt-2 border-t border-orange-200/80">
+            <span class="text-xs font-black text-orange-950 block mb-1.5">受限制大臣名單 (點擊開啟通行詳情)：</span>
+            <div id="zoneServiceStudentPills" class="flex flex-wrap gap-1.5">
+              <!-- 動態由 renderTrafficView() 渲染 -->
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2201,11 +2288,11 @@
     </div>
   </div>
 
-  <!-- MODAL: 個別大臣下課紅綠燈詳情與手動放行 (視窗大小最適化・兩大紀律分區・字體放大清晰) -->
-  <div id="trafficDetailModal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-    <div class="parchment-card max-w-xl sm:max-w-2xl w-full max-h-[90vh] flex flex-col rounded-2xl shadow-2xl border-2 border-amber-400 overflow-hidden">
+  <!-- MODAL: 個別大臣下課紅綠燈詳情與手動放行 (視窗大小最適化・兩大紀律分區並排・字體放大清晰) -->
+  <div id="trafficDetailModal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 md:p-6">
+    <div class="parchment-card max-w-4xl lg:max-w-5xl w-full max-h-[85vh] sm:max-h-[88vh] flex flex-col rounded-2xl shadow-2xl border-2 border-amber-400 overflow-hidden">
       <!-- 頂部標題列 (固定於上方) -->
-      <div class="flex items-center justify-between border-b-2 border-amber-300 p-4 sm:p-5 bg-gradient-to-r from-amber-200 via-yellow-200 to-amber-300 flex-shrink-0">
+      <div class="flex items-center justify-between border-b-2 border-amber-300 p-3.5 sm:p-4 bg-gradient-to-r from-amber-200 via-yellow-200 to-amber-300 flex-shrink-0">
         <h3 id="trafficModalStudentTitle" class="text-lg sm:text-xl font-black text-amber-950 flex items-center space-x-2">
           <span>🚦 大臣下課通行詳情</span>
         </h3>
@@ -2215,7 +2302,7 @@
       </div>
 
       <!-- 可捲動的主體內容區 (滾輪捲動，絕不超出螢幕，字體清晰大方) -->
-      <div id="trafficModalContent" class="overflow-y-auto p-4 sm:p-6 space-y-4 text-sm flex-1">
+      <div id="trafficModalContent" class="overflow-y-auto p-4 sm:p-5 space-y-4 text-sm flex-1">
         <!-- 動態注入該大臣即時通行燈號、兩大獨立紀律分區與作業進度 -->
       </div>
     </div>
@@ -3176,8 +3263,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111621"></script>
-  <script src="ui.js?v=2026111621"></script>
+  <script src="app.js?v=2026111623"></script>
+  <script src="ui.js?v=2026111623"></script>
 
 </body>
 </html>
