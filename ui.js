@@ -2517,25 +2517,43 @@ function addCustomServiceCardToStudent(studentId, reason) {
   showToast(`🧹 已為大臣指派愛班卡：${reason}`);
 }
 
-function openBehaviorCardModal() {
+function openBehaviorCardModal(defaultType = 'reflection') {
   if (!checkTeacherAuth("派發常規紀律卡牌（自省卡/愛班卡）")) return;
   const grid = document.getElementById("behaviorStudentSelectorGrid");
   const students = window.KingdomApp.store.data.students || [];
   if (grid) {
     grid.innerHTML = students.map(st => `
-      <label class="flex items-center space-x-1.5 p-1 rounded hover:bg-amber-100 cursor-pointer text-xs">
-        <input type="checkbox" name="behaviorStudentCheckbox" value="${st.id}" class="rounded text-rose-600 focus:ring-rose-500">
+      <label class="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-amber-100 cursor-pointer text-xs sm:text-sm font-bold text-slate-900">
+        <input type="checkbox" name="behaviorStudentCheckbox" value="${st.id}" class="rounded text-rose-600 focus:ring-rose-500 w-4 h-4">
         <span>${String(st.seatNo).padStart(2, '0')}.${st.name}</span>
       </label>
     `).join('');
   }
+
+  const modalTitle = document.getElementById("behaviorModalMainTitle");
+  if (modalTitle) {
+    modalTitle.innerHTML = defaultType === 'service'
+      ? `<span>🧹 派發全班愛班服務卡 (課間愛班勞動)</span>`
+      : `<span>🪑 派發全班座位自省卡 (紅燈・禁止下課)</span>`;
+  }
+
+  const targetRadio = document.querySelector(`input[name="behaviorCardType"][value="${defaultType}"]`);
+  if (targetRadio) targetRadio.checked = true;
+
   document.getElementById("behaviorCardModal").classList.remove("hidden");
   renderBehaviorReasonShortcuts();
 
   // 監聽單選按鈕變更，自動更換事由快捷列
   const typeRadios = document.querySelectorAll('input[name="behaviorCardType"]');
   typeRadios.forEach(radio => {
-    radio.onchange = () => renderBehaviorReasonShortcuts();
+    radio.onchange = () => {
+      if (modalTitle) {
+        modalTitle.innerHTML = radio.value === 'service'
+          ? `<span>🧹 派發全班愛班服務卡 (課間愛班勞動)</span>`
+          : `<span>🪑 派發全班座位自省卡 (紅燈・禁止下課)</span>`;
+      }
+      renderBehaviorReasonShortcuts();
+    };
   });
 
   initLucideIcons();
@@ -2576,11 +2594,52 @@ function submitBehaviorCards(e) {
   renderTrafficView();
 }
 
+let activeTrafficCardTab = 'reflection';
+
+function switchTrafficDetailTab(tabType) {
+  activeTrafficCardTab = tabType;
+  const refTab = document.getElementById("trafficTabContentReflection");
+  const srvTab = document.getElementById("trafficTabContentService");
+  const btnRef = document.getElementById("tabBtnReflection");
+  const btnSrv = document.getElementById("tabBtnService");
+
+  if (tabType === 'reflection') {
+    if (refTab) refTab.classList.remove("hidden");
+    if (srvTab) srvTab.classList.add("hidden");
+    if (btnRef) {
+      btnRef.className = "flex-1 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm sm:text-base bg-rose-600 text-white font-black shadow-md";
+    }
+    if (btnSrv) {
+      btnSrv.className = "flex-1 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm sm:text-base text-amber-950 font-bold hover:bg-white/60";
+    }
+  } else {
+    if (refTab) refTab.classList.add("hidden");
+    if (srvTab) srvTab.classList.remove("hidden");
+    if (btnRef) {
+      btnRef.className = "flex-1 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm sm:text-base text-amber-950 font-bold hover:bg-white/60";
+    }
+    if (btnSrv) {
+      btnSrv.className = "flex-1 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm sm:text-base bg-orange-600 text-white font-black shadow-md";
+    }
+  }
+}
+
 function openTrafficDetailModal(studentId) {
-  activeTrafficStudentId = studentId;
   const status = window.KingdomApp.store.evaluateTrafficStatus(studentId);
   if (!status) return;
   const st = status.student;
+
+  // 智慧預設選定 Tab：切換不同學生時，若該生無自省卡但有愛班卡，則切換至愛班卡
+  if (typeof activeTrafficStudentId === 'undefined' || activeTrafficStudentId !== studentId) {
+    if (status.reflectionCount > 0 || status.hasReflection) {
+      activeTrafficCardTab = 'reflection';
+    } else if (status.serviceCount > 0 || status.hasService) {
+      activeTrafficCardTab = 'service';
+    } else {
+      activeTrafficCardTab = 'reflection';
+    }
+  }
+  activeTrafficStudentId = studentId;
 
   const titleEl = document.getElementById("trafficModalStudentTitle");
   if (titleEl) {
@@ -2590,177 +2649,236 @@ function openTrafficDetailModal(studentId) {
   const content = document.getElementById("trafficModalContent");
   if (!content) return;
 
+  const refCount = status.reflectionCount || (status.hasReflection ? 1 : 0);
+  const srvCount = status.serviceCount || (status.hasService ? 1 : 0);
+  const bCard = (window.KingdomApp.store.data.behaviorCards && (window.KingdomApp.store.data.behaviorCards[st.id] || window.KingdomApp.store.data.behaviorCards[st.seatNo])) || {};
+
+  // 作業列表與狀態摘要
+  let hasPendingOrRevisionHw = false;
   const hwList = (window.KingdomApp.store.data.homework || []).map(hw => {
     const rec = (hw.records && (hw.records[st.id] !== undefined ? hw.records[st.id] : hw.records[st.seatNo])) || 'pending';
     let badge = '';
-    if (rec === 'submitted' || rec === 'excellent') badge = `<span class="text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded font-black">✅ 準時已交</span>`;
-    else if (rec === 'late') badge = `<span class="text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded font-black">⏰ 遲交已補</span>`;
-    else if (rec === 'revision') badge = `<span class="text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded font-black">⚠️ 需訂正</span>`;
-    else badge = `<span class="text-rose-700 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded font-black">❌ 未繳交</span>`;
+    if (rec === 'submitted' || rec === 'excellent') {
+      badge = `<span class="text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 rounded-lg font-black text-xs sm:text-sm">✅ 準時已交</span>`;
+    } else if (rec === 'late') {
+      badge = `<span class="text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-lg font-black text-xs sm:text-sm">⏰ 遲交已補</span>`;
+    } else if (rec === 'revision') {
+      hasPendingOrRevisionHw = true;
+      badge = `<span class="text-purple-900 bg-purple-100 border border-purple-300 px-2.5 py-0.5 rounded-lg font-black text-xs sm:text-sm">⚠️ 需訂正</span>`;
+    } else {
+      hasPendingOrRevisionHw = true;
+      badge = `<span class="text-rose-900 bg-rose-100 border border-rose-300 px-2.5 py-0.5 rounded-lg font-black text-xs sm:text-sm">❌ 未繳交</span>`;
+    }
     return `
-      <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-amber-200">
-        <span class="font-bold text-slate-800">${hw.title}</span>
+      <div class="flex items-center justify-between p-2.5 rounded-xl bg-amber-50/70 border border-amber-200">
+        <span class="font-bold text-slate-900 text-sm sm:text-base">${hw.title}</span>
         ${badge}
       </div>
     `;
   }).join('');
 
-  const refCount = status.reflectionCount || (status.hasReflection ? 1 : 0);
-  const srvCount = status.serviceCount || (status.hasService ? 1 : 0);
-  const bCard = (window.KingdomApp.store.data.behaviorCards && (window.KingdomApp.store.data.behaviorCards[st.id] || window.KingdomApp.store.data.behaviorCards[st.seatNo])) || {};
-
   content.innerHTML = `
-    <!-- 當前判定結果 -->
-    <div class="p-3.5 rounded-xl border-2 ${status.cardClass || ''} space-y-1">
-      <div class="flex items-center space-x-2">
-        <span class="text-base font-black">${status.label}</span>
+    <!-- 頂部當前判定結果 (大字體醒目橫幅) -->
+    <div class="p-4 rounded-2xl border-2 ${status.cardClass || ''} flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-xs">
+      <div class="space-y-1">
+        <div class="flex items-center space-x-2">
+          <span class="text-lg sm:text-xl font-black">${status.label}</span>
+          ${status.isOverridden ? '<span class="text-xs bg-amber-400 text-amber-950 font-black px-2 py-0.5 rounded-md">導師指定覆寫</span>' : ''}
+        </div>
+        <p class="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed">${status.desc}</p>
       </div>
-      <p class="text-xs font-medium text-slate-800">${status.desc}</p>
+      <div class="flex items-center space-x-2 flex-shrink-0">
+        <span class="text-xs sm:text-sm font-black px-3 py-1.5 rounded-xl ${refCount > 0 ? 'bg-rose-100 text-rose-900 border border-rose-300' : 'bg-slate-100 text-slate-600'}">
+          🪑 自省卡：${refCount} 張
+        </span>
+        <span class="text-xs sm:text-sm font-black px-3 py-1.5 rounded-xl ${srvCount > 0 ? 'bg-orange-100 text-orange-900 border border-orange-300' : 'bg-slate-100 text-slate-600'}">
+          🧹 愛班卡：${srvCount} 張
+        </span>
+      </div>
     </div>
 
-    <!-- 作業清單 -->
-    <div class="space-y-1.5">
-      <span class="font-black text-amber-950 block">📝 今日各項作業進度：</span>
-      <div class="space-y-1 max-h-32 overflow-y-auto pr-1">
-        ${hwList}
-      </div>
+    <!-- 紀律卡牌管理兩大獨立分區切換列 (字體清晰、大按鈕，互不擠壓) -->
+    <div class="bg-amber-100/90 p-1.5 rounded-2xl border-2 border-amber-400 shadow-sm flex items-center space-x-2">
+      <button type="button" onclick="switchTrafficDetailTab('reflection')" id="tabBtnReflection"
+        class="flex-1 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm sm:text-base ${activeTrafficCardTab === 'reflection' ? 'bg-rose-600 text-white font-black shadow-md' : 'text-amber-950 font-bold hover:bg-white/60'}">
+        <span class="text-lg">🪑</span>
+        <span>座位自省卡專區</span>
+        <span class="px-2 py-0.5 rounded-full text-xs font-black ${activeTrafficCardTab === 'reflection' ? 'bg-white text-rose-700' : 'bg-rose-200 text-rose-900'}">${refCount}</span>
+      </button>
+
+      <button type="button" onclick="switchTrafficDetailTab('service')" id="tabBtnService"
+        class="flex-1 py-2.5 rounded-xl transition flex items-center justify-center space-x-2 text-sm sm:text-base ${activeTrafficCardTab === 'service' ? 'bg-orange-600 text-white font-black shadow-md' : 'text-amber-950 font-bold hover:bg-white/60'}">
+        <span class="text-lg">🧹</span>
+        <span>愛班服務卡專區</span>
+        <span class="px-2 py-0.5 rounded-full text-xs font-black ${activeTrafficCardTab === 'service' ? 'bg-white text-orange-700' : 'bg-orange-200 text-orange-900'}">${srvCount}</span>
+      </button>
     </div>
 
-    <!-- 行為卡累計次數與微調 (自省卡 & 愛班服務卡) -->
-    <div class="p-3 rounded-xl bg-amber-50 border border-amber-300 space-y-3">
-      <span class="font-black text-amber-950 block text-xs">🏷️ 紀律卡牌累計與調整：</span>
-      
-      <!-- 自省卡 (作業未交自動新增 / 導師全手動移除) -->
-      <div class="bg-white p-2.5 rounded-xl border border-amber-200 space-y-2">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <!-- ============================================================== -->
+    <!-- 第一部分：🪑 座位自省卡專區 (大字舒適、明細清楚、附手動核銷移除) -->
+    <!-- ============================================================== -->
+    <div id="trafficTabContentReflection" class="${activeTrafficCardTab === 'reflection' ? '' : 'hidden'} space-y-3.5">
+      <div class="bg-white p-4 rounded-2xl border-2 border-rose-300 space-y-3 shadow-xs">
+        <!-- 頂部累計數與快速調整按鈕 -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-rose-200">
           <div>
-            <span class="font-black text-slate-900 block flex items-center space-x-1.5">
+            <span class="font-black text-slate-900 text-base sm:text-lg flex items-center space-x-2">
               <span>🪑 座位自省卡</span>
-              <span class="text-[10px] font-bold bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded border border-rose-300">作業未交自動派發 / 導師手動核銷</span>
+              <span class="text-xs font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded-md border border-rose-300">作業未交自動 / 導師手動</span>
             </span>
-            <span class="text-[11px] font-bold text-rose-700">
-              目前累計：${refCount} 次 ${status.reflectionReason ? `(${status.reflectionReason})` : ''}
-            </span>
+            <div class="text-sm sm:text-base font-black text-rose-700 mt-0.5">
+              目前累計：<span class="text-lg sm:text-xl font-digital">${refCount}</span> 次 ${status.reflectionReason ? `(${status.reflectionReason})` : ''}
+            </div>
           </div>
-          <div class="flex items-center space-x-1 text-xs font-bold">
-            <button type="button" onclick="removeStudentReflectionOne(${st.id})" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300" title="導師手動減免 1 次自省卡">-1 次</button>
-            <button type="button" onclick="addStudentReflectionOne(${st.id})" class="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300" title="自省卡加 1 次">+1 次</button>
-            <button type="button" onclick="pardonStudentCard(${st.id}, 'reflection')" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-black" title="自省卡特赦歸零">🕊️ 特赦歸零</button>
+          <div class="flex items-center space-x-1.5 text-xs sm:text-sm font-black flex-shrink-0">
+            <button type="button" onclick="removeStudentReflectionOne(${st.id})" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-2xs" title="導師手動減免 1 次自省卡">-1 次</button>
+            <button type="button" onclick="addStudentReflectionOne(${st.id})" class="px-3.5 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 shadow-2xs" title="自省卡加 1 次">+1 次</button>
+            <button type="button" onclick="pardonStudentCard(${st.id}, 'reflection')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-2xs" title="自省卡特赦歸零">🕊️ 特赦歸零</button>
           </div>
         </div>
 
-        <!-- 現存自省卡清單 (導師逐筆手動移除) -->
-        ${(bCard.reflectionReasons && bCard.reflectionReasons.length > 0) ? `
-          <div class="space-y-1 pt-1.5 border-t border-rose-100">
-            <span class="text-[10px] font-black text-rose-800 block">📋 現存自省卡清單（導師手動移除專區）：</span>
-            <div class="space-y-1 max-h-28 overflow-y-auto pr-0.5">
+        <!-- 現存自省卡清單 (導師逐筆手動移除核銷專區) -->
+        <div class="space-y-2">
+          <span class="text-xs sm:text-sm font-black text-rose-950 block">📋 現存自省卡清單 (點選 ❌ 導師手動核銷移除)：</span>
+          ${(bCard.reflectionReasons && bCard.reflectionReasons.length > 0) ? `
+            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
               ${bCard.reflectionReasons.map((r, rIdx) => `
-                <div class="flex items-center justify-between p-1 rounded-lg bg-rose-50 border border-rose-200 text-xs">
-                  <div class="flex items-center space-x-1 truncate mr-2">
-                    <span class="font-bold text-rose-950">${rIdx + 1}. ${r.text}</span>
-                    ${r.isAutoHw ? `<span class="text-[9px] bg-rose-200 text-rose-900 px-1 py-0.2 rounded font-mono">系統派發</span>` : `<span class="text-[9px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded">導師手動</span>`}
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-rose-50 border-2 border-rose-200 text-sm">
+                  <div class="flex items-center space-x-2 truncate mr-2">
+                    <span class="font-black text-rose-950">${rIdx + 1}. ${r.text}</span>
+                    ${r.isAutoHw ? `<span class="text-xs bg-rose-200 text-rose-900 px-1.5 py-0.5 rounded font-bold">未交自動派發</span>` : `<span class="text-xs bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded font-bold">導師手動</span>`}
                   </div>
-                  <button type="button" onclick="removeStudentReflectionReasonByIndex(${st.id}, ${rIdx})" class="px-1.5 py-0.5 rounded text-[10px] font-black bg-white hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-300 transition shadow-2xs flex-shrink-0" title="導師手動核銷移除此張自省卡">
+                  <button type="button" onclick="removeStudentReflectionReasonByIndex(${st.id}, ${rIdx})" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-white hover:bg-rose-600 hover:text-white text-rose-700 border-2 border-rose-300 transition shadow-xs flex-shrink-0" title="導師手動核銷移除此張自省卡">
                     ❌ 移除
                   </button>
                 </div>
               `).join('')}
             </div>
-          </div>
-        ` : ''}
+          ` : `
+            <div class="p-3 rounded-xl bg-rose-50/50 border border-dashed border-rose-300 text-slate-500 font-bold text-center text-xs sm:text-sm">
+              🟢 目前無生效中的座位自省卡
+            </div>
+          `}
+        </div>
 
-        <div class="pt-1.5 border-t border-rose-100">
-          <div class="flex items-center justify-between text-[10px] text-rose-900 font-bold mb-1">
-            <span>⚡ 自省事由快捷（點擊一鍵核發，附編輯/刪除）：</span>
+        <!-- 自省快捷事由列 (大字體標籤，點擊一鍵核發) -->
+        <div class="pt-3 border-t border-rose-200 space-y-2">
+          <div class="flex items-center justify-between text-xs sm:text-sm font-black text-rose-950">
+            <span>⚡ 自省事由快捷（點擊一鍵核發，附 ✏️編輯 / 🗑️刪除）：</span>
             <button type="button" onclick="openAddBehaviorReasonModal('reflection')" class="text-rose-700 hover:underline">+ 新增自省快捷</button>
           </div>
-          <div class="flex flex-wrap gap-1">
+          <div class="flex flex-wrap gap-2">
             ${(window.KingdomApp.store.data.behaviorReasons || window.KingdomApp.DEFAULT_BEHAVIOR_REASONS || []).filter(r => r.type === 'reflection').map(r => `
-              <div class="inline-flex items-center rounded-lg bg-rose-50 border border-rose-300 text-rose-950 font-bold shadow-2xs overflow-hidden">
-                <button type="button" onclick="addCustomReflectionCardToStudent(${st.id}, '${r.text.replace(/'/g, "\\'")}')" class="px-2 py-0.5 text-[11px] hover:bg-rose-100 transition" title="立即核發 1 次：${r.text}">
+              <div class="inline-flex items-center rounded-xl bg-rose-50 border-2 border-rose-300 text-rose-950 font-black shadow-2xs overflow-hidden">
+                <button type="button" onclick="addCustomReflectionCardToStudent(${st.id}, '${r.text.replace(/'/g, "\\'")}')" class="px-3 py-1.5 text-xs sm:text-sm hover:bg-rose-100 transition" title="立即核發 1 次：${r.text}">
                   ${r.label}
                 </button>
-                <button type="button" onclick="event.stopPropagation(); openEditBehaviorReasonModal('${r.id}')" class="px-1 py-0.5 text-[10px] text-slate-500 hover:text-amber-800 hover:bg-rose-200 border-l border-rose-200" title="編輯此快捷">✏️</button>
-                <button type="button" onclick="event.stopPropagation(); deleteBehaviorReasonPrompt('${r.id}')" class="px-1 py-0.5 text-[10px] text-slate-400 hover:text-rose-700 hover:bg-rose-200 border-l border-rose-200" title="刪除此快捷">🗑️</button>
+                <button type="button" onclick="event.stopPropagation(); openEditBehaviorReasonModal('${r.id}')" class="px-2 py-1.5 text-xs text-slate-500 hover:text-amber-800 hover:bg-rose-200 border-l border-rose-200" title="編輯此快捷">✏️</button>
+                <button type="button" onclick="event.stopPropagation(); deleteBehaviorReasonPrompt('${r.id}')" class="px-2 py-1.5 text-xs text-slate-400 hover:text-rose-700 hover:bg-rose-200 border-l border-rose-200" title="刪除此快捷">🗑️</button>
               </div>
-            `).join('') || '<span class="text-[10px] text-slate-400">暫無快捷</span>'}
-          </div>
-        </div>
-      </div>
-
-      <!-- 愛班卡 (打卡遲到自動設定為「遲到」 / 導師全手動移除) -->
-      <div class="bg-white p-2.5 rounded-xl border border-amber-200 space-y-2">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <span class="font-black text-slate-900 block flex items-center space-x-1.5">
-              <span>🧹 愛班服務卡</span>
-              <span class="text-[10px] font-bold bg-orange-100 text-orange-800 px-1.5 py-0.2 rounded border border-orange-300">遲到自動派發 / 導師手動核銷</span>
-            </span>
-            <span class="text-[11px] font-bold text-orange-700">
-              目前累計：${srvCount} 次 ${status.serviceReason ? `(${status.serviceReason})` : ''}
-            </span>
-          </div>
-          <div class="flex items-center space-x-1 text-xs font-bold">
-            <button type="button" onclick="removeStudentServiceOne(${st.id})" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300" title="導師手動減免 1 次愛班卡">-1 次</button>
-            <button type="button" onclick="addStudentServiceOne(${st.id})" class="px-2 py-1 rounded bg-orange-100 hover:bg-orange-200 text-orange-900 border border-orange-300" title="愛班卡加 1 次">+1 次</button>
-            <button type="button" onclick="pardonStudentCard(${st.id}, 'service')" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-black" title="愛班卡特赦歸零">🧹 特赦歸零</button>
-          </div>
-        </div>
-
-        <!-- 現存愛班卡清單 (導師逐筆手動移除) -->
-        ${(bCard.serviceReasons && bCard.serviceReasons.length > 0) ? `
-          <div class="space-y-1 pt-1.5 border-t border-orange-100">
-            <span class="text-[10px] font-black text-orange-800 block">📋 現存愛班卡清單（導師手動移除專區）：</span>
-            <div class="space-y-1 max-h-28 overflow-y-auto pr-0.5">
-              ${bCard.serviceReasons.map((r, sIdx) => `
-                <div class="flex items-center justify-between p-1 rounded-lg bg-orange-50 border border-orange-200 text-xs">
-                  <div class="flex items-center space-x-1 truncate mr-2">
-                    <span class="font-bold text-orange-950">${sIdx + 1}. ${r.text}</span>
-                    ${r.text === '遲到' ? `<span class="text-[9px] bg-orange-200 text-orange-900 px-1 py-0.2 rounded font-mono">遲到派發</span>` : `<span class="text-[9px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded">導師指派</span>`}
-                  </div>
-                  <button type="button" onclick="removeStudentServiceReasonByIndex(${st.id}, ${sIdx})" class="px-1.5 py-0.5 rounded text-[10px] font-black bg-white hover:bg-orange-600 hover:text-white text-orange-700 border border-orange-300 transition shadow-2xs flex-shrink-0" title="導師手動核銷移除此張愛班卡">
-                    ❌ 移除
-                  </button>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        <div class="pt-1.5 border-t border-orange-100">
-          <div class="flex items-center justify-between text-[10px] text-orange-900 font-bold mb-1">
-            <span>⚡ 愛班事由快捷（點擊一鍵指派，附編輯/刪除）：</span>
-            <button type="button" onclick="openAddBehaviorReasonModal('service')" class="text-orange-700 hover:underline">+ 新增愛班快捷</button>
-          </div>
-          <div class="flex flex-wrap gap-1">
-            ${(window.KingdomApp.store.data.behaviorReasons || window.KingdomApp.DEFAULT_BEHAVIOR_REASONS || []).filter(r => r.type === 'service').map(r => `
-              <div class="inline-flex items-center rounded-lg bg-orange-50 border border-orange-300 text-orange-950 font-bold shadow-2xs overflow-hidden">
-                <button type="button" onclick="addCustomServiceCardToStudent(${st.id}, '${r.text.replace(/'/g, "\\'")}')" class="px-2 py-0.5 text-[11px] hover:bg-orange-100 transition" title="立即指派 1 次：${r.text}">
-                  ${r.label}
-                </button>
-                <button type="button" onclick="event.stopPropagation(); openEditBehaviorReasonModal('${r.id}')" class="px-1 py-0.5 text-[10px] text-slate-500 hover:text-amber-800 hover:bg-orange-200 border-l border-orange-200" title="編輯此快捷">✏️</button>
-                <button type="button" onclick="event.stopPropagation(); deleteBehaviorReasonPrompt('${r.id}')" class="px-1 py-0.5 text-[10px] text-slate-400 hover:text-rose-700 hover:bg-orange-200 border-l border-orange-200" title="刪除此快捷">🗑️</button>
-              </div>
-            `).join('') || '<span class="text-[10px] text-slate-400">暫無快捷</span>'}
+            `).join('') || '<span class="text-xs text-slate-400">暫無快捷</span>'}
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 導師手動快速裁定 -->
-    <div class="pt-2 border-t border-amber-200 space-y-1.5">
-      <span class="font-black text-amber-950 block">👑 導師手動快速覆寫：</span>
-      <div class="grid grid-cols-4 gap-1.5 font-black text-xs">
-        <button onclick="setTrafficOverrideFromModal(${st.id}, 'green')" class="py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow">🟢 特赦綠燈</button>
-        <button onclick="setTrafficOverrideFromModal(${st.id}, 'yellow')" class="py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-amber-950 shadow">🟡 指定黃燈</button>
-        <button onclick="setTrafficOverrideFromModal(${st.id}, 'red')" class="py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow">🔴 指定紅燈</button>
-        <button onclick="setTrafficOverrideFromModal(${st.id}, 'auto')" class="py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800">🔄 自動判定</button>
+    <!-- ============================================================== -->
+    <!-- 第二部分：🧹 愛班服務卡專區 (大字舒適、明細清楚、附手動核銷移除) -->
+    <!-- ============================================================== -->
+    <div id="trafficTabContentService" class="${activeTrafficCardTab === 'service' ? '' : 'hidden'} space-y-3.5">
+      <div class="bg-white p-4 rounded-2xl border-2 border-orange-300 space-y-3 shadow-xs">
+        <!-- 頂部累計數與快速調整按鈕 -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-orange-200">
+          <div>
+            <span class="font-black text-slate-900 text-base sm:text-lg flex items-center space-x-2">
+              <span>🧹 愛班服務卡</span>
+              <span class="text-xs font-bold bg-orange-100 text-orange-800 px-2 py-0.5 rounded-md border border-orange-300">遲到自動派發 / 導師手動</span>
+            </span>
+            <div class="text-sm sm:text-base font-black text-orange-700 mt-0.5">
+              目前累計：<span class="text-lg sm:text-xl font-digital">${srvCount}</span> 次 ${status.serviceReason ? `(${status.serviceReason})` : ''}
+            </div>
+          </div>
+          <div class="flex items-center space-x-1.5 text-xs sm:text-sm font-black flex-shrink-0">
+            <button type="button" onclick="removeStudentServiceOne(${st.id})" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-2xs" title="導師手動減免 1 次愛班卡">-1 次</button>
+            <button type="button" onclick="addStudentServiceOne(${st.id})" class="px-3.5 py-2 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-900 border border-orange-300 shadow-2xs" title="愛班卡加 1 次">+1 次</button>
+            <button type="button" onclick="pardonStudentCard(${st.id}, 'service')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-2xs" title="愛班卡特赦歸零">🧹 特赦歸零</button>
+          </div>
+        </div>
+
+        <!-- 現存愛班卡清單 (導師逐筆手動移除核銷專區) -->
+        <div class="space-y-2">
+          <span class="text-xs sm:text-sm font-black text-orange-950 block">📋 現存愛班卡清單 (點選 ❌ 導師手動核銷移除)：</span>
+          ${(bCard.serviceReasons && bCard.serviceReasons.length > 0) ? `
+            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+              ${bCard.serviceReasons.map((r, sIdx) => `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-orange-50 border-2 border-orange-200 text-sm">
+                  <div class="flex items-center space-x-2 truncate mr-2">
+                    <span class="font-black text-orange-950">${sIdx + 1}. ${r.text}</span>
+                    ${r.text === '遲到' ? `<span class="text-xs bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded font-bold">遲到自動派發</span>` : `<span class="text-xs bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded font-bold">導師手動指派</span>`}
+                  </div>
+                  <button type="button" onclick="removeStudentServiceReasonByIndex(${st.id}, ${sIdx})" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-white hover:bg-orange-600 hover:text-white text-orange-700 border-2 border-orange-300 transition shadow-xs flex-shrink-0" title="導師手動核銷移除此張愛班卡">
+                    ❌ 移除
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <div class="p-3 rounded-xl bg-orange-50/50 border border-dashed border-orange-300 text-slate-500 font-bold text-center text-xs sm:text-sm">
+              🟢 目前無生效中的愛班服務卡
+            </div>
+          `}
+        </div>
+
+        <!-- 愛班快捷事由列 (大字體標籤，點擊一鍵指派) -->
+        <div class="pt-3 border-t border-orange-200 space-y-2">
+          <div class="flex items-center justify-between text-xs sm:text-sm font-black text-orange-950">
+            <span>⚡ 愛班事由快捷（點擊一鍵指派，附 ✏️編輯 / 🗑️刪除）：</span>
+            <button type="button" onclick="openAddBehaviorReasonModal('service')" class="text-orange-700 hover:underline">+ 新增愛班快捷</button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            ${(window.KingdomApp.store.data.behaviorReasons || window.KingdomApp.DEFAULT_BEHAVIOR_REASONS || []).filter(r => r.type === 'service').map(r => `
+              <div class="inline-flex items-center rounded-xl bg-orange-50 border-2 border-orange-300 text-orange-950 font-black shadow-2xs overflow-hidden">
+                <button type="button" onclick="addCustomServiceCardToStudent(${st.id}, '${r.text.replace(/'/g, "\\'")}')" class="px-3 py-1.5 text-xs sm:text-sm hover:bg-orange-100 transition" title="立即指派 1 次：${r.text}">
+                  ${r.label}
+                </button>
+                <button type="button" onclick="event.stopPropagation(); openEditBehaviorReasonModal('${r.id}')" class="px-2 py-1.5 text-xs text-slate-500 hover:text-amber-800 hover:bg-orange-200 border-l border-orange-200" title="編輯此快捷">✏️</button>
+                <button type="button" onclick="event.stopPropagation(); deleteBehaviorReasonPrompt('${r.id}')" class="px-2 py-1.5 text-xs text-slate-400 hover:text-rose-700 hover:bg-orange-200 border-l border-orange-200" title="刪除此快捷">🗑️</button>
+              </div>
+            `).join('') || '<span class="text-xs text-slate-400">暫無快捷</span>'}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📝 今日各項作業進度 (折疊卡片，字體大方) -->
+    <details class="bg-white rounded-2xl border-2 border-amber-300 p-3.5 shadow-xs" ${hasPendingOrRevisionHw ? 'open' : ''}>
+      <summary class="flex items-center justify-between cursor-pointer font-black text-amber-950 text-sm sm:text-base select-none">
+        <div class="flex items-center space-x-2">
+          <span>📝 今日各項作業繳交進度</span>
+          ${hasPendingOrRevisionHw ? `<span class="text-xs bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-300">有待處理項目</span>` : `<span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">全員已繳齊</span>`}
+        </div>
+        <span class="text-xs text-amber-800 font-bold">點擊展開/收合 ▼</span>
+      </summary>
+      <div class="mt-2.5 space-y-2 pt-2 border-t border-amber-200 max-h-40 overflow-y-auto pr-1">
+        ${hwList}
+      </div>
+    </details>
+
+    <!-- 👑 導師手動快速覆寫 (底部按鈕放大清晰) -->
+    <div class="pt-2 border-t border-amber-300 space-y-2">
+      <span class="font-black text-amber-950 block text-xs sm:text-sm">👑 導師手動快速覆寫通行狀態：</span>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-black text-xs sm:text-sm">
+        <button onclick="setTrafficOverrideFromModal(${st.id}, 'green')" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs">🟢 特赦綠燈</button>
+        <button onclick="setTrafficOverrideFromModal(${st.id}, 'yellow')" class="py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-amber-950 shadow-xs">🟡 指定黃燈</button>
+        <button onclick="setTrafficOverrideFromModal(${st.id}, 'red')" class="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-xs">🔴 指定紅燈</button>
+        <button onclick="setTrafficOverrideFromModal(${st.id}, 'auto')" class="py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 shadow-xs">🔄 自動判定</button>
       </div>
     </div>
   `;
 
   const modal = document.getElementById("trafficDetailModal");
   if (modal) modal.classList.remove("hidden");
+  initLucideIcons();
 }
 
 function closeTrafficDetailModal() {
@@ -6310,5 +6428,6 @@ if (typeof window !== 'undefined') {
   window.addCustomServiceCardToStudent = addCustomServiceCardToStudent;
   window.removeStudentReflectionReasonByIndex = removeStudentReflectionReasonByIndex;
   window.removeStudentServiceReasonByIndex = removeStudentServiceReasonByIndex;
+  window.switchTrafficDetailTab = switchTrafficDetailTab;
 }
 
