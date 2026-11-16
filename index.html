@@ -485,11 +485,11 @@
           </span>
           <span class="flex items-center space-x-1">
             <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
-            <span><strong>紅燈</strong>：作業未交或座位自省 ➔ 需留座反省補寫</span>
+            <span><strong>座位自省卡</strong>：作業一項未交自動新增1張 (標示作業) 或 導師手動指派 ➔ 留座反省</span>
           </span>
           <span class="flex items-center space-x-1">
             <span>🧹</span>
-            <span><strong>愛班卡</strong>：逾 07:40 未打卡自動頒發 (請假豁免) ➔ 下課留班補打掃</span>
+            <span><strong>愛班服務卡</strong>：打卡遲到系統自動新增（事由：遲到） 或 導師手動指派 ➔ 下課補打掃</span>
           </span>
         </div>
 
@@ -2304,7 +2304,7 @@
   <div id="addBehaviorReasonModal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="parchment-card max-w-sm w-full p-5 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-amber-300 pb-2">
-        <h3 class="text-base font-black text-amber-950 flex items-center space-x-1.5">
+        <h3 id="behaviorReasonModalTitle" class="text-base font-black text-amber-950 flex items-center space-x-1.5">
           <span>🪑 自訂常規事由快捷</span>
         </h3>
         <button onclick="closeAddBehaviorReasonModal()" class="text-slate-500 hover:text-slate-800">
@@ -2313,6 +2313,7 @@
       </div>
 
       <form onsubmit="submitNewBehaviorReason(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="editBehaviorReasonId" value="">
         <div>
           <label class="block font-bold text-amber-950 mb-1">歸屬卡牌類型：</label>
           <select id="reasonCardType" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
@@ -2322,16 +2323,16 @@
         </div>
         <div>
           <label class="block font-bold text-amber-950 mb-1">快捷標籤名稱 (顯示於快捷列)：</label>
-          <input type="text" id="reasonLabel" required placeholder="例如：作業未帶、走廊奔跑" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
+          <input type="text" id="reasonLabel" required placeholder="例如：作業未交、遲到、分心聊天" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
         </div>
         <div>
           <label class="block font-bold text-amber-950 mb-1">完整事由文字：</label>
-          <input type="text" id="reasonText" required placeholder="例如：課堂作業未帶留座補寫完成" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-medium">
+          <input type="text" id="reasonText" required placeholder="例如：作業未交留座反省、遲到" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-medium">
         </div>
 
         <div class="flex items-center justify-end space-x-2 pt-2 border-t border-amber-200">
           <button type="button" onclick="closeAddBehaviorReasonModal()" class="px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white font-bold">取消</button>
-          <button type="submit" class="btn-royal-gold px-4 py-1.5 rounded-lg font-black shadow">儲存事由快捷</button>
+          <button id="btnSubmitBehaviorReason" type="submit" class="btn-royal-gold px-4 py-1.5 rounded-lg font-black shadow">儲存事由快捷</button>
         </div>
       </form>
     </div>
@@ -3169,8 +3170,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111617"></script>
-  <script src="ui.js?v=2026111617"></script>
+  <script src="app.js?v=2026111619"></script>
+  <script src="ui.js?v=2026111619"></script>
 
 </body>
 </html>

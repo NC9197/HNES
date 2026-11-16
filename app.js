@@ -64,17 +64,17 @@ const DEFAULT_HOMEWORK_PRESETS = [
   { id: 'hw_pre_8', subject: '綜合', name: '聯絡簿', fullName: '家長簽名聯絡簿' }
 ];
 
-// 預設行為登記原因庫
+// 預設行為登記原因庫 (支援自省卡與愛班卡快捷，導師可自由新增、編輯、刪除)
 const DEFAULT_BEHAVIOR_REASONS = [
-  { id: 'br_ref_1', type: 'reflection', label: '上課分心聊私事', text: '上課分心聊私事' },
-  { id: 'br_ref_2', type: 'reflection', label: '未帶課堂學用品', text: '未帶課堂學用品' },
-  { id: 'br_ref_3', type: 'reflection', label: '未經許可擅離位', text: '未經許可擅離位' },
-  { id: 'br_ref_4', type: 'reflection', label: '走廊危險奔跑追逐', text: '走廊危險奔跑追逐' },
-  { id: 'br_ref_5', type: 'reflection', label: '對師長同儕禮貌欠佳', text: '對師長同儕禮貌欠佳' },
-  { id: 'br_srv_1', type: 'service', label: '超過07:40未打卡', text: '超過07:40未打卡（留班補打掃）' },
-  { id: 'br_srv_2', type: 'service', label: '個人座位周遭整潔不佳', text: '個人座位周遭整潔不佳' },
+  { id: 'br_ref_1', type: 'reflection', label: '作業未交', text: '作業未交留座反省' },
+  { id: 'br_ref_2', type: 'reflection', label: '上課分心聊私事', text: '上課分心聊私事' },
+  { id: 'br_ref_3', type: 'reflection', label: '未帶課堂學用品', text: '未帶課堂學用品' },
+  { id: 'br_ref_4', type: 'reflection', label: '未經許可擅離位', text: '未經許可擅離位' },
+  { id: 'br_ref_5', type: 'reflection', label: '走廊危險奔跑追逐', text: '走廊危險奔跑追逐' },
+  { id: 'br_srv_1', type: 'service', label: '遲到', text: '遲到' },
+  { id: 'br_srv_2', type: 'service', label: '個人座位整潔不佳', text: '個人座位周遭整潔不佳' },
   { id: 'br_srv_3', type: 'service', label: '打掃責任區未落實', text: '打掃責任區未落實' },
-  { id: 'br_srv_4', type: 'service', label: '忘記抽屜與置物櫃清空', text: '忘記抽屜與置物櫃清空' },
+  { id: 'br_srv_4', type: 'service', label: '忘記清空抽屜置物櫃', text: '忘記抽屜與置物櫃清空' },
   { id: 'br_srv_5', type: 'service', label: '公物使用後未歸位', text: '公物使用後未歸位' }
 ];
 
@@ -456,10 +456,10 @@ const DEFAULT_REWARD_CARDS = [
   { id: 'rc_6', title: '國王特赦奏章豁免卷', cost: 50, icon: '📜', desc: '可減免一項指定短篇日常作業（不含段考與作文）', category: 'special' }
 ];
 
-// 行為卡累計資料 (座位自省卡、愛班服務卡)
+// 行為卡累計資料 (座位自省卡：作業未交自動新增/導師手動控制；愛班服務卡：打卡遲到自動設定為「遲到」/導師手動控制)
 const DEFAULT_BEHAVIOR_CARDS = {
-  8: { reflectionCount: 0, serviceCount: 1, serviceReason: "晨檢遲到留班補打掃", serviceReasons: [{ text: "晨檢遲到留班補打掃", date: getTodayDateString(), time: "07:46" }] },
-  22: { reflectionCount: 1, serviceCount: 1, reflectionReason: "作業兩項缺繳", reflectionReasons: [{ text: "作業兩項缺繳", date: getTodayDateString(), time: "08:00" }], serviceReason: "校車遲到", serviceReasons: [{ text: "校車遲到", date: getTodayDateString(), time: "07:48" }] }
+  8: { reflectionCount: 0, serviceCount: 1, serviceReason: "遲到", serviceReasons: [{ text: "遲到", date: getTodayDateString(), time: "07:46" }] },
+  22: { reflectionCount: 1, serviceCount: 1, reflectionReason: "作業未交（國語習作第十課）", reflectionReasons: [{ text: "作業未交（國語習作第十課）", hwId: "1", isAutoHw: true, date: getTodayDateString(), time: "08:00" }], serviceReason: "遲到", serviceReasons: [{ text: "遲到", date: getTodayDateString(), time: "07:48" }] }
 };
 
 const DEFAULT_ANNOUNCEMENTS = [
@@ -475,6 +475,7 @@ const STORAGE_KEY = "xining_kingdom_v3_dashboard";
 class KingdomStore {
   constructor() {
     this.data = this.load();
+    this.syncAllHomeworkReflectionCards();
   }
 
   normalizeData(parsed) {
@@ -1125,6 +1126,17 @@ class KingdomStore {
     this.save();
   }
 
+  updateBehaviorReason(reasonId, { type, label, text }) {
+    if (!this.data.behaviorReasons) return;
+    const found = this.data.behaviorReasons.find(p => p.id === reasonId);
+    if (found) {
+      if (type) found.type = type === "service" ? "service" : "reflection";
+      if (label) found.label = label.trim();
+      if (text !== undefined) found.text = (text || label).trim();
+      this.save();
+    }
+  }
+
   // --- 榮譽卡牌商城與兌換 (兌換只扣除可用點數 points，不扣除 lifetimePoints) ---
   addRewardCard({ title, cost, icon = "🎁", desc = "", category = "item" }) {
     if (!title || !cost) return;
@@ -1221,17 +1233,85 @@ class KingdomStore {
     return b.serviceCount !== undefined ? b.serviceCount : (b.serviceCard ? 1 : 0);
   }
 
+  // --- 作業未交自動派發座位自省卡同步 (一項未交自動新增一張自省卡，標示哪項作業) ---
+  syncHomeworkReflectionCards(studentId) {
+    if (!this.data.behaviorCards) this.data.behaviorCards = {};
+    if (!this.data.behaviorCards[studentId]) {
+      this.data.behaviorCards[studentId] = {
+        reflectionCount: 0,
+        reflectionCard: false,
+        reflectionReason: '',
+        reflectionReasons: [],
+        serviceCount: 0,
+        serviceCard: false,
+        serviceReason: '',
+        serviceReasons: []
+      };
+    }
+    const b = this.data.behaviorCards[studentId];
+    if (!Array.isArray(b.reflectionReasons)) b.reflectionReasons = [];
+
+    const student = (this.data.students || []).find(s => s.id === studentId || s.seatNo === studentId);
+    if (!student) return;
+
+    // 找出該學生目前所有未交作業 (pending 或 missing)
+    const missingHws = (this.data.homework || []).filter(hw => {
+      const rec = (hw.records && (hw.records[student.id] !== undefined ? hw.records[student.id] : hw.records[student.seatNo])) || 'pending';
+      return rec === 'pending' || rec === 'missing';
+    });
+
+    const currentMissingHwIds = new Set(missingHws.map(h => String(h.id)));
+
+    // 1. 移除已補交或已刪除作業的自動作業自省卡 (保留導師手動核發的自省卡)
+    b.reflectionReasons = b.reflectionReasons.filter(r => {
+      if (!r.isAutoHw) return true;
+      return currentMissingHwIds.has(String(r.hwId));
+    });
+
+    // 2. 為每一項未交作業確保具備一張自省卡 (標示哪項作業)
+    missingHws.forEach(hw => {
+      const exists = b.reflectionReasons.some(r => r.isAutoHw && String(r.hwId) === String(hw.id));
+      if (!exists) {
+        const hwName = hw.title || hw.presetName || '日常作業';
+        b.reflectionReasons.push({
+          text: `作業未交（${hwName}）`,
+          hwId: String(hw.id),
+          isAutoHw: true,
+          date: getTodayDateString(),
+          time: new Date().toTimeString().slice(0, 5)
+        });
+      }
+    });
+
+    // 3. 重新計算累計自省卡數量與事由摘要
+    b.reflectionCount = b.reflectionReasons.length;
+    b.reflectionCard = b.reflectionCount > 0;
+    b.reflectionReason = b.reflectionReasons.map(r => r.text).join('、');
+  }
+
+  syncAllHomeworkReflectionCards() {
+    (this.data.students || []).forEach(st => {
+      this.syncHomeworkReflectionCards(st.id);
+    });
+    this.save();
+  }
+
   addReflectionCard(studentId, reason = "") {
     if (!this.data.behaviorCards) this.data.behaviorCards = {};
     if (!this.data.behaviorCards[studentId]) {
       this.data.behaviorCards[studentId] = { reflectionCount: 0, serviceCount: 0, reflectionReasons: [], serviceReasons: [] };
     }
     const b = this.data.behaviorCards[studentId];
-    b.reflectionCount = (b.reflectionCount || (b.reflectionCard ? 1 : 0)) + 1;
-    b.reflectionCard = true;
     if (!Array.isArray(b.reflectionReasons)) b.reflectionReasons = [];
-    b.reflectionReasons.push({ text: reason || "課堂座位自省", date: getTodayDateString(), time: new Date().toTimeString().slice(0, 5) });
-    b.reflectionReason = reason || b.reflectionReason || "課堂座位自省";
+    b.reflectionReasons.push({
+      text: reason || "課堂座位自省",
+      isAutoHw: false,
+      date: getTodayDateString(),
+      time: new Date().toTimeString().slice(0, 5)
+    });
+    b.reflectionCount = b.reflectionReasons.length;
+    b.reflectionCard = true;
+    b.reflectionReason = b.reflectionReasons.map(r => r.text).join('、');
     this.save();
     return b.reflectionCount;
   }
@@ -1239,28 +1319,32 @@ class KingdomStore {
   removeReflectionCardOne(studentId) {
     if (!this.data.behaviorCards || !this.data.behaviorCards[studentId]) return 0;
     const b = this.data.behaviorCards[studentId];
-    const current = b.reflectionCount !== undefined ? b.reflectionCount : (b.reflectionCard ? 1 : 0);
-    b.reflectionCount = Math.max(0, current - 1);
-    b.reflectionCard = b.reflectionCount > 0;
-    if (b.reflectionCount === 0) {
-      b.reflectionReason = "";
-      b.reflectionReasons = [];
+    if (!Array.isArray(b.reflectionReasons)) b.reflectionReasons = [];
+    if (b.reflectionReasons.length > 0) {
+      b.reflectionReasons.pop();
     }
+    b.reflectionCount = b.reflectionReasons.length;
+    b.reflectionCard = b.reflectionCount > 0;
+    b.reflectionReason = b.reflectionReasons.map(r => r.text).join('、');
     this.save();
     return b.reflectionCount;
   }
 
-  addServiceCard(studentId, reason = "") {
+  addServiceCard(studentId, reason = "遲到") {
     if (!this.data.behaviorCards) this.data.behaviorCards = {};
     if (!this.data.behaviorCards[studentId]) {
       this.data.behaviorCards[studentId] = { reflectionCount: 0, serviceCount: 0, reflectionReasons: [], serviceReasons: [] };
     }
     const b = this.data.behaviorCards[studentId];
-    b.serviceCount = (b.serviceCount || (b.serviceCard ? 1 : 0)) + 1;
-    b.serviceCard = true;
     if (!Array.isArray(b.serviceReasons)) b.serviceReasons = [];
-    b.serviceReasons.push({ text: reason || "愛班服務勞動", date: getTodayDateString(), time: new Date().toTimeString().slice(0, 5) });
-    b.serviceReason = reason || b.serviceReason || "愛班服務勞動";
+    b.serviceReasons.push({
+      text: reason || "遲到",
+      date: getTodayDateString(),
+      time: new Date().toTimeString().slice(0, 5)
+    });
+    b.serviceCount = b.serviceReasons.length;
+    b.serviceCard = true;
+    b.serviceReason = b.serviceReasons.map(r => r.text).join('、');
     this.save();
     return b.serviceCount;
   }
@@ -1268,13 +1352,13 @@ class KingdomStore {
   removeServiceCardOne(studentId) {
     if (!this.data.behaviorCards || !this.data.behaviorCards[studentId]) return 0;
     const b = this.data.behaviorCards[studentId];
-    const current = b.serviceCount !== undefined ? b.serviceCount : (b.serviceCard ? 1 : 0);
-    b.serviceCount = Math.max(0, current - 1);
-    b.serviceCard = b.serviceCount > 0;
-    if (b.serviceCount === 0) {
-      b.serviceReason = "";
-      b.serviceReasons = [];
+    if (!Array.isArray(b.serviceReasons)) b.serviceReasons = [];
+    if (b.serviceReasons.length > 0) {
+      b.serviceReasons.pop();
     }
+    b.serviceCount = b.serviceReasons.length;
+    b.serviceCard = b.serviceCount > 0;
+    b.serviceReason = b.serviceReasons.map(r => r.text).join('、');
     this.save();
     return b.serviceCount;
   }
@@ -1376,17 +1460,17 @@ class KingdomStore {
     }
 
     // 2. 自省卡與愛班服務累計判定
+    // 自省卡：作業未交自動新增（一項未交自動新增1張，標示哪項作業）＋ 導師手動控制
     const bCard = (this.data.behaviorCards && (this.data.behaviorCards[sId] || this.data.behaviorCards[seatNo])) || {};
     const reflectionCount = this.getReflectionCount(sId);
-    const hasManualReflection = reflectionCount > 0;
-    const reflectionReason = bCard.reflectionReason || '';
+    const hasReflection = reflectionCount > 0;
+    const reflectionReason = bCard.reflectionReason || (bCard.reflectionReasons ? bCard.reflectionReasons.map(r => r.text).join('、') : '');
 
+    // 愛班卡：系統判定打卡遲到自動加入（事由直接為「遲到」）＋ 導師手動控制兩種，實體儲存於 behaviorCards
     const isLateCheckIn = att.status === 'late';
-    const isUncheckedLate = (!att.checkInTime && att.status !== 'present');
-    const autoServiceFromLate = isLateCheckIn || isUncheckedLate;
-    const serviceCount = this.getServiceCount(sId) + (autoServiceFromLate && !bCard.serviceCount ? 1 : 0);
+    const serviceCount = this.getServiceCount(sId);
     const hasService = serviceCount > 0;
-    const serviceReason = bCard.serviceReason || (isLateCheckIn ? '超過07:40未打卡（留班補打掃）' : (isUncheckedLate ? '超過07:40未打卡（留班補打掃）' : '愛班服務勞動'));
+    const serviceReason = bCard.serviceReason || (hasService ? '遲到' : '');
 
     // 3. 檢查今日各項作業繳交情形 (支援 submitted, late, revision, pending)
     const missingList = [];
@@ -1434,7 +1518,7 @@ class KingdomStore {
         badgeClass: isGreen ? 'badge-present' : isYellow ? 'badge-late' : 'badge-leave',
         cardClass: isGreen ? 'traffic-card-green' : isYellow ? 'traffic-card-yellow' : 'traffic-card-red',
         desc: isGreen ? '👑 導師手動特赦准予通行下課！' : (isYellow ? '⚠️ 導師指定暫緩放行' : '🛑 導師指定座位自省'),
-        hasReflection: hasManualReflection,
+        hasReflection,
         reflectionCount,
         reflectionReason,
         hasService,
@@ -1450,13 +1534,14 @@ class KingdomStore {
 
     // 依規則嚴格判定：
     // A. 作業未繳交或是上課表現不佳有座位自省卡者 -> 紅燈 (需在座位上反省)
-    if (hasManualReflection || missingList.length > 0) {
+    if (hasReflection || missingList.length > 0) {
       const reasons = [];
-      if (missingList.length > 0) {
-        reasons.push(missingList.map(h => `${getShortHwName(h)}未交`).join('、'));
-      }
-      if (hasManualReflection) {
-        reasons.push(reflectionCount > 1 ? `自省卡(x${reflectionCount})` : (reflectionReason ? `座位自省(${reflectionReason})` : '座位自省'));
+      if (bCard.reflectionReasons && bCard.reflectionReasons.length > 0) {
+        reasons.push(...bCard.reflectionReasons.map(r => r.text));
+      } else if (reflectionReason) {
+        reasons.push(reflectionReason);
+      } else if (missingList.length > 0) {
+        reasons.push(...missingList.map(h => `作業未交（${h.title || h.presetName || '日常作業'}）`));
       }
       const shortReason = reasons.join('、');
 
@@ -1468,7 +1553,7 @@ class KingdomStore {
         badgeClass: 'badge-leave',
         cardClass: 'traffic-card-red',
         desc: `🛑 無法下課原因：${shortReason}`,
-        hasReflection: hasManualReflection,
+        hasReflection,
         reflectionCount,
         reflectionReason,
         hasService,

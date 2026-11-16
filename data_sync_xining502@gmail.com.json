@@ -658,9 +658,9 @@
         "note": "晨檢遲到 (13:44)"
       },
       "2": {
-        "status": "present",
-        "checkInTime": "07:31",
-        "note": ""
+        "status": "late",
+        "checkInTime": "14:16",
+        "note": "晨檢遲到 (14:16)"
       },
       "3": {
         "status": "present",
@@ -1279,13 +1279,28 @@
   "rewardRedemptions": [],
   "behaviorCards": {
     "1": {
-      "reflectionCard": false,
-      "reflectionCount": 0,
-      "reflectionReason": "",
-      "serviceCard": false,
-      "serviceCount": 0,
-      "serviceReason": "",
-      "history": []
+      "reflectionCard": true,
+      "reflectionCount": 1,
+      "reflectionReason": "午休時間喧嘩干擾他人休息",
+      "serviceCard": true,
+      "serviceCount": 1,
+      "serviceReason": "外掃責任區域清潔未落實",
+      "history": [],
+      "reflectionReasons": [
+        {
+          "text": "午休時間喧嘩干擾他人休息",
+          "isAutoHw": false,
+          "date": "2026-11-16",
+          "time": "14:42"
+        }
+      ],
+      "serviceReasons": [
+        {
+          "text": "外掃責任區域清潔未落實",
+          "date": "2026-11-16",
+          "time": "14:52"
+        }
+      ]
     },
     "2": {
       "reflectionCard": false,
@@ -1294,7 +1309,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "serviceReasons": [],
+      "reflectionReasons": []
     },
     "3": {
       "reflectionCard": false,
@@ -1303,7 +1320,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "4": {
       "reflectionCard": false,
@@ -1312,7 +1331,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "5": {
       "reflectionCard": false,
@@ -1321,7 +1342,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "6": {
       "reflectionCard": false,
@@ -1330,7 +1353,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "7": {
       "reflectionCard": false,
@@ -1339,19 +1364,19 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "8": {
       "reflectionCount": 0,
-      "serviceCount": 1,
-      "serviceReason": "晨檢遲到留班補打掃",
-      "serviceReasons": [
-        {
-          "text": "晨檢遲到留班補打掃",
-          "date": "2026-11-16",
-          "time": "07:46"
-        }
-      ]
+      "serviceCount": 0,
+      "serviceReason": "",
+      "serviceReasons": [],
+      "reflectionCard": false,
+      "reflectionReason": "",
+      "reflectionReasons": [],
+      "serviceCard": false
     },
     "9": {
       "reflectionCard": false,
@@ -1360,7 +1385,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "10": {
       "reflectionCard": false,
@@ -1369,7 +1396,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "11": {
       "reflectionCard": false,
@@ -1378,7 +1407,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "12": {
       "reflectionCard": false,
@@ -1387,7 +1418,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "13": {
       "reflectionCard": false,
@@ -1396,16 +1429,42 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "14": {
-      "reflectionCard": false,
-      "reflectionCount": 0,
-      "reflectionReason": "",
+      "reflectionCard": true,
+      "reflectionCount": 3,
+      "reflectionReason": "作業未交（國語習作第 八 課完成）、作業未交（數學習作 P.62 ~ P.65）、作業未交（生字造詞隨堂筆記）",
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [
+        {
+          "text": "作業未交（國語習作第 八 課完成）",
+          "hwId": "1",
+          "isAutoHw": true,
+          "date": "2026-11-16",
+          "time": "14:38"
+        },
+        {
+          "text": "作業未交（數學習作 P.62 ~ P.65）",
+          "hwId": "2",
+          "isAutoHw": true,
+          "date": "2026-11-16",
+          "time": "14:38"
+        },
+        {
+          "text": "作業未交（生字造詞隨堂筆記）",
+          "hwId": "3",
+          "isAutoHw": true,
+          "date": "2026-11-16",
+          "time": "14:38"
+        }
+      ],
+      "serviceReasons": []
     },
     "15": {
       "reflectionCard": false,
@@ -1414,7 +1473,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "16": {
       "reflectionCard": false,
@@ -1423,7 +1484,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "17": {
       "reflectionCard": false,
@@ -1432,7 +1495,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "18": {
       "reflectionCard": false,
@@ -1441,7 +1506,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "19": {
       "reflectionCard": false,
@@ -1450,7 +1517,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "20": {
       "reflectionCard": false,
@@ -1459,7 +1528,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "21": {
       "reflectionCard": false,
@@ -1468,27 +1539,34 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "22": {
-      "reflectionCount": 1,
-      "serviceCount": 1,
-      "reflectionReason": "作業兩項缺繳",
+      "reflectionCount": 2,
+      "serviceCount": 0,
+      "reflectionReason": "作業未交（國語習作第 八 課完成）、作業未交（數學習作 P.62 ~ P.65）",
       "reflectionReasons": [
         {
-          "text": "作業兩項缺繳",
+          "text": "作業未交（國語習作第 八 課完成）",
+          "hwId": "1",
+          "isAutoHw": true,
           "date": "2026-11-16",
-          "time": "08:00"
+          "time": "14:38"
+        },
+        {
+          "text": "作業未交（數學習作 P.62 ~ P.65）",
+          "hwId": "2",
+          "isAutoHw": true,
+          "date": "2026-11-16",
+          "time": "14:38"
         }
       ],
-      "serviceReason": "校車遲到",
-      "serviceReasons": [
-        {
-          "text": "校車遲到",
-          "date": "2026-11-16",
-          "time": "07:48"
-        }
-      ]
+      "serviceReason": "",
+      "serviceReasons": [],
+      "reflectionCard": true,
+      "serviceCard": false
     },
     "23": {
       "reflectionCard": false,
@@ -1497,7 +1575,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "24": {
       "reflectionCard": false,
@@ -1506,7 +1586,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "25": {
       "reflectionCard": false,
@@ -1515,7 +1597,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "26": {
       "reflectionCard": false,
@@ -1524,7 +1608,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     },
     "27": {
       "reflectionCard": false,
@@ -1533,7 +1619,9 @@
       "serviceCard": false,
       "serviceCount": 0,
       "serviceReason": "",
-      "history": []
+      "history": [],
+      "reflectionReasons": [],
+      "serviceReasons": []
     }
   },
   "trafficOverrides": {},
@@ -1573,5 +1661,5 @@
     null,
     null
   ],
-  "lastModified": 1794808276655
+  "lastModified": 1794812017351
 }

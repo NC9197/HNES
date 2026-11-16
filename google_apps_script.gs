@@ -65,8 +65,16 @@ function doPost(e) {
     body = { data: raw };
   }
 
-  var account = (body.account || 'default').toLowerCase().replace(/[^a-z0-9_]/g, '_');
-  var payloadStr = typeof body.data === 'string' ? body.data : JSON.stringify(body.data || {});
+  var account = (body.account || (e && e.parameter && e.parameter.account) || 'default').toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  
+  var payloadStr = '';
+  if (body.data !== undefined && body.data !== null) {
+    payloadStr = typeof body.data === 'string' ? body.data : JSON.stringify(body.data);
+  } else if (body.students) {
+    payloadStr = JSON.stringify(body);
+  } else {
+    payloadStr = typeof body === 'string' ? body : JSON.stringify(body);
+  }
 
   saveData(prop, account, payloadStr);
 
