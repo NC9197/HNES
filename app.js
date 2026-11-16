@@ -87,21 +87,65 @@ const DEFAULT_SEATING_CHART = [
   25, 26, 27, null, null, null
 ];
 
-// 預設今日聯絡簿資料
+// 預設今日聯絡簿資料 (全新初始純淨版，作業由導師每日自行填寫發布，系統不自動生成假作業)
 const DEFAULT_CONTACT_BOOK = {
   date: "2026-11-16",
   homeworkItems: [
-    "1. 國語習作第 八 課完成",
-    "2. 數學習作 P.62 ~ P.65",
-    "3. 訂正國語隨堂生字本",
-    "4. 閱讀課外讀物 20 分鐘並簽名"
+    "1. 國語習作第八課 P.58 ~ P.62",
+    "2. 數學習作第 72 頁至第 74 頁",
+    "3. 訂正國語隨堂生字語詞卷",
+    "4. 明日晨讀書籍準備完畢"
   ],
   reminders: [
-    "明天有體育課，請穿著西寧王國運動服與運動鞋",
-    "請帶自然課觀察記錄本與彩色筆",
-    "記得帶水壺與跳繩"
+    "明天有體育課，請穿著西寧王國運動服",
+    "帶水壺、跳繩與個人潔牙用具"
   ],
   queenMotto: "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
+};
+
+const DEFAULT_CONTACT_BOOK_HISTORY = {
+  "2026-11-16": {
+    date: "2026-11-16",
+    homeworkItems: [
+      "1. 國語習作第八課 P.58 ~ P.62",
+      "2. 數學習作第 72 頁至第 74 頁",
+      "3. 訂正國語隨堂生字語詞卷",
+      "4. 明日晨讀書籍準備完畢"
+    ],
+    reminders: [
+      "明天有體育課，請穿著西寧王國運動服",
+      "帶水壺、跳繩與個人潔牙用具"
+    ],
+    queenMotto: "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！",
+    updatedAt: 1794803534000
+  },
+  "2026-11-13": {
+    date: "2026-11-13",
+    homeworkItems: [
+      "1. 國語習作第 九 課閱讀理解題",
+      "2. 數學習作 P.66 ~ P.68",
+      "3. 預習自然第三單元"
+    ],
+    reminders: [
+      "下週一全校升旗朝會，請準時 07:40 前抵達",
+      "請帶美術水彩用具與調色盤"
+    ],
+    queenMotto: "持之以恆是成功的鑰匙，週末溫故而知新！",
+    updatedAt: 1794717134000
+  },
+  "2026-11-12": {
+    date: "2026-11-12",
+    homeworkItems: [
+      "1. 國語隨堂造句本完成",
+      "2. 數學甲本單元練習二",
+      "3. 課外閱讀 20 分鐘"
+    ],
+    reminders: [
+      "明天有體育課，穿著西寧王國運動服，帶水壺與跳繩"
+    ],
+    queenMotto: "每一天的努力都是積累智慧的寶藏。",
+    updatedAt: 1794630734000
+  }
 };
 
 // ============================================================================
@@ -256,7 +300,7 @@ function getTodayDateString() {
   return `${y}-${m}-${d}`;
 }
 
-// 預設今日出席狀態 (1~27號)
+// 預設今日與歷日出席狀態 (1~27號)
 const DEFAULT_ATTENDANCE = {
   [getTodayDateString()]: {
     1: { status: 'present', checkInTime: '07:28', note: '' },
@@ -272,7 +316,7 @@ const DEFAULT_ATTENDANCE = {
     11: { status: 'present', checkInTime: '07:34', note: '' },
     12: { status: 'present', checkInTime: '07:22', note: '' },
     13: { status: 'present', checkInTime: '07:37', note: '' },
-    14: { status: 'leave', checkInTime: null, note: '病假（家長已通報）' },
+    14: { status: 'leave', checkInTime: null, leaveType: 'sick', note: '病假（家長已通報）' },
     15: { status: 'present', checkInTime: '07:26', note: '' },
     16: { status: 'present', checkInTime: '07:32', note: '' },
     17: { status: 'present', checkInTime: '07:35', note: '' },
@@ -286,6 +330,64 @@ const DEFAULT_ATTENDANCE = {
     25: { status: 'present', checkInTime: '07:27', note: '' },
     26: { status: 'present', checkInTime: '07:34', note: '' },
     27: { status: 'present', checkInTime: '07:30', note: '' }
+  },
+  "2026-11-13": {
+    1: { status: 'present', checkInTime: '07:21', note: '' },
+    2: { status: 'present', checkInTime: '07:22', note: '' },
+    3: { status: 'present', checkInTime: '07:23', note: '' },
+    4: { status: 'present', checkInTime: '07:24', note: '' },
+    5: { status: 'present', checkInTime: '07:25', note: '' },
+    6: { status: 'present', checkInTime: '07:26', note: '' },
+    7: { status: 'present', checkInTime: '07:27', note: '' },
+    8: { status: 'present', checkInTime: '07:28', note: '' },
+    9: { status: 'present', checkInTime: '07:29', note: '' },
+    10: { status: 'present', checkInTime: '07:30', note: '' },
+    11: { status: 'present', checkInTime: '07:31', note: '' },
+    12: { status: 'present', checkInTime: '07:32', note: '' },
+    13: { status: 'late', checkInTime: '07:46', note: '校車誤點' },
+    14: { status: 'present', checkInTime: '07:34', note: '' },
+    15: { status: 'present', checkInTime: '07:35', note: '' },
+    16: { status: 'present', checkInTime: '07:36', note: '' },
+    17: { status: 'present', checkInTime: '07:37', note: '' },
+    18: { status: 'present', checkInTime: '07:20', note: '' },
+    19: { status: 'present', checkInTime: '07:21', note: '' },
+    20: { status: 'leave', checkInTime: null, leaveType: 'sick', leaveScope: 'all_day', note: '流感就醫' },
+    21: { status: 'present', checkInTime: '07:23', note: '' },
+    22: { status: 'present', checkInTime: '07:24', note: '' },
+    23: { status: 'present', checkInTime: '07:25', note: '' },
+    24: { status: 'present', checkInTime: '07:26', note: '' },
+    25: { status: 'present', checkInTime: '07:27', note: '' },
+    26: { status: 'present', checkInTime: '07:28', note: '' },
+    27: { status: 'present', checkInTime: '07:29', note: '' }
+  },
+  "2026-11-12": {
+    1: { status: 'present', checkInTime: '07:21', note: '' },
+    2: { status: 'present', checkInTime: '07:22', note: '' },
+    3: { status: 'present', checkInTime: '07:23', note: '' },
+    4: { status: 'present', checkInTime: '07:24', note: '' },
+    5: { status: 'present', checkInTime: '07:25', note: '' },
+    6: { status: 'present', checkInTime: '07:26', note: '' },
+    7: { status: 'present', checkInTime: '07:27', note: '' },
+    8: { status: 'present', checkInTime: '07:28', note: '' },
+    9: { status: 'present', checkInTime: '07:29', note: '' },
+    10: { status: 'present', checkInTime: '07:30', note: '' },
+    11: { status: 'present', checkInTime: '07:31', note: '' },
+    12: { status: 'present', checkInTime: '07:32', note: '' },
+    13: { status: 'present', checkInTime: '07:33', note: '' },
+    14: { status: 'present', checkInTime: '07:34', note: '' },
+    15: { status: 'present', checkInTime: '07:35', note: '' },
+    16: { status: 'present', checkInTime: '07:36', note: '' },
+    17: { status: 'present', checkInTime: '07:37', note: '' },
+    18: { status: 'present', checkInTime: '07:20', note: '' },
+    19: { status: 'present', checkInTime: '07:21', note: '' },
+    20: { status: 'present', checkInTime: '07:22', note: '' },
+    21: { status: 'present', checkInTime: '07:23', note: '' },
+    22: { status: 'present', checkInTime: '07:24', note: '' },
+    23: { status: 'present', checkInTime: '07:25', note: '' },
+    24: { status: 'present', checkInTime: '07:26', note: '' },
+    25: { status: 'present', checkInTime: '07:27', note: '' },
+    26: { status: 'present', checkInTime: '07:28', note: '' },
+    27: { status: 'present', checkInTime: '07:29', note: '' }
   }
 };
 
@@ -383,8 +485,24 @@ class KingdomStore {
     if (!parsed.homeworkPresets) parsed.homeworkPresets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
     if (!parsed.behaviorReasons) parsed.behaviorReasons = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS));
     if (!parsed.contactBook) parsed.contactBook = JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK));
-    if (!parsed.contactBookHistory) parsed.contactBookHistory = { [getTodayDateString()]: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)) };
-    if (!parsed.attendance) parsed.attendance = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE));
+    if (!parsed.contactBookHistory || typeof parsed.contactBookHistory !== 'object') {
+      parsed.contactBookHistory = JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK_HISTORY));
+    } else {
+      Object.keys(DEFAULT_CONTACT_BOOK_HISTORY).forEach(d => {
+        if (!parsed.contactBookHistory[d]) {
+          parsed.contactBookHistory[d] = JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK_HISTORY[d]));
+        }
+      });
+    }
+    if (!parsed.attendance || typeof parsed.attendance !== 'object') {
+      parsed.attendance = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE));
+    } else {
+      Object.keys(DEFAULT_ATTENDANCE).forEach(d => {
+        if (!parsed.attendance[d] || Object.keys(parsed.attendance[d]).length === 0) {
+          parsed.attendance[d] = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE[d]));
+        }
+      });
+    }
     if (!parsed.homework) parsed.homework = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK));
     if (!parsed.pointLogs) parsed.pointLogs = JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS));
     if (!parsed.announcements) parsed.announcements = JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS));
@@ -505,7 +623,7 @@ class KingdomStore {
       homeworkPresets: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS)),
       behaviorReasons: JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS)),
       contactBook: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)),
-      contactBookHistory: { [getTodayDateString()]: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)) },
+      contactBookHistory: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK_HISTORY)),
       attendance: JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE)),
       homework: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK)),
       pointLogs: JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS)),
@@ -609,29 +727,24 @@ class KingdomStore {
     return this.data.seatingChart;
   }
 
-  // --- 每日聯絡簿按日歷史記錄 ---
+  // --- 每日聯絡簿按日歷史記錄 (由導師每日填寫更新，系統不自行強加假作業) ---
   getContactBook(dateStr) {
     const targetDate = dateStr || getTodayDateString();
     if (this.data.contactBookHistory && this.data.contactBookHistory[targetDate]) {
       return this.data.contactBookHistory[targetDate];
     }
-    if (targetDate === getTodayDateString() && this.data.contactBook) {
-      return this.data.contactBook;
+    // 若該日尚未另外建立歷史，預設使用目前最新導師儲存的聯絡簿
+    if (this.data.contactBook) {
+      return {
+        ...this.data.contactBook,
+        date: targetDate
+      };
     }
-    // 返回基礎範本
+    // 若全新無任何資料，返回純淨範本 (不強加假作業)
     return {
       date: targetDate,
-      homeworkItems: [
-        "1. 國語習作第 八 課完成",
-        "2. 數學習作 P.62 ~ P.65",
-        "3. 訂正國語隨堂生字本",
-        "4. 閱讀課外讀物 20 分鐘並簽名"
-      ],
-      reminders: [
-        "明天有體育課，請穿著西寧王國運動服與運動鞋",
-        "請帶自然課觀察記錄本與彩色筆",
-        "記得帶水壺與跳繩"
-      ],
+      homeworkItems: [],
+      reminders: [],
       queenMotto: "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
     };
   }
@@ -645,9 +758,8 @@ class KingdomStore {
       updatedAt: Date.now()
     };
     this.data.contactBookHistory[targetDate] = entry;
-    if (targetDate === getTodayDateString()) {
-      this.data.contactBook = entry;
-    }
+    // 無論編輯何日，同時更新當前最新之 contactBook
+    this.data.contactBook = entry;
     this.save();
     return entry;
   }

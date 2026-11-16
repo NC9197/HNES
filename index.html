@@ -358,6 +358,27 @@
             </p>
           </div>
 
+          <!-- 📜 歷日聯絡簿歷史存檔簿 (按日存檔總覽) -->
+          <div class="mt-5 pt-4 border-t-2 border-dashed border-amber-300 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="text-lg">📜</span>
+                <h4 class="text-base sm:text-lg font-black text-amber-950">
+                  歷日聯絡簿存檔紀錄 (各日奏章回溯)
+                </h4>
+              </div>
+              <button type="button" onclick="toggleContactHistoryAccordion()" class="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 rounded-xl text-xs font-black shadow-xs flex items-center space-x-1">
+                <i data-lucide="history" class="w-3.5 h-3.5 text-amber-700"></i>
+                <span id="btnToggleContactHistoryText">歷史存檔簿 (展開/收合)</span>
+              </button>
+            </div>
+
+            <!-- 歷史紀錄卡片清單 -->
+            <div id="morningContactHistoryList" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+              <!-- 動態由 renderContactBookHistoryList() 渲染各日聯絡簿 -->
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -721,6 +742,36 @@
           <!-- 動態由 JavaScript 渲染 -->
         </div>
 
+        <!-- =============================================================== -->
+        <!-- 📅 歷日全班出席紀錄總簿 (Daily Attendance History Archive) -->
+        <!-- =============================================================== -->
+        <div class="parchment-card p-5 sm:p-6 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-amber-300">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-full border border-amber-300 shadow-xs">
+                  📅 每日出席歷史紀錄簿
+                </span>
+                <span class="text-xs text-amber-900 font-bold hidden sm:inline">自動按日保存全班出席、遲到與告假紀錄，點選任一日即可切換查看或補登</span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-black text-amber-950 flex items-center space-x-2 mt-1">
+                <span>📋 歷日全班出席紀錄與統計總表</span>
+              </h3>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <span id="attendanceHistoryDatesCountBadge" class="text-xs font-black bg-amber-100 text-amber-900 px-3 py-1.5 rounded-xl border border-amber-300">
+                已記錄歷史出席
+              </span>
+            </div>
+          </div>
+
+          <!-- 歷史紀錄表格容器 -->
+          <div id="attendanceHistoryTableContainer" class="space-y-3">
+            <!-- 動態渲染各日出席歷史清單 -->
+          </div>
+        </div>
+
       </section>
 
       <!-- ------------------------------------------------------------- -->
@@ -746,6 +797,10 @@
                 <input type="date" id="hwHistoryDatePicker" onchange="filterHomeworkByDate(this.value)" class="bg-transparent font-bold cursor-pointer">
                 <button type="button" onclick="showAllHomeworkHistory()" class="px-2 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 ml-1">全部歷史</button>
               </div>
+              <button onclick="openEditContactModal()" class="px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 font-black text-xs sm:text-sm shadow-sm flex items-center space-x-1.5" title="編輯今日大螢幕聯絡簿">
+                <i data-lucide="edit-3" class="w-4 h-4 text-amber-700"></i>
+                <span>✏️ 編輯每日聯絡簿</span>
+              </button>
               <button onclick="openNewHomeworkModal()" class="btn-royal-gold px-4 py-2 rounded-xl text-sm font-black flex items-center space-x-2 shadow">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 <span>頒發新奏章 (新增作業)</span>
@@ -797,6 +852,32 @@
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+
+        <!-- ★★★ 歷日聯絡簿存檔總覽庫 (各日回家奏章檔案庫) ★★★ -->
+        <div class="parchment-card p-5 sm:p-6 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b-2 border-amber-400">
+            <div>
+              <span class="text-amber-800 text-xs font-bold">📜 每日聯絡簿存檔總覽庫</span>
+              <h3 class="text-xl sm:text-2xl font-black text-amber-950 flex items-center space-x-2">
+                <span>歷日聯絡簿存檔紀錄庫 (各日回家作業與重要提醒)</span>
+              </h3>
+              <p class="text-xs text-amber-800 font-medium mt-0.5">
+                導師每天發布的回家作業、重要提醒與皇后聖諭皆會自動按日永久存檔，點選「📺 展示」可載入大螢幕，或點「✏️ 編輯」直接修改！
+              </p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="openEditContactModal()" class="px-4 py-2 rounded-xl btn-royal-gold text-xs sm:text-sm font-black shadow flex items-center space-x-1.5">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                <span>✏️ 編輯今日聯絡簿</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 聯絡簿歷史卡片清單網格 -->
+          <div id="teacherContactHistoryList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- 動態渲染聯絡簿歷史卡片 -->
           </div>
         </div>
 
@@ -1365,33 +1446,41 @@
     <div class="parchment-card max-w-xl w-full p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-amber-300 pb-3">
         <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
-          <span>✏️ 編輯今日大螢幕聯絡簿</span>
+          <span>✏️</span>
+          <span id="editContactModalDateTitle">編輯今日大螢幕聯絡簿</span>
         </h3>
-        <button onclick="closeEditContactModal()" class="text-slate-500 hover:text-slate-800">
+        <button onclick="closeEditContactModal()" class="text-slate-500 hover:text-slate-800 p-1">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
+      <div class="bg-amber-100/80 p-3 rounded-xl border border-amber-300 text-xs text-amber-950 flex items-center space-x-2">
+        <i data-lucide="info" class="w-4 h-4 text-amber-700 flex-shrink-0"></i>
+        <span>由導師每日手動填寫更新（每行一項），儲存後將即時同步至晨間大螢幕與家長專區！</span>
+      </div>
+
       <form onsubmit="saveContactBookData(event)" class="space-y-3.5 text-xs">
         <div>
-          <label class="block font-black text-amber-950 mb-1">
-            今日作業抄寫項目 (一行一項，後排學生大字體呈現)：
+          <label class="block font-black text-amber-950 mb-1 flex items-center justify-between">
+            <span>✍️ 今日作業抄寫項目 (一行一項，後排學生大字體呈現)：</span>
+            <span class="text-[11px] text-amber-800 font-normal">可留空</span>
           </label>
-          <textarea id="editContactHwItems" rows="5" required class="w-full p-3 rounded-xl border-2 border-amber-300 font-bold text-sm leading-relaxed focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+          <textarea id="editContactHwItems" rows="5" placeholder="例如：&#10;1. 國語習作第 八 課完成&#10;2. 數學習作 P.62 ~ P.65&#10;3. 訂正國語隨堂生字本" class="w-full p-3 rounded-xl border-2 border-amber-300 font-bold text-sm leading-relaxed focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-black text-amber-950 mb-1 flex items-center justify-between">
+            <span>🔔 重要提醒與攜帶物品 (一行一項)：</span>
+            <span class="text-[11px] text-amber-800 font-normal">可留空</span>
+          </label>
+          <textarea id="editContactReminders" rows="3" placeholder="例如：&#10;明天有體育課，請穿著西寧王國運動服與運動鞋&#10;請帶自然課觀察記錄本與彩色筆" class="w-full p-3 rounded-xl border-2 border-amber-300 font-bold text-sm leading-relaxed focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
         </div>
 
         <div>
           <label class="block font-black text-amber-950 mb-1">
-            重要提醒與攜帶物品 (一行一項)：
+            👑 皇后每日聖諭 / 班級格言：
           </label>
-          <textarea id="editContactReminders" rows="3" class="w-full p-3 rounded-xl border-2 border-amber-300 font-bold text-sm leading-relaxed focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
-        </div>
-
-        <div>
-          <label class="block font-black text-amber-950 mb-1">
-            皇后每日聖諭 / 班級格言：
-          </label>
-          <input type="text" id="editContactMotto" class="w-full px-3 py-2 rounded-xl border-2 border-amber-300 font-bold text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          <input type="text" id="editContactMotto" placeholder="細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！" class="w-full px-3 py-2 rounded-xl border-2 border-amber-300 font-bold text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
         </div>
 
         <div class="flex items-center justify-end space-x-2 pt-2 border-t border-amber-200">
@@ -3058,8 +3147,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111608"></script>
-  <script src="ui.js?v=2026111608"></script>
+  <script src="app.js?v=2026111615"></script>
+  <script src="ui.js?v=2026111615"></script>
 
 </body>
 </html>

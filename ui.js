@@ -4,7 +4,7 @@
  */
 
 let currentMainView = 'morning'; // 'morning' | 'teacher' | 'parent'
-let currentTeacherTab = 'homework'; // 'attendance' | 'homework' | 'points' | 'pets' | 'roster' | 'announcements'
+let currentTeacherTab = 'attendance'; // 'attendance' | 'homework' | 'points' | 'pets' | 'roster' | 'announcements'
 let currentSelectedHwId = null;
 let currentAttendanceFilter = 'all';
 
@@ -341,7 +341,7 @@ function switchMainView(view) {
     if (!checkTeacherAuth("進入導師管理室")) return;
     if (teacherView) teacherView.classList.remove("hidden");
     if (btnTeacher) btnTeacher.className = activeBtnClass;
-    renderCurrentTeacherTab();
+    switchTeacherTab(currentTeacherTab || 'attendance');
   } else {
     if (parentView) parentView.classList.remove("hidden");
     if (btnParent) btnParent.className = activeBtnClass;
@@ -532,29 +532,46 @@ function renderMorningBoard() {
 
   const hwList = document.getElementById("contactHomeworkList");
   if (hwList) {
-    const items = contactBook.homeworkItems || [];
-    hwList.innerHTML = items.map((item, idx) => `
-      <li class="flex items-start space-x-2 py-1 border-b border-amber-200/60 last:border-0">
-        <span class="bg-amber-400 text-amber-950 w-8 h-8 rounded-full flex items-center justify-center text-base sm:text-lg font-black flex-shrink-0 shadow-sm">
-          ${idx + 1}
-        </span>
-        <span class="pt-0.5">${item}</span>
-      </li>
-    `).join('');
+    const items = (contactBook && contactBook.homeworkItems) ? contactBook.homeworkItems : [];
+    if (items.length === 0) {
+      hwList.innerHTML = `
+        <li class="flex items-center space-x-2 py-4 text-amber-900/70 text-lg sm:text-xl font-bold bg-amber-50/60 p-4 rounded-xl border border-dashed border-amber-300">
+          <span>📝 導師今日尚未指派作業（點擊右上角「✏️ 編輯聯絡簿項目」開始輸入）</span>
+        </li>
+      `;
+    } else {
+      hwList.innerHTML = items.map((item, idx) => `
+        <li class="flex items-start space-x-2 py-1 border-b border-amber-200/60 last:border-0">
+          <span class="bg-amber-400 text-amber-950 w-8 h-8 rounded-full flex items-center justify-center text-base sm:text-lg font-black flex-shrink-0 shadow-sm">
+            ${idx + 1}
+          </span>
+          <span class="pt-0.5">${item}</span>
+        </li>
+      `).join('');
+    }
   }
 
   const reminderList = document.getElementById("contactReminderList");
   if (reminderList) {
-    const reminders = contactBook.reminders || [];
-    reminderList.innerHTML = reminders.map(item => `
-      <li class="leading-relaxed py-0.5">${item}</li>
-    `).join('');
+    const reminders = (contactBook && contactBook.reminders) ? contactBook.reminders : [];
+    if (reminders.length === 0) {
+      reminderList.innerHTML = `
+        <li class="text-amber-900/70 text-base sm:text-lg font-bold list-none">（今日無特殊提醒或攜帶物品）</li>
+      `;
+    } else {
+      reminderList.innerHTML = reminders.map(item => `
+        <li class="leading-relaxed py-0.5">${item}</li>
+      `).join('');
+    }
   }
 
   const mottoEl = document.getElementById("contactQueenMotto");
   if (mottoEl) {
     mottoEl.textContent = contactBook.queenMotto || "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！";
   }
+
+  // 同步渲染歷日聯絡簿歷史紀錄簿 (各日奏章檔案庫)
+  renderContactBookHistoryList();
 }
 
 function handleMorningSeatCheckIn(studentId, seatNo) {
@@ -617,38 +634,72 @@ function toggleFullscreen() {
 
 // 編輯聯絡簿項目 Modal
 function openEditContactModal() {
-  const cb = window.KingdomApp.store.data.contactBook || window.KingdomApp.DEFAULT_CONTACT_BOOK;
-  document.getElementById("editContactHwItems").value = cb.homeworkItems.join('\n');
-  document.getElementById("editContactReminders").value = cb.reminders.join('\n');
-  document.getElementById("editContactMotto").value = cb.queenMotto || '';
-  document.getElementById("editContactModal").classList.remove("hidden");
+  if (!checkTeacherAuth("編輯聯絡簿項目")) return;
+  const targetDate = currentContactDate || window.KingdomApp.getTodayDateString();
+  const cb = window.KingdomApp.store.getContactBook(targetDate);
+  
+  const titleEl = document.getElementById("editContactModalDateTitle");
+  if (titleEl) {
+    titleEl.textContent = `編輯大螢幕聯絡簿奏章 (${targetDate})`;
+  }
+
+  const hwEl = document.getElementById("editContactHwItems") || document.getElementById("editContactHwInput");
+  const remEl = document.getElementById("editContactReminders") || document.getElementById("editContactRemindersInput");
+  const mottoEl = document.getElementById("editContactMotto") || document.getElementById("editContactMottoInput");
+
+  if (hwEl) {
+    const hwList = (cb && cb.homeworkItems) ? cb.homeworkItems : [];
+    hwEl.value = Array.isArray(hwList) ? hwList.join('\n') : String(hwList || '');
+  }
+  if (remEl) {
+    const remList = (cb && cb.reminders) ? cb.reminders : [];
+    remEl.value = Array.isArray(remList) ? remList.join('\n') : String(remList || '');
+  }
+  if (mottoEl) {
+    mottoEl.value = (cb && cb.queenMotto) ? cb.queenMotto : '';
+  }
+
+  const modal = document.getElementById("editContactModal");
+  if (modal) modal.classList.remove("hidden");
   initLucideIcons();
+
+  setTimeout(() => {
+    if (hwEl) hwEl.focus();
+  }, 100);
 }
 
 function closeEditContactModal() {
-  document.getElementById("editContactModal").classList.add("hidden");
+  const modal = document.getElementById("editContactModal");
+  if (modal) modal.classList.add("hidden");
 }
 
 function saveContactBookData(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
   if (!checkTeacherAuth("編輯聯絡簿奏章")) return;
 
-  const hwRaw = document.getElementById("editContactHwInput").value;
-  const remRaw = document.getElementById("editContactRemindersInput").value;
-  const motto = document.getElementById("editContactMottoInput").value;
+  const hwEl = document.getElementById("editContactHwItems") || document.getElementById("editContactHwInput");
+  const remEl = document.getElementById("editContactReminders") || document.getElementById("editContactRemindersInput");
+  const mottoEl = document.getElementById("editContactMotto") || document.getElementById("editContactMottoInput");
 
+  const hwRaw = hwEl ? hwEl.value : "";
+  const remRaw = remEl ? remEl.value : "";
+  const motto = mottoEl ? mottoEl.value : "";
+
+  // 導師手動輸入，完全由導師掌控，系統不自行強加假作業
   const homeworkItems = hwRaw.split('\n').map(s => s.trim()).filter(Boolean);
   const reminders = remRaw.split('\n').map(s => s.trim()).filter(Boolean);
 
   const targetDate = currentContactDate || window.KingdomApp.getTodayDateString();
 
   window.KingdomApp.store.saveContactBook(targetDate, {
-    homeworkItems: homeworkItems.length > 0 ? homeworkItems : ["1. 今日各科無指定作業，請溫習課堂筆記"],
-    reminders: reminders.length > 0 ? reminders : ["攜帶水壺與正常文具學用品"],
+    homeworkItems: homeworkItems,
+    reminders: reminders,
     queenMotto: motto.trim() || "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
   });
 
-  window.KingdomApp.sound.playFanfare();
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+    window.KingdomApp.sound.playFanfare();
+  }
   showToast(`📜 ${targetDate} 聯絡簿奏章已成功修訂發布！`, "👑");
   closeEditContactModal();
   renderMorningBoard();
@@ -863,6 +914,164 @@ function renderAttendanceView() {
   }).join('');
 
   initLucideIcons();
+  renderAttendanceHistoryTable();
+}
+
+// --- TAB 1: 皇室點名簿【歷日出席歷史紀錄總表】 ---
+function renderAttendanceHistoryTable() {
+  const container = document.getElementById("attendanceHistoryTableContainer");
+  if (!container) return;
+
+  const attendanceData = window.KingdomApp.store.data.attendance || {};
+  const students = window.KingdomApp.store.data.students || [];
+  const currentDate = getSelectedAttendanceDate();
+  const dateKeys = Object.keys(attendanceData).sort().reverse();
+
+  const countBadge = document.getElementById("attendanceHistoryDatesCountBadge");
+  if (countBadge) {
+    countBadge.textContent = `共記錄 ${dateKeys.length} 天出席史料`;
+  }
+
+  if (dateKeys.length === 0) {
+    container.innerHTML = `
+      <div class="p-6 text-center text-slate-500 font-bold bg-white rounded-xl border border-dashed border-amber-300">
+        目前尚無歷日出席歷史紀錄。只要在上方進行簽到或打卡，系統將自動按日保存！
+      </div>
+    `;
+    return;
+  }
+
+  const weekdayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+
+  container.innerHTML = `
+    <div class="overflow-x-auto rounded-xl border-2 border-amber-300 bg-white shadow-sm">
+      <table class="w-full text-xs text-left">
+        <thead class="bg-amber-100 text-amber-950 font-black border-b border-amber-300">
+          <tr>
+            <th class="p-3 text-center w-32">📅 紀錄日期</th>
+            <th class="p-3 text-center w-28">出席概況</th>
+            <th class="p-3">⏰ 遲到名單 (打卡時間)</th>
+            <th class="p-3">🏖️ 告假名單 (事病假與節數)</th>
+            <th class="p-3 text-center w-24">出席率</th>
+            <th class="p-3 text-center w-28">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-amber-200/70 font-medium">
+          ${dateKeys.map(dateStr => {
+            const dayRecords = attendanceData[dateStr] || {};
+            const dObj = new Date(dateStr + "T00:00:00");
+            const weekday = !isNaN(dObj.getDay()) ? weekdayNames[dObj.getDay()] : "";
+            const isSelected = (dateStr === currentDate);
+            const isToday = (dateStr === window.KingdomApp.getTodayDateString());
+
+            let pCount = 0;
+            let lCount = 0;
+            let aCount = 0;
+            const lateStudents = [];
+            const leaveStudents = [];
+
+            students.forEach(st => {
+              const rec = dayRecords[st.id] || { status: 'present' };
+              if (rec.status === 'present') {
+                pCount++;
+              } else if (rec.status === 'late') {
+                lCount++;
+                lateStudents.push({
+                  name: `${st.seatNo}.${st.name}`,
+                  time: rec.checkInTime || '07:45'
+                });
+              } else if (rec.status === 'leave') {
+                aCount++;
+                const lTypeText = rec.leaveType === 'sick' ? '病假' : (rec.leaveType === 'official' ? '公假' : (rec.leaveType === 'mourning' ? '喪假' : '事假'));
+                const periodText = (rec.periods && rec.periods.length) ? `(${rec.periods.length}節)` : '(全天)';
+                leaveStudents.push({
+                  name: `${st.seatNo}.${st.name}`,
+                  type: lTypeText,
+                  period: periodText
+                });
+              }
+            });
+
+            const total = students.length || 27;
+            const rate = total > 0 ? Math.round((pCount / total) * 100) : 100;
+
+            return `
+              <tr class="${isSelected ? 'bg-amber-100/70 font-black' : 'hover:bg-amber-50/50'} transition-colors">
+                <td class="p-3 text-center whitespace-nowrap">
+                  <div class="flex flex-col items-center">
+                    <span class="text-sm font-black text-amber-950">${dateStr}</span>
+                    <span class="text-[11px] font-bold text-amber-800">${weekday} ${isToday ? '<span class="bg-amber-500 text-white px-1.5 py-0.2 rounded-full text-[10px]">今日</span>' : ''}</span>
+                  </div>
+                </td>
+                <td class="p-3 text-center">
+                  ${(lCount === 0 && aCount === 0) ? `
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      🎉 全勤到齊 (${pCount}人)
+                    </span>
+                  ` : `
+                    <div class="flex flex-col gap-0.5 items-center text-[11px]">
+                      <span class="text-emerald-700 font-bold">🟢 到校: ${pCount}</span>
+                      ${lCount > 0 ? `<span class="text-amber-700 font-bold">⏰ 遲到: ${lCount}</span>` : ''}
+                      ${aCount > 0 ? `<span class="text-rose-700 font-bold">🏖️ 請假: ${aCount}</span>` : ''}
+                    </div>
+                  `}
+                </td>
+                <td class="p-3">
+                  ${lateStudents.length > 0 ? `
+                    <div class="flex flex-wrap gap-1">
+                      ${lateStudents.map(ls => `
+                        <span class="inline-flex items-center bg-amber-50 border border-amber-300 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold">
+                          <span>${ls.name}</span>
+                          <span class="ml-1 text-[10px] text-amber-700">(${ls.time})</span>
+                        </span>
+                      `).join('')}
+                    </div>
+                  ` : `
+                    <span class="text-slate-400 font-bold">無人遲到</span>
+                  `}
+                </td>
+                <td class="p-3">
+                  ${leaveStudents.length > 0 ? `
+                    <div class="flex flex-wrap gap-1">
+                      ${leaveStudents.map(ls => `
+                        <span class="inline-flex items-center bg-rose-50 border border-rose-300 text-rose-900 px-2 py-0.5 rounded text-[11px] font-bold">
+                          <span>${ls.name}</span>
+                          <span class="ml-1 text-[10px] text-rose-700">${ls.type}${ls.period}</span>
+                        </span>
+                      `).join('')}
+                    </div>
+                  ` : `
+                    <span class="text-slate-400 font-bold">無人請假</span>
+                  `}
+                </td>
+                <td class="p-3 text-center">
+                  <span class="px-2 py-1 rounded-lg font-black ${rate === 100 ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'}">
+                    ${rate}%
+                  </span>
+                </td>
+                <td class="p-3 text-center">
+                  <button onclick="switchAttendanceDate('${dateStr}')" class="px-2.5 py-1.5 rounded-lg text-xs font-black shadow-xs flex items-center justify-center space-x-1 mx-auto ${isSelected ? 'bg-amber-600 text-white ring-2 ring-amber-400' : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400'}">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                    <span>${isSelected ? '當前檢視中' : '切換補登'}</span>
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  initLucideIcons();
+}
+
+function switchAttendanceDate(dateStr) {
+  const picker = document.getElementById("attendanceDatePicker");
+  if (picker) {
+    picker.value = dateStr;
+  }
+  renderAttendanceView();
+  showToast(`📅 已切換檢視 ${dateStr} 皇室點名紀錄`, "👑");
 }
 
 function filterAttendanceStatus(status) {
@@ -1023,8 +1232,101 @@ function saveStudentLeave(e) {
 }
 
 // ===================================================================
-// 5. 皇室奏章堂：當天作業繳交情形【統整大看板】 (Summary Board)
+// 5. 皇室奏章堂：當天作業繳交情形【四欄式拖曳統整看板】 (Summary Board)
 // ===================================================================
+let currentDraggedHwInfo = null;
+
+function handleHwStudentDragStart(event, hwId, studentId) {
+  currentDraggedHwInfo = { hwId, studentId: Number(studentId) || studentId };
+  if (event.dataTransfer) {
+    event.dataTransfer.setData("text/plain", JSON.stringify(currentDraggedHwInfo));
+    event.dataTransfer.effectAllowed = "move";
+  }
+  if (event.currentTarget) {
+    event.currentTarget.classList.add("opacity-40", "scale-95");
+  }
+}
+
+function handleHwStudentDragEnd(event) {
+  if (event.currentTarget) {
+    event.currentTarget.classList.remove("opacity-40", "scale-95");
+  }
+  document.querySelectorAll(".hw-dropzone").forEach(el => {
+    el.classList.remove("ring-4", "ring-amber-400", "bg-amber-100/60");
+  });
+}
+
+function handleHwDropZoneOver(event) {
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = "move";
+  }
+  const dz = event.currentTarget;
+  if (dz && !dz.classList.contains("ring-4")) {
+    dz.classList.add("ring-4", "ring-amber-400", "bg-amber-100/60");
+  }
+}
+
+function handleHwDropZoneLeave(event) {
+  const dz = event.currentTarget;
+  if (dz) {
+    dz.classList.remove("ring-4", "ring-amber-400", "bg-amber-100/60");
+  }
+}
+
+function handleHwDropZoneDrop(event, hwId, targetStatus) {
+  event.preventDefault();
+  const dz = event.currentTarget;
+  if (dz) {
+    dz.classList.remove("ring-4", "ring-amber-400", "bg-amber-100/60");
+  }
+
+  let hwIdToUse = hwId;
+  let studentIdToUse = null;
+
+  try {
+    const rawData = event.dataTransfer ? event.dataTransfer.getData("text/plain") : null;
+    if (rawData) {
+      const data = JSON.parse(rawData);
+      if (data && data.studentId) {
+        studentIdToUse = data.studentId;
+        if (data.hwId) hwIdToUse = data.hwId;
+      }
+    }
+  } catch (e) {}
+
+  if (!studentIdToUse && currentDraggedHwInfo) {
+    studentIdToUse = currentDraggedHwInfo.studentId;
+    hwIdToUse = currentDraggedHwInfo.hwId;
+  }
+
+  if (hwIdToUse && studentIdToUse) {
+    setStudentHomeworkStatus(hwIdToUse, studentIdToUse, targetStatus);
+    const student = window.KingdomApp.store.data.students.find(s => s.id == studentIdToUse);
+    const statusNames = {
+      submitted: '✅ 準時已繳交',
+      late: '⏰ 遲交已補',
+      revision: '⚠️ 需訂正',
+      pending: '❌ 未繳交'
+    };
+    showToast(`📜 已將 ${student ? student.name : '大臣'} 移動至【${statusNames[targetStatus] || targetStatus}】`, "✨");
+  }
+  currentDraggedHwInfo = null;
+}
+
+function setStudentHomeworkStatus(hwId, studentId, targetStatus) {
+  const hw = window.KingdomApp.store.data.homework.find(h => h.id == hwId);
+  if (!hw) return;
+  if (!hw.records) hw.records = {};
+
+  hw.records[studentId] = targetStatus;
+  window.KingdomApp.store.save();
+  window.KingdomApp.sound.playCoin();
+  renderHomeworkSummaryBoard();
+  renderTrafficView();         // 即時連動下課紅綠燈！
+  renderHomeworkSettlementTable(); // 即時連動學期結算統計！
+}
+
 function renderHomeworkSummaryBoard() {
   const container = document.getElementById("homeworkSummaryBoardContainer");
   if (!container) return;
@@ -1048,6 +1350,7 @@ function renderHomeworkSummaryBoard() {
       </div>
     `;
     renderHomeworkSettlementTable();
+    renderContactBookHistoryList();
     return;
   }
 
@@ -1070,8 +1373,52 @@ function renderHomeworkSummaryBoard() {
       }
     });
 
+    const columns = [
+      {
+        id: 'submitted',
+        title: '準時已繳交',
+        icon: '✅',
+        colorText: 'text-emerald-950',
+        bgClass: 'bg-emerald-50/70 border-emerald-300',
+        badgeClass: 'bg-emerald-600 text-white',
+        chipBorder: 'border-emerald-300 hover:border-emerald-500 bg-white text-emerald-950',
+        list: submittedList
+      },
+      {
+        id: 'late',
+        title: '遲交已補',
+        icon: '⏰',
+        colorText: 'text-amber-950',
+        bgClass: 'bg-amber-50/70 border-amber-300',
+        badgeClass: 'bg-amber-600 text-white',
+        chipBorder: 'border-amber-300 hover:border-amber-500 bg-white text-amber-950',
+        list: lateList
+      },
+      {
+        id: 'revision',
+        title: '需訂正',
+        icon: '⚠️',
+        colorText: 'text-purple-950',
+        bgClass: 'bg-purple-50/70 border-purple-300',
+        badgeClass: 'bg-purple-600 text-white',
+        chipBorder: 'border-purple-300 hover:border-purple-500 bg-white text-purple-950',
+        list: revisionList
+      },
+      {
+        id: 'pending',
+        title: '未繳交',
+        icon: '❌',
+        colorText: 'text-rose-950',
+        bgClass: 'bg-rose-50/70 border-rose-300',
+        badgeClass: 'bg-rose-600 text-white',
+        chipBorder: 'border-rose-300 hover:border-rose-500 bg-white text-rose-950',
+        list: pendingList
+      }
+    ];
+
     return `
-      <div class="bg-white rounded-2xl border-2 border-amber-300 p-5 space-y-4 shadow-sm">
+      <div class="bg-white rounded-2xl border-2 border-amber-300 p-5 space-y-4 shadow-sm" data-hw-card-id="${hw.id}">
+        <!-- 頂部作業資訊與操作按鈕 -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-amber-200">
           <div>
             <div class="flex items-center space-x-2">
@@ -1103,56 +1450,200 @@ function renderHomeworkSummaryBoard() {
           </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-2">
-            <div class="flex justify-between font-black text-emerald-900">
-              <span>✅ 準時已繳交</span>
-              <span>${submittedList.length} 人</span>
-            </div>
-            <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-              ${submittedList.map(s => `<span class="bg-white border border-emerald-300 px-1.5 py-0.5 rounded text-[11px] font-bold">${s.seatNo}.${s.name}</span>`).join('')}
-            </div>
-          </div>
+        <!-- 🌟 四欄式拖曳移動看板 (Drag & Drop + 觸控快速切換) 🌟 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          ${columns.map(col => `
+            <div class="rounded-xl border-2 ${col.bgClass} p-3 flex flex-col space-y-2">
+              <div class="flex items-center justify-between pb-1 border-b border-amber-200/60 font-black">
+                <span class="flex items-center space-x-1.5 ${col.colorText}">
+                  <span>${col.icon}</span>
+                  <span>${col.title}</span>
+                </span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-black ${col.badgeClass} shadow-2xs">
+                  ${col.list.length} 人
+                </span>
+              </div>
 
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
-            <div class="flex justify-between font-black text-amber-900">
-              <span>⏰ 遲交已補</span>
-              <span>${lateList.length} 人</span>
+              <!-- 可放置區域 Dropzone (支援拖曳放置) -->
+              <div 
+                class="hw-dropzone flex-1 min-h-[140px] max-h-72 overflow-y-auto space-y-1.5 p-1.5 rounded-lg border-2 border-dashed border-slate-300/80 transition-all"
+                data-hw-id="${hw.id}"
+                data-status="${col.id}"
+                ondragover="handleHwDropZoneOver(event)"
+                ondragleave="handleHwDropZoneLeave(event)"
+                ondrop="handleHwDropZoneDrop(event, '${hw.id}', '${col.id}')"
+              >
+                ${col.list.length === 0 ? `
+                  <div class="h-28 flex flex-col items-center justify-center text-slate-400 text-[11px] pointer-events-none select-none">
+                    <span>✋ 拖曳大臣名牌至此</span>
+                  </div>
+                ` : col.list.map(s => `
+                  <div
+                    class="hw-student-chip p-1.5 rounded-lg border ${col.chipBorder} shadow-2xs flex items-center justify-between gap-1 cursor-grab active:cursor-grabbing hover:shadow-md transition-all select-none"
+                    draggable="true"
+                    ondragstart="handleHwStudentDragStart(event, '${hw.id}', '${s.id}')"
+                    ondragend="handleHwStudentDragEnd(event)"
+                    title="【拖曳移動】至其他欄位，或點擊右側按鈕快速變更"
+                  >
+                    <div class="flex items-center space-x-1 min-w-0">
+                      <span class="text-slate-400 text-[10px] font-bold">⋮⋮</span>
+                      <span class="font-black truncate text-[11px]">${String(s.seatNo).padStart(2, '0')}.${s.name}</span>
+                    </div>
+                    <!-- 快捷切換微型按鈕群 (支援大螢幕觸控點擊) -->
+                    <div class="flex items-center space-x-0.5 shrink-0">
+                      ${col.id !== 'submitted' ? `
+                        <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'submitted')" title="移動至【準時已繳交】" class="w-5 h-5 rounded hover:bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">✅</button>
+                      ` : ''}
+                      ${col.id !== 'late' ? `
+                        <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'late')" title="移動至【遲交已補】" class="w-5 h-5 rounded hover:bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-bold">⏰</button>
+                      ` : ''}
+                      ${col.id !== 'revision' ? `
+                        <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'revision')" title="移動至【需訂正】" class="w-5 h-5 rounded hover:bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold">⚠️</button>
+                      ` : ''}
+                      ${col.id !== 'pending' ? `
+                        <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'pending')" title="移動至【未繳交】" class="w-5 h-5 rounded hover:bg-rose-100 text-rose-700 flex items-center justify-center text-[10px] font-bold">❌</button>
+                      ` : ''}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
             </div>
-            <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-              ${lateList.map(s => `<span class="bg-white border border-amber-300 px-1.5 py-0.5 rounded text-[11px] font-bold">${s.seatNo}.${s.name}</span>`).join('')}
-            </div>
-          </div>
-
-          <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 space-y-2">
-            <div class="flex justify-between font-black text-purple-900">
-              <span>⚠️ 需訂正</span>
-              <span>${revisionList.length} 人</span>
-            </div>
-            <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-              ${revisionList.map(s => `<span class="bg-white border border-purple-300 px-1.5 py-0.5 rounded text-[11px] font-bold text-purple-900">${s.seatNo}.${s.name}</span>`).join('')}
-            </div>
-          </div>
-
-          <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 space-y-2">
-            <div class="flex justify-between font-black text-rose-900">
-              <span>❌ 未繳交</span>
-              <span>${pendingList.length} 人</span>
-            </div>
-            <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-              ${pendingList.map(s => `<span class="bg-white border border-rose-300 px-1.5 py-0.5 rounded text-[11px] font-bold text-rose-900">${s.seatNo}.${s.name}</span>`).join('')}
-            </div>
-          </div>
+          `).join('')}
         </div>
       </div>
     `;
   }).join('');
 
   renderHomeworkSettlementTable();
+  renderContactBookHistoryList();
+}
+
+// -------------------------------------------------------------------
+// 📜 歷日聯絡簿歷史存檔簿 (各日回家奏章回溯檔案庫)
+// -------------------------------------------------------------------
+let isContactHistoryExpanded = true;
+
+function toggleContactHistoryAccordion() {
+  const list = document.getElementById("morningContactHistoryList");
+  const txt = document.getElementById("btnToggleContactHistoryText");
+  if (!list) return;
+  isContactHistoryExpanded = !isContactHistoryExpanded;
+  if (isContactHistoryExpanded) {
+    list.classList.remove("hidden");
+    if (txt) txt.textContent = "歷史存檔簿 (收合)";
+  } else {
+    list.classList.add("hidden");
+    if (txt) txt.textContent = "歷史存檔簿 (展開)";
+  }
+}
+
+function loadContactDateToMorning(dateStr) {
+  currentContactDate = dateStr;
+  const picker = document.getElementById("morningContactDatePicker");
+  if (picker) picker.value = dateStr;
+  renderMorningBoard();
+  showToast(`📺 已在晨間大螢幕載入【${dateStr}】聯絡簿奏章！`, "📜");
+}
+
+function openEditContactModalForDate(dateStr) {
+  currentContactDate = dateStr;
+  openEditContactModal();
+}
+
+function renderContactBookHistoryList() {
+  const morningContainer = document.getElementById("morningContactHistoryList");
+  const teacherContainer = document.getElementById("teacherContactHistoryList");
+  if (!morningContainer && !teacherContainer) return;
+
+  const history = window.KingdomApp.store.data.contactBookHistory || {};
+  const dateKeys = Object.keys(history).sort().reverse();
+  const todayStr = window.KingdomApp.getTodayDateString();
+  const weekdayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+
+  if (dateKeys.length === 0) {
+    const emptyHtml = `
+      <div class="col-span-full p-4 text-center text-slate-500 font-bold bg-amber-50/70 rounded-xl border border-dashed border-amber-300">
+        目前尚無歷日聯絡簿歷史紀錄。導師點擊「✏️ 編輯每日聯絡簿」後即可按日存檔！
+      </div>
+    `;
+    if (morningContainer) morningContainer.innerHTML = emptyHtml;
+    if (teacherContainer) teacherContainer.innerHTML = emptyHtml;
+    return;
+  }
+
+  const renderCard = (dateStr) => {
+    const entry = history[dateStr] || {};
+    const dObj = new Date(dateStr + "T00:00:00");
+    const weekday = !isNaN(dObj.getDay()) ? weekdayNames[dObj.getDay()] : "";
+    const isToday = (dateStr === todayStr);
+    const hwItems = entry.homeworkItems || [];
+    const remItems = entry.reminders || [];
+    const motto = entry.queenMotto || "";
+
+    return `
+      <div class="bg-white rounded-xl border-2 ${isToday ? 'border-amber-400 ring-2 ring-amber-300/70' : 'border-amber-200'} p-3.5 space-y-2.5 shadow-2xs hover:shadow-md transition-all">
+        <div class="flex items-center justify-between pb-2 border-b border-amber-200">
+          <div class="flex items-center space-x-1.5">
+            <span class="text-base font-black text-amber-950">${dateStr}</span>
+            <span class="text-xs font-bold text-amber-800">(${weekday})</span>
+            ${isToday ? '<span class="bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black">今日</span>' : ''}
+          </div>
+          <div class="flex items-center space-x-1">
+            <button type="button" onclick="loadContactDateToMorning('${dateStr}')" class="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs flex items-center space-x-0.5" title="載入至大螢幕展示">
+              <span>📺</span>
+              <span>展示</span>
+            </button>
+            <button type="button" onclick="openEditContactModalForDate('${dateStr}')" class="px-2 py-1 rounded-lg btn-royal-gold text-amber-950 text-xs font-black border border-amber-400 hover:opacity-90 shadow-2xs flex items-center space-x-0.5" title="編輯此日聯絡簿">
+              <span>✏️</span>
+              <span>編輯</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-1.5 text-xs text-slate-800">
+          <div class="font-bold flex items-center justify-between text-amber-950">
+            <span>📝 回家作業 (${hwItems.length} 項)：</span>
+          </div>
+          ${hwItems.length > 0 ? `
+            <ul class="space-y-1 pl-1 max-h-28 overflow-y-auto font-medium">
+              ${hwItems.map((item, idx) => `
+                <li class="flex items-start space-x-1.5 text-[11px] leading-snug">
+                  <span class="w-4 h-4 rounded-full bg-amber-200 text-amber-900 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">${idx + 1}</span>
+                  <span class="truncate">${item}</span>
+                </li>
+              `).join('')}
+            </ul>
+          ` : `
+            <p class="text-slate-400 text-[11px] italic">未指派作業</p>
+          `}
+
+          ${remItems.length > 0 ? `
+            <div class="pt-1 border-t border-dashed border-amber-200">
+              <span class="font-bold text-amber-950 text-[11px]">🔔 重要提醒：</span>
+              <ul class="list-disc list-inside text-[11px] text-slate-700 pl-1 space-y-0.5">
+                ${remItems.slice(0, 2).map(r => `<li class="truncate">${r}</li>`).join('')}
+                ${remItems.length > 2 ? `<li class="text-[10px] text-slate-400">…等共 ${remItems.length} 項提醒</li>` : ''}
+              </ul>
+            </div>
+          ` : ''}
+
+          ${motto ? `
+            <div class="pt-1 text-[11px] text-amber-900 bg-amber-50/70 p-1.5 rounded border border-amber-200 italic truncate" title="${motto}">
+              ${motto}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  };
+
+  const cardsHtml = dateKeys.map(d => renderCard(d)).join('');
+  if (morningContainer) morningContainer.innerHTML = cardsHtml;
+  if (teacherContainer) teacherContainer.innerHTML = cardsHtml;
 }
 
 function cycleHwStatus(hwId, studentId) {
-  const hw = window.KingdomApp.store.data.homework.find(h => h.id === hwId);
+  const hw = window.KingdomApp.store.data.homework.find(h => h.id == hwId);
   if (!hw) return;
   if (!hw.records) hw.records = {};
 
@@ -1182,7 +1673,7 @@ function cycleHwStatus(hwId, studentId) {
 // -------------------------------------------------------------------
 function openSetRevisionModal(hwId) {
   activeRevisionHwId = hwId;
-  const hw = window.KingdomApp.store.data.homework.find(h => h.id === hwId);
+  const hw = window.KingdomApp.store.data.homework.find(h => h.id == hwId);
   if (!hw) return;
 
   document.getElementById("setRevisionModalTitle").textContent = `設置【${hw.title}】需訂正大臣名單`;
@@ -1237,7 +1728,7 @@ function toggleSelectAllRevision(selectAll) {
 
 function saveRevisionSelection() {
   if (!activeRevisionHwId) return;
-  const hw = window.KingdomApp.store.data.homework.find(h => h.id === activeRevisionHwId);
+  const hw = window.KingdomApp.store.data.homework.find(h => h.id == activeRevisionHwId);
   if (!hw) return;
   if (!hw.records) hw.records = {};
 
@@ -1263,7 +1754,7 @@ function saveRevisionSelection() {
 }
 
 function batchMarkAllHwSubmitted(hwId) {
-  const hw = window.KingdomApp.store.data.homework.find(h => h.id === hwId);
+  const hw = window.KingdomApp.store.data.homework.find(h => h.id == hwId);
   if (!hw) return;
   if (!hw.records) hw.records = {};
 
@@ -1281,7 +1772,7 @@ function batchMarkAllHwSubmitted(hwId) {
 
 function deleteHomework(hwId) {
   if (!confirm("確定要刪除此項作業奏章嗎？")) return;
-  window.KingdomApp.store.data.homework = window.KingdomApp.store.data.homework.filter(h => h.id !== hwId);
+  window.KingdomApp.store.data.homework = window.KingdomApp.store.data.homework.filter(h => h.id != hwId);
   window.KingdomApp.store.save();
   showToast("🗑️ 作業奏章已銷毀");
   renderHomeworkSummaryBoard();
@@ -5307,5 +5798,25 @@ if (typeof window !== 'undefined') {
   window.quickFeedStudentInZoo = quickFeedStudentInZoo;
   window.feedAllZooAnimalsOne = feedAllZooAnimalsOne;
   window.triggerZooCheerParty = triggerZooCheerParty;
+  window.openEditContactModal = openEditContactModal;
+  window.closeEditContactModal = closeEditContactModal;
+  window.saveContactBookData = saveContactBookData;
+  window.changeContactDateDelta = changeContactDateDelta;
+  window.changeContactDateToToday = changeContactDateToToday;
+  window.handleContactDatePickerChange = handleContactDatePickerChange;
+
+  // 出席歷史、聯絡簿歷史與作業拖曳看板
+  window.renderAttendanceHistoryTable = renderAttendanceHistoryTable;
+  window.switchAttendanceDate = switchAttendanceDate;
+  window.renderContactBookHistoryList = renderContactBookHistoryList;
+  window.toggleContactHistoryAccordion = toggleContactHistoryAccordion;
+  window.loadContactDateToMorning = loadContactDateToMorning;
+  window.openEditContactModalForDate = openEditContactModalForDate;
+  window.handleHwStudentDragStart = handleHwStudentDragStart;
+  window.handleHwStudentDragEnd = handleHwStudentDragEnd;
+  window.handleHwDropZoneOver = handleHwDropZoneOver;
+  window.handleHwDropZoneLeave = handleHwDropZoneLeave;
+  window.handleHwDropZoneDrop = handleHwDropZoneDrop;
+  window.setStudentHomeworkStatus = setStudentHomeworkStatus;
 }
 

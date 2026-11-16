@@ -13,7 +13,7 @@
       "lifetimePoints": 88,
       "animalType": "lion",
       "petType": "lion",
-      "petExp": 87
+      "petExp": 88
     },
     {
       "id": 2,
@@ -26,7 +26,7 @@
       "lifetimePoints": 161,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 160
+      "petExp": 161
     },
     {
       "id": 3,
@@ -39,7 +39,7 @@
       "lifetimePoints": 211,
       "animalType": "cat",
       "petType": "cat",
-      "petExp": 210
+      "petExp": 211
     },
     {
       "id": 4,
@@ -52,7 +52,7 @@
       "lifetimePoints": 66,
       "animalType": "rabbit",
       "petType": "rabbit",
-      "petExp": 65
+      "petExp": 66
     },
     {
       "id": 5,
@@ -65,7 +65,7 @@
       "lifetimePoints": 131,
       "animalType": "bear",
       "petType": "bear",
-      "petExp": 130
+      "petExp": 131
     },
     {
       "id": 6,
@@ -78,7 +78,7 @@
       "lifetimePoints": 311,
       "animalType": "penguin",
       "petType": "penguin",
-      "petExp": 310
+      "petExp": 311
     },
     {
       "id": 7,
@@ -91,7 +91,7 @@
       "lifetimePoints": 96,
       "animalType": "owl",
       "petType": "owl",
-      "petExp": 95
+      "petExp": 96
     },
     {
       "id": 8,
@@ -104,7 +104,7 @@
       "lifetimePoints": 146,
       "animalType": "fox",
       "petType": "fox",
-      "petExp": 145
+      "petExp": 146
     },
     {
       "id": 9,
@@ -117,7 +117,7 @@
       "lifetimePoints": 51,
       "animalType": "hamster",
       "petType": "hamster",
-      "petExp": 50
+      "petExp": 51
     },
     {
       "id": 10,
@@ -130,7 +130,7 @@
       "lifetimePoints": 176,
       "animalType": "lion",
       "petType": "lion",
-      "petExp": 175
+      "petExp": 176
     },
     {
       "id": 11,
@@ -143,7 +143,7 @@
       "lifetimePoints": 116,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 115
+      "petExp": 116
     },
     {
       "id": 12,
@@ -156,7 +156,7 @@
       "lifetimePoints": 241,
       "animalType": "cat",
       "petType": "cat",
-      "petExp": 240
+      "petExp": 241
     },
     {
       "id": 13,
@@ -169,7 +169,7 @@
       "lifetimePoints": 191,
       "animalType": "rabbit",
       "petType": "rabbit",
-      "petExp": 190
+      "petExp": 191
     },
     {
       "id": 14,
@@ -182,7 +182,7 @@
       "lifetimePoints": 156,
       "animalType": "bear",
       "petType": "bear",
-      "petExp": 155
+      "petExp": 156
     },
     {
       "id": 15,
@@ -195,7 +195,7 @@
       "lifetimePoints": 321,
       "animalType": "penguin",
       "petType": "penguin",
-      "petExp": 320
+      "petExp": 321
     },
     {
       "id": 16,
@@ -208,7 +208,7 @@
       "lifetimePoints": 81,
       "animalType": "owl",
       "petType": "owl",
-      "petExp": 80
+      "petExp": 81
     },
     {
       "id": 17,
@@ -221,7 +221,7 @@
       "lifetimePoints": 126,
       "animalType": "fox",
       "petType": "fox",
-      "petExp": 125
+      "petExp": 126
     },
     {
       "id": 18,
@@ -234,7 +234,7 @@
       "lifetimePoints": 206,
       "animalType": "hamster",
       "petType": "hamster",
-      "petExp": 205
+      "petExp": 206
     },
     {
       "id": 19,
@@ -247,7 +247,7 @@
       "lifetimePoints": 141,
       "animalType": "lion",
       "petType": "lion",
-      "petExp": 140
+      "petExp": 141
     },
     {
       "id": 20,
@@ -260,7 +260,7 @@
       "lifetimePoints": 166,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 165
+      "petExp": 166
     },
     {
       "id": 21,
@@ -273,7 +273,7 @@
       "lifetimePoints": 281,
       "animalType": "cat",
       "petType": "cat",
-      "petExp": 280
+      "petExp": 281
     },
     {
       "id": 22,
@@ -286,7 +286,7 @@
       "lifetimePoints": 91,
       "animalType": "rabbit",
       "petType": "rabbit",
-      "petExp": 90
+      "petExp": 91
     },
     {
       "id": 23,
@@ -299,7 +299,7 @@
       "lifetimePoints": 136,
       "animalType": "bear",
       "petType": "bear",
-      "petExp": 135
+      "petExp": 136
     },
     {
       "id": 24,
@@ -312,7 +312,7 @@
       "lifetimePoints": 71,
       "animalType": "penguin",
       "petType": "penguin",
-      "petExp": 70
+      "petExp": 71
     },
     {
       "id": 25,
@@ -325,7 +325,7 @@
       "lifetimePoints": 226,
       "animalType": "owl",
       "petType": "owl",
-      "petExp": 225
+      "petExp": 226
     },
     {
       "id": 26,
@@ -338,7 +338,7 @@
       "lifetimePoints": 111,
       "animalType": "fox",
       "petType": "fox",
-      "petExp": 110
+      "petExp": 111
     },
     {
       "id": 27,
@@ -351,7 +351,7 @@
       "lifetimePoints": 141,
       "animalType": "hamster",
       "petType": "hamster",
-      "petExp": 140
+      "petExp": 141
     }
   ],
   "pointPresets": [
@@ -539,35 +539,58 @@
     }
   ],
   "contactBook": {
-    "date": "2026-11-16",
     "homeworkItems": [
-      "1. 國語習作第 八 課完成",
-      "2. 數學習作 P.62 ~ P.65",
-      "3. 訂正國語隨堂生字本",
-      "4. 閱讀課外讀物 20 分鐘並簽名"
+      "1. 國語習作第十課生字",
+      "2. 數學習作第 70-72 頁",
+      "3. 訂正自然隨堂單"
     ],
     "reminders": [
-      "明天有體育課，請穿著西寧王國運動服與運動鞋",
-      "請帶自然課觀察記錄本與彩色筆",
-      "記得帶水壺與跳繩"
+      "明天穿著西寧王國運動服"
     ],
-    "queenMotto": "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
+    "queenMotto": "認真專注，踏實向前！",
+    "date": "2026-11-16",
+    "updatedAt": 1794803534792
   },
   "contactBookHistory": {
     "2026-11-16": {
-      "date": "2026-11-16",
       "homeworkItems": [
-        "1. 國語習作第 八 課完成",
-        "2. 數學習作 P.62 ~ P.65",
-        "3. 訂正國語隨堂生字本",
-        "4. 閱讀課外讀物 20 分鐘並簽名"
+        "1. 國語習作第十課生字",
+        "2. 數學習作第 70-72 頁",
+        "3. 訂正自然隨堂單"
       ],
       "reminders": [
-        "明天有體育課，請穿著西寧王國運動服與運動鞋",
-        "請帶自然課觀察記錄本與彩色筆",
-        "記得帶水壺與跳繩"
+        "明天穿著西寧王國運動服"
       ],
-      "queenMotto": "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
+      "queenMotto": "認真專注，踏實向前！",
+      "date": "2026-11-16",
+      "updatedAt": 1794803534792
+    },
+    "2026-11-13": {
+      "date": "2026-11-13",
+      "homeworkItems": [
+        "1. 國語習作第 九 課閱讀理解題",
+        "2. 數學習作 P.66 ~ P.68",
+        "3. 預習自然第三單元"
+      ],
+      "reminders": [
+        "下週一全校升旗朝會，請準時 07:40 前抵達",
+        "請帶美術水彩用具與調色盤"
+      ],
+      "queenMotto": "持之以恆是成功的鑰匙，週末溫故而知新！",
+      "updatedAt": 1794717134000
+    },
+    "2026-11-12": {
+      "date": "2026-11-12",
+      "homeworkItems": [
+        "1. 國語隨堂造句本完成",
+        "2. 數學甲本單元練習二",
+        "3. 課外閱讀 20 分鐘"
+      ],
+      "reminders": [
+        "明天有體育課，穿著西寧王國運動服，帶水壺與跳繩"
+      ],
+      "queenMotto": "每一天的努力都是積累智慧的寶藏。",
+      "updatedAt": 1794630734000
     }
   },
   "attendance": {
@@ -705,6 +728,282 @@
       "27": {
         "status": "present",
         "checkInTime": "07:30",
+        "note": ""
+      }
+    },
+    "2026-11-13": {
+      "1": {
+        "status": "present",
+        "checkInTime": "07:21",
+        "note": ""
+      },
+      "2": {
+        "status": "present",
+        "checkInTime": "07:22",
+        "note": ""
+      },
+      "3": {
+        "status": "present",
+        "checkInTime": "07:23",
+        "note": ""
+      },
+      "4": {
+        "status": "present",
+        "checkInTime": "07:24",
+        "note": ""
+      },
+      "5": {
+        "status": "present",
+        "checkInTime": "07:25",
+        "note": ""
+      },
+      "6": {
+        "status": "present",
+        "checkInTime": "07:26",
+        "note": ""
+      },
+      "7": {
+        "status": "present",
+        "checkInTime": "07:27",
+        "note": ""
+      },
+      "8": {
+        "status": "present",
+        "checkInTime": "07:28",
+        "note": ""
+      },
+      "9": {
+        "status": "present",
+        "checkInTime": "07:29",
+        "note": ""
+      },
+      "10": {
+        "status": "present",
+        "checkInTime": "07:30",
+        "note": ""
+      },
+      "11": {
+        "status": "present",
+        "checkInTime": "07:31",
+        "note": ""
+      },
+      "12": {
+        "status": "present",
+        "checkInTime": "07:32",
+        "note": ""
+      },
+      "13": {
+        "status": "late",
+        "checkInTime": "07:46",
+        "note": "校車誤點"
+      },
+      "14": {
+        "status": "present",
+        "checkInTime": "07:34",
+        "note": ""
+      },
+      "15": {
+        "status": "present",
+        "checkInTime": "07:35",
+        "note": ""
+      },
+      "16": {
+        "status": "present",
+        "checkInTime": "07:36",
+        "note": ""
+      },
+      "17": {
+        "status": "present",
+        "checkInTime": "07:37",
+        "note": ""
+      },
+      "18": {
+        "status": "present",
+        "checkInTime": "07:20",
+        "note": ""
+      },
+      "19": {
+        "status": "present",
+        "checkInTime": "07:21",
+        "note": ""
+      },
+      "20": {
+        "status": "leave",
+        "checkInTime": null,
+        "leaveType": "sick",
+        "leaveScope": "all_day",
+        "note": "流感就醫"
+      },
+      "21": {
+        "status": "present",
+        "checkInTime": "07:23",
+        "note": ""
+      },
+      "22": {
+        "status": "present",
+        "checkInTime": "07:24",
+        "note": ""
+      },
+      "23": {
+        "status": "present",
+        "checkInTime": "07:25",
+        "note": ""
+      },
+      "24": {
+        "status": "present",
+        "checkInTime": "07:26",
+        "note": ""
+      },
+      "25": {
+        "status": "present",
+        "checkInTime": "07:27",
+        "note": ""
+      },
+      "26": {
+        "status": "present",
+        "checkInTime": "07:28",
+        "note": ""
+      },
+      "27": {
+        "status": "present",
+        "checkInTime": "07:29",
+        "note": ""
+      }
+    },
+    "2026-11-12": {
+      "1": {
+        "status": "present",
+        "checkInTime": "07:21",
+        "note": ""
+      },
+      "2": {
+        "status": "present",
+        "checkInTime": "07:22",
+        "note": ""
+      },
+      "3": {
+        "status": "present",
+        "checkInTime": "07:23",
+        "note": ""
+      },
+      "4": {
+        "status": "present",
+        "checkInTime": "07:24",
+        "note": ""
+      },
+      "5": {
+        "status": "present",
+        "checkInTime": "07:25",
+        "note": ""
+      },
+      "6": {
+        "status": "present",
+        "checkInTime": "07:26",
+        "note": ""
+      },
+      "7": {
+        "status": "present",
+        "checkInTime": "07:27",
+        "note": ""
+      },
+      "8": {
+        "status": "present",
+        "checkInTime": "07:28",
+        "note": ""
+      },
+      "9": {
+        "status": "present",
+        "checkInTime": "07:29",
+        "note": ""
+      },
+      "10": {
+        "status": "present",
+        "checkInTime": "07:30",
+        "note": ""
+      },
+      "11": {
+        "status": "present",
+        "checkInTime": "07:31",
+        "note": ""
+      },
+      "12": {
+        "status": "present",
+        "checkInTime": "07:32",
+        "note": ""
+      },
+      "13": {
+        "status": "present",
+        "checkInTime": "07:33",
+        "note": ""
+      },
+      "14": {
+        "status": "present",
+        "checkInTime": "07:34",
+        "note": ""
+      },
+      "15": {
+        "status": "present",
+        "checkInTime": "07:35",
+        "note": ""
+      },
+      "16": {
+        "status": "present",
+        "checkInTime": "07:36",
+        "note": ""
+      },
+      "17": {
+        "status": "present",
+        "checkInTime": "07:37",
+        "note": ""
+      },
+      "18": {
+        "status": "present",
+        "checkInTime": "07:20",
+        "note": ""
+      },
+      "19": {
+        "status": "present",
+        "checkInTime": "07:21",
+        "note": ""
+      },
+      "20": {
+        "status": "present",
+        "checkInTime": "07:22",
+        "note": ""
+      },
+      "21": {
+        "status": "present",
+        "checkInTime": "07:23",
+        "note": ""
+      },
+      "22": {
+        "status": "present",
+        "checkInTime": "07:24",
+        "note": ""
+      },
+      "23": {
+        "status": "present",
+        "checkInTime": "07:25",
+        "note": ""
+      },
+      "24": {
+        "status": "present",
+        "checkInTime": "07:26",
+        "note": ""
+      },
+      "25": {
+        "status": "present",
+        "checkInTime": "07:27",
+        "note": ""
+      },
+      "26": {
+        "status": "present",
+        "checkInTime": "07:28",
+        "note": ""
+      },
+      "27": {
+        "status": "present",
+        "checkInTime": "07:29",
         "note": ""
       }
     }
@@ -1240,6 +1539,6 @@
     null,
     null
   ],
-  "lastModified": 1794791779103,
+  "lastModified": 1794805820221,
   "_isFreshInit": true
 }
