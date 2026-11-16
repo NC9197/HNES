@@ -3116,7 +3116,7 @@ function renderPointsZooHabitat() {
 
         <!-- 飽食度與可用金幣狀態 -->
         <div class="mt-1 flex items-center justify-center space-x-1 text-[10px] font-mono font-bold text-slate-700 bg-emerald-50/80 w-full py-0.5 rounded-lg border border-emerald-200">
-          <span onclick="openEditStudentPointsModal(${st.id})" class="cursor-pointer hover:text-amber-600 hover:underline font-black" title="點擊修改金幣數量">🪙${st.points || 0}</span>
+          <span class="font-black">🪙${st.points || 0}</span>
           <span class="text-slate-300">|</span>
           <span class="text-emerald-800" title="累積總飽食度">🍎${lifetime}</span>
         </div>
@@ -3232,14 +3232,11 @@ function renderPointsView() {
               <span class="text-xs font-bold text-amber-800">${petStatus.animalName}</span>
             </div>
 
-            <div onclick="openEditStudentPointsModal(${st.id})" class="mt-3 flex items-center justify-between bg-white hover:bg-amber-50 cursor-pointer p-2.5 rounded-xl border-2 border-amber-300 hover:border-amber-400 transition shadow-xs group" title="點擊直接更改此大臣金幣數量">
+            <div class="mt-3 flex items-center justify-between bg-white p-2.5 rounded-xl border border-amber-300 shadow-xs">
               <div class="flex items-center space-x-1.5">
-                <span class="text-xl group-hover:scale-110 transition-transform">🪙</span>
+                <span class="text-xl">🪙</span>
                 <div>
-                  <div class="flex items-center space-x-1">
-                    <span class="text-[10px] text-amber-800 font-bold block">可用金幣</span>
-                    <span class="text-[9px] bg-amber-200 text-amber-900 px-1 rounded font-black">✏️更改</span>
-                  </div>
+                  <span class="text-[10px] text-amber-800 font-bold block">可用金幣</span>
                   <span class="text-base font-black text-amber-600 font-digital">${st.points || 0} 點</span>
                 </div>
               </div>
@@ -3269,7 +3266,7 @@ function renderPointsView() {
               🎁換卡
             </button>
             <button onclick="openEditStudentPointsModal(${st.id})" class="py-1 px-2 rounded-lg bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-300 hover:to-amber-400 text-amber-950 font-black text-xs transition border border-amber-400 shadow-sm flex items-center space-x-0.5" title="更改此大臣金幣數量">
-              <span>✏️</span><span>改金幣</span>
+              <span>🪙</span><span>改金幣</span>
             </button>
           </div>
         </div>
@@ -3733,24 +3730,40 @@ function renderPointPresets() {
 // 單獨大臣更改金幣數量 Modal 控制器 (Teacher Edit Student Points)
 // ===================================================================
 function openEditStudentPointsModal(studentId) {
-  if (!checkTeacherAuth("更改大臣金幣數量")) return;
   const student = window.KingdomApp.store.data.students.find(s => s.id == studentId || s.seatNo == studentId);
   if (!student) return;
 
-  const aType = student.animalType || student.petType || 'lion';
-  const aDef = (window.KingdomApp && window.KingdomApp.ANIMAL_DEFINITIONS && window.KingdomApp.ANIMAL_DEFINITIONS[aType]) || { icon: '🦁', name: '守護動物' };
+  const aType = student.animalType || student.petType || 'dog';
+  const aDef = (window.KingdomApp && window.KingdomApp.ANIMAL_DEFINITIONS && window.KingdomApp.ANIMAL_DEFINITIONS[aType]) || { icon: '🐶', name: '忠誠柴犬' };
 
   const modal = document.getElementById("editStudentPointsModal");
   if (!modal) return;
 
-  document.getElementById("editPointsStudentId").value = student.id;
-  document.getElementById("editPointsStudentSeat").textContent = `${String(student.seatNo).padStart(2, '0')}號`;
-  document.getElementById("editPointsStudentName").textContent = student.name;
-  document.getElementById("editPointsStudentTitle").textContent = `${student.title} (${aDef.icon} ${aDef.name})`;
-  document.getElementById("editPointsStudentIcon").textContent = aDef.icon;
-  document.getElementById("editPointsCurrentBalance").textContent = `${student.points || 0} 🪙`;
-  document.getElementById("editPointsTargetInput").value = student.points || 0;
-  document.getElementById("editPointsReasonInput").value = "導師手動調整金幣";
+  const idInput = document.getElementById("editPointsStudentId");
+  const seatEl = document.getElementById("editPointsStudentSeat");
+  const nameEl = document.getElementById("editPointsStudentName");
+  const titleEl = document.getElementById("editPointsStudentTitle");
+  const iconEl = document.getElementById("editPointsStudentIcon");
+  const balEl = document.getElementById("editPointsCurrentBalance");
+  const targetInput = document.getElementById("editPointsTargetInput");
+  const reasonInput = document.getElementById("editPointsReasonInput");
+
+  if (idInput) idInput.value = student.id;
+  if (seatEl) seatEl.textContent = `${String(student.seatNo).padStart(2, '0')}號`;
+  if (nameEl) nameEl.textContent = student.name;
+  if (titleEl) titleEl.textContent = `${student.title || '大臣'} (${aDef.icon} ${aDef.name})`;
+  if (iconEl) iconEl.textContent = aDef.icon;
+  if (balEl) balEl.textContent = `${student.points || 0} 🪙`;
+  if (targetInput) {
+    targetInput.value = student.points || 0;
+    setTimeout(() => {
+      try {
+        targetInput.focus();
+        targetInput.select();
+      } catch (err) {}
+    }, 100);
+  }
+  if (reasonInput) reasonInput.value = "導師手動調整金幣";
 
   modal.classList.remove("hidden");
   initLucideIcons();
@@ -3774,10 +3787,15 @@ function adjustEditPointsInput(delta) {
 }
 
 function submitEditStudentPoints(e) {
-  e.preventDefault();
-  const id = parseInt(document.getElementById("editPointsStudentId").value, 10);
-  const target = parseInt(document.getElementById("editPointsTargetInput").value, 10);
-  const reason = document.getElementById("editPointsReasonInput").value.trim() || "導師手動調整金幣";
+  if (e && e.preventDefault) e.preventDefault();
+  const idEl = document.getElementById("editPointsStudentId");
+  const targetEl = document.getElementById("editPointsTargetInput");
+  const reasonEl = document.getElementById("editPointsReasonInput");
+
+  if (!idEl || !targetEl) return;
+  const id = parseInt(idEl.value, 10);
+  const target = parseInt(targetEl.value, 10);
+  const reason = (reasonEl && reasonEl.value.trim()) || "導師手動調整金幣";
 
   if (isNaN(target) || target < 0) {
     alert("請輸入有效的金幣數值（0 或正整數）！");
@@ -3787,12 +3805,14 @@ function submitEditStudentPoints(e) {
   const updated = window.KingdomApp.store.setStudentPoints(id, target, reason);
   if (updated) {
     if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
-      window.KingdomApp.sound.playCoin();
+      try { window.KingdomApp.sound.playCoin(); } catch (err) {}
     }
     showToast(`💰 成功將【${updated.name}】的金幣更新為 ${target} 點！`, "👑");
     closeEditStudentPointsModal();
-    renderPointsView();
-    renderRosterView();
+    if (typeof renderPointsView === 'function') renderPointsView();
+    if (typeof renderRosterView === 'function') renderRosterView();
+    if (typeof renderPointsZooHabitat === 'function') renderPointsZooHabitat();
+    if (typeof renderPetsOverview === 'function') renderPetsOverview();
   }
 }
 
@@ -4272,23 +4292,23 @@ function renderRosterView() {
           </div>
           ${secondPetRosterHtml}
         </td>
-        <!-- 可用金幣 -->
+        <!-- 可用金幣 (純數字顯示，不作點擊) -->
         <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap">
-          <span onclick="openEditStudentPointsModal(${st.id})" class="font-black text-amber-600 text-sm block cursor-pointer hover:underline" title="點擊更改金幣數量">${st.points || 0} 🪙 ✏️</span>
+          <span class="font-black text-amber-600 text-sm block">${st.points || 0} 🪙</span>
         </td>
-        <!-- 操作按鈕列 -->
+        <!-- 操作按鈕列 (投餵與操作區) -->
         <td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
           <button onclick="openZooFeedModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-xs font-black shadow-xs transform active:scale-95 transition" title="投餵飼料讓動物長大！">
             🍎 投餵
           </button>
-          <button onclick="copyParentLink(${st.seatNo})" class="px-2 py-1 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded text-xs font-black shadow-sm" title="複製家長查閱專用訊息">
+          <button onclick="openEditStudentPointsModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-300 hover:to-amber-400 text-amber-950 rounded-lg text-xs font-black border border-amber-400 shadow-xs transform active:scale-95 transition" title="更改此大臣金幣數量">
+            🪙 改金幣
+          </button>
+          <button onclick="copyParentLink(${st.seatNo})" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded text-xs font-black shadow-xs" title="複製家長查閱專用訊息">
             📋 家長連結
           </button>
           <button onclick="openEditStudentModal(${st.id})" class="px-1.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-xs font-bold">
             修改
-          </button>
-          <button onclick="openEditStudentPointsModal(${st.id})" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded text-xs font-black border border-amber-400 shadow-xs" title="更改此大臣金幣數量">
-            ✏️ 改金幣
           </button>
           <button onclick="deleteStudent(${st.id})" class="px-1.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded text-xs font-bold">
             除名
@@ -6179,6 +6199,14 @@ function closeZooFeedModal() {
   activeFeedStudentId = null;
 }
 
+function openEditPointsFromFeedModal() {
+  const targetId = activeFeedStudentId;
+  closeZooFeedModal();
+  if (targetId) {
+    openEditStudentPointsModal(targetId);
+  }
+}
+
 function executeFeedStudent(amount, foodName) {
   if (!activeFeedStudentId) return;
   const res = window.KingdomApp.store.feedStudentAnimal(activeFeedStudentId, amount, foodName);
@@ -6686,5 +6714,16 @@ if (typeof window !== 'undefined') {
   window.openMorningCheckInChangeModal = openMorningCheckInChangeModal;
   window.closeMorningCheckInChangeModal = closeMorningCheckInChangeModal;
   window.changeMorningAttendanceStatus = changeMorningAttendanceStatus;
+
+  // 大臣金幣數量更改與飽食度控制
+  window.openEditStudentPointsModal = openEditStudentPointsModal;
+  window.closeEditStudentPointsModal = closeEditStudentPointsModal;
+  window.setEditPointsQuick = setEditPointsQuick;
+  window.adjustEditPointsInput = adjustEditPointsInput;
+  window.submitEditStudentPoints = submitEditStudentPoints;
+  window.promptSingleResetPoints = promptSingleResetPoints;
+  window.openEditPointsFromFeedModal = openEditPointsFromFeedModal;
+  window.confirmResetAllPetsSatiety = confirmResetAllPetsSatiety;
+  window.openBatchResetPointsModal = openBatchResetPointsModal;
 }
 
