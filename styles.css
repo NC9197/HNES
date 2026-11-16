@@ -383,40 +383,81 @@ body {
 }
 
 /* ===================================================================
- * 教室座位表 (Seating Chart & Lucky Draw)
+ * 教室座位表 (Seating Chart & Lucky Draw & Dock)
  * =================================================================== */
+.font-cute {
+  font-family: 'Comic Sans MS', 'Balsamiq Sans', 'Quicksand', 'Nunito', 'Microsoft JhengHei', '微軟正黑體', 'PingFang TC', -apple-system, sans-serif;
+}
+
 .seat-desk-card {
-  background: linear-gradient(145deg, #ffffff 0%, #fffef8 60%, #fef9c3 100%);
-  border: 2px solid #fcd34d;
-  border-radius: 1rem;
-  padding: 0.65rem;
+  background: linear-gradient(145deg, #ffffff 0%, #fffef8 55%, #fef3c7 100%);
+  border: 2.5px solid #fcd34d;
+  border-radius: 1.15rem;
+  padding: 0.65rem 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 110px;
+  min-height: 125px;
   position: relative;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   cursor: grab;
-  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.08);
+  box-shadow: 0 4px 10px rgba(180, 83, 9, 0.08);
 }
 
 .seat-desk-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.02);
   border-color: #f59e0b;
-  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.16);
+  box-shadow: 0 10px 22px rgba(217, 119, 6, 0.22);
 }
 
 .seat-desk-card:active {
   cursor: grabbing;
 }
 
+.seat-badge-cute {
+  box-shadow: 0 2px 4px rgba(180, 83, 9, 0.15);
+  transition: transform 0.15s ease;
+}
+
+.seat-desk-card:hover .seat-badge-cute {
+  transform: scale(1.05);
+}
+
+.seat-student-name {
+  font-family: 'Comic Sans MS', 'Balsamiq Sans', 'Quicksand', 'Nunito', 'Microsoft JhengHei', '微軟正黑體', 'PingFang TC', -apple-system, sans-serif;
+  letter-spacing: 0.05em;
+  line-height: 1.25;
+}
+
+.seat-desk-empty {
+  background: rgba(254, 243, 199, 0.35);
+  border: 2px dashed #f59e0b;
+  border-radius: 1.15rem;
+  padding: 0.65rem;
+  min-height: 125px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.seat-desk-empty:hover {
+  background: rgba(254, 243, 199, 0.75);
+  border-color: #d97706;
+  border-style: solid;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(217, 119, 6, 0.15);
+}
+
 .seat-empty-card {
   background: rgba(254, 243, 199, 0.45);
   border: 2px dashed #d1d5db;
-  border-radius: 1rem;
+  border-radius: 1.15rem;
   padding: 0.65rem;
-  min-height: 110px;
+  min-height: 125px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -428,6 +469,34 @@ body {
 .seat-empty-card:hover {
   background: rgba(254, 243, 199, 0.85);
   border-color: #f59e0b;
+}
+
+/* 底部待入座座號托盤大臣卡片 */
+.dock-student-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  cursor: grab;
+}
+
+.dock-student-card:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.25);
+}
+
+.dock-student-card:active {
+  cursor: grabbing;
+}
+
+.dock-student-card.dock-selected {
+  outline: 3.5px solid #d97706 !important;
+  box-shadow: 0 0 20px rgba(217, 119, 6, 0.65) !important;
+  transform: scale(1.08) !important;
+  z-index: 10;
+}
+
+.dock-drag-active {
+  outline: 3.5px dashed #f59e0b !important;
+  background: #fef3c7 !important;
 }
 
 /* 座位被選取進行互換 */
@@ -522,6 +591,9 @@ body {
     box-shadow: none !important;
     page-break-inside: avoid;
     background: #fff !important;
+  }
+  body.print-mode-seating #seatingStudentDockContainer {
+    display: none !important;
   }
 
   /* 模式 2：專用列印作業繳交與平時成績結算表 (解決按下列印顯示座位表之問題) */

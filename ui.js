@@ -821,7 +821,7 @@ function saveContactBookData(e) {
 
 function getSelectedAttendanceDate() {
   const dateInput = document.getElementById("attendanceDatePicker");
-  return dateInput ? dateInput.value : window.KingdomApp.getTodayDateString();
+  return (dateInput && dateInput.value) ? dateInput.value : window.KingdomApp.getTodayDateString();
 }
 
 function updateLateThreshold(val) {
@@ -842,13 +842,18 @@ function renderAttendanceView() {
   let presentCount = 0;
   let leaveCount = 0;
   let lateCount = 0;
+  let uncheckCount = 0;
 
   const leaveList = [];
   const lateList = [];
+  const uncheckList = [];
 
   students.forEach(st => {
-    const rec = attendanceData[st.id] || { status: 'present' };
-    if (rec.status === 'present') {
+    const rec = attendanceData[st.id] || null;
+    if (!rec || !rec.status || rec.status === 'uncheck') {
+      uncheckCount++;
+      uncheckList.push(st);
+    } else if (rec.status === 'present') {
       presentCount++;
     } else if (rec.status === 'leave') {
       leaveCount++;
@@ -856,10 +861,14 @@ function renderAttendanceView() {
     } else if (rec.status === 'late') {
       lateCount++;
       lateList.push({ student: st, record: rec });
+    } else {
+      uncheckCount++;
+      uncheckList.push(st);
     }
   });
 
   const total = students.length;
+  // 出席率嚴格依在朝實到人數計算，未打卡者絕不預設為出席
   const rate = total > 0 ? Math.round((presentCount / total) * 100) : 0;
 
   document.getElementById("statTotalStudents").textContent = total;
@@ -868,10 +877,10 @@ function renderAttendanceView() {
   document.getElementById("statLateStudents").textContent = lateCount;
   document.getElementById("statAttendanceRate").textContent = `${rate}%`;
 
-  // 頂部醒目的【缺席與遲到大臣即時看板】
+  // 頂部醒目的【出席狀況即時看板】（禁止無打卡時宣稱全員到齊）
   const topAlertBoard = document.getElementById("topAbsenteeAlertBoard");
   if (topAlertBoard) {
-    if (leaveList.length === 0 && lateList.length === 0) {
+    if (uncheckCount === 0 && leaveList.length === 0 && lateList.length === 0 && total > 0) {
       topAlertBoard.innerHTML = `
         <div class="all-present-board p-4 rounded-2xl flex items-center justify-between border-2 border-emerald-400">
           <div class="flex items-center space-x-3">
@@ -884,26 +893,61 @@ function renderAttendanceView() {
           <span class="bg-emerald-600 text-white text-xs font-black px-3 py-1 rounded-full shadow">全勤卓越</span>
         </div>
       `;
+    } else if (presentCount === 0 && lateList.length === 0 && leaveList.length === 0) {
+      topAlertBoard.innerHTML = `
+        <div class="p-4 sm:p-5 rounded-2xl border-2 border-amber-300 bg-amber-50/90 shadow-sm space-y-2">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center space-x-2">
+              <span class="text-2xl">🌅</span>
+              <h3 class="text-amber-950 font-black text-base sm:text-lg">
+                晨間朝會簽到進行中（今日尚未有人打卡到校）
+              </h3>
+            </div>
+            <span class="text-xs bg-amber-600 text-white font-black px-2.5 py-0.5 rounded-full">
+              自主簽到中 (0 / ${total})
+            </span>
+          </div>
+          <p class="text-xs text-amber-800 font-medium">
+            💡 本王國嚴格禁止系統自動產生假打卡！一律由學生在大螢幕按座號自主打卡，或由皇后老師手動登記。
+          </p>
+        </div>
+      `;
     } else {
       topAlertBoard.innerHTML = `
         <div class="alert-board p-4 sm:p-5 rounded-2xl border-2 border-rose-400 shadow-md space-y-3">
-          <div class="flex items-center justify-between border-b border-rose-200 pb-2">
+          <div class="flex items-center justify-between border-b border-rose-200 pb-2 flex-wrap gap-2">
             <div class="flex items-center space-x-2">
               <span class="text-2xl animate-bounce">🚨</span>
               <h3 class="text-rose-950 font-black text-base sm:text-lg">
-                今日缺席與延遲覲見名單 (共 ${leaveList.length + lateList.length} 人)
+                今日出缺席即時看板 (實到 ${presentCount} 人 ‧ 未到 ${uncheckCount} 人)
               </h3>
             </div>
             <span class="text-xs bg-rose-600 text-white font-black px-2.5 py-0.5 rounded-full">
-              請假 ${leaveList.length} 人 ‧ 遲到 ${lateList.length} 人
+              未打卡 ${uncheckCount} 人 ‧ 請假 ${leaveList.length} 人 ‧ 遲到 ${lateList.length} 人
             </span>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="bg-white/90 p-3 rounded-xl border border-rose-300">
+              <span class="font-black text-rose-800 block mb-1.5">🔴 尚未打卡大臣 (${uncheckList.length}人)：</span>
+              ${uncheckList.length === 0 ? '<span class="text-emerald-600 font-bold">全員皆已打卡或登記！</span>' : `
+                <div class="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                  ${uncheckList.map(st => `
+                    <div class="flex items-center justify-between bg-rose-50/80 p-1.5 rounded-lg border border-rose-200">
+                      <span class="font-black text-slate-800">${String(st.seatNo).padStart(2, '0')}號 ${st.name}</span>
+                      <button onclick="setStudentAttendance(${st.id}, 'present')" class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded font-black hover:bg-emerald-700">
+                        補簽到
+                      </button>
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+
             <div class="bg-white/90 p-3 rounded-xl border border-rose-200">
               <span class="font-black text-rose-800 block mb-1.5">🏖️ 告假大臣名單 (${leaveList.length}人)：</span>
               ${leaveList.length === 0 ? '<span class="text-slate-400">今日無大臣請假</span>' : `
-                <div class="space-y-1.5">
+                <div class="max-h-36 overflow-y-auto space-y-1.5 pr-1">
                   ${leaveList.map(item => {
                     const st = item.student;
                     const rec = item.record;
@@ -930,7 +974,7 @@ function renderAttendanceView() {
             <div class="bg-white/90 p-3 rounded-xl border border-amber-300">
               <span class="font-black text-amber-900 block mb-1.5">⏳ 延遲覲見大臣 (${lateList.length}人，超過 ${lateThreshold})：</span>
               ${lateList.length === 0 ? '<span class="text-slate-400">今日無遲到大臣</span>' : `
-                <div class="space-y-1.5">
+                <div class="max-h-36 overflow-y-auto space-y-1.5 pr-1">
                   ${lateList.map(item => {
                     const st = item.student;
                     const rec = item.record;
@@ -960,15 +1004,17 @@ function renderAttendanceView() {
   if (!grid) return;
 
   const filtered = students.filter(st => {
-    const rec = attendanceData[st.id] || { status: 'present' };
+    const rec = attendanceData[st.id] || null;
+    const status = rec ? rec.status : 'uncheck';
     if (currentAttendanceFilter === 'all') return true;
-    return rec.status === currentAttendanceFilter;
+    if (currentAttendanceFilter === 'uncheck') return status === 'uncheck';
+    return status === currentAttendanceFilter;
   });
 
   grid.innerHTML = filtered.map(st => {
-    const rec = attendanceData[st.id] || { status: 'present' };
-    const status = rec.status;
-    const checkInTime = rec.checkInTime || '';
+    const rec = attendanceData[st.id] || null;
+    const status = rec ? rec.status : 'uncheck';
+    const checkInTime = (rec && rec.checkInTime) || '';
 
     let badgeHtml = '';
     let detailHtml = '';
@@ -994,6 +1040,13 @@ function renderAttendanceView() {
           超過門檻 ${lateThreshold} ${rec.note ? `‧ ${rec.note}` : ''}
         </div>
       `;
+    } else {
+      badgeHtml = `<span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-rose-700 border border-rose-300">🔴 尚未打卡 (未到)</span>`;
+      detailHtml = `
+        <div class="mt-2 text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200">
+          大臣尚未於晨會打卡，可由學生自主按座號簽到，或導師手動登記。
+        </div>
+      `;
     }
 
     return `
@@ -1012,7 +1065,7 @@ function renderAttendanceView() {
           ${detailHtml}
         </div>
 
-        <div class="mt-3 pt-2.5 border-t border-amber-200 flex items-center space-x-1.5">
+        <div class="mt-3 pt-2.5 border-t border-amber-200 flex items-center space-x-1.5 flex-wrap gap-1">
           <button onclick="setStudentAttendance(${st.id}, 'present')" class="flex-1 py-1 px-1.5 text-xs font-black rounded-lg ${status === 'present' ? 'bg-emerald-600 text-white shadow' : 'bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300'}">
             出席
           </button>
@@ -1022,6 +1075,11 @@ function renderAttendanceView() {
           <button onclick="setStudentAttendance(${st.id}, 'late')" class="flex-1 py-1 px-1.5 text-xs font-black rounded-lg ${status === 'late' ? 'bg-amber-600 text-white shadow' : 'bg-white hover:bg-amber-50 text-amber-800 border border-amber-300'}">
             遲到
           </button>
+          ${status !== 'uncheck' ? `
+            <button onclick="setStudentAttendance(${st.id}, 'uncheck')" title="重設為未打卡（未到）" class="py-1 px-2 text-xs font-black rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 border border-slate-300">
+              設未到
+            </button>
+          ` : ''}
         </div>
       </div>
     `;
@@ -1081,12 +1139,15 @@ function renderAttendanceHistoryTable() {
             let pCount = 0;
             let lCount = 0;
             let aCount = 0;
+            let uCount = 0;
             const lateStudents = [];
             const leaveStudents = [];
 
             students.forEach(st => {
-              const rec = dayRecords[st.id] || { status: 'present' };
-              if (rec.status === 'present') {
+              const rec = dayRecords[st.id] || null;
+              if (!rec || !rec.status || rec.status === 'uncheck') {
+                uCount++;
+              } else if (rec.status === 'present') {
                 pCount++;
               } else if (rec.status === 'late') {
                 lCount++;
@@ -1103,11 +1164,13 @@ function renderAttendanceHistoryTable() {
                   type: lTypeText,
                   period: periodText
                 });
+              } else {
+                uCount++;
               }
             });
 
             const total = students.length || 27;
-            const rate = total > 0 ? Math.round((pCount / total) * 100) : 100;
+            const rate = total > 0 ? Math.round((pCount / total) * 100) : 0;
 
             return `
               <tr class="${isSelected ? 'bg-amber-100/70 font-black' : 'hover:bg-amber-50/50'} transition-colors">
@@ -1118,13 +1181,14 @@ function renderAttendanceHistoryTable() {
                   </div>
                 </td>
                 <td class="p-3 text-center">
-                  ${(lCount === 0 && aCount === 0) ? `
+                  ${(uCount === 0 && lCount === 0 && aCount === 0 && pCount > 0) ? `
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                       🎉 全勤到齊 (${pCount}人)
                     </span>
                   ` : `
                     <div class="flex flex-col gap-0.5 items-center text-[11px]">
                       <span class="text-emerald-700 font-bold">🟢 到校: ${pCount}</span>
+                      ${uCount > 0 ? `<span class="text-rose-600 font-bold">🔴 未到: ${uCount}</span>` : ''}
                       ${lCount > 0 ? `<span class="text-amber-700 font-bold">⏰ 遲到: ${lCount}</span>` : ''}
                       ${aCount > 0 ? `<span class="text-rose-700 font-bold">🏖️ 請假: ${aCount}</span>` : ''}
                     </div>
@@ -1190,7 +1254,7 @@ function switchAttendanceDate(dateStr) {
 
 function filterAttendanceStatus(status) {
   currentAttendanceFilter = status;
-  const buttons = ['all', 'present', 'leave', 'late'];
+  const buttons = ['all', 'present', 'leave', 'late', 'uncheck'];
   buttons.forEach(b => {
     const el = document.getElementById(`btnFilterAtt-${b}`);
     if (el) {
@@ -1211,13 +1275,16 @@ function markAllPresent() {
     window.KingdomApp.store.data.attendance[date] = {};
   }
 
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
   students.forEach(st => {
-    window.KingdomApp.store.data.attendance[date][st.id] = { status: 'present', checkInTime: '07:30' };
+    window.KingdomApp.store.data.attendance[date][st.id] = { status: 'present', checkInTime: timeStr, note: '導師一鍵全班補簽到' };
   });
 
   window.KingdomApp.store.save();
   window.KingdomApp.sound.playCoin();
-  showToast("👑 全體 27 位大臣已全數完成簽到出席！");
+  showToast("👑 全體 27 位大臣已全數手動簽到出席！");
   renderAttendanceView();
   renderMorningBoard();
   renderTrafficView(); // 連動下課紅綠燈與愛班卡判定
@@ -1233,15 +1300,31 @@ function setStudentAttendance(studentId, status, customNote) {
 
   const prev = window.KingdomApp.store.data.attendance[date][studentId] || {};
 
+  // 若設定為未到（uncheck），直接清除打卡紀錄，恢復初始空白
+  if (status === 'uncheck') {
+    delete window.KingdomApp.store.data.attendance[date][studentId];
+    window.KingdomApp.store.save();
+    window.KingdomApp.sound.playCoin();
+    showToast("🔴 已重設為未打卡（未到）狀態！");
+    renderAttendanceView();
+    renderMorningBoard();
+    renderTrafficView();
+    return;
+  }
+
   // 愛班卡系統判定：若登記為遲到且為今日，系統自動增加一張愛班服務卡（事由直接設定為「遲到」）
   // 自動派發的自省卡和愛班卡皆由導師手動移除，系統無須自動移除
   if (status === 'late' && prev.status !== 'late' && date === todayStr) {
     window.KingdomApp.store.addServiceCard(studentId, "遲到");
   }
 
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
   window.KingdomApp.store.data.attendance[date][studentId] = {
     ...prev,
     status,
+    checkInTime: prev.checkInTime || (status === 'present' ? timeStr : (status === 'late' ? '07:45' : null)),
     note: customNote || (status === 'present' ? '在朝準時' : prev.note)
   };
 
@@ -3162,14 +3245,52 @@ function quickFeedStudentInZoo(studentId) {
 
 function feedAllZooAnimalsOne() {
   const students = window.KingdomApp.store.data.students || [];
+  const snapshots = students.map(st => ({
+    studentId: st.id,
+    seatNo: st.seatNo,
+    name: st.name,
+    pointsBefore: st.points || 0,
+    lifetimeBefore: st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0),
+    secondPetExpBefore: st.secondPetExp || 0
+  }));
+
   students.forEach(st => {
     st.lifetimePoints = (st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0)) + 1;
+    st.petExp = st.lifetimePoints;
   });
+
+  const actionId = Date.now();
+  const action = {
+    id: actionId,
+    title: '全班 27 隻萌寵全園大餵食 (飽食度各 +1)',
+    reason: '動物園全園大餵食',
+    points: 1,
+    type: 'all',
+    targetDesc: '全班 27 隻萌寵',
+    date: window.KingdomApp.getTodayDateString(),
+    time: new Date().toTimeString().slice(0, 5),
+    snapshots,
+    undone: false
+  };
+
+  window.KingdomApp.store.recordPointAction(action);
+
+  window.KingdomApp.store.data.pointLogs.unshift({
+    id: actionId,
+    actionId: actionId,
+    studentId: 'all',
+    points: 1,
+    reason: '🍎 動物園全園大餵食：全班 27 隻萌寵飽食度各 +1',
+    date: window.KingdomApp.getTodayDateString(),
+    time: new Date().toTimeString().slice(0, 5)
+  });
+
   window.KingdomApp.store.save();
   if (window.KingdomSound && window.KingdomSound.playFeedMunch) {
     window.KingdomSound.playFeedMunch();
   }
   showToast("🍎 全園大狂歡！全班 27 隻萌寵動物都吃到了香甜蘋果，飽食度各 +1 點！", "🎉");
+  showUndoNotificationBanner(action);
   renderPointsView();
   renderRosterView();
 }
@@ -3205,103 +3326,131 @@ function renderPointsView() {
 
   if (grid) {
     grid.innerHTML = students.map(st => {
-      const aType = st.animalType || st.petType || 'lion';
+      const aType = st.animalType || st.petType || 'dog';
       const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0);
       const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
       const isSelected = selectedStudentIdsForPoints.has(st.id);
       return `
-        <div id="pointStudentCard-${st.id}" class="parchment-card p-4 minister-card flex flex-col justify-between ${isSelected ? 'student-multi-selected' : ''} ${petStatus.isGolden ? 'ring-2 ring-amber-400 bg-amber-50/80' : ''}">
+        <div id="pointStudentCard-${st.id}" class="parchment-card p-3 sm:p-3.5 minister-card flex flex-col justify-between rounded-2xl border-2 transition-all hover:shadow-md ${isSelected ? 'student-multi-selected border-amber-500 bg-amber-50/90' : 'border-amber-200/90 bg-white/95'}">
           <div>
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2">
-                <input type="checkbox" id="pointStudentCheck-${st.id}" ${isSelected ? 'checked' : ''} onchange="toggleStudentPointSelection(${st.id})" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer">
-                <span class="text-xs font-mono font-black text-amber-950 bg-amber-200 px-2 py-0.5 rounded">
-                  座號 ${String(st.seatNo).padStart(2, '0')}
+            <!-- 頂部身分列：勾選 + 座號 + 姓名 + 稱號與動物圖示 (簡單清楚一行掌握) -->
+            <div class="flex items-center justify-between pb-2 border-b border-amber-200/80">
+              <div class="flex items-center space-x-1.5 min-w-0">
+                <input type="checkbox" id="pointStudentCheck-${st.id}" ${isSelected ? 'checked' : ''} onchange="toggleStudentPointSelection(${st.id})" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer flex-shrink-0" title="勾選進行多位大臣批次加點">
+                <span class="text-xs font-mono font-black text-amber-950 bg-amber-200 px-1.5 py-0.5 rounded flex-shrink-0">
+                  ${String(st.seatNo).padStart(2, '0')}號
                 </span>
+                <span class="text-base sm:text-lg font-black text-slate-900 truncate tracking-wide">${st.name}</span>
               </div>
-              <span class="text-xs font-bold px-2 py-0.5 rounded-full ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black border border-amber-500' : 'bg-amber-100 text-amber-900'}">
-                ${petStatus.animalIcon} ${petStatus.stageTitle}
-              </span>
+              <div class="flex items-center space-x-1 flex-shrink-0">
+                <span class="text-[10px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded truncate max-w-[80px]" title="${st.title}">
+                  ${st.title}
+                </span>
+                <span class="text-sm cursor-help" title="${petStatus.animalName} (${petStatus.stageTitle})">${petStatus.animalIcon}</span>
+              </div>
             </div>
 
-            <div class="mt-2 flex items-center justify-between">
-              <div class="flex items-center space-x-1.5">
-                <span class="text-base font-black text-slate-800">${st.name}</span>
-                <span class="text-xs text-amber-950 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded font-bold">${st.title}</span>
-              </div>
-              <span class="text-xs font-bold text-amber-800">${petStatus.animalName}</span>
-            </div>
-
-            <div class="mt-3 flex items-center justify-between bg-white p-2.5 rounded-xl border border-amber-300 shadow-xs">
-              <div class="flex items-center space-x-1.5">
-                <span class="text-xl">🪙</span>
+            <!-- 核心大字：可用金幣突出展示 (簡單、清楚、明瞭) -->
+            <div class="my-2.5 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50/80 border border-amber-300/80 flex items-center justify-between shadow-2xs">
+              <div class="flex items-center space-x-2">
+                <span class="text-2xl leading-none">🪙</span>
                 <div>
-                  <span class="text-[10px] text-amber-800 font-bold block">可用金幣</span>
-                  <span class="text-base font-black text-amber-600 font-digital">${st.points || 0} 點</span>
+                  <span class="text-[10px] text-amber-800 font-bold block leading-tight">可用金幣</span>
+                  <div class="flex items-baseline space-x-0.5">
+                    <span class="text-2xl font-black text-amber-600 font-digital leading-none">${st.points || 0}</span>
+                    <span class="text-xs font-black text-amber-800">點</span>
+                  </div>
                 </div>
               </div>
               <div class="text-right">
-                <span class="text-[10px] text-amber-800 font-bold block">🍎 寵物飽食度</span>
-                <span class="text-xs font-black text-amber-950 font-digital">${lifetime} 點</span>
+                <span class="text-[10px] text-slate-500 font-bold block leading-tight">🍎 飽食度</span>
+                <span class="text-xs font-black text-emerald-800 font-digital">${lifetime} 點</span>
               </div>
-            </div>
-
-            <div class="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
-              <div class="h-full bg-amber-500 transition-all duration-300" style="width: ${petStatus.progressPercent}%"></div>
             </div>
           </div>
 
-          <!-- 快速個人加減分、兌換獎勵與更改金幣 -->
-          <div class="mt-3 pt-2 border-t border-amber-200 flex items-center space-x-1">
-            <button onclick="awardSingleStudent(${st.id}, 1, '課堂嘉獎')" class="flex-1 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-black text-xs transition border border-amber-300">
-              +1
-            </button>
-            <button onclick="awardSingleStudent(${st.id}, 2, '表現優良')" class="flex-1 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-black text-xs transition border border-amber-300">
-              +2
-            </button>
-            <button onclick="awardSingleStudent(${st.id}, 5, '建樹卓越')" class="flex-1 py-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs transition border border-amber-500 shadow-sm">
-              +5
-            </button>
-            <button onclick="openRedeemCardForStudent(${st.id})" class="py-1 px-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-black text-xs transition border border-amber-400 shadow-sm" title="以金幣兌換獎勵卡">
-              🎁換卡
-            </button>
-            <button onclick="openEditStudentPointsModal(${st.id})" class="py-1 px-2 rounded-lg bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-300 hover:to-amber-400 text-amber-950 font-black text-xs transition border border-amber-400 shadow-sm flex items-center space-x-0.5" title="更改此大臣金幣數量">
-              <span>🪙</span><span>改金幣</span>
-            </button>
+          <!-- 底部操作列：好點的大按鍵快速加分 + 功能操作列 (分層清楚、絕不誤觸) -->
+          <div class="space-y-1.5 pt-1">
+            <!-- 快速加分主按鈕 (+1, +2, +5) -->
+            <div class="grid grid-cols-3 gap-1.5">
+              <button onclick="awardSingleStudent(${st.id}, 1, '課堂嘉獎')" class="py-1 rounded-xl bg-amber-100 hover:bg-amber-200 active:scale-95 text-amber-950 font-black text-xs sm:text-sm transition border border-amber-300 shadow-2xs flex items-center justify-center" title="給予 +1 金幣嘉獎">
+                +1
+              </button>
+              <button onclick="awardSingleStudent(${st.id}, 2, '表現優良')" class="py-1 rounded-xl bg-amber-100 hover:bg-amber-200 active:scale-95 text-amber-950 font-black text-xs sm:text-sm transition border border-amber-300 shadow-2xs flex items-center justify-center" title="給予 +2 金幣嘉獎">
+                +2
+              </button>
+              <button onclick="awardSingleStudent(${st.id}, 5, '建樹卓越')" class="py-1 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 active:scale-95 text-amber-950 font-black text-xs sm:text-sm transition shadow-2xs flex items-center justify-center" title="給予 +5 金幣大賞">
+                +5
+              </button>
+            </div>
+
+            <!-- 輔助操作按鈕 (🎁換卡 / 🪙改金幣) -->
+            <div class="grid grid-cols-2 gap-1.5">
+              <button onclick="openRedeemCardForStudent(${st.id})" class="py-1 px-2 rounded-lg bg-white hover:bg-amber-100 active:scale-95 text-amber-950 font-bold text-xs transition border border-amber-300 shadow-2xs flex items-center justify-center space-x-1" title="以金幣兌換獎勵卡">
+                <span>🎁</span><span>換卡</span>
+              </button>
+              <button onclick="openEditStudentPointsModal(${st.id})" class="py-1 px-2 rounded-lg bg-white hover:bg-amber-100 active:scale-95 text-amber-950 font-bold text-xs transition border border-amber-300 shadow-2xs flex items-center justify-center space-x-1" title="更改此大臣金幣數量">
+                <span>🪙</span><span>改金幣</span>
+              </button>
+            </div>
           </div>
         </div>
       `;
     }).join('');
   }
 
-  // 渲染獎懲歷史日誌
+  // 渲染獎懲歷史日誌 (支援逐筆撤銷與復原)
   if (logList) {
     const logs = window.KingdomApp.store.data.pointLogs;
     if (logs.length === 0) {
       logList.innerHTML = `<p class="text-slate-400 text-xs">暫無近期獎懲紀錄</p>`;
     } else {
-      logList.innerHTML = logs.slice(0, 15).map(l => {
+      logList.innerHTML = logs.slice(0, 20).map(l => {
         let studentName = '全班大臣';
         if (l.studentId !== 'all') {
           const st = students.find(s => s.id === l.studentId);
-          studentName = st ? `${String(st.seatNo).padStart(2, '0')}號 ${st.name}` : (l.studentId === 'multi' ? '多位大臣' : '未知大臣');
+          studentName = st ? `${String(st.seatNo).padStart(2, '0')}號 ${st.name}` : (l.studentId === 'multi' ? '多位大臣' : (l.studentId === 'batch_adjust' ? '批次調整' : '未知大臣'));
         }
-        const isPositive = l.points >= 0;
+        const isPositive = l.points > 0;
+        const isUndone = l.undone || (l.reason && l.reason.includes('已撤銷'));
+        const isUndoLog = !!l.isUndoLog;
+
         return `
-          <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-amber-200 text-xs">
-            <div class="flex items-center space-x-2">
-              <span class="font-black text-amber-950">[${studentName}]</span>
-              <span class="text-slate-800">${l.reason}</span>
+          <div class="flex items-center justify-between p-2 rounded-lg ${isUndone ? 'bg-slate-100 opacity-60 border-slate-300' : (isUndoLog ? 'bg-rose-50/80 border-rose-200' : 'bg-white border-amber-200')} border text-xs transition">
+            <div class="flex items-center space-x-2 min-w-0">
+              <span class="font-black ${isUndone ? 'text-slate-500 line-through' : (isUndoLog ? 'text-rose-900' : 'text-amber-950')} flex-shrink-0">[${studentName}]</span>
+              <span class="${isUndone ? 'text-slate-400 line-through' : (isUndoLog ? 'text-rose-800 font-bold' : 'text-slate-800')} truncate">${l.reason}</span>
             </div>
             <div class="flex items-center space-x-2 flex-shrink-0">
-              <span class="font-mono ${isPositive ? 'text-amber-600 font-black' : 'text-rose-600 font-bold'}">
-                ${isPositive ? `+${l.points}` : l.points} 🪙
+              <span class="font-mono ${isUndone ? 'text-slate-400 line-through' : (l.points === 0 ? 'text-slate-500' : (isPositive ? 'text-amber-600 font-black' : 'text-rose-600 font-bold'))}">
+                ${l.points > 0 ? `+${l.points}` : l.points} 🪙
               </span>
               <span class="text-[10px] text-slate-400 font-bold">${l.time || ''}</span>
+              ${!isUndone && !isUndoLog && l.points !== 0 ? `
+                <button onclick="confirmRevokePointLog(${l.id})" class="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-300 text-[10px] font-black shadow-2xs transition flex items-center space-x-0.5" title="撤回此筆記功並反向沖銷金幣">
+                  <span>↩️</span><span>撤回</span>
+                </button>
+              ` : (isUndone ? '<span class="text-[9px] font-black text-slate-400 bg-slate-200 px-1 py-0.5 rounded">已撤銷</span>' : '')}
             </div>
           </div>
         `;
       }).join('');
+    }
+  }
+
+  // 更新頂部加點錯誤復原按鈕狀態
+  const undoBtn = document.getElementById("btnUndoPointAction");
+  if (undoBtn) {
+    const lastAction = window.KingdomApp.store.getLastUndoableAction();
+    if (lastAction) {
+      undoBtn.classList.remove("opacity-50");
+      const shortTitle = lastAction.title.length > 12 ? lastAction.title.slice(0, 12) + '...' : lastAction.title;
+      undoBtn.innerHTML = `<span>↩️</span><span>復原上一步 (${shortTitle})</span>`;
+      undoBtn.title = `點擊可立即復原：${lastAction.title} (${lastAction.time})`;
+    } else {
+      undoBtn.classList.add("opacity-50");
+      undoBtn.innerHTML = `<span>↩️</span><span>復原上一步加點</span>`;
+      undoBtn.title = `目前沒有可復原的加點操作`;
     }
   }
 
@@ -3380,6 +3529,7 @@ function awardSelectedStudents(points, defaultReason) {
     showToast(`⚠️ 已為 ${targetIds.length} 位大臣扣除 ${Math.abs(points)} 點金幣。`);
   }
 
+  showUndoNotificationBanner();
   renderPointsView();
 }
 
@@ -3415,6 +3565,7 @@ function submitCustomMultiPoints(e) {
     showToast(`⚠️ 已為 ${targetIds.length} 位大臣扣除 ${Math.abs(pts)} 點。`);
   }
   closeCustomMultiPointsModal();
+  showUndoNotificationBanner();
   renderPointsView();
 }
 
@@ -3893,18 +4044,7 @@ function applyPresetToTarget(presetId) {
     }
     showToast(`👑 已為已勾選的 ${targetIds.length} 位大臣套用【${preset.label}】(${preset.points > 0 ? `+${preset.points}` : preset.points}點)！`);
   } else if (choice === "0" || choice === "全班") {
-    window.KingdomApp.store.data.students.forEach(st => {
-      st.points = Math.max(0, (st.points || 0) + preset.points);
-    });
-    window.KingdomApp.store.data.pointLogs.unshift({
-      id: Date.now(),
-      studentId: 'all',
-      points: preset.points,
-      reason: preset.label,
-      date: window.KingdomApp.getTodayDateString(),
-      time: new Date().toTimeString().slice(0, 5)
-    });
-    window.KingdomApp.store.save();
+    window.KingdomApp.store.awardAllStudents(preset.points, preset.label);
     if (preset.points > 0) {
       window.KingdomApp.sound.playFanfare();
       window.KingdomApp.triggerConfetti();
@@ -3917,20 +4057,12 @@ function applyPresetToTarget(presetId) {
       alert("找不到該座號的大臣！");
       return;
     }
-    student.points = Math.max(0, (student.points || 0) + preset.points);
-    window.KingdomApp.store.data.pointLogs.unshift({
-      id: Date.now(),
-      studentId: student.id,
-      points: preset.points,
-      reason: preset.label,
-      date: window.KingdomApp.getTodayDateString(),
-      time: new Date().toTimeString().slice(0, 5)
-    });
-    window.KingdomApp.store.save();
+    window.KingdomApp.store.awardSingleStudent(student.id, preset.points, preset.label);
     window.KingdomApp.sound.playCoin();
     showToast(`${student.name} 套用【${preset.label}】(${preset.points > 0 ? `+${preset.points}` : preset.points}點)！`);
   }
 
+  showUndoNotificationBanner();
   renderPointsView();
 }
 
@@ -3980,41 +4112,25 @@ function deletePointPreset(id) {
 }
 
 function awardSingleStudent(studentId, points, defaultReason) {
-  const student = window.KingdomApp.store.data.students.find(s => s.id === studentId);
+  const student = window.KingdomApp.store.data.students.find(s => s.id === studentId || s.seatNo === studentId);
   if (!student) return;
 
   const reason = prompt(`請輸入給予【${student.name}】${points > 0 ? '獎勵' : '紀律扣分'}的事由：`, defaultReason);
   if (reason === null) return;
 
-  const oldStage = window.KingdomApp.getPetStatus(student.petType, student.points).stageIndex;
-  student.points = Math.max(0, (student.points || 0) + points);
-  const newStage = window.KingdomApp.getPetStatus(student.petType, student.points).stageIndex;
-
-  window.KingdomApp.store.data.pointLogs.unshift({
-    id: Date.now(),
-    studentId: student.id,
-    points,
-    reason: reason || defaultReason,
-    date: window.KingdomApp.getTodayDateString(),
-    time: new Date().toTimeString().slice(0, 5)
-  });
-
-  window.KingdomApp.store.save();
-
-  if (points > 0) {
-    window.KingdomApp.sound.playCoin();
-    if (newStage > oldStage) {
-      window.KingdomApp.sound.playFanfare();
-      window.KingdomApp.triggerConfetti();
-      showToast(`🎉 恭喜！${student.name} 的守護神獸吸收充足榮譽能量，成功進化！`);
+  const updated = window.KingdomApp.store.awardSingleStudent(student.id, points, reason || defaultReason);
+  if (updated) {
+    if (points > 0) {
+      window.KingdomApp.sound.playCoin();
+      showToast(`🪙 【${student.name}】獲得 ${points} 點皇家金幣！`);
     } else {
-      showToast(`🪙 ${student.name} 獲得 ${points} 點皇家金幣！`);
+      showToast(`⚠️ 【${student.name}】扣除 ${Math.abs(points)} 點金幣。`);
     }
-  } else {
-    showToast(`⚠️ ${student.name} 扣除 ${Math.abs(points)} 點金幣。`);
-  }
 
-  renderPointsView();
+    showUndoNotificationBanner();
+    renderPointsView();
+    if (typeof renderRosterView === 'function') renderRosterView();
+  }
 }
 
 function openBatchPointModal() {
@@ -4055,11 +4171,12 @@ function selectPointTarget(mode) {
 function submitBatchPoints(e) {
   e.preventDefault();
   const points = parseInt(document.getElementById("batchPointAmount").value, 10);
-  const reason = document.getElementById("batchPointReason").value.trim();
+  const reason = document.getElementById("batchPointReason").value.trim() || "國王聖旨賞賜";
 
   let targetStudents = [];
   if (currentPointTargetMode === 'all') {
     targetStudents = window.KingdomApp.store.data.students;
+    window.KingdomApp.store.awardAllStudents(points, reason);
   } else {
     const checked = Array.from(document.querySelectorAll('input[name="targetStudentCheck"]:checked')).map(cb => parseInt(cb.value, 10));
     if (checked.length === 0) {
@@ -4067,27 +4184,126 @@ function submitBatchPoints(e) {
       return;
     }
     targetStudents = window.KingdomApp.store.data.students.filter(st => checked.includes(st.id));
+    window.KingdomApp.store.batchAwardMultipleStudents(targetStudents.map(s => s.id), points, reason);
   }
 
-  targetStudents.forEach(st => {
-    st.points = Math.max(0, (st.points || 0) + points);
-  });
+  if (points > 0) {
+    window.KingdomApp.sound.playFanfare();
+    window.KingdomApp.triggerConfetti();
+    showToast(`👑 聖旨已宣告！獎勵已發放給 ${targetStudents.length} 位大臣！`);
+  } else {
+    window.KingdomApp.sound.playCoin();
+    showToast(`⚠️ 已對 ${targetStudents.length} 位大臣扣除 ${Math.abs(points)} 點金幣。`);
+  }
 
-  window.KingdomApp.store.data.pointLogs.unshift({
-    id: Date.now(),
-    studentId: currentPointTargetMode === 'all' ? 'all' : targetStudents[0].id,
-    points,
-    reason: currentPointTargetMode === 'all' ? reason : `${reason} (${targetStudents.map(s => s.name).join('、')})`,
-    date: window.KingdomApp.getTodayDateString(),
-    time: new Date().toTimeString().slice(0, 5)
-  });
-
-  window.KingdomApp.store.save();
-  window.KingdomApp.sound.playFanfare();
-  window.KingdomApp.triggerConfetti();
-  showToast(`👑 聖旨已宣告！獎勵已發放給 ${targetStudents.length} 位大臣！`);
   closeBatchPointModal();
+  showUndoNotificationBanner();
   renderPointsView();
+}
+
+// ===================================================================
+// 全班加點與大臣獎懲錯誤操作復原制度 (Points Undo & Recovery System)
+// ===================================================================
+let undoBannerTimeout = null;
+
+function showUndoNotificationBanner(action) {
+  if (!action && window.KingdomApp && window.KingdomApp.store) {
+    action = window.KingdomApp.store.getLastUndoableAction();
+  }
+  if (!action) return;
+
+  let banner = document.getElementById("pointUndoNotificationBanner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "pointUndoNotificationBanner";
+    banner.className = "fixed top-5 left-1/2 -translate-x-1/2 z-50 max-w-xl w-[92%] bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 text-white px-4 py-3 rounded-2xl shadow-2xl border-2 border-amber-400 flex items-center justify-between gap-3 transition-all duration-300 transform scale-100";
+    document.body.appendChild(banner);
+  }
+
+  banner.innerHTML = `
+    <div class="flex items-center space-x-2.5 min-w-0">
+      <span class="text-2xl flex-shrink-0 animate-pulse">↩️</span>
+      <div class="min-w-0">
+        <div class="text-[11px] font-black text-amber-300 flex items-center space-x-1">
+          <span>加點操作已完成</span>
+          <span class="bg-amber-400/20 text-amber-200 px-1 rounded text-[10px] font-mono">可即時復原</span>
+        </div>
+        <div class="text-xs sm:text-sm font-bold text-amber-50 truncate">${action.title}</div>
+      </div>
+    </div>
+    <div class="flex items-center space-x-2 flex-shrink-0">
+      <button onclick="executeUndoLastPointAction(${action.id})" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-300 to-amber-400 hover:from-amber-200 hover:to-amber-300 active:scale-95 text-amber-950 font-black text-xs shadow-md transition flex items-center space-x-1" title="點擊立即撤銷剛剛的加點操作">
+        <span>↩️</span><span>立即復原 (Undo)</span>
+      </button>
+      <button onclick="dismissUndoBanner()" class="text-slate-400 hover:text-white p-1 rounded-lg text-sm" title="關閉提示">
+        ✕
+      </button>
+    </div>
+  `;
+
+  banner.classList.remove("hidden");
+
+  if (undoBannerTimeout) clearTimeout(undoBannerTimeout);
+  undoBannerTimeout = setTimeout(() => {
+    dismissUndoBanner();
+  }, 10000);
+}
+
+function dismissUndoBanner() {
+  const banner = document.getElementById("pointUndoNotificationBanner");
+  if (banner) {
+    banner.classList.add("hidden");
+  }
+  if (undoBannerTimeout) clearTimeout(undoBannerTimeout);
+}
+
+function promptUndoLastPointAction() {
+  const act = window.KingdomApp.store.getLastUndoableAction();
+  if (!act) {
+    alert("目前沒有可復原的加點操作記錄！");
+    return;
+  }
+  const ok = confirm(`↩️ 確定要復原上一筆加點操作嗎？\n\n【${act.title}】\n時間：${act.time}\n\n確認後系統將精準還原大臣的金幣與萌寵飽食度至操作前數值。`);
+  if (!ok) return;
+  executeUndoLastPointAction(act.id);
+}
+
+function executeUndoLastPointAction(actionId = null) {
+  const res = window.KingdomApp.store.undoPointAction(actionId);
+  if (res.success) {
+    dismissUndoBanner();
+    if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+      try { window.KingdomApp.sound.playCoin(); } catch (err) {}
+    }
+    showToast(`↩️ ${res.message}`, "🎉");
+    renderPointsView();
+    if (typeof renderPointsZooHabitat === 'function') renderPointsZooHabitat();
+    if (typeof renderRosterView === 'function') renderRosterView();
+    if (typeof renderPetsOverview === 'function') renderPetsOverview();
+  } else {
+    alert(res.message);
+  }
+}
+
+function confirmRevokePointLog(logId) {
+  const log = window.KingdomApp.store.data.pointLogs.find(l => l.id == logId);
+  if (!log) return;
+  const ok = confirm(`↩️ 確定要撤回這筆記功紀錄嗎？\n\n事由：${log.reason}\n變動：${log.points > 0 ? `+${log.points}` : log.points} 點\n時間：${log.time || ''}\n\n確認後系統將自動反向沖銷金幣與飽食度並標記已撤銷。`);
+  if (!ok) return;
+
+  const res = window.KingdomApp.store.revokePointLog(logId);
+  if (res.success) {
+    if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+      try { window.KingdomApp.sound.playCoin(); } catch (err) {}
+    }
+    showToast(`↩️ ${res.message}`, "✅");
+    renderPointsView();
+    if (typeof renderPointsZooHabitat === 'function') renderPointsZooHabitat();
+    if (typeof renderRosterView === 'function') renderRosterView();
+    if (typeof renderPetsOverview === 'function') renderPetsOverview();
+  } else {
+    alert(res.message);
+  }
 }
 
 // ===================================================================
@@ -4765,9 +4981,18 @@ function renderParentDashboardContent() {
   const todayStr = window.KingdomApp.getTodayDateString();
   document.getElementById("parentTodayDateLabel").textContent = todayStr;
   const attendanceBox = document.getElementById("parentAttendanceStatusBox");
-  const todayAtt = (window.KingdomApp.store.data.attendance[todayStr] && window.KingdomApp.store.data.attendance[todayStr][student.id]) || { status: 'present' };
+  const todayAtt = (window.KingdomApp.store.data.attendance[todayStr] && window.KingdomApp.store.data.attendance[todayStr][student.id]) || null;
 
-  if (todayAtt.status === 'present') {
+  if (!todayAtt || todayAtt.status === 'uncheck') {
+    attendanceBox.className = "p-4 rounded-xl border-2 border-slate-300 bg-slate-50 flex items-center space-x-3";
+    attendanceBox.innerHTML = `
+      <div class="text-3xl">⏳</div>
+      <div>
+        <h4 class="font-black text-slate-800 text-sm">今日尚未打卡到校 (未到)</h4>
+        <p class="text-xs text-slate-600">大臣今日尚未完成晨間朝會簽到，請家長確認大臣是否已平安抵達校園。</p>
+      </div>
+    `;
+  } else if (todayAtt.status === 'present') {
     attendanceBox.className = "p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50 flex items-center space-x-3";
     attendanceBox.innerHTML = `
       <div class="text-3xl">✅</div>
@@ -5027,8 +5252,11 @@ function refreshCurrentView() {
 // 8. 教室座位表 (5行 x 6列 = 30格) ＆ 幸運抽籤控制器
 // ===================================================================
 let selectedSeatIndex = null;
-let luckyDrawTimeout = null;
+let selectedDockSeatNo = null;
 let draggedSeatIndex = null;
+let draggedDockSeatNo = null;
+let currentDockFilter = 'all';
+let luckyDrawTimeout = null;
 
 function renderSeatingChart() {
   const container = document.getElementById("seatingGridContainer");
@@ -5072,7 +5300,7 @@ function renderSeatingChart() {
         else if (att.status === "late") attBadge = `<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">⚠️ 遲到</span>`;
         else if (att.status === "leave") attBadge = `<span class="text-[10px] bg-sky-100 text-sky-800 font-bold px-1.5 py-0.5 rounded">🏖️ 請假</span>`;
       } else {
-        attBadge = `<span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-1.5 py-0.5 rounded">未打卡</span>`;
+        attBadge = `<span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-1.5 py-0.5 rounded">未到</span>`;
       }
 
       let lightBadge = "";
@@ -5085,6 +5313,9 @@ function renderSeatingChart() {
       let refChip = refCount > 0 ? `<span class="text-[9px] bg-rose-600 text-white font-bold px-1 rounded shadow-xs">自省${refCount > 1 ? `x${refCount}` : ''}</span>` : "";
       let serviceChip = srvCount > 0 ? `<span class="text-[9px] bg-orange-600 text-white font-bold px-1 rounded shadow-xs">愛班${srvCount > 1 ? `x${srvCount}` : ''}</span>` : "";
 
+      const petStatus = window.KingdomApp.getAnimalStatus ? window.KingdomApp.getAnimalStatus(student.animalType || student.petType || 'dog', student.points || 0) : null;
+      const animalIcon = petStatus ? petStatus.animalIcon : '🐾';
+
       html += `
         <div class="seat-desk-card ${isSelected ? 'seat-selected ring-4 ring-amber-500' : ''}" 
              id="seatDesk-${i}"
@@ -5096,19 +5327,32 @@ function renderSeatingChart() {
              ondragend="handleSeatDragEnd(event)"
              onclick="handleSeatClick(${i})">
           <div class="flex items-center justify-between text-xs w-full">
-            <span class="font-mono font-bold text-slate-400 text-[10px]">${row}-${col}</span>
+            <span class="font-mono font-bold text-amber-700/60 text-[11px] bg-amber-100/70 px-1 rounded">${row}-${col}</span>
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
             </div>
           </div>
-          <div class="my-1 text-center">
-            <span class="seat-badge">${String(student.seatNo).padStart(2, '0')}號</span>
-            <div class="font-black text-amber-950 text-sm mt-0.5 truncate max-w-[85px] mx-auto">${student.name}</div>
+          <div class="my-1.5 text-center flex flex-col items-center justify-center">
+            <span class="seat-badge-cute inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-200 text-amber-950 border border-amber-400 shadow-xs tracking-wider font-mono">
+              <span>${animalIcon}</span>
+              <span>${String(student.seatNo).padStart(2, '0')} 號</span>
+            </span>
+            <div class="seat-student-name font-black text-amber-950 text-base sm:text-lg mt-1 tracking-wide font-cute truncate max-w-[110px] mx-auto filter drop-shadow-xs">
+              ${student.name}
+            </div>
           </div>
-          <div class="flex items-center justify-center space-x-1">
-            ${refChip}
-            ${serviceChip}
+          <div class="flex items-center justify-between w-full pt-1 border-t border-amber-200/60">
+            <div class="flex items-center space-x-1">
+              ${refChip}
+              ${serviceChip}
+            </div>
+            <button type="button" 
+                    onclick="event.stopPropagation(); removeStudentFromSeat(${i})" 
+                    title="移出此席位回到下方待入座名冊" 
+                    class="text-[10px] text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-1.5 py-0.5 rounded-md border border-rose-200 font-bold transition">
+              移出
+            </button>
           </div>
         </div>
       `;
@@ -5121,20 +5365,148 @@ function renderSeatingChart() {
              ondragleave="handleSeatDragLeave(event, ${i})"
              ondrop="handleSeatDrop(event, ${i})"
              onclick="handleSeatClick(${i})">
-          <div class="text-[10px] text-slate-400 font-mono">${row}-${col}</div>
-          <div class="text-xs font-bold text-slate-400 mt-2">🈳 走道空位</div>
-          <div class="text-[9px] text-slate-300">點擊指派大臣</div>
+          <div class="text-[11px] text-amber-700/60 font-mono font-bold w-full text-left">${row}-${col}</div>
+          <div class="my-1 text-center flex flex-col items-center justify-center">
+            <span class="text-2xl opacity-75">🪑</span>
+            <span class="text-xs sm:text-sm font-black text-amber-900/80 font-cute mt-0.5">空席</span>
+            <span class="text-[10px] text-amber-700/60 font-bold">拖曳下方座號移入</span>
+          </div>
+          <div class="text-[10px] text-amber-600/70 text-center font-bold">點擊或拖曳入座</div>
         </div>
       `;
     }
   }
 
   container.innerHTML = html;
+  renderSeatingDock();
+}
+
+// --- 渲染下方大臣座號庫 (拖曳移入托盤) ---
+function renderSeatingDock() {
+  const dock = document.getElementById("seatingStudentDock");
+  if (!dock) return;
+
+  const chart = window.KingdomApp.store.getSeatingChart();
+  const students = window.KingdomApp.store.data.students || [];
+  const layout = window.KingdomApp.store.getSeatingLayout();
+
+  let assignedCount = 0;
+  students.forEach(s => {
+    if (chart.includes(s.seatNo)) assignedCount++;
+  });
+  const unassignedCount = students.length - assignedCount;
+
+  const countBadge = document.getElementById("seatingDockCountBadge");
+  if (countBadge) countBadge.textContent = `已入座 ${assignedCount} / ${students.length}`;
+
+  const unassignedEl = document.getElementById("dockUnassignedCount");
+  if (unassignedEl) unassignedEl.textContent = unassignedCount;
+
+  const assignedEl = document.getElementById("dockAssignedCount");
+  if (assignedEl) assignedEl.textContent = assignedCount;
+
+  // 篩選
+  const filteredStudents = students.filter(s => {
+    const isAssigned = chart.includes(s.seatNo);
+    if (currentDockFilter === 'unassigned') return !isAssigned;
+    if (currentDockFilter === 'assigned') return isAssigned;
+    return true; // 'all'
+  });
+
+  dock.innerHTML = filteredStudents.map(student => {
+    const seatedIdx = chart.indexOf(student.seatNo);
+    const isAssigned = seatedIdx !== -1;
+    const isSelected = selectedDockSeatNo === student.seatNo;
+    const row = isAssigned ? Math.floor(seatedIdx / layout.cols) + 1 : 0;
+    const col = isAssigned ? (seatedIdx % layout.cols) + 1 : 0;
+
+    const petStatus = window.KingdomApp.getAnimalStatus ? window.KingdomApp.getAnimalStatus(student.animalType || student.petType || 'dog', student.points || 0) : null;
+    const animalIcon = petStatus ? petStatus.animalIcon : '🐾';
+
+    return `
+      <div class="dock-student-card parchment-card p-2 rounded-xl border-2 flex flex-col items-center justify-between transition ${isSelected ? 'dock-selected ring-4 ring-amber-500' : ''} ${isAssigned ? 'bg-amber-50/80 border-amber-300' : 'bg-rose-50/90 border-rose-300 shadow-xs ring-1 ring-rose-200'}"
+           id="dockStudent-${student.seatNo}"
+           draggable="true"
+           ondragstart="handleDockStudentDragStart(event, ${student.seatNo})"
+           ondragend="handleDockStudentDragEnd(event)"
+           onclick="handleDockStudentClick(${student.seatNo})"
+           title="${student.seatNo}號 ${student.name} ${isAssigned ? `(已在第${row}排第${col}列)` : '(待入座)'} - 按住拖曳移入座位，或點擊後點選座位">
+        <div class="w-full flex items-center justify-between text-[10px]">
+          <span class="font-mono font-black ${isAssigned ? 'text-amber-800' : 'text-rose-700'}">${animalIcon}</span>
+          <span class="text-[9px] font-bold ${isAssigned ? 'text-emerald-700 bg-emerald-100 px-1 rounded' : 'text-rose-700 bg-rose-100 px-1 rounded animate-pulse'}">
+            ${isAssigned ? `${row}-${col}` : '待入座'}
+          </span>
+        </div>
+        <div class="my-1 text-center flex flex-col items-center">
+          <span class="seat-badge-cute inline-flex items-center space-x-0.5 px-2 py-0.5 rounded-full text-xs sm:text-sm font-black ${isAssigned ? 'bg-amber-200 text-amber-950 border border-amber-300' : 'bg-rose-200 text-rose-950 border border-rose-300'} font-mono">
+            <span>${String(student.seatNo).padStart(2, '0')}號</span>
+          </span>
+          <span class="font-black text-amber-950 text-sm sm:text-base font-cute mt-0.5 tracking-wide truncate max-w-[85px]">
+            ${student.name}
+          </span>
+        </div>
+        <div class="text-[10px] font-bold text-center ${isAssigned ? 'text-slate-500' : 'text-rose-600 font-black'}">
+          ${isAssigned ? `第${row}排${col}列` : '👉 拖曳入座'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 拖曳下方大臣座號卡片
+function handleDockStudentDragStart(e, seatNo) {
+  draggedDockSeatNo = seatNo;
+  draggedSeatIndex = null;
+  e.dataTransfer.setData("text/plain", `dock:${seatNo}`);
+  e.dataTransfer.effectAllowed = "copyMove";
+  const el = document.getElementById(`dockStudent-${seatNo}`);
+  if (el) el.classList.add("seat-dragging");
+}
+
+function handleDockStudentDragEnd(e) {
+  draggedDockSeatNo = null;
+  document.querySelectorAll(".seat-dragging").forEach(el => el.classList.remove("seat-dragging"));
+  document.querySelectorAll(".seat-drag-over").forEach(el => el.classList.remove("seat-drag-over"));
+  document.getElementById("seatingStudentDockContainer")?.classList.remove("dock-drag-active");
+}
+
+function handleDockDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  const container = document.getElementById("seatingStudentDockContainer");
+  if (container && !container.classList.contains("dock-drag-active")) {
+    container.classList.add("dock-drag-active");
+  }
+}
+
+function handleDockDragLeave(e) {
+  const container = document.getElementById("seatingStudentDockContainer");
+  if (container) container.classList.remove("dock-drag-active");
+}
+
+function handleDockDrop(e) {
+  e.preventDefault();
+  const container = document.getElementById("seatingStudentDockContainer");
+  if (container) container.classList.remove("dock-drag-active");
+
+  if (draggedSeatIndex !== null) {
+    const idx = draggedSeatIndex;
+    const chart = window.KingdomApp.store.getSeatingChart();
+    const seatNo = chart[idx];
+    const student = seatNo ? window.KingdomApp.store.data.students.find(s => s.seatNo === seatNo) : null;
+    window.KingdomApp.store.setSeatStudent(idx, null);
+    draggedSeatIndex = null;
+    document.querySelectorAll(".seat-dragging").forEach(el => el.classList.remove("seat-dragging"));
+    window.KingdomApp.sound.playCoin();
+    showToast(`💺 已將【${student ? `${student.seatNo}號 ${student.name}` : '該席位'}】移出座位，回到下方待入座托盤！`, "🎒");
+    renderSeatingChart();
+  }
 }
 
 function handleSeatDragStart(e, idx) {
   draggedSeatIndex = idx;
-  e.dataTransfer.setData("text/plain", String(idx));
+  draggedDockSeatNo = null;
+  e.dataTransfer.setData("text/plain", `seat:${idx}`);
   e.dataTransfer.effectAllowed = "move";
   const el = document.getElementById(`seatDesk-${idx}`);
   if (el) el.classList.add("seat-dragging");
@@ -5156,24 +5528,62 @@ function handleSeatDragLeave(e, idx) {
 
 function handleSeatDrop(e, targetIdx) {
   e.preventDefault();
-  const sourceIdx = draggedSeatIndex;
-  draggedSeatIndex = null;
-
   document.querySelectorAll(".seat-drag-over").forEach(el => el.classList.remove("seat-drag-over"));
   document.querySelectorAll(".seat-dragging").forEach(el => el.classList.remove("seat-dragging"));
 
-  if (sourceIdx !== null && sourceIdx !== targetIdx) {
+  // 1. 若是從下方座號庫拖曳移入
+  if (draggedDockSeatNo !== null) {
+    const seatNo = draggedDockSeatNo;
+    draggedDockSeatNo = null;
+    const student = window.KingdomApp.store.data.students.find(s => s.seatNo === seatNo);
+    window.KingdomApp.store.setSeatStudent(targetIdx, seatNo);
+    window.KingdomApp.sound.playCoin();
+    showToast(`💺 已將【${seatNo}號 ${student ? student.name : ''}】安排入座！`, "🎉");
+    renderSeatingChart();
+    return;
+  }
+
+  // 2. 若是上方座位之間拖曳互換
+  if (draggedSeatIndex !== null && draggedSeatIndex !== targetIdx) {
+    const sourceIdx = draggedSeatIndex;
+    draggedSeatIndex = null;
     window.KingdomApp.store.swapSeats(sourceIdx, targetIdx);
     window.KingdomApp.sound.playCoin();
-    showToast(`💺 席位 ${sourceIdx + 1} 與 席位 ${targetIdx + 1} 已成功調換！`, "👑");
+    showToast(`💺 席位互換成功！`, "👑");
     renderSeatingChart();
+    return;
   }
+  draggedSeatIndex = null;
 }
 
 function handleSeatDragEnd(e) {
   draggedSeatIndex = null;
+  draggedDockSeatNo = null;
   document.querySelectorAll(".seat-drag-over").forEach(el => el.classList.remove("seat-drag-over"));
   document.querySelectorAll(".seat-dragging").forEach(el => el.classList.remove("seat-dragging"));
+  document.getElementById("seatingStudentDockContainer")?.classList.remove("dock-drag-active");
+}
+
+function handleDockStudentClick(seatNo) {
+  const student = window.KingdomApp.store.data.students.find(s => s.seatNo === seatNo);
+  if (!student) return;
+
+  if (selectedDockSeatNo === seatNo) {
+    selectedDockSeatNo = null;
+    cancelSeatSelection();
+    return;
+  }
+
+  selectedDockSeatNo = seatNo;
+  selectedSeatIndex = null;
+
+  const notice = document.getElementById("seatingSwapNotice");
+  const text = document.getElementById("seatingSwapText");
+  if (text) {
+    text.innerHTML = `已選取下方大臣 <b>【${student.seatNo}號 ${student.name}】</b>，請點擊上方任意座位入座（或點擊取消）：`;
+  }
+  if (notice) notice.classList.remove("hidden");
+  renderSeatingChart();
 }
 
 function handleSeatClick(idx) {
@@ -5181,12 +5591,25 @@ function handleSeatClick(idx) {
   const notice = document.getElementById("seatingSwapNotice");
   const text = document.getElementById("seatingSwapText");
 
+  // 若目前已選取下方待入座大臣，點擊座位直接入座！
+  if (selectedDockSeatNo !== null) {
+    const seatNo = selectedDockSeatNo;
+    const student = window.KingdomApp.store.data.students.find(s => s.seatNo === seatNo);
+    window.KingdomApp.store.setSeatStudent(idx, seatNo);
+    window.KingdomApp.sound.playCoin();
+    showToast(`💺 已將【${seatNo}號 ${student ? student.name : ''}】安排入座！`, "🎉");
+    selectedDockSeatNo = null;
+    cancelSeatSelection();
+    return;
+  }
+
+  // 原有座位互換邏輯
   if (selectedSeatIndex === null) {
     selectedSeatIndex = idx;
     const seatNo = chart[idx];
     const student = seatNo ? window.KingdomApp.store.data.students.find(s => s.seatNo === seatNo) : null;
     const label = student ? `${student.seatNo}號 ${student.name}` : `席位 ${idx + 1} (空席)`;
-    if (text) text.textContent = `已選取「${label}」，請點擊另一個席位進行互換：`;
+    if (text) text.textContent = `已選取「${label}」，請點擊另一個席位進行互換（或再次點擊取消）：`;
     if (notice) notice.classList.remove("hidden");
     renderSeatingChart();
   } else {
@@ -5205,9 +5628,58 @@ function handleSeatClick(idx) {
 
 function cancelSeatSelection() {
   selectedSeatIndex = null;
+  selectedDockSeatNo = null;
   const notice = document.getElementById("seatingSwapNotice");
   if (notice) notice.classList.add("hidden");
   renderSeatingChart();
+}
+
+function removeStudentFromSeat(idx) {
+  const chart = window.KingdomApp.store.getSeatingChart();
+  const seatNo = chart[idx];
+  if (seatNo) {
+    const student = window.KingdomApp.store.data.students.find(s => s.seatNo === seatNo);
+    window.KingdomApp.store.setSeatStudent(idx, null);
+    window.KingdomApp.sound.playCoin();
+    showToast(`💺 已將【${student ? `${student.seatNo}號 ${student.name}` : '該席位'}】移出，回到下方待入座托盤！`, "🎒");
+    renderSeatingChart();
+  }
+}
+
+function filterDockView(filter) {
+  currentDockFilter = filter;
+  const filters = ['all', 'unassigned', 'assigned'];
+  filters.forEach(f => {
+    const btn = document.getElementById(`btnDockFilter-${f}`);
+    if (btn) {
+      if (f === filter) {
+        btn.className = "px-2.5 py-1 rounded-lg bg-amber-950 text-amber-200 border border-amber-950 shadow-xs font-black";
+      } else {
+        btn.className = "px-2.5 py-1 rounded-lg bg-white/90 text-slate-700 border border-amber-300 hover:bg-amber-100 font-bold";
+      }
+    }
+  });
+  renderSeatingDock();
+}
+
+function clearAllSeatsPrompt() {
+  if (confirm("🧹 確定要清空所有座位嗎？全班 27 位大臣將全數移至下方待入座區，方便您重新拖曳排座。")) {
+    window.KingdomApp.store.clearAllSeats();
+    window.KingdomApp.sound.playCoin();
+    cancelSeatSelection();
+    showToast("🧹 所有席位已清空，大臣皆已集中於下方待入座托盤！", "✨");
+    renderSeatingChart();
+  }
+}
+
+function autoAssignOrderPrompt() {
+  if (confirm("👑 確定要將 1~27 位大臣依照座號順序自動排入座位嗎？")) {
+    window.KingdomApp.store.assignSeatsInOrder();
+    window.KingdomApp.sound.playFanfare();
+    cancelSeatSelection();
+    showToast("👑 已依 1~27 座號順序自動排滿座位！", "✨");
+    renderSeatingChart();
+  }
 }
 
 function randomizeSeatsPrompt() {
@@ -5215,6 +5687,7 @@ function randomizeSeatsPrompt() {
     window.KingdomApp.store.randomizeSeats();
     window.KingdomApp.sound.playFanfare();
     window.KingdomApp.triggerConfetti();
+    cancelSeatSelection();
     showToast("🔀 全班座位已隨機重新分配！", "🎉");
     renderSeatingChart();
   }
@@ -5223,6 +5696,7 @@ function randomizeSeatsPrompt() {
 function resetSeatingPrompt() {
   if (confirm("確定要將座位表恢復為 1~27 號初始依序排位嗎？")) {
     window.KingdomApp.store.resetSeatingChart();
+    cancelSeatSelection();
     showToast("🔄 座位表已恢復為 1~27 號預設排位！", "💺");
     renderSeatingChart();
   }
@@ -6725,5 +7199,35 @@ if (typeof window !== 'undefined') {
   window.openEditPointsFromFeedModal = openEditPointsFromFeedModal;
   window.confirmResetAllPetsSatiety = confirmResetAllPetsSatiety;
   window.openBatchResetPointsModal = openBatchResetPointsModal;
+
+  // 集點榜多選與快速獎勵控制
+  window.toggleStudentPointSelection = toggleStudentPointSelection;
+  window.selectAllStudentsPoints = selectAllStudentsPoints;
+  window.invertStudentPointsSelection = invertStudentPointsSelection;
+  window.awardSingleStudent = awardSingleStudent;
+  window.awardSelectedStudents = awardSelectedStudents;
+  window.openCustomMultiPointsModal = openCustomMultiPointsModal;
+  window.closeCustomMultiPointsModal = closeCustomMultiPointsModal;
+  window.openRedeemCardForStudent = openRedeemCardForStudent;
+
+  // 全班加點與大臣獎懲錯誤操作復原機制
+  window.showUndoNotificationBanner = showUndoNotificationBanner;
+  window.dismissUndoBanner = dismissUndoBanner;
+  window.promptUndoLastPointAction = promptUndoLastPointAction;
+  window.executeUndoLastPointAction = executeUndoLastPointAction;
+  window.confirmRevokePointLog = confirmRevokePointLog;
+
+  // 教室座位表與拖曳排座托盤
+  window.renderSeatingDock = renderSeatingDock;
+  window.handleDockStudentDragStart = handleDockStudentDragStart;
+  window.handleDockStudentDragEnd = handleDockStudentDragEnd;
+  window.handleDockDragOver = handleDockDragOver;
+  window.handleDockDragLeave = handleDockDragLeave;
+  window.handleDockDrop = handleDockDrop;
+  window.handleDockStudentClick = handleDockStudentClick;
+  window.removeStudentFromSeat = removeStudentFromSeat;
+  window.filterDockView = filterDockView;
+  window.clearAllSeatsPrompt = clearAllSeatsPrompt;
+  window.autoAssignOrderPrompt = autoAssignOrderPrompt;
 }
 

@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=2026111617">
+  <link rel="stylesheet" href="styles.css?v=2026111702">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -698,8 +698,58 @@
       </div>
 
       <!-- 5列 x 6排 座位網格容器 (共30格，支援手機平板滑動防擠壓) -->
-      <div class="w-full overflow-x-auto pb-4">
+      <div class="w-full overflow-x-auto pb-2">
         <div id="seatingGridContainer" class="grid gap-3 p-3 bg-amber-50/70 rounded-2xl border-2 border-amber-300/80 shadow-inner min-h-[460px] min-w-[680px]">
+          <!-- 由 ui.js renderSeatingChart() 動態填入 -->
+        </div>
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- 🎒 頁面下方：27位大臣座號待入座托盤 (集中拖曳移入區) -->
+      <!-- =============================================================== -->
+      <div id="seatingStudentDockContainer" 
+           ondragover="handleDockDragOver(event)" 
+           ondragleave="handleDockDragLeave(event)" 
+           ondrop="handleDockDrop(event)"
+           class="p-4 sm:p-5 bg-gradient-to-br from-amber-100/90 via-yellow-50/90 to-amber-100/90 rounded-2xl border-2 border-amber-400 shadow-md space-y-3 transition">
+        <!-- 托盤標題與快速操作列 -->
+        <div class="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-amber-300">
+          <div class="flex items-center space-x-2">
+            <span class="text-2xl animate-bounce">🎒</span>
+            <div>
+              <h3 class="text-base sm:text-lg font-black text-amber-950 font-cute flex items-center space-x-2">
+                <span>內閣大臣座號庫（拖曳移入座位）</span>
+                <span id="seatingDockCountBadge" class="text-xs bg-amber-600 text-white font-black px-2.5 py-0.5 rounded-full shadow-xs">已入座 27 / 27</span>
+              </h3>
+              <p class="text-xs text-amber-900/90 font-bold">
+                💡 <b>操作方式</b>：按住下方大臣座號卡片，直接<b>拖曳移入</b>上方任一座位；或先點擊大臣再點擊座位入座！
+              </p>
+            </div>
+          </div>
+
+          <!-- 快捷工具鈕 -->
+          <div class="flex items-center space-x-1.5 flex-wrap gap-1 text-xs font-black">
+            <button type="button" onclick="filterDockView('all')" id="btnDockFilter-all" class="px-2.5 py-1 rounded-lg bg-amber-950 text-amber-200 border border-amber-950 shadow-xs">
+              全部 (27)
+            </button>
+            <button type="button" onclick="filterDockView('unassigned')" id="btnDockFilter-unassigned" class="px-2.5 py-1 rounded-lg bg-white/90 text-rose-800 border border-amber-300 hover:bg-amber-100">
+              未入座 (<span id="dockUnassignedCount">0</span>)
+            </button>
+            <button type="button" onclick="filterDockView('assigned')" id="btnDockFilter-assigned" class="px-2.5 py-1 rounded-lg bg-white/90 text-emerald-800 border border-amber-300 hover:bg-amber-100">
+              已入座 (<span id="dockAssignedCount">27</span>)
+            </button>
+            <span class="text-amber-400">|</span>
+            <button type="button" onclick="autoAssignOrderPrompt()" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-amber-950 border border-amber-600 shadow-xs" title="依照 1~27 座號順序自動排入座位">
+              1~27 依序入座
+            </button>
+            <button type="button" onclick="clearAllSeatsPrompt()" class="px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 shadow-xs" title="清空上方所有席位，大臣全數移至下方待入座">
+              🧹 清空座位
+            </button>
+          </div>
+        </div>
+
+        <!-- 27 位大臣座號卡片水平/網格托盤 -->
+        <div id="seatingStudentDock" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2.5 max-h-60 overflow-y-auto p-2 bg-white/70 rounded-xl border border-amber-200">
           <!-- 由 ui.js renderSeatingChart() 動態填入 -->
         </div>
       </div>
@@ -707,8 +757,8 @@
       <!-- 底部走廊與後門提示 -->
       <div class="bg-amber-200/60 border border-amber-300 rounded-xl p-2.5 text-center text-xs text-amber-900 font-bold flex items-center justify-between px-6">
         <span>🚪 教室後門（資源回收區）</span>
-        <span>💡 提示：點擊任一座位即可選取互換，亦可直接以滑鼠或手指拖曳！</span>
-        <span> lockers 置物櫃 🎒</span>
+        <span>💡 提示：點擊任一座號或座位即可排座／互換，亦可直接拖曳移入！</span>
+        <span>lockers 置物櫃 🎒</span>
       </div>
 
     </div>
@@ -828,13 +878,14 @@
 
         <!-- 篩選列 -->
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <div class="flex items-center space-x-1.5 text-xs font-bold">
+          <div class="flex items-center space-x-1.5 text-xs font-bold flex-wrap gap-1">
             <button onclick="filterAttendanceStatus('all')" id="btnFilterAtt-all" class="px-3.5 py-1.5 rounded-lg bg-amber-950 text-amber-300 border border-amber-900 shadow-sm">全部大臣 (27)</button>
             <button onclick="filterAttendanceStatus('present')" id="btnFilterAtt-present" class="px-3.5 py-1.5 rounded-lg bg-white/80 text-slate-700 border border-amber-300 hover:bg-amber-100">在朝出席</button>
             <button onclick="filterAttendanceStatus('leave')" id="btnFilterAtt-leave" class="px-3.5 py-1.5 rounded-lg bg-white/80 text-rose-700 border border-rose-300 hover:bg-rose-50">告假缺席</button>
             <button onclick="filterAttendanceStatus('late')" id="btnFilterAtt-late" class="px-3.5 py-1.5 rounded-lg bg-white/80 text-amber-800 border border-amber-300 hover:bg-amber-100">遲到大臣</button>
+            <button onclick="filterAttendanceStatus('uncheck')" id="btnFilterAtt-uncheck" class="px-3.5 py-1.5 rounded-lg bg-white/80 text-rose-800 border border-rose-300 hover:bg-rose-50">未打卡</button>
           </div>
-          <span class="text-xs text-amber-900 font-medium">💡 系統依 07:40 判定遲到，皇后老師可隨時點擊按鈕直接修改！</span>
+          <span class="text-xs text-amber-900 font-medium">💡 絕不自動產生假打卡：一律由學生按座號自主簽到，或導師手動登記！</span>
         </div>
 
         <!-- 27位大臣簽到名冊網格 -->
@@ -1002,6 +1053,11 @@
                 <span>💰</span>
                 <span>批次更改金幣與重置</span>
               </button>
+              <!-- ↩️ 全班加點錯誤操作復原按鈕 -->
+              <button id="btnUndoPointAction" onclick="promptUndoLastPointAction()" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-rose-50 hover:bg-rose-100 text-rose-900 border-2 border-rose-300 shadow-sm flex items-center space-x-1.5 transition active:scale-95" title="復原上一次全班或大臣加扣點操作">
+                <span>↩️</span>
+                <span>復原上一步加點</span>
+              </button>
               <button onclick="openPointPresetsModal()" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white hover:bg-amber-100 text-amber-950 border-2 border-amber-400 shadow-sm flex items-center space-x-1.5">
                 <span>⚙️</span>
                 <span>加點快捷設定</span>
@@ -1130,9 +1186,38 @@
           </div>
         </div>
 
-        <!-- 27 位大臣金幣網格 -->
-        <div id="pointsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <!-- 動態渲染 -->
+        <!-- 27 位大臣個人集點榜專區 (簡單清楚明瞭) -->
+        <div class="parchment-card p-4 sm:p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-amber-300">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-black text-amber-900 bg-amber-200 px-2.5 py-1 rounded-xl border border-amber-300 shadow-2xs">
+                👑 27 位大臣個人集點榜
+              </span>
+              <h3 class="text-lg sm:text-xl font-black text-amber-950">
+                大臣榮譽金幣 ‧ 快速嘉獎與換卡
+              </h3>
+            </div>
+            <!-- 多選批次操作工具列 -->
+            <div class="flex items-center space-x-2 text-xs">
+              <span id="multiSelectedCountBadge" class="font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg">
+                已選取 0 位
+              </span>
+              <button onclick="selectAllStudentsPoints(true)" class="px-2.5 py-1 bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 rounded-lg font-bold shadow-2xs transition">
+                全選
+              </button>
+              <button onclick="selectAllStudentsPoints(false)" class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg font-bold shadow-2xs transition">
+                清除
+              </button>
+              <button onclick="invertStudentPointsSelection()" class="px-2.5 py-1 bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 rounded-lg font-bold shadow-2xs transition">
+                反選
+              </button>
+            </div>
+          </div>
+
+          <!-- 27 位大臣金幣網格 -->
+          <div id="pointsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+            <!-- 動態渲染 -->
+          </div>
         </div>
 
         <!-- 近期記功簿 -->
@@ -3466,8 +3551,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111628"></script>
-  <script src="ui.js?v=2026111628"></script>
+  <script src="app.js?v=2026111702"></script>
+  <script src="ui.js?v=2026111702"></script>
 
 </body>
 </html>

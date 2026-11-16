@@ -300,37 +300,8 @@ function getTodayDateString() {
   return `${y}-${m}-${d}`;
 }
 
-// 預設今日與歷日出席狀態 (1~27號)
+// 歷日示範出席歷史紀錄 (示範資料僅保留過去日期，絕不預設今日假打卡，嚴格依賴學生自主打卡或導師手動操作)
 const DEFAULT_ATTENDANCE = {
-  [getTodayDateString()]: {
-    1: { status: 'present', checkInTime: '07:28', note: '' },
-    2: { status: 'present', checkInTime: '07:31', note: '' },
-    3: { status: 'present', checkInTime: '07:33', note: '' },
-    4: { status: 'present', checkInTime: '07:35', note: '' },
-    5: { status: 'present', checkInTime: '07:38', note: '' },
-    6: { status: 'present', checkInTime: '07:25', note: '' },
-    7: { status: 'present', checkInTime: '07:39', note: '' },
-    8: { status: 'late', checkInTime: '07:46', note: '晨讀遲到' },
-    9: { status: 'present', checkInTime: '07:36', note: '' },
-    10: { status: 'present', checkInTime: '07:30', note: '' },
-    11: { status: 'present', checkInTime: '07:34', note: '' },
-    12: { status: 'present', checkInTime: '07:22', note: '' },
-    13: { status: 'present', checkInTime: '07:37', note: '' },
-    14: { status: 'leave', checkInTime: null, leaveType: 'sick', note: '病假（家長已通報）' },
-    15: { status: 'present', checkInTime: '07:26', note: '' },
-    16: { status: 'present', checkInTime: '07:32', note: '' },
-    17: { status: 'present', checkInTime: '07:35', note: '' },
-    18: { status: 'present', checkInTime: '07:29', note: '' },
-    19: { status: 'present', checkInTime: '07:33', note: '' },
-    20: { status: 'present', checkInTime: '07:36', note: '' },
-    21: { status: 'present', checkInTime: '07:24', note: '' },
-    22: { status: 'late', checkInTime: '07:48', note: '校車延誤' },
-    23: { status: 'present', checkInTime: '07:35', note: '' },
-    24: { status: 'present', checkInTime: '07:38', note: '' },
-    25: { status: 'present', checkInTime: '07:27', note: '' },
-    26: { status: 'present', checkInTime: '07:34', note: '' },
-    27: { status: 'present', checkInTime: '07:30', note: '' }
-  },
   "2026-11-13": {
     1: { status: 'present', checkInTime: '07:21', note: '' },
     2: { status: 'present', checkInTime: '07:22', note: '' },
@@ -496,16 +467,28 @@ class KingdomStore {
       });
     }
     if (!parsed.attendance || typeof parsed.attendance !== 'object') {
-      parsed.attendance = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE));
+      parsed.attendance = {};
+    }
+    // 過去示範歷史資料按需補齊，但嚴禁為今日自動產生任何假打卡
+    Object.keys(DEFAULT_ATTENDANCE).forEach(d => {
+      if (!parsed.attendance[d] || Object.keys(parsed.attendance[d]).length === 0) {
+        parsed.attendance[d] = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE[d]));
+      }
+    });
+    // 確保今日打卡記錄為全新狀態（絕不自動更新，一律由學生自主按座號打卡或導師手動操作）
+    const todayStr = getTodayDateString();
+    if (!parsed.attendance[todayStr]) {
+      parsed.attendance[todayStr] = {};
     } else {
-      Object.keys(DEFAULT_ATTENDANCE).forEach(d => {
-        if (!parsed.attendance[d] || Object.keys(parsed.attendance[d]).length === 0) {
-          parsed.attendance[d] = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE[d]));
-        }
-      });
+      // 防呆清理：若今日紀錄包含舊版預設假資料（如 1號為 07:28 且 6號為 07:25），自動重設清空
+      const todayRec = parsed.attendance[todayStr];
+      if (todayRec && todayRec[1] && todayRec[1].checkInTime === '07:28' && todayRec[6] && todayRec[6].checkInTime === '07:25') {
+        parsed.attendance[todayStr] = {};
+      }
     }
     if (!parsed.homework) parsed.homework = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK));
     if (!parsed.pointLogs) parsed.pointLogs = JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS));
+    if (!parsed.pointActionHistory || !Array.isArray(parsed.pointActionHistory)) parsed.pointActionHistory = [];
     if (!parsed.announcements) parsed.announcements = JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS));
     if (!parsed.rewardCards) parsed.rewardCards = JSON.parse(JSON.stringify(DEFAULT_REWARD_CARDS));
     if (!parsed.rewardRedemptions) parsed.rewardRedemptions = [];
@@ -618,6 +601,7 @@ class KingdomStore {
       attendance: JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE)),
       homework: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK)),
       pointLogs: JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS)),
+      pointActionHistory: [],
       announcements: JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS)),
       lastModified: 0,
       _isFreshInit: true
@@ -654,6 +638,7 @@ class KingdomStore {
       attendance: JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE)),
       homework: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK)),
       pointLogs: JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS)),
+      pointActionHistory: [],
       announcements: JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS)),
       rewardCards: JSON.parse(JSON.stringify(DEFAULT_REWARD_CARDS)),
       rewardRedemptions: [],
@@ -752,6 +737,37 @@ class KingdomStore {
     this.data.seatingChart = [...DEFAULT_SEATING_CHART];
     this.save();
     return this.data.seatingChart;
+  }
+
+  clearAllSeats() {
+    const layout = this.getSeatingLayout();
+    const total = layout.rows * layout.cols;
+    this.data.seatingChart = new Array(total).fill(null);
+    this.save();
+    return this.data.seatingChart;
+  }
+
+  assignSeatsInOrder() {
+    const layout = this.getSeatingLayout();
+    const total = layout.rows * layout.cols;
+    const chart = new Array(total).fill(null);
+    const seatNos = this.data.students.map(s => s.seatNo).sort((a, b) => a - b);
+    for (let i = 0; i < total && i < seatNos.length; i++) {
+      chart[i] = seatNos[i];
+    }
+    this.data.seatingChart = chart;
+    this.save();
+    return chart;
+  }
+
+  removeStudentFromSeat(idx) {
+    const chart = this.getSeatingChart();
+    if (idx >= 0 && idx < chart.length) {
+      chart[idx] = null;
+      this.save();
+      return true;
+    }
+    return false;
   }
 
   // --- 每日聯絡簿按日歷史記錄 (由導師每日填寫更新，系統不自行強加假作業) ---
@@ -960,49 +976,60 @@ class KingdomStore {
     };
   }
 
-  // --- 雙軌金幣制度：可用金幣 (points) 與生涯累積總額 (lifetimePoints) ---
-  awardSingleStudent(studentId, points, reason = "課堂嘉獎") {
-    const pts = parseInt(points, 10);
-    if (isNaN(pts)) return false;
-    const student = this.data.students.find(s => s.id === studentId || s.seatNo === studentId);
-    if (!student) return false;
-
-    if (student.lifetimePoints === undefined) student.lifetimePoints = student.points || 0;
-
-    if (pts > 0) {
-      student.points = (student.points || 0) + pts;
-      student.lifetimePoints = (student.lifetimePoints || 0) + pts;
-      student.petExp = student.lifetimePoints;
-      if (student.secondPetType) {
-        student.secondPetExp = Math.max(0, student.lifetimePoints - 500);
-      }
-    } else {
-      student.points = Math.max(0, (student.points || 0) + pts);
+  // --- 加扣點操作記錄器 (支援全班加點與個人加點錯誤復原機制) ---
+  recordPointAction(action) {
+    if (!this.data.pointActionHistory) this.data.pointActionHistory = [];
+    this.data.pointActionHistory.unshift(action);
+    if (this.data.pointActionHistory.length > 30) {
+      this.data.pointActionHistory = this.data.pointActionHistory.slice(0, 30);
     }
-
-    this.data.pointLogs.unshift({
-      id: Date.now(),
-      studentId: student.id,
-      points: pts,
-      reason,
-      date: getTodayDateString(),
-      time: new Date().toTimeString().slice(0, 5)
-    });
-
-    this.save();
-    return true;
   }
 
+  canUndoPointAction() {
+    return Array.isArray(this.data.pointActionHistory) && this.data.pointActionHistory.some(a => !a.undone);
+  }
+
+  getLastUndoableAction() {
+    if (!Array.isArray(this.data.pointActionHistory)) return null;
+    return this.data.pointActionHistory.find(a => !a.undone) || null;
+  }
+
+  // --- 全班 27 位大臣一鍵加點 (支援完整復原制度) ---
+  awardAllStudents(points, reason = "全班課堂嘉獎") {
+    const allIds = this.data.students.map(s => s.id);
+    return this.batchAwardMultipleStudents(allIds, points, reason);
+  }
+
+  // --- 雙軌金幣制度：單一大臣加點 (自動支援復原制度) ---
+  awardSingleStudent(studentId, points, reason = "課堂嘉獎") {
+    const res = this.batchAwardMultipleStudents([studentId], points, reason);
+    return res && res.length > 0;
+  }
+
+  // --- 批次/多選/全班大臣加扣點主函式 (支援加點前快照與 100% 精準復原) ---
   batchAwardMultipleStudents(studentIds, points, reason = "課堂嘉獎") {
     if (!Array.isArray(studentIds) || studentIds.length === 0) return [];
     const pts = parseInt(points, 10);
     if (isNaN(pts)) return [];
 
     const updatedStudents = [];
+    const snapshots = [];
+
     studentIds.forEach(id => {
       const student = this.data.students.find(s => s.id === id || s.seatNo === id);
       if (student) {
         if (student.lifetimePoints === undefined) student.lifetimePoints = student.points || 0;
+
+        // 加點前精準快照 (含金幣、總飽食度、第二寵物經驗值)
+        snapshots.push({
+          studentId: student.id,
+          seatNo: student.seatNo,
+          name: student.name,
+          pointsBefore: student.points || 0,
+          lifetimeBefore: student.lifetimePoints || 0,
+          secondPetExpBefore: student.secondPetExp || 0
+        });
+
         if (pts > 0) {
           student.points = (student.points || 0) + pts;
           student.lifetimePoints = (student.lifetimePoints || 0) + pts;
@@ -1018,13 +1045,39 @@ class KingdomStore {
     });
 
     if (updatedStudents.length > 0) {
-      const namesStr = updatedStudents.length <= 5 
-        ? updatedStudents.map(s => `${String(s.seatNo).padStart(2, '0')}.${s.name}`).join('、')
-        : `${updatedStudents.length} 位大臣 (${updatedStudents.slice(0, 3).map(s => s.name).join('、')}等)`;
+      const isAll = updatedStudents.length === this.data.students.length;
+      const namesStr = isAll 
+        ? "全班 27 位大臣" 
+        : (updatedStudents.length <= 5 
+            ? updatedStudents.map(s => `${String(s.seatNo).padStart(2, '0')}.${s.name}`).join('、')
+            : `${updatedStudents.length} 位大臣 (${updatedStudents.slice(0, 3).map(s => s.name).join('、')}等)`);
+
+      const actionId = Date.now();
+      const actionTitle = isAll
+        ? `全班 27 位大臣 ${pts > 0 ? `+${pts}` : pts} 點 (${reason})`
+        : (updatedStudents.length === 1
+            ? `${updatedStudents[0].name} ${pts > 0 ? `+${pts}` : pts} 點 (${reason})`
+            : `${updatedStudents.length} 位大臣 ${pts > 0 ? `+${pts}` : pts} 點 (${reason})`);
+
+      const action = {
+        id: actionId,
+        title: actionTitle,
+        reason,
+        points: pts,
+        type: isAll ? 'all' : (updatedStudents.length === 1 ? 'single' : 'batch'),
+        targetDesc: namesStr,
+        date: getTodayDateString(),
+        time: new Date().toTimeString().slice(0, 5),
+        snapshots,
+        undone: false
+      };
+
+      this.recordPointAction(action);
 
       this.data.pointLogs.unshift({
-        id: Date.now(),
-        studentId: updatedStudents.length === 1 ? updatedStudents[0].id : 'multi',
+        id: actionId,
+        actionId: actionId,
+        studentId: isAll ? 'all' : (updatedStudents.length === 1 ? updatedStudents[0].id : 'multi'),
         points: pts,
         reason: `${reason} 【對象：${namesStr}】`,
         date: getTodayDateString(),
@@ -1034,6 +1087,133 @@ class KingdomStore {
       this.save();
     }
     return updatedStudents;
+  }
+
+  // --- 加點錯誤復原函式 (Undo Point Action) ---
+  undoPointAction(actionId = null) {
+    if (!this.data.pointActionHistory || this.data.pointActionHistory.length === 0) {
+      return { success: false, message: "目前沒有可復原的加點操作記錄！" };
+    }
+
+    let action = null;
+    if (actionId) {
+      action = this.data.pointActionHistory.find(a => a.id == actionId && !a.undone);
+    } else {
+      action = this.data.pointActionHistory.find(a => !a.undone);
+    }
+
+    if (!action) {
+      return { success: false, message: "找不到可復原的操作或該操作先前已被復原過！" };
+    }
+
+    let restoredCount = 0;
+    if (Array.isArray(action.snapshots)) {
+      action.snapshots.forEach(snap => {
+        const student = this.data.students.find(s => s.id === snap.studentId || s.seatNo === snap.seatNo);
+        if (student) {
+          student.points = snap.pointsBefore;
+          student.lifetimePoints = snap.lifetimeBefore;
+          student.petExp = snap.lifetimeBefore;
+          if (snap.secondPetExpBefore !== undefined) {
+            student.secondPetExp = snap.secondPetExpBefore;
+          }
+          restoredCount++;
+        }
+      });
+    }
+
+    action.undone = true;
+    action.undoneAt = new Date().toISOString();
+
+    // 在 pointLogs 中標註原記錄並新增復原沖正記錄
+    if (Array.isArray(this.data.pointLogs)) {
+      const origLog = this.data.pointLogs.find(l => l.actionId === action.id || l.id === action.id);
+      if (origLog) {
+        origLog.undone = true;
+        if (!origLog.reason.startsWith('[↩️已撤銷]')) {
+          origLog.reason = `[↩️已撤銷] ${origLog.reason}`;
+        }
+      }
+      this.data.pointLogs.unshift({
+        id: Date.now(),
+        actionId: action.id,
+        studentId: action.type === 'all' ? 'all' : (action.snapshots.length === 1 ? action.snapshots[0].studentId : 'multi'),
+        points: -action.points,
+        reason: `↩️ 導師已復原：【${action.title}】(原加扣點已全數沖正)`,
+        date: getTodayDateString(),
+        time: new Date().toTimeString().slice(0, 5),
+        isUndoLog: true
+      });
+    }
+
+    this.save();
+    return {
+      success: true,
+      action,
+      restoredCount,
+      message: `成功復原【${action.title}】！已將 ${restoredCount} 位大臣金幣與飽食度精準還原！`
+    };
+  }
+
+  // --- 撤銷指定的記功簿記錄 (Revoke Point Log) ---
+  revokePointLog(logId) {
+    if (!Array.isArray(this.data.pointLogs)) return { success: false, message: "無記功簿記錄" };
+    const log = this.data.pointLogs.find(l => l.id == logId);
+    if (!log) return { success: false, message: "找不到該筆記功紀錄" };
+    if (log.undone) return { success: false, message: "此筆紀錄先前已被撤回過！" };
+
+    // 若有 actionId，優先使用完整快照復原
+    if (log.actionId && Array.isArray(this.data.pointActionHistory)) {
+      const act = this.data.pointActionHistory.find(a => a.id == log.actionId && !a.undone);
+      if (act) {
+        return this.undoPointAction(log.actionId);
+      }
+    }
+
+    // 否則進行單純數值反向沖銷
+    const delta = parseInt(log.points, 10) || 0;
+    let count = 0;
+    if (log.studentId === 'all') {
+      this.data.students.forEach(st => {
+        st.points = Math.max(0, (st.points || 0) - delta);
+        if (delta > 0 && st.lifetimePoints !== undefined) {
+          st.lifetimePoints = Math.max(0, st.lifetimePoints - delta);
+          st.petExp = st.lifetimePoints;
+        }
+        count++;
+      });
+    } else if (log.studentId !== 'batch_adjust' && log.studentId !== 'multi') {
+      const st = this.data.students.find(s => s.id == log.studentId || s.seatNo == log.studentId);
+      if (st) {
+        st.points = Math.max(0, (st.points || 0) - delta);
+        if (delta > 0 && st.lifetimePoints !== undefined) {
+          st.lifetimePoints = Math.max(0, st.lifetimePoints - delta);
+          st.petExp = st.lifetimePoints;
+        }
+        count++;
+      }
+    }
+
+    log.undone = true;
+    if (!log.reason.startsWith('[↩️已撤銷]')) {
+      log.reason = `[↩️已撤銷] ${log.reason}`;
+    }
+
+    this.data.pointLogs.unshift({
+      id: Date.now(),
+      studentId: log.studentId,
+      points: -delta,
+      reason: `↩️ 導師已手動撤銷此筆記功：【${log.reason.replace('[↩️已撤銷] ', '')}】`,
+      date: getTodayDateString(),
+      time: new Date().toTimeString().slice(0, 5),
+      isUndoLog: true
+    });
+
+    this.save();
+    return {
+      success: true,
+      message: `已成功撤銷該筆紀錄！受影響的大臣金幣已沖銷還原。`
+    };
   }
 
   // --- 批次更改金幣與重置功能 ---
@@ -1577,10 +1757,10 @@ class KingdomStore {
     const sId = student.id;
     const seatNo = student.seatNo;
     const today = getTodayDateString();
-    const att = (this.data.attendance[today] && (this.data.attendance[today][sId] || this.data.attendance[today][seatNo])) || { status: 'present' };
+    const att = (this.data.attendance[today] && (this.data.attendance[today][sId] || this.data.attendance[today][seatNo])) || null;
 
     // 1. 若今日請假：定為請假，則嚴格豁免！絕不頒發愛班卡
-    if (att.status === 'leave') {
+    if (att && att.status === 'leave') {
       return {
         student,
         light: 'leave',
@@ -1610,7 +1790,7 @@ class KingdomStore {
     const reflectionReason = bCard.reflectionReason || (bCard.reflectionReasons ? bCard.reflectionReasons.map(r => r.text).join('、') : '');
 
     // 愛班卡：系統判定打卡遲到自動加入（事由直接為「遲到」）＋ 導師手動控制兩種，實體儲存於 behaviorCards
-    const isLateCheckIn = att.status === 'late';
+    const isLateCheckIn = !!(att && att.status === 'late');
     const serviceCount = this.getServiceCount(sId);
     const hasService = serviceCount > 0;
     const serviceReason = bCard.serviceReason || (hasService ? '遲到' : '');
