@@ -68,13 +68,142 @@ function checkTeacherAuth(actionName = "進入導師管理室") {
   }
 }
 
-function promptChangeQueenPassword() {
-  if (!checkTeacherAuth("修改導師密碼")) return;
-  const newPass = prompt("請輸入新的導師通行密碼（不可為空）：");
-  if (!newPass || !newPass.trim()) return;
-  window.KingdomApp.store.data.queenPassword = newPass.trim();
+function lockTeacherSession() {
+  isTeacherAuthenticated = false;
+  showToast("🔒 導師管理權限已鎖定，再次進入需驗證通行密碼。", "🛡️");
+  if (typeof switchMainView === "function") {
+    switchMainView("morning");
+  }
+}
+
+function openChangePasswordModal() {
+  const modal = document.getElementById("changePasswordModal");
+  if (!modal) return;
+  
+  const oldInput = document.getElementById("oldTeacherPasswordInput");
+  const newInput = document.getElementById("newTeacherPasswordInput");
+  const confirmInput = document.getElementById("confirmTeacherPasswordInput");
+  const errorAlert = document.getElementById("changePasswordErrorAlert");
+  
+  if (oldInput) {
+    oldInput.value = "";
+    oldInput.type = "password";
+  }
+  if (newInput) {
+    newInput.value = "";
+    newInput.type = "password";
+  }
+  if (confirmInput) {
+    confirmInput.value = "";
+    confirmInput.type = "password";
+  }
+  if (errorAlert) {
+    errorAlert.classList.add("hidden");
+  }
+
+  // 重置眼睛圖示
+  const eyeButtons = modal.querySelectorAll("button[onclick*='togglePasswordVisibility']");
+  eyeButtons.forEach(btn => {
+    btn.innerHTML = '<i data-lucide="eye" class="w-4 h-4 text-slate-400"></i>';
+  });
+
+  modal.classList.remove("hidden");
+  initLucideIcons();
+  
+  setTimeout(() => {
+    if (oldInput) oldInput.focus();
+  }, 100);
+}
+
+function closeChangePasswordModal() {
+  const modal = document.getElementById("changePasswordModal");
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+}
+
+function togglePasswordVisibility(inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPass = input.type === "password";
+  input.type = isPass ? "text" : "password";
+  if (btnEl) {
+    btnEl.innerHTML = isPass 
+      ? '<i data-lucide="eye-off" class="w-4 h-4 text-amber-700"></i>' 
+      : '<i data-lucide="eye" class="w-4 h-4 text-slate-400"></i>';
+    initLucideIcons();
+  }
+}
+
+function showChangePasswordError(msg) {
+  const errorAlert = document.getElementById("changePasswordErrorAlert");
+  const errorText = document.getElementById("changePasswordErrorText");
+  if (errorAlert && errorText) {
+    errorText.textContent = msg;
+    errorAlert.classList.remove("hidden");
+  } else {
+    alert(msg);
+  }
+}
+
+function submitChangePasswordForm(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  
+  const oldInput = document.getElementById("oldTeacherPasswordInput");
+  const newInput = document.getElementById("newTeacherPasswordInput");
+  const confirmInput = document.getElementById("confirmTeacherPasswordInput");
+  
+  const oldPass = oldInput ? oldInput.value.trim() : "";
+  const newPass = newInput ? newInput.value.trim() : "";
+  const confirmPass = confirmInput ? confirmInput.value.trim() : "";
+  
+  const currentPassword = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data.queenPassword) || "queen";
+  
+  // 1. 驗證目前舊通行密碼
+  if (oldPass !== currentPassword) {
+    showChangePasswordError("❌ 目前導師通行密碼輸入錯誤！若尚未更改過，預設密碼為 queen。");
+    if (oldInput) {
+      oldInput.focus();
+      oldInput.select();
+    }
+    return;
+  }
+  
+  // 2. 驗證新密碼長度與內容
+  if (!newPass || newPass.length < 3) {
+    showChangePasswordError("❌ 新通行密碼長度太短！請至少輸入 3 個字元（英數皆可）。");
+    if (newInput) {
+      newInput.focus();
+    }
+    return;
+  }
+  
+  // 3. 驗證兩次密碼是否一致
+  if (newPass !== confirmPass) {
+    showChangePasswordError("❌ 兩次輸入的新通行密碼不一致，請再次確認以防打錯！");
+    if (confirmInput) {
+      confirmInput.focus();
+      confirmInput.select();
+    }
+    return;
+  }
+
+  // 4. 通過驗證，儲存並同步至雲端與本機
+  window.KingdomApp.store.data.queenPassword = newPass;
   window.KingdomApp.store.save();
-  showToast("🔑 導師通行密碼修改成功！請妥善保管。", "👑");
+  isTeacherAuthenticated = true;
+  
+  closeChangePasswordModal();
+  
+  if (window.KingdomSound && window.KingdomSound.playPraise) {
+    window.KingdomSound.playPraise();
+  }
+  
+  showToast("👑 導師專屬通行密碼已成功更新並即時同步！請妥善保管新密碼。", "🔑");
+}
+
+function promptChangeQueenPassword() {
+  openChangePasswordModal();
 }
 
 // ===================================================================
@@ -1897,6 +2026,124 @@ function setTrafficOverrideFromModal(studentId, overrideLight) {
 }
 
 // ===================================================================
+// 加點區 ‧ 王國全班萌寵大動物園 (Kingdom Class Pet Sanctuary in Points View)
+// ===================================================================
+function renderPointsZooHabitat() {
+  const container = document.getElementById("pointsZooGrid");
+  if (!container) return;
+
+  const students = window.KingdomApp.store.data.students || [];
+  let totalFood = 0;
+  let goldenCount = 0;
+
+  const cardsHtml = students.map(st => {
+    const seatPad = String(st.seatNo).padStart(2, '0');
+    const aType = (st.animalType || st.petType || 'lion').toLowerCase();
+    const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0);
+    totalFood += lifetime;
+    const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
+    if (petStatus.isGolden) goldenCount++;
+    const svgCode = window.KingdomApp.renderAnimalSVG(aType, petStatus.stageIndex);
+
+    return `
+      <div id="zooAnimalCard-${st.id}" class="bg-white/90 hover:bg-white rounded-2xl p-2 border ${petStatus.isGolden ? 'border-amber-400 ring-2 ring-amber-300 shadow-md bg-gradient-to-b from-amber-50 to-white' : 'border-emerald-300/80 hover:border-emerald-500'} shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col items-center justify-between text-center relative group transform hover:-translate-y-1">
+        <!-- 學生座號姓名 (保證同一行) -->
+        <span class="text-[11px] font-mono font-black text-emerald-950 bg-emerald-100/90 px-1.5 py-0.5 rounded-full mb-1 truncate max-w-full whitespace-nowrap">
+          ${seatPad} ${st.name}
+        </span>
+
+        <!-- 萌寵 SVG 生動頭像 (點擊可開啟投餵舍) -->
+        <div onclick="openZooFeedModal(${st.id})" class="w-14 h-14 flex items-center justify-center p-0.5 cursor-pointer transform group-hover:scale-110 transition-transform duration-200" title="點擊投餵 ${st.name} 的 ${petStatus.animalName}">
+          ${svgCode}
+        </div>
+
+        <!-- 動物名稱與階段 -->
+        <div class="mt-1 w-full">
+          <div class="text-[10px] font-black text-slate-800 truncate" title="${petStatus.animalName}">
+            ${petStatus.animalIcon} ${petStatus.animalName}
+          </div>
+          <div class="text-[9px] font-bold px-1.5 py-0.2 rounded-full mt-0.5 inline-block ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 border border-amber-400 font-black' : 'bg-emerald-100 text-emerald-900'}">
+            ${petStatus.stageTitle}
+          </div>
+        </div>
+
+        <!-- 飽食度與可用金幣狀態 -->
+        <div class="mt-1 flex items-center justify-center space-x-1 text-[10px] font-mono font-bold text-slate-700 bg-emerald-50/80 w-full py-0.5 rounded-lg border border-emerald-200">
+          <span title="可用金幣">🪙${st.points || 0}</span>
+          <span class="text-slate-300">|</span>
+          <span class="text-emerald-800" title="累積總飽食度">🍎${lifetime}</span>
+        </div>
+
+        <!-- 快捷互動按鈕：+1 金幣 與 🍎 投餵 -->
+        <div class="mt-1.5 flex items-center space-x-1 w-full pt-1 border-t border-emerald-100">
+          <button onclick="awardSingleStudent(${st.id}, 1, '動物園課堂嘉獎')" class="flex-1 py-0.5 rounded-md bg-amber-100 hover:bg-amber-200 text-amber-950 font-black text-[10px] transition border border-amber-300 shadow-xs" title="給予 +1 金幣嘉獎">
+            +1🪙
+          </button>
+          <button onclick="quickFeedStudentInZoo(${st.id})" class="flex-1 py-0.5 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[10px] transition shadow-xs" title="投餵 1 顆蘋果飼料">
+            🍎餵
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = cardsHtml;
+
+  const statsPill = document.getElementById("zooHabitatStatsPill");
+  if (statsPill) {
+    statsPill.innerHTML = `
+      <span>🐾 全園 <strong>${students.length}</strong> 隻動物棲息</span>
+      <span class="text-emerald-300">·</span>
+      <span>🍎 總飽食 <strong>${totalFood}</strong> 點</span>
+      <span class="text-emerald-300">·</span>
+      <span>👑 巨星 <strong>${goldenCount}</strong> 隻</span>
+    `;
+  }
+}
+
+function quickFeedStudentInZoo(studentId) {
+  const result = window.KingdomApp.store.feedStudentAnimal(studentId, 1, "美味紅蘋果");
+  if (!result) return;
+  if (window.KingdomSound && window.KingdomSound.playFeedMunch) {
+    window.KingdomSound.playFeedMunch();
+  }
+  showToast(`🍎 嘎嘣脆！已為【${result.student.name}】的【${result.status.animalName}】投餵 1 顆蘋果！`, "🐾");
+  renderPointsView();
+  renderRosterView();
+}
+
+function feedAllZooAnimalsOne() {
+  const students = window.KingdomApp.store.data.students || [];
+  students.forEach(st => {
+    st.lifetimePoints = (st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0)) + 1;
+  });
+  window.KingdomApp.store.save();
+  if (window.KingdomSound && window.KingdomSound.playFeedMunch) {
+    window.KingdomSound.playFeedMunch();
+  }
+  showToast("🍎 全園大狂歡！全班 27 隻萌寵動物都吃到了香甜蘋果，飽食度各 +1 點！", "🎉");
+  renderPointsView();
+  renderRosterView();
+}
+
+function triggerZooCheerParty() {
+  if (window.KingdomSound && window.KingdomSound.playPraise) {
+    window.KingdomSound.playPraise();
+  }
+  if (typeof confetti === 'function') {
+    confetti({ particleCount: 90, spread: 80, origin: { y: 0.55 } });
+  }
+  const cards = document.querySelectorAll("#pointsZooGrid > div");
+  cards.forEach(card => {
+    card.classList.add("animate-bounce");
+    setTimeout(() => {
+      card.classList.remove("animate-bounce");
+    }, 1200);
+  });
+  showToast("🎉 哇！全班 27 隻萌寵動物開心地在草原上轉圈跳舞！", "🦁");
+}
+
+// ===================================================================
 // 6. 榮譽集點榜與批次/單獨重置點數 (Points Management)
 // ===================================================================
 function renderPointsView() {
@@ -1906,6 +2153,7 @@ function renderPointsView() {
 
   renderPointPresets();
   renderRewardCards();
+  renderPointsZooHabitat();
 
   if (grid) {
     grid.innerHTML = students.map(st => {
@@ -2786,49 +3034,51 @@ function renderRosterView() {
 
     return `
       <tr class="hover:bg-amber-100/60 transition">
-        <td class="py-2.5 px-3 font-mono font-black text-amber-950">${seatPad}</td>
-        <td class="py-2.5 px-3 font-black text-slate-900">${st.name}</td>
-        <td class="py-2.5 px-3 text-xs">
-          <span class="bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded font-bold">${st.title}</span>
+        <td class="py-2.5 px-3 font-mono font-black text-amber-950 whitespace-nowrap text-center">${seatPad}</td>
+        <td class="py-2.5 px-3 font-black text-slate-900 whitespace-nowrap text-sm sm:text-base">${st.name}</td>
+        <td class="py-2.5 px-3 text-xs whitespace-nowrap">
+          <span class="bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded font-bold inline-block">${st.title}</span>
         </td>
-        <td class="py-2.5 px-3 text-xs bg-amber-50/80 rounded">
+        <td class="py-2.5 px-3 text-xs bg-amber-50/80 rounded whitespace-nowrap">
           <span class="font-mono font-bold text-slate-800">${st.birthday}</span>
           <span class="block text-[10px] text-amber-800 font-mono font-bold">密碼: ${passCode}</span>
         </td>
-        <td class="py-2.5 px-3 text-xs">
-          <div class="flex items-center space-x-2.5">
-            <div class="w-12 h-12 flex-shrink-0 bg-white rounded-xl p-0.5 border border-amber-300 shadow-xs">
+        <!-- 認養萌寵成長度 (精簡版：頭像+名稱階段+進度條緊湊同行) -->
+        <td class="py-2.5 px-3 text-xs whitespace-nowrap">
+          <div class="flex items-center space-x-2">
+            <div class="w-9 h-9 flex-shrink-0 bg-white rounded-xl p-0.5 border border-amber-300 shadow-xs cursor-pointer hover:border-amber-500 transition" onclick="openChangeAnimalModal(${st.id})" title="點擊更換萌寵">
               ${svgCode}
             </div>
             <div>
               <div class="flex items-center space-x-1.5">
                 <span class="font-black text-amber-950 text-xs">${petStatus.animalName}</span>
-                <span class="text-[10px] font-black px-1.5 py-0.5 rounded-full ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 border border-amber-500' : 'bg-amber-100 text-amber-900'}">${petStatus.stageTitle}</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black border border-amber-400' : 'bg-amber-100 text-amber-900'}">${petStatus.stageTitle}</span>
+                <button type="button" onclick="openChangeAnimalModal(${st.id})" class="text-[10px] text-amber-700 hover:text-amber-900 hover:underline font-bold" title="更換認養萌寵">
+                  [換]
+                </button>
               </div>
-              <div class="text-[10px] text-slate-600 font-bold mt-0.5">
-                🍎 總飽食度：${lifetime} 點 ${petStatus.nextThreshold ? `(距長大還差 ${petStatus.pointsToNext} 🍎)` : '(已達動物園人氣巨星！)'}
-              </div>
-              <div class="w-32 bg-slate-200 h-1.5 rounded-full overflow-hidden mt-1">
-                <div class="h-full bg-gradient-to-r from-emerald-400 to-amber-500 rounded-full" style="width: ${petStatus.progressPct}%"></div>
+              <div class="flex items-center space-x-1.5 mt-0.5">
+                <div class="w-16 bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-emerald-400 to-amber-500 rounded-full" style="width: ${petStatus.progressPct}%"></div>
+                </div>
+                <span class="text-[10px] font-mono font-bold text-slate-600">🍎 ${lifetime} 點</span>
               </div>
             </div>
-            <button type="button" onclick="openChangeAnimalModal(${st.id})" class="px-1.5 py-0.5 rounded bg-white hover:bg-amber-200 text-amber-900 border border-amber-300 text-[10px] font-black ml-1 whitespace-nowrap" title="更換認養動物">
-              🔄換動物
-            </button>
           </div>
         </td>
-        <td class="py-2.5 px-3 font-mono text-xs">
-          <span class="font-black text-amber-600 block">${st.points || 0} 🪙 (可用金幣)</span>
-          <span class="text-[10px] text-emerald-800 font-bold block">🍎 累積飽食: ${lifetime}</span>
+        <!-- 可用金幣 -->
+        <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap">
+          <span class="font-black text-amber-600 text-sm block">${st.points || 0} 🪙</span>
         </td>
+        <!-- 操作按鈕列 -->
         <td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
-          <button onclick="openZooFeedModal(${st.id})" class="px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-xs font-black shadow-xs transform active:scale-95 transition" title="投餵飼料讓動物長大！">
-            🍎 投餵飼料
+          <button onclick="openZooFeedModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-xs font-black shadow-xs transform active:scale-95 transition" title="投餵飼料讓動物長大！">
+            🍎 投餵
           </button>
           <button onclick="copyParentLink(${st.seatNo})" class="px-2 py-1 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded text-xs font-black shadow-sm" title="複製家長查閱專用訊息">
             📋 家長連結
           </button>
-          <button onclick="openEditStudentModal(${st.id})" class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-xs font-bold">
+          <button onclick="openEditStudentModal(${st.id})" class="px-1.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-xs font-bold">
             修改
           </button>
           <button onclick="promptSingleResetPoints(${st.id})" class="px-1.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold border border-slate-300" title="重置點數">
@@ -4238,7 +4488,7 @@ function saveGoogleScriptUrl() {
 }
 
 function copyGoogleAppsScriptCode() {
-  const code = `// === 西寧小小兵王國 ‧ Google 雲端專屬同步腳本 ===
+  const code = `// === 西寧小小兵王國 ‧ Google 雲端專屬同步中繼站腳本 (2026 最新萌寵動物園旗艦版) ===
 // 本腳本支援分塊儲存，容量高達 500KB，完全免費且安全！
 
 function doGet(e) {
@@ -4246,6 +4496,19 @@ function doGet(e) {
   var account = (p.account || 'default').toLowerCase().replace(/[^a-z0-9_]/g, '_');
   var action = p.action || 'pull';
   var prop = PropertiesService.getScriptProperties();
+
+  // 若直接以瀏覽器打開網址，顯示連線健康歡迎訊息
+  if (!p.action && !p.account) {
+    var info = {
+      status: "online",
+      system: "西寧國小五年二班 ‧ 西寧小小兵王國 雲端同步中繼站",
+      version: "2026.v3.zoo",
+      time: new Date().toISOString(),
+      message: "🟢 雲端同步服務正常運作中！請將本網址貼回系統「跨裝置雲端同步中心」即可。"
+    };
+    return ContentService.createTextOutput(JSON.stringify(info, null, 2))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
   if (action === 'push' && p.payload) {
     saveData(prop, account, p.payload);
@@ -4276,6 +4539,7 @@ function doPost(e) {
 }
 
 function saveData(prop, account, str) {
+  if (!str) return;
   var CHUNK_SIZE = 8000;
   var totalChunks = Math.ceil(str.length / CHUNK_SIZE);
   var oldTotal = parseInt(prop.getProperty('chunk_cnt_' + account) || '0', 10);
@@ -5033,5 +5297,15 @@ if (typeof window !== 'undefined') {
   window.executeFeedStudent = executeFeedStudent;
   window.executeFeedCustomStudent = executeFeedCustomStudent;
   window.quickFeedStudent = openZooFeedModal;
+  window.openChangePasswordModal = openChangePasswordModal;
+  window.closeChangePasswordModal = closeChangePasswordModal;
+  window.togglePasswordVisibility = togglePasswordVisibility;
+  window.submitChangePasswordForm = submitChangePasswordForm;
+  window.promptChangeQueenPassword = promptChangeQueenPassword;
+  window.lockTeacherSession = lockTeacherSession;
+  window.renderPointsZooHabitat = renderPointsZooHabitat;
+  window.quickFeedStudentInZoo = quickFeedStudentInZoo;
+  window.feedAllZooAnimalsOne = feedAllZooAnimalsOne;
+  window.triggerZooCheerParty = triggerZooCheerParty;
 }
 

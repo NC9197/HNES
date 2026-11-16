@@ -1,5 +1,5 @@
 {
-  "queenPassword": "queen",
+  "queenPassword": "teacher2026",
   "lateThreshold": "07:40",
   "students": [
     {
@@ -9,11 +9,11 @@
       "gender": "M",
       "title": "內閣首輔大臣",
       "birthday": "0315",
-      "points": 86,
-      "lifetimePoints": 86,
+      "points": 88,
+      "lifetimePoints": 88,
       "animalType": "lion",
       "petType": "lion",
-      "petExp": 86
+      "petExp": 87
     },
     {
       "id": 2,
@@ -23,7 +23,7 @@
       "title": "皇家騎士團長",
       "birthday": "0520",
       "points": 160,
-      "lifetimePoints": 160,
+      "lifetimePoints": 161,
       "animalType": "dog",
       "petType": "dog",
       "petExp": 160
@@ -36,7 +36,7 @@
       "title": "國庫財政大臣",
       "birthday": "0812",
       "points": 210,
-      "lifetimePoints": 210,
+      "lifetimePoints": 211,
       "animalType": "cat",
       "petType": "cat",
       "petExp": 210
@@ -49,7 +49,7 @@
       "title": "宮廷禮儀大臣",
       "birthday": "1104",
       "points": 65,
-      "lifetimePoints": 65,
+      "lifetimePoints": 66,
       "animalType": "rabbit",
       "petType": "rabbit",
       "petExp": 65
@@ -62,7 +62,7 @@
       "title": "皇家文書大臣",
       "birthday": "0228",
       "points": 130,
-      "lifetimePoints": 130,
+      "lifetimePoints": 131,
       "animalType": "bear",
       "petType": "bear",
       "petExp": 130
@@ -75,7 +75,7 @@
       "title": "奇蹟魔法大臣",
       "birthday": "0709",
       "points": 310,
-      "lifetimePoints": 310,
+      "lifetimePoints": 311,
       "animalType": "penguin",
       "petType": "penguin",
       "petExp": 310
@@ -88,7 +88,7 @@
       "title": "守護壁壘大將",
       "birthday": "0923",
       "points": 95,
-      "lifetimePoints": 95,
+      "lifetimePoints": 96,
       "animalType": "owl",
       "petType": "owl",
       "petExp": 95
@@ -101,7 +101,7 @@
       "title": "皇家圖書大臣",
       "birthday": "0416",
       "points": 145,
-      "lifetimePoints": 145,
+      "lifetimePoints": 146,
       "animalType": "fox",
       "petType": "fox",
       "petExp": 145
@@ -114,7 +114,7 @@
       "title": "生態綠意大臣",
       "birthday": "1205",
       "points": 50,
-      "lifetimePoints": 50,
+      "lifetimePoints": 51,
       "animalType": "hamster",
       "petType": "hamster",
       "petExp": 50
@@ -127,7 +127,7 @@
       "title": "國境先鋒騎士",
       "birthday": "0630",
       "points": 175,
-      "lifetimePoints": 175,
+      "lifetimePoints": 176,
       "animalType": "lion",
       "petType": "lion",
       "petExp": 175
@@ -140,7 +140,7 @@
       "title": "皇家衛隊隊長",
       "birthday": "0118",
       "points": 115,
-      "lifetimePoints": 115,
+      "lifetimePoints": 116,
       "animalType": "dog",
       "petType": "dog",
       "petExp": 115
@@ -153,7 +153,7 @@
       "title": "智慧科技大臣",
       "birthday": "1010",
       "points": 240,
-      "lifetimePoints": 240,
+      "lifetimePoints": 241,
       "animalType": "cat",
       "petType": "cat",
       "petExp": 240
@@ -166,7 +166,7 @@
       "title": "體育競技女將軍",
       "birthday": "0403",
       "points": 190,
-      "lifetimePoints": 190,
+      "lifetimePoints": 191,
       "animalType": "rabbit",
       "petType": "rabbit",
       "petExp": 190
@@ -179,7 +179,7 @@
       "title": "藝術壁畫大臣",
       "birthday": "0825",
       "points": 155,
-      "lifetimePoints": 155,
+      "lifetimePoints": 156,
       "animalType": "bear",
       "petType": "bear",
       "petExp": 155
@@ -192,7 +192,7 @@
       "title": "皇家音樂總監",
       "birthday": "0614",
       "points": 320,
-      "lifetimePoints": 320,
+      "lifetimePoints": 321,
       "animalType": "penguin",
       "petType": "penguin",
       "petExp": 320
@@ -205,7 +205,7 @@
       "title": "晨曦敲鐘官",
       "birthday": "0329",
       "points": 80,
-      "lifetimePoints": 80,
+      "lifetimePoints": 81,
       "animalType": "owl",
       "petType": "owl",
       "petExp": 80
@@ -218,7 +218,7 @@
       "title": "皇家糧餉大臣",
       "birthday": "1119",
       "points": 125,
-      "lifetimePoints": 125,
+      "lifetimePoints": 126,
       "animalType": "fox",
       "petType": "fox",
       "petExp": 125
@@ -231,7 +231,7 @@
       "title": "萬國外交特使",
       "birthday": "0508",
       "points": 205,
-      "lifetimePoints": 205,
+      "lifetimePoints": 206,
       "animalType": "hamster",
       "petType": "hamster",
       "petExp": 205
@@ -244,7 +244,7 @@
       "title": "秩序執法女官",
       "birthday": "0915",
       "points": 140,
-      "lifetimePoints": 140,
+      "lifetimePoints": 141,
       "animalType": "lion",
       "petType": "lion",
       "petExp": 140
@@ -257,7 +257,7 @@
       "title": "歡樂慶典大臣",
       "birthday": "0722",
       "points": 165,
-      "lifetimePoints": 165,
+      "lifetimePoints": 166,
       "animalType": "dog",
       "petType": "dog",
       "petExp": 165
@@ -270,7 +270,7 @@
       "title": "皇家天文占星官",
       "birthday": "0107",
       "points": 280,
-      "lifetimePoints": 280,
+      "lifetimePoints": 281,
       "animalType": "cat",
       "petType": "cat",
       "petExp": 280
@@ -283,7 +283,7 @@
       "title": "星光守望騎士",
       "birthday": "1224",
       "points": 90,
-      "lifetimePoints": 90,
+      "lifetimePoints": 91,
       "animalType": "rabbit",
       "petType": "rabbit",
       "petExp": 90
@@ -296,7 +296,7 @@
       "title": "皇宮環境大臣",
       "birthday": "0214",
       "points": 135,
-      "lifetimePoints": 135,
+      "lifetimePoints": 136,
       "animalType": "bear",
       "petType": "bear",
       "petExp": 135
@@ -309,7 +309,7 @@
       "title": "皇家廣播宣令官",
       "birthday": "1002",
       "points": 70,
-      "lifetimePoints": 70,
+      "lifetimePoints": 71,
       "animalType": "penguin",
       "petType": "penguin",
       "petExp": 70
@@ -322,7 +322,7 @@
       "title": "智慧博學顧問",
       "birthday": "0606",
       "points": 225,
-      "lifetimePoints": 225,
+      "lifetimePoints": 226,
       "animalType": "owl",
       "petType": "owl",
       "petExp": 225
@@ -335,7 +335,7 @@
       "title": "皇家工務大臣",
       "birthday": "0918",
       "points": 110,
-      "lifetimePoints": 110,
+      "lifetimePoints": 111,
       "animalType": "fox",
       "petType": "fox",
       "petExp": 110
@@ -348,7 +348,7 @@
       "title": "皇家巡察御史",
       "birthday": "0425",
       "points": 140,
-      "lifetimePoints": 140,
+      "lifetimePoints": 141,
       "animalType": "hamster",
       "petType": "hamster",
       "petExp": 140
@@ -821,6 +821,22 @@
   ],
   "pointLogs": [
     {
+      "id": 1794791777727,
+      "studentId": 1,
+      "points": 1,
+      "reason": "🍎 動物園投餵飼料：美味紅蘋果 (+1 飽食成長)",
+      "date": "2026-11-16",
+      "time": "09:16"
+    },
+    {
+      "id": 1794791776343,
+      "studentId": 1,
+      "points": 1,
+      "reason": "teacher2026",
+      "date": "2026-11-16",
+      "time": "09:16"
+    },
+    {
       "id": 1794787806053,
       "studentId": 1,
       "points": 1,
@@ -1224,6 +1240,6 @@
     null,
     null
   ],
-  "lastModified": 1794787806086,
+  "lastModified": 1794791779103,
   "_isFreshInit": true
 }

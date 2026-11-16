@@ -155,9 +155,13 @@
               <span>導入王國備份檔</span>
               <input type="file" id="importFileInput" onchange="importDataJSON(event)" class="hidden" accept=".json">
             </label>
-            <button onclick="promptChangeQueenPassword()" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-amber-950 flex items-center space-x-2">
-              <i data-lucide="shield" class="w-4 h-4 text-amber-600"></i>
-              <span>🔑 修改導師通行密碼</span>
+            <button onclick="openChangePasswordModal()" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-amber-950 flex items-center space-x-2">
+              <i data-lucide="key" class="w-4 h-4 text-amber-600"></i>
+              <span>🔑 更改導師專屬通行密碼</span>
+            </button>
+            <button onclick="lockTeacherSession()" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-slate-700 flex items-center space-x-2">
+              <i data-lucide="lock" class="w-4 h-4 text-slate-500"></i>
+              <span>🔒 鎖定導師權限 (登出)</span>
             </button>
             <div class="border-t border-amber-200 my-1"></div>
             <button onclick="openCloudSyncModal()" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-amber-950 flex items-center space-x-2">
@@ -619,6 +623,18 @@
           <i data-lucide="megaphone" class="w-4 h-4"></i>
           <span>皇室告示欄</span>
         </button>
+
+        <!-- 導師專屬通行密碼與權限鎖定快捷鈕 -->
+        <div class="ml-auto flex items-center space-x-1.5 sm:space-x-2">
+          <button onclick="openChangePasswordModal()" class="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 font-black text-xs flex items-center space-x-1 shadow-sm transition" title="更改導師專屬通行密碼">
+            <i data-lucide="key" class="w-3.5 h-3.5 text-amber-700"></i>
+            <span>🔑 更改密碼</span>
+          </button>
+          <button onclick="lockTeacherSession()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs flex items-center space-x-1 shadow-sm transition" title="鎖定導師權限並返回晨間大螢幕">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-600"></i>
+            <span>🔒 鎖定</span>
+          </button>
+        </div>
       </div>
 
       <!-- ------------------------------------------------------------- -->
@@ -837,6 +853,51 @@
           </div>
         </div>
 
+        <!-- =============================================================== -->
+        <!-- 🐾 王國全班萌寵大動物園 (全班 27 隻動物棲息生活大自然樂園) -->
+        <!-- =============================================================== -->
+        <div id="pointsZooSanctuary" class="bg-gradient-to-b from-sky-100 via-emerald-50 to-emerald-100/90 border-2 border-emerald-400 rounded-3xl p-5 shadow-lg relative overflow-hidden space-y-4">
+          <!-- 自然氛圍背景彩蛋裝飾 -->
+          <div class="absolute -top-6 -right-6 text-7xl opacity-25 select-none pointer-events-none">☀️</div>
+          <div class="absolute top-2 left-10 text-4xl opacity-30 select-none pointer-events-none animate-pulse">☁️</div>
+          <div class="absolute bottom-1 right-10 text-3xl opacity-30 select-none pointer-events-none">🌳</div>
+          <div class="absolute bottom-1 left-6 text-3xl opacity-30 select-none pointer-events-none">🌲</div>
+
+          <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-3 border-b border-emerald-300/80">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-black text-emerald-800 bg-emerald-200/90 px-2.5 py-0.5 rounded-full border border-emerald-300 shadow-xs">
+                  🐾 西寧五年二班 ‧ 萌寵大生境
+                </span>
+                <span class="text-xs text-emerald-900 font-bold hidden sm:inline">全班 27 隻認養動物都在這裡共同生活！點擊任一動物可快速投餵或給予嘉獎</span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-black text-emerald-950 flex items-center space-x-2 mt-1">
+                <span>🏞️ 班級萌寵大動物園 ‧ 歡樂同樂園</span>
+              </h3>
+            </div>
+
+            <!-- 動物園統計與互動按鈕 -->
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="zooHabitatStatsPill" class="text-xs font-black bg-white/95 text-emerald-900 px-3 py-1.5 rounded-xl border border-emerald-300 shadow-xs flex items-center space-x-1.5">
+                <span>🐾 27 隻動物棲息中</span>
+              </span>
+              <button onclick="feedAllZooAnimalsOne()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs shadow-sm flex items-center space-x-1 transform active:scale-95 transition" title="一鍵為全園 27 隻動物投餵 1 顆蘋果飼料！">
+                <span>🍎</span>
+                <span>全園大餵食 (+1)</span>
+              </button>
+              <button onclick="triggerZooCheerParty()" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-sm flex items-center space-x-1 transform active:scale-95 transition" title="全園動物集體歡呼跳舞">
+                <span>🎉</span>
+                <span>動物開趴跳舞</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 動物園草皮圍欄：27 隻動物生動棲息網格 -->
+          <div id="pointsZooGrid" class="relative z-10 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2.5">
+            <!-- 動態由 renderPointsZooHabitat() 渲染 27 隻生活在一起的萌寵卡 -->
+          </div>
+        </div>
+
         <!-- 多選大臣快速加扣點工具列 (方便同時選擇多位大臣加扣點) -->
         <!-- 🎁 皇家藏寶閣 ‧ 獎勵卡牌兌換所 (點數換獎勵) -->
         <div class="parchment-card p-5 sm:p-6 space-y-4">
@@ -1000,6 +1061,9 @@
               <button onclick="openBatchCenterModal('birthdays')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 flex items-center space-x-1">
                 <span>🔑 批次密碼(生日)</span>
               </button>
+              <button onclick="openChangePasswordModal()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 flex items-center space-x-1" title="更改導師專屬通行密碼">
+                <span>👑 導師密碼</span>
+              </button>
               <button onclick="openAddStudentModal()" class="btn-royal-gold px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5">
                 <i data-lucide="user-plus" class="w-4 h-4"></i>
                 <span>冊封新大臣</span>
@@ -1020,13 +1084,13 @@
             <table class="w-full text-left text-sm">
               <thead class="bg-amber-200 text-amber-950 font-black border-b border-amber-400">
                 <tr>
-                  <th class="py-2.5 px-3">座號</th>
-                  <th class="py-2.5 px-3">姓名</th>
-                  <th class="py-2.5 px-3">大臣官職/幹部名稱</th>
-                  <th class="py-2.5 px-3">生日 / 家長密碼 (座號+生日)</th>
-                  <th class="py-2.5 px-3">🐾 動物園認養萌寵 (長大體態)</th>
-                  <th class="py-2.5 px-3">🪙 零用金幣 / 🍎 累積飽食度</th>
-                  <th class="py-2.5 px-3 text-right">🍎 投餵飼料與操作</th>
+                  <th class="py-2.5 px-3 whitespace-nowrap text-center">座號</th>
+                  <th class="py-2.5 px-3 whitespace-nowrap">姓名</th>
+                  <th class="py-2.5 px-3 whitespace-nowrap">大臣官職/幹部名稱</th>
+                  <th class="py-2.5 px-3 whitespace-nowrap">生日 / 家長密碼</th>
+                  <th class="py-2.5 px-3 whitespace-nowrap">🐾 認養萌寵 (成長度)</th>
+                  <th class="py-2.5 px-3 whitespace-nowrap">🪙 可用金幣</th>
+                  <th class="py-2.5 px-3 text-right whitespace-nowrap">🍎 投餵與操作</th>
                 </tr>
               </thead>
               <tbody id="studentRosterTableBody" class="divide-y divide-amber-200/80 bg-white/60">
@@ -2545,6 +2609,98 @@
   </div>
 
   <!-- =============================================================== -->
+  <!-- MODAL: 更改導師專屬通行密碼 (Change Teacher Passcode Modal) -->
+  <!-- =============================================================== -->
+  <div id="changePasswordModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-md w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3">
+        <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
+          <span>👑</span>
+          <span>更改導師專屬通行密碼</span>
+        </h3>
+        <button onclick="closeChangePasswordModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 說明提示卡 -->
+      <div class="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 p-3.5 rounded-xl text-xs space-y-1.5 text-amber-950 shadow-inner">
+        <div class="flex items-center space-x-1.5 font-black text-amber-900">
+          <i data-lucide="shield-check" class="w-4 h-4 text-amber-700"></i>
+          <span>五年二班 ‧ 導師最高通行權限</span>
+        </div>
+        <p class="text-slate-700 leading-relaxed">
+          此通行密碼用於進入<strong>皇后議政廳、修改金幣點數、聯絡簿奏章與學生名冊維護</strong>等高階管理功能，保障班級隱私與防竄改。
+        </p>
+        <p class="text-amber-800 font-bold">
+          ※ 系統初始預設通行密碼為：<code class="bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-950 font-mono font-black">queen</code>。若您未曾更改過，請在目前密碼欄位輸入 <code class="bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-950 font-mono font-black">queen</code>。
+        </p>
+      </div>
+
+      <!-- 表單錯誤提示盒 -->
+      <div id="changePasswordErrorAlert" class="hidden bg-rose-50 border-2 border-rose-300 text-rose-800 p-3 rounded-xl text-xs font-bold flex items-center space-x-2 animate-pulse">
+        <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0 text-rose-600"></i>
+        <span id="changePasswordErrorText">密碼輸入有誤，請再試一次。</span>
+      </div>
+
+      <!-- 修改密碼表單 -->
+      <form onsubmit="submitChangePasswordForm(event)" class="space-y-3.5 text-xs font-bold">
+        <!-- 1. 目前密碼 -->
+        <div>
+          <label class="block text-slate-800 mb-1 flex items-center justify-between">
+            <span>目前導師通行密碼 <span class="text-rose-600">*</span></span>
+          </label>
+          <div class="relative">
+            <input type="password" id="oldTeacherPasswordInput" required autocomplete="current-password" placeholder="請輸入目前的通行密碼 (預設為 queen)" class="w-full pl-3 pr-10 py-2 border-2 border-amber-300 rounded-xl bg-white font-mono text-sm focus:border-amber-600 focus:outline-none transition shadow-inner">
+            <button type="button" onclick="togglePasswordVisibility('oldTeacherPasswordInput', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1" title="切換顯示/隱藏密碼">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. 設定新密碼 -->
+        <div>
+          <label class="block text-slate-800 mb-1 flex items-center justify-between">
+            <span>設定新通行密碼 <span class="text-rose-600">*</span></span>
+            <span class="text-[11px] text-slate-500 font-normal">至少 3 個字元，英數皆可</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="newTeacherPasswordInput" required autocomplete="new-password" placeholder="請輸入新設定的通行密碼" class="w-full pl-3 pr-10 py-2 border-2 border-amber-300 rounded-xl bg-white font-mono text-sm focus:border-amber-600 focus:outline-none transition shadow-inner">
+            <button type="button" onclick="togglePasswordVisibility('newTeacherPasswordInput', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1" title="切換顯示/隱藏密碼">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. 再次確認新密碼 -->
+        <div>
+          <label class="block text-slate-800 mb-1 flex items-center justify-between">
+            <span>再次確認新通行密碼 <span class="text-rose-600">*</span></span>
+            <span class="text-[11px] text-slate-500 font-normal">需與上方新密碼完全一致</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="confirmTeacherPasswordInput" required autocomplete="new-password" placeholder="請再次輸入新通行密碼以防打錯" class="w-full pl-3 pr-10 py-2 border-2 border-amber-300 rounded-xl bg-white font-mono text-sm focus:border-amber-600 focus:outline-none transition shadow-inner">
+            <button type="button" onclick="togglePasswordVisibility('confirmTeacherPasswordInput', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1" title="切換顯示/隱藏密碼">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 操作按鈕列 -->
+        <div class="flex items-center justify-end space-x-2.5 pt-3 border-t border-amber-200">
+          <button type="button" onclick="closeChangePasswordModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold transition">
+            取消
+          </button>
+          <button type="submit" id="btnSubmitChangePassword" class="btn-royal-gold px-5 py-2 rounded-xl font-black shadow flex items-center space-x-1.5 transform hover:scale-[1.02] active:scale-[0.98] transition">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>確認更新密碼</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
   <!-- MODAL: 更換可愛動物園萌寵 (9大可愛動物 ‧ 陪伴長大) -->
   <!-- =============================================================== -->
   <div id="changeAnimalModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -2902,8 +3058,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111606"></script>
-  <script src="ui.js?v=2026111606"></script>
+  <script src="app.js?v=2026111608"></script>
+  <script src="ui.js?v=2026111608"></script>
 
 </body>
 </html>
