@@ -317,8 +317,8 @@ function switchMainView(view) {
   if (teacherView) teacherView.classList.add("hidden");
   if (parentView) parentView.classList.add("hidden");
 
-  const defaultBtnClass = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60";
-  const activeBtnClass = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-black transition flex items-center space-x-1.5 bg-amber-950 text-amber-300 shadow";
+  const defaultBtnClass = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight";
+  const activeBtnClass = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-black transition flex items-center space-x-1.5 bg-amber-950 text-amber-300 shadow leading-tight";
 
   if (btnMorning) btnMorning.className = defaultBtnClass;
   if (btnTraffic) btnTraffic.className = defaultBtnClass;
@@ -2307,7 +2307,7 @@ function renderHomeworkSettlementTable() {
 // 5.5 下課紅綠燈通行儀表板 (Traffic Light Break Board Controller)
 // 包含當前即時時鐘、西寧國小作息倒數計時、超緊湊 Mini 學生卡片 (27人一覽無遺)
 // ===================================================================
-let trafficDisplayMode = 'grid5x5'; // 預設為 5*5+2 大屏模式 (去除姓名，座號與原因一眼明瞭)
+let trafficDisplayMode = 'grid5x5'; // 預設為大屏模式 (去除姓名，座號與原因一眼明瞭)
 
 // 西寧國小五年二班課堂作息時程表
 const XINING_BELL_SCHEDULE = [
@@ -2542,9 +2542,9 @@ function toggleTrafficDisplayMode() {
   trafficDisplayMode = trafficDisplayMode === 'grid5x5' ? 'compact' : 'grid5x5';
   const label = document.getElementById("trafficDisplayModeLabel");
   if (label) {
-    label.textContent = trafficDisplayMode === 'grid5x5' ? '5*5+2 模式' : 'Mini 模式';
+    label.textContent = trafficDisplayMode === 'grid5x5' ? '大屏模式' : 'Mini 模式';
   }
-  showToast(`🖥️ 已切換為【${trafficDisplayMode === 'grid5x5' ? '5*5+2 大屏版面' : 'Mini 緊湊模式'}】`);
+  showToast(`🖥️ 已切換為【${trafficDisplayMode === 'grid5x5' ? '大屏模式' : 'Mini 模式'}】`);
   renderTrafficView();
 }
 
@@ -2709,7 +2709,7 @@ function renderTrafficView() {
 
   // 根據顯示模式切換網格欄數
   if (trafficDisplayMode === 'grid5x5') {
-    // 5*5+2 核心大屏版面：5 欄排布 (前 5 列共 25 人，第 6 列 2 人)，去除姓名僅留座號與明確原因
+    // 大屏模式核心版面：5 欄排布 (前 5 列共 25 人，第 6 列 2 人)，去除姓名僅留座號與明確原因
     grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-2.5";
     
     grid.innerHTML = filtered.map(item => {

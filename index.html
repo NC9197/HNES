@@ -47,50 +47,57 @@
   <header class="no-print sticky top-0 z-40 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 border-b-2 border-amber-500/50 text-amber-950 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
       
-      <!-- 王國校徽與標題 -->
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchMainView('morning')">
-        <div class="w-12 h-12 rounded-2xl bg-white border-2 border-amber-500 p-0.5 shadow-md flex items-center justify-center text-3xl font-black">
+      <!-- 王國校徽與標題 (單排行進，乾淨明朗) -->
+      <div class="flex items-center space-x-3 cursor-pointer shrink-0" onclick="switchMainView('morning')">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white border-2 border-amber-500 p-0.5 shadow-md flex items-center justify-center text-2xl sm:text-3xl font-black shrink-0">
           👑
         </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <span class="text-xs tracking-wider uppercase bg-amber-950 text-amber-200 px-2.5 py-0.5 rounded-full font-bold shadow-sm">
-              西寧國小五年二班 (27人)
-            </span>
-          </div>
-          <h1 class="text-xl sm:text-2xl font-black tracking-wide text-amber-950 drop-shadow-sm flex items-center space-x-1.5 mt-0.5">
+        <div class="flex items-center space-x-2.5">
+          <h1 class="text-xl sm:text-2xl font-black tracking-wide text-amber-950 drop-shadow-sm flex items-center space-x-1.5 whitespace-nowrap">
             <span>🏰 西寧小小兵王國</span>
           </h1>
-          <div class="text-xs text-amber-900 font-bold mt-0.5 flex items-center space-x-1">
-            <span>📅 朝會日期：</span>
-            <span id="navTodayDate"></span>
-          </div>
+          <span id="navTodayDate" class="hidden 2xl:inline-block text-xs text-amber-900/90 font-bold bg-amber-200/70 border border-amber-300/80 px-2.5 py-0.5 rounded-lg whitespace-nowrap"></span>
         </div>
       </div>
 
       <!-- 導航切換按鈕區 -->
       <div class="flex items-center space-x-2 sm:space-x-3">
-        <!-- 主視角切換器 (晨間大螢幕 vs 下課紅綠燈 vs 皇后議政廳 vs 家長專區) -->
+        <!-- 主視角切換器 (晨間朝會 大螢幕 vs 下課 紅綠燈 vs 教室 座位表 vs 皇后 議政廳 vs 家長 專區) -->
         <div class="bg-amber-500/40 p-1 rounded-xl border border-amber-600/40 flex items-center shadow-inner">
-          <button id="btnNavMorning" onclick="switchMainView('morning')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-black transition flex items-center space-x-1.5 bg-amber-950 text-amber-300 shadow">
-            <span>🌅</span>
-            <span>晨間朝會大螢幕</span>
+          <button id="btnNavMorning" onclick="switchMainView('morning')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-black transition flex items-center space-x-1.5 bg-amber-950 text-amber-300 shadow leading-tight">
+            <span class="text-base sm:text-lg shrink-0">🌅</span>
+            <span class="flex flex-col text-center">
+              <span>晨間朝會</span>
+              <span>大螢幕</span>
+            </span>
           </button>
-          <button id="btnNavTraffic" onclick="switchMainView('traffic')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60">
-            <span>🚦</span>
-            <span>下課紅綠燈</span>
+          <button id="btnNavTraffic" onclick="switchMainView('traffic')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight">
+            <span class="text-base sm:text-lg shrink-0">🚦</span>
+            <span class="flex flex-col text-center">
+              <span>下課</span>
+              <span>紅綠燈</span>
+            </span>
           </button>
-          <button id="btnNavSeating" onclick="switchMainView('seating')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60">
-            <span>💺</span>
-            <span>教室座位表</span>
+          <button id="btnNavSeating" onclick="switchMainView('seating')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight">
+            <span class="text-base sm:text-lg shrink-0">💺</span>
+            <span class="flex flex-col text-center">
+              <span>教室</span>
+              <span>座位表</span>
+            </span>
           </button>
-          <button id="btnNavTeacher" onclick="switchMainView('teacher')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60">
-            <span>👑</span>
-            <span>皇后議政廳</span>
+          <button id="btnNavTeacher" onclick="switchMainView('teacher')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight">
+            <span class="text-base sm:text-lg shrink-0">👑</span>
+            <span class="flex flex-col text-center">
+              <span>皇后</span>
+              <span>議政廳</span>
+            </span>
           </button>
-          <button id="btnNavParent" onclick="switchMainView('parent')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60">
-            <span>👨‍👩‍👧</span>
-            <span>家長專區</span>
+          <button id="btnNavParent" onclick="switchMainView('parent')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight">
+            <span class="text-base sm:text-lg shrink-0">👨‍👩‍👧</span>
+            <span class="flex flex-col text-center">
+              <span>家長</span>
+              <span>專區</span>
+            </span>
           </button>
         </div>
 
@@ -473,9 +480,9 @@
           <span class="text-amber-400/60 font-bold">|</span>
 
           <!-- 模式切換 -->
-          <button onclick="toggleTrafficDisplayMode()" id="btnTrafficDisplayMode" class="px-2 py-1 rounded-lg bg-amber-950 text-amber-300 text-xs font-black flex items-center space-x-1 shadow-2xs" title="切換 5*5+2 大屏模式或 Mini 緊湊模式">
+          <button onclick="toggleTrafficDisplayMode()" id="btnTrafficDisplayMode" class="px-2 py-1 rounded-lg bg-amber-950 text-amber-300 text-xs font-black flex items-center space-x-1 shadow-2xs" title="切換大屏模式或 Mini 緊湊模式">
             <span>🖥️</span>
-            <span id="trafficDisplayModeLabel">5*5+2 模式</span>
+            <span id="trafficDisplayModeLabel">大屏模式</span>
           </button>
 
           <!-- 管理抽屜開關 -->
@@ -3999,8 +4006,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111709"></script>
-  <script src="ui.js?v=2026111709"></script>
+  <script src="app.js?v=2026111710"></script>
+  <script src="ui.js?v=2026111710"></script>
 
 </body>
 </html>
