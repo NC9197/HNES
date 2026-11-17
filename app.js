@@ -544,6 +544,12 @@ class KingdomStore {
       parsed.petDefaultDogV20261116 = true;
     }
 
+    // 愛班卡與自省卡全體歸零校驗 (v20261117：全班 27 位大臣愛班卡與自省卡全數歸零，待正式啟用後導師手動編輯)
+    if (!parsed.behaviorCardsResetV20261117) {
+      parsed.behaviorCards = {};
+      parsed.behaviorCardsResetV20261117 = true;
+    }
+
     parsed.students.forEach((st, idx) => {
       // 確保可用金幣與生涯累積總額 (飽食度歸零，初始值為 0，不可預設為 points)
       if (st.points === undefined || st.points === null || isNaN(st.points)) st.points = 50;
@@ -879,7 +885,7 @@ class KingdomStore {
         id: Date.now(),
         studentId: 'batch_adjust',
         points: 0,
-        reason: `導師名冊批次更新金幣 (${modifiedCount} 位大臣)`,
+        reason: `導師名冊批次更新蘋果 (${modifiedCount} 位大臣)`,
         date: getTodayDateString(),
         time: new Date().toTimeString().slice(0, 5)
       });
@@ -1150,7 +1156,7 @@ class KingdomStore {
       success: true,
       action,
       restoredCount,
-      message: `成功復原【${action.title}】！已將 ${restoredCount} 位大臣金幣與飽食度精準還原！`
+      message: `成功復原【${action.title}】！已將 ${restoredCount} 位大臣蘋果與成長值精準還原！`
     };
   }
 
@@ -1211,7 +1217,7 @@ class KingdomStore {
     this.save();
     return {
       success: true,
-      message: `已成功撤銷該筆紀錄！受影響的大臣金幣已沖銷還原。`
+      message: `已成功撤銷該筆紀錄！受影響的大臣蘋果已沖銷還原。`
     };
   }
 
@@ -1281,7 +1287,7 @@ class KingdomStore {
   }
 
   // --- 導師自由設定/更改個別大臣金幣數量 ---
-  setStudentPoints(studentId, targetPoints, reason = "導師調整金幣") {
+  setStudentPoints(studentId, targetPoints, reason = "導師調整蘋果") {
     const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
     if (!student) return null;
     const oldPoints = student.points || 0;
@@ -1292,7 +1298,7 @@ class KingdomStore {
       id: Date.now(),
       studentId: student.id,
       points: diff,
-      reason: `${reason} 【金幣設為 ${newPts} 點 (原 ${oldPoints} 點)】`,
+      reason: `${reason} 【蘋果設為 ${newPts} 顆 (原 ${oldPoints} 顆)】`,
       date: getTodayDateString(),
       time: new Date().toTimeString().slice(0, 5)
     });
@@ -1447,7 +1453,7 @@ class KingdomStore {
     if (!card) return { success: false, message: "查無此卡牌" };
 
     if (student.points < card.cost) {
-      return { success: false, message: `金幣不足！持有：${student.points}，需要：${card.cost}` };
+      return { success: false, message: `蘋果不足！持有：${student.points} 顆，需要：${card.cost} 顆` };
     }
 
     // 扣除可用金幣，保留 lifetimePoints！
@@ -1478,7 +1484,7 @@ class KingdomStore {
     });
 
     this.save();
-    return { success: true, message: `成功兌換【${card.title}】！已扣除 ${card.cost} 點可用金幣。生涯累積神獸不減退！` };
+    return { success: true, message: `成功兌換【${card.title}】！已扣除 ${card.cost} 顆可用蘋果，萌寵陪伴成長不減退！` };
   }
 
   toggleRedemptionStatus(redemptionId) {

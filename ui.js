@@ -2543,6 +2543,46 @@ function toggleTrafficDisplayMode() {
   renderTrafficView();
 }
 
+// --- 格式化紅綠燈雙排文字：上排未完成項目，下排愛班/自省卡牌張數 ---
+function formatTrafficRows(item) {
+  const rCount = item.reflectionCount || (item.hasReflection ? 1 : 0);
+  const sCount = item.serviceCount || (item.hasService ? 1 : 0);
+
+  // 下排：愛班卡或自省卡數量，以 (卡牌)*(張數) 顯示
+  const cardTokens = [];
+  if (rCount > 0) cardTokens.push(`🪑*${rCount}`);
+  if (sCount > 0) cardTokens.push(`🧹*${sCount}`);
+  const bottomRowText = cardTokens.length > 0 ? cardTokens.join(' ') : '✨ 無違規卡';
+
+  // 上排：未完成項目
+  let topRowText = '';
+  if (item.light === 'green') {
+    topRowText = '🟢 准許下課';
+  } else if (item.light === 'yellow') {
+    if (item.revisionList && item.revisionList.length > 0) {
+      const titles = item.revisionList.map(h => h.presetName || h.title || '作業').slice(0, 2).join('、');
+      topRowText = `🟡 ${titles}待訂正`;
+    } else {
+      topRowText = `🟡 ${item.shortReason || '待訂正'}`;
+    }
+  } else if (item.light === 'red') {
+    if (item.missingList && item.missingList.length > 0) {
+      const titles = item.missingList.map(h => h.presetName || h.title || '作業').slice(0, 2).join('、');
+      topRowText = `🔴 ${titles}未交`;
+    } else if (rCount > 0) {
+      topRowText = '🔴 留座自省';
+    } else {
+      topRowText = `🔴 ${item.shortReason || '座位自省'}`;
+    }
+  } else if (item.light === 'leave') {
+    topRowText = '🏖️ 請假在府';
+  } else {
+    topRowText = item.label || '狀態未知';
+  }
+
+  return { topRowText, bottomRowText, rCount, sCount, hasCards: cardTokens.length > 0 };
+}
+
 function renderTrafficView() {
   const grid = document.getElementById("trafficCardsGrid");
   if (!grid) return;
@@ -2664,89 +2704,82 @@ function renderTrafficView() {
 
   // 根據顯示模式切換網格欄數
   if (trafficDisplayMode === 'compact') {
-    // 超緊湊 Mini 模式：9 欄排布 (大螢幕剛好 3 列 27 人全顯，高度省半免滾動)
-    grid.className = "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-9 gap-2";
+    // 超緊湊 Mini 模式：9 欄排布 (大螢幕剛好 3 列 27 人全顯)
+    grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2";
     
     grid.innerHTML = filtered.map(item => {
       const st = item.student;
       const seatPad = String(st.seatNo).padStart(2, '0');
+      const { topRowText, bottomRowText, hasCards } = formatTrafficRows(item);
 
-      // 迷你行為徽章
-      let badgesHtml = '';
-      if (item.hasReflection) {
-        const rCount = item.reflectionCount || 1;
-        badgesHtml += `<span class="badge-reflection text-[10px] font-black px-1 rounded flex items-center shadow-2xs" title="座位自省卡 ${rCount}張">🪑${rCount > 1 ? rCount : ''}</span>`;
-      }
-      if (item.hasService) {
-        const sCount = item.serviceCount || 1;
-        badgesHtml += `<span class="badge-service text-[10px] font-black px-1 rounded flex items-center shadow-2xs" title="愛班服務卡 ${sCount}張">🧹${sCount > 1 ? sCount : ''}</span>`;
-      }
+      let cardClass = '';
+      let seatBgClass = '';
+      let topRowColorClass = '';
+      let bottomRowColorClass = '';
+      let miniOrbClass = '';
+      let orbSymbol = '';
+      let orbTooltip = '';
 
-      // 1. 綠燈：超緊湊 Mini 徽章卡片
       if (item.light === 'green') {
-        return `
-          <div onclick="openTrafficDetailModal(${st.id})" 
-            class="traffic-mini-card mini-green p-2 flex items-center justify-between gap-1 cursor-pointer group"
-            title="${seatPad}號 ${st.name} 准許通行 (點擊開啟通行詳情)">
-            <div class="flex items-center space-x-1.5 min-w-0 flex-1">
-              <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-950 flex-shrink-0">${seatPad}</span>
-              <span class="font-cute font-black text-sm text-slate-900 truncate">${st.name}</span>
-            </div>
-            <div class="flex items-center space-x-1 flex-shrink-0">
-              ${badgesHtml}
-              <div class="mini-orb mini-orb-green" title="准許下課">✓</div>
-            </div>
-          </div>
-        `;
+        cardClass = 'mini-green';
+        seatBgClass = 'bg-emerald-200 text-emerald-950';
+        topRowColorClass = 'text-emerald-900';
+        bottomRowColorClass = hasCards ? 'text-amber-800 font-black' : 'text-emerald-700/80';
+        miniOrbClass = 'mini-orb-green';
+        orbSymbol = '✓';
+        orbTooltip = '准許下課';
+      } else if (item.light === 'yellow') {
+        cardClass = 'mini-yellow';
+        seatBgClass = 'bg-amber-200 text-amber-950';
+        topRowColorClass = 'text-amber-950';
+        bottomRowColorClass = hasCards ? 'text-rose-900 font-black' : 'text-amber-800';
+        miniOrbClass = 'mini-orb-yellow';
+        orbSymbol = '!';
+        orbTooltip = item.label || '待訂正';
+      } else if (item.light === 'red') {
+        cardClass = 'mini-red';
+        seatBgClass = 'bg-rose-200 text-rose-950';
+        topRowColorClass = 'text-rose-950 font-black';
+        bottomRowColorClass = hasCards ? 'text-rose-950 font-black' : 'text-rose-800';
+        miniOrbClass = 'mini-orb-red';
+        orbSymbol = '🛑';
+        orbTooltip = item.label || '禁止下課';
+      } else {
+        cardClass = 'mini-leave';
+        seatBgClass = 'bg-slate-200 text-slate-700';
+        topRowColorClass = 'text-slate-600';
+        bottomRowColorClass = 'text-slate-500';
+        miniOrbClass = 'mini-orb-leave';
+        orbSymbol = '🏖️';
+        orbTooltip = '今日請假';
       }
 
-      // 2. 黃燈：待訂正 Mini 卡片
-      if (item.light === 'yellow') {
-        return `
-          <div onclick="openTrafficDetailModal(${st.id})" 
-            class="traffic-mini-card mini-yellow p-2 flex items-center justify-between gap-1 cursor-pointer group"
-            title="${seatPad}號 ${st.name}：${item.label} (點擊開啟訂正核銷)">
-            <div class="flex items-center space-x-1.5 min-w-0 flex-1">
-              <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 flex-shrink-0">${seatPad}</span>
-              <span class="font-cute font-black text-sm text-amber-950 truncate">${st.name}</span>
-            </div>
-            <div class="flex items-center space-x-1 flex-shrink-0">
-              ${badgesHtml}
-              <div class="mini-orb mini-orb-yellow" title="${item.label}">!</div>
-            </div>
-          </div>
-        `;
-      }
-
-      // 3. 紅燈：留座自省/缺交 Mini 卡片
-      if (item.light === 'red') {
-        return `
-          <div onclick="openTrafficDetailModal(${st.id})" 
-            class="traffic-mini-card mini-red p-2 flex items-center justify-between gap-1 cursor-pointer group"
-            title="${seatPad}號 ${st.name}：${item.label} (點擊開啟管理)">
-            <div class="flex items-center space-x-1.5 min-w-0 flex-1">
-              <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded bg-rose-200 text-rose-950 flex-shrink-0">${seatPad}</span>
-              <span class="font-cute font-black text-sm text-rose-950 truncate">${st.name}</span>
-            </div>
-            <div class="flex items-center space-x-1 flex-shrink-0">
-              ${badgesHtml}
-              <div class="mini-orb mini-orb-red" title="${item.label}">🛑</div>
-            </div>
-          </div>
-        `;
-      }
-
-      // 4. 請假：免查 Mini 卡片
       return `
         <div onclick="openTrafficDetailModal(${st.id})" 
-          class="traffic-mini-card mini-leave p-2 flex items-center justify-between gap-1 cursor-pointer group"
-          title="${seatPad}號 ${st.name} 今日請假在府休養">
-          <div class="flex items-center space-x-1.5 min-w-0 flex-1">
-            <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 flex-shrink-0">${seatPad}</span>
-            <span class="font-cute font-black text-sm text-slate-600 truncate">${st.name}</span>
-          </div>
+          class="traffic-mini-card ${cardClass} p-2 flex items-center justify-between gap-1.5 cursor-pointer group shadow-2xs transition"
+          title="${seatPad}號 ${st.name} | ${topRowText} | ${bottomRowText}">
+          
+          <!-- 左側：座號與大臣姓名 -->
           <div class="flex items-center space-x-1 flex-shrink-0">
-            <div class="mini-orb mini-orb-leave" title="請假在府">🏖️</div>
+            <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded ${seatBgClass}">${seatPad}</span>
+            <span class="font-cute font-black text-sm text-slate-900 truncate max-w-[50px]">${st.name}</span>
+          </div>
+
+          <!-- 中間：上下雙排顯示 (上排：未完成項目；下排：卡牌*張數) -->
+          <div class="flex flex-col items-center justify-center flex-1 min-w-0 text-center leading-tight px-0.5">
+            <!-- 上排：未完成項目 (或准許下課) -->
+            <div class="text-[11px] font-black truncate w-full ${topRowColorClass}" title="${topRowText}">
+              ${topRowText}
+            </div>
+            <!-- 下排：愛班卡或自省卡數量，以 (卡牌)*(張數) 顯示 -->
+            <div class="text-[10px] font-bold truncate w-full ${bottomRowColorClass}">
+              ${bottomRowText}
+            </div>
+          </div>
+
+          <!-- 右側：先以燈號為主 (大型發光燈珠) -->
+          <div class="flex-shrink-0">
+            <div class="mini-orb ${miniOrbClass}" title="${orbTooltip}">${orbSymbol}</div>
           </div>
         </div>
       `;
@@ -2759,6 +2792,7 @@ function renderTrafficView() {
     grid.innerHTML = filtered.map(item => {
       const st = item.student;
       const seatPad = String(st.seatNo).padStart(2, '0');
+      const { topRowText, bottomRowText, hasCards } = formatTrafficRows(item);
 
       let orbHtml = '';
       let statusTextClass = '';
@@ -2779,14 +2813,14 @@ function renderTrafficView() {
       const reflectionBadge = item.hasReflection 
         ? `<span class="badge-reflection text-[11px] font-black px-2 py-0.5 rounded-full flex items-center space-x-1 shadow-sm">
              <span>🪑</span>
-             <span>座位自省卡</span>
+             <span>座位自省卡 (${item.reflectionCount || 1}張)</span>
            </span>` 
         : '';
 
       const serviceBadge = item.hasService 
         ? `<span class="badge-service text-[11px] font-black px-2 py-0.5 rounded-full flex items-center space-x-1 shadow-sm">
              <span>🧹</span>
-             <span>愛班服務卡</span>
+             <span>愛班服務卡 (${item.serviceCount || 1}張)</span>
            </span>` 
         : '';
 
@@ -2815,11 +2849,16 @@ function renderTrafficView() {
               </div>
             </div>
 
-            <!-- 核心通行狀態標章 -->
-            <div class="mt-3 bg-white/80 p-2.5 rounded-xl border border-amber-300/80 shadow-sm space-y-1.5">
-              <div class="flex flex-wrap items-center gap-1.5">
-                <span class="text-xs font-black ${statusTextClass}">${item.label}</span>
-                ${overrideBadge}
+            <!-- 核心通行狀態標章 (雙排顯示：上排未完成項目，下排愛班/自省卡牌張數) -->
+            <div class="mt-3 bg-white/90 p-2.5 rounded-xl border border-amber-300/80 shadow-xs space-y-1.5">
+              <div class="flex items-center justify-between gap-1 flex-wrap">
+                <div class="text-xs font-black ${statusTextClass} flex items-center space-x-1">
+                  <span>${topRowText}</span>
+                  ${overrideBadge}
+                </div>
+                <div class="text-[11px] font-black px-2 py-0.5 rounded-md ${hasCards ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}">
+                  ${bottomRowText}
+                </div>
               </div>
               <p class="text-xs text-slate-800 leading-snug font-medium">
                 ${item.desc}
@@ -3519,20 +3558,20 @@ function renderPointsZooHabitat() {
         <!-- 第二萌寵狀態標籤 (若有) -->
         ${secondPetPill}
 
-        <!-- 飽食度與可用金幣狀態 -->
+        <!-- 可用蘋果與萌寵成長狀態 -->
         <div class="mt-1 flex items-center justify-center space-x-1 text-[10px] font-mono font-bold text-slate-700 bg-emerald-50/80 w-full py-0.5 rounded-lg border border-emerald-200">
-          <span class="font-black">🪙${st.points || 0}</span>
+          <span class="font-black text-rose-700" title="可用蘋果">🍎${st.points || 0}</span>
           <span class="text-slate-300">|</span>
-          <span class="text-emerald-800" title="累積總飽食度">🍎${lifetime}</span>
+          <span class="text-emerald-800" title="累積成長經驗">🐾${lifetime}</span>
         </div>
 
-        <!-- 快捷互動按鈕：+1 金幣 與 🍎 投餵 -->
+        <!-- 快捷互動按鈕：+1 🍎 與 🍎 投餵 -->
         <div class="mt-1.5 flex items-center space-x-1 w-full pt-1 border-t border-emerald-100">
-          <button onclick="awardSingleStudent(${st.id}, 1, '動物園課堂嘉獎')" class="flex-1 py-0.5 rounded-md bg-amber-100 hover:bg-amber-200 text-amber-950 font-black text-[10px] transition border border-amber-300 shadow-xs" title="給予 +1 金幣嘉獎">
-            +1🪙
+          <button onclick="awardSingleStudent(${st.id}, 1, '課堂嘉獎獎勵蘋果')" class="flex-1 py-0.5 rounded-md bg-rose-100 hover:bg-rose-200 text-rose-950 font-black text-[10px] transition border border-rose-300 shadow-xs" title="給予 +1 顆紅蘋果">
+            +1🍎
           </button>
-          <button onclick="quickFeedStudentInZoo(${st.id})" class="flex-1 py-0.5 rounded-md bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[10px] transition shadow-xs" title="投餵 1 顆蘋果飼料">
-            🍎餵
+          <button onclick="quickFeedStudentInZoo(${st.id})" class="flex-1 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] transition shadow-xs" title="投餵 1 顆蘋果伴寵物長大">
+            🍎餵食
           </button>
         </div>
       </div>
@@ -3672,47 +3711,50 @@ function renderPointsView() {
               </div>
             </div>
 
-            <!-- 核心大字：可用金幣突出展示 (簡單、清楚、明瞭) -->
-            <div class="my-2.5 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50/80 border border-amber-300/80 flex items-center justify-between shadow-2xs">
+            <!-- 核心大字：可用蘋果與萌寵成長 (簡單、清楚、明瞭) -->
+            <div class="my-2.5 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-50 via-amber-50 to-emerald-50 border border-rose-300/80 flex items-center justify-between shadow-2xs">
               <div class="flex items-center space-x-2">
-                <span class="text-2xl leading-none">🪙</span>
+                <span class="text-2xl leading-none">🍎</span>
                 <div>
-                  <span class="text-[10px] text-amber-800 font-bold block leading-tight">可用金幣</span>
+                  <span class="text-[10px] text-rose-800 font-bold block leading-tight">可用蘋果</span>
                   <div class="flex items-baseline space-x-0.5">
-                    <span class="text-2xl font-black text-amber-600 font-digital leading-none">${st.points || 0}</span>
-                    <span class="text-xs font-black text-amber-800">點</span>
+                    <span class="text-2xl font-black text-rose-600 font-digital leading-none">${st.points || 0}</span>
+                    <span class="text-xs font-black text-rose-800">顆</span>
                   </div>
                 </div>
               </div>
               <div class="text-right">
-                <span class="text-[10px] text-slate-500 font-bold block leading-tight">🍎 飽食度</span>
+                <span class="text-[10px] text-slate-500 font-bold block leading-tight">🐾 寵物成長</span>
                 <span class="text-xs font-black text-emerald-800 font-digital">${lifetime} 點</span>
               </div>
             </div>
           </div>
 
-          <!-- 底部操作列：好點的大按鍵快速加分 + 功能操作列 (分層清楚、絕不誤觸) -->
+          <!-- 底部操作列：好點的大按鍵快速加蘋果 + 投餵與操作按鈕 -->
           <div class="space-y-1.5 pt-1">
-            <!-- 快速加分主按鈕 (+1, +2, +5) -->
+            <!-- 快速加蘋果主按鈕 (+1, +2, +5) -->
             <div class="grid grid-cols-3 gap-1.5">
-              <button onclick="awardSingleStudent(${st.id}, 1, '課堂嘉獎')" class="py-1 rounded-xl bg-amber-100 hover:bg-amber-200 active:scale-95 text-amber-950 font-black text-xs sm:text-sm transition border border-amber-300 shadow-2xs flex items-center justify-center" title="給予 +1 金幣嘉獎">
-                +1
+              <button onclick="awardSingleStudent(${st.id}, 1, '課堂嘉獎獎勵蘋果')" class="py-1 rounded-xl bg-rose-100 hover:bg-rose-200 active:scale-95 text-rose-950 font-black text-xs sm:text-sm transition border border-rose-300 shadow-2xs flex items-center justify-center space-x-0.5" title="獎勵 +1 顆紅蘋果">
+                <span>+1</span><span class="text-xs">🍎</span>
               </button>
-              <button onclick="awardSingleStudent(${st.id}, 2, '表現優良')" class="py-1 rounded-xl bg-amber-100 hover:bg-amber-200 active:scale-95 text-amber-950 font-black text-xs sm:text-sm transition border border-amber-300 shadow-2xs flex items-center justify-center" title="給予 +2 金幣嘉獎">
-                +2
+              <button onclick="awardSingleStudent(${st.id}, 2, '表現優良獎勵蘋果')" class="py-1 rounded-xl bg-rose-100 hover:bg-rose-200 active:scale-95 text-rose-950 font-black text-xs sm:text-sm transition border border-rose-300 shadow-2xs flex items-center justify-center space-x-0.5" title="獎勵 +2 顆紅蘋果">
+                <span>+2</span><span class="text-xs">🍎</span>
               </button>
-              <button onclick="awardSingleStudent(${st.id}, 5, '建樹卓越')" class="py-1 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 active:scale-95 text-amber-950 font-black text-xs sm:text-sm transition shadow-2xs flex items-center justify-center" title="給予 +5 金幣大賞">
-                +5
+              <button onclick="awardSingleStudent(${st.id}, 5, '建樹卓越獎勵蘋果')" class="py-1 rounded-xl bg-gradient-to-r from-rose-400 to-amber-500 hover:from-rose-500 hover:to-amber-600 active:scale-95 text-white font-black text-xs sm:text-sm transition shadow-2xs flex items-center justify-center space-x-0.5" title="大賞 +5 顆紅蘋果">
+                <span>+5</span><span class="text-xs">🍎</span>
               </button>
             </div>
 
-            <!-- 輔助操作按鈕 (🎁換卡 / 🪙改金幣) -->
-            <div class="grid grid-cols-2 gap-1.5">
-              <button onclick="openRedeemCardForStudent(${st.id})" class="py-1 px-2 rounded-lg bg-white hover:bg-amber-100 active:scale-95 text-amber-950 font-bold text-xs transition border border-amber-300 shadow-2xs flex items-center justify-center space-x-1" title="以金幣兌換獎勵卡">
+            <!-- 輔助操作按鈕 (🐾投餵寵物 / 🎁換卡 / ✏️改蘋果) -->
+            <div class="grid grid-cols-3 gap-1.5">
+              <button onclick="openZooFeedModal(${st.id})" class="py-1 px-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-950 font-bold text-xs transition border border-emerald-300 shadow-2xs flex items-center justify-center space-x-0.5" title="投餵認養萌寵長大">
+                <span>🐾</span><span>投餵</span>
+              </button>
+              <button onclick="openRedeemCardForStudent(${st.id})" class="py-1 px-1.5 rounded-lg bg-white hover:bg-amber-100 active:scale-95 text-amber-950 font-bold text-xs transition border border-amber-300 shadow-2xs flex items-center justify-center space-x-0.5" title="以蘋果兌換特權卡">
                 <span>🎁</span><span>換卡</span>
               </button>
-              <button onclick="openEditStudentPointsModal(${st.id})" class="py-1 px-2 rounded-lg bg-white hover:bg-amber-100 active:scale-95 text-amber-950 font-bold text-xs transition border border-amber-300 shadow-2xs flex items-center justify-center space-x-1" title="更改此大臣金幣數量">
-                <span>🪙</span><span>改金幣</span>
+              <button onclick="openEditStudentPointsModal(${st.id})" class="py-1 px-1.5 rounded-lg bg-white hover:bg-rose-100 active:scale-95 text-rose-950 font-bold text-xs transition border border-rose-300 shadow-2xs flex items-center justify-center space-x-0.5" title="更改此大臣蘋果數量">
+                <span>✏️</span><span>改蘋果</span>
               </button>
             </div>
           </div>
@@ -3749,7 +3791,7 @@ function renderPointsView() {
               </span>
               <span class="text-[10px] text-slate-400 font-bold">${l.time || ''}</span>
               ${!isUndone && !isUndoLog && l.points !== 0 ? `
-                <button onclick="confirmRevokePointLog(${l.id})" class="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-300 text-[10px] font-black shadow-2xs transition flex items-center space-x-0.5" title="撤回此筆記功並反向沖銷金幣">
+                <button onclick="confirmRevokePointLog(${l.id})" class="px-2 py-0.5 rounded-md bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-300 text-[10px] font-black shadow-2xs transition flex items-center space-x-0.5" title="撤回此筆記功並反向沖銷蘋果">
                   <span>↩️</span><span>撤回</span>
                 </button>
               ` : (isUndone ? '<span class="text-[9px] font-black text-slate-400 bg-slate-200 px-1 py-0.5 rounded">已撤銷</span>' : '')}
@@ -3845,10 +3887,10 @@ function awardSelectedStudents(points, defaultReason) {
   if (points > 0) {
     window.KingdomApp.sound.playFanfare();
     window.KingdomApp.triggerConfetti();
-    showToast(`🎉 成功為 ${targetIds.length} 位大臣同時頒發 +${points} 點金幣！`);
+    showToast(`🎉 成功為 ${targetIds.length} 位大臣同時頒發 +${points} 顆紅蘋果！`);
   } else {
     window.KingdomApp.sound.playCoin();
-    showToast(`⚠️ 已為 ${targetIds.length} 位大臣扣除 ${Math.abs(points)} 點金幣。`);
+    showToast(`⚠️ 已為 ${targetIds.length} 位大臣扣除 ${Math.abs(points)} 顆紅蘋果。`);
   }
 
   showUndoNotificationBanner();
@@ -4059,7 +4101,7 @@ function openRedeemCardModal(cardId) {
   document.getElementById("redeemCardTargetId").value = card.id;
   document.getElementById("redeemModalCardIcon").textContent = card.icon || '🎁';
   document.getElementById("redeemModalCardTitle").textContent = card.title;
-  document.getElementById("redeemModalCardCostBadge").textContent = `所需金幣：${card.cost} 點`;
+  document.getElementById("redeemModalCardCostBadge").textContent = `所需蘋果：${card.cost} 顆`;
 
   const select = document.getElementById("redeemStudentSelect");
   const students = window.KingdomApp.store.data.students || [];
@@ -4109,11 +4151,11 @@ function updateRedeemPreview() {
     previewBox.className = "p-3 rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-950 font-bold space-y-1";
     previewBox.innerHTML = `
       <div class="flex items-center justify-between">
-        <span>大臣現有金幣：<strong>${student.points} 點</strong></span>
+        <span>大臣現有蘋果：<strong>${student.points} 顆</strong></span>
         <span>兌換扣除：<strong>-${card.cost} 點</strong></span>
       </div>
       <div class="pt-1 border-t border-emerald-200 text-sm font-black text-emerald-800">
-        兌換後剩餘金幣：${remaining} 點 (金幣足夠 ✅)
+        兌換後剩餘蘋果：${remaining} 顆 (蘋果足夠 ✅)
       </div>
     `;
     if (btn) {
@@ -4124,11 +4166,11 @@ function updateRedeemPreview() {
     previewBox.className = "p-3 rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-950 font-bold space-y-1";
     previewBox.innerHTML = `
       <div class="flex items-center justify-between">
-        <span>大臣現有金幣：<strong>${student.points} 點</strong></span>
-        <span>所需金幣：<strong>${card.cost} 點</strong></span>
+        <span>大臣現有蘋果：<strong>${student.points} 顆</strong></span>
+        <span>所需蘋果：<strong>${card.cost} 顆</strong></span>
       </div>
       <div class="pt-1 border-t border-rose-200 text-sm font-black text-rose-700">
-        尚缺 ${Math.abs(remaining)} 點金幣，無法兌換 ❌
+        尚缺 ${Math.abs(remaining)} 顆蘋果，無法兌換 ❌
       </div>
     `;
     if (btn) {
@@ -4200,7 +4242,7 @@ function renderPointPresets() {
 }
 
 // ===================================================================
-// 單獨大臣更改金幣數量 Modal 控制器 (Teacher Edit Student Points)
+// 單獨大臣更改蘋果數量 Modal 控制器 (Teacher Edit Student Points)
 // ===================================================================
 function openEditStudentPointsModal(studentId) {
   const student = window.KingdomApp.store.data.students.find(s => s.id == studentId || s.seatNo == studentId);
@@ -4236,7 +4278,7 @@ function openEditStudentPointsModal(studentId) {
       } catch (err) {}
     }, 100);
   }
-  if (reasonInput) reasonInput.value = "導師手動調整金幣";
+  if (reasonInput) reasonInput.value = "導師手動調整蘋果";
 
   modal.classList.remove("hidden");
   initLucideIcons();
@@ -4268,10 +4310,10 @@ function submitEditStudentPoints(e) {
   if (!idEl || !targetEl) return;
   const id = parseInt(idEl.value, 10);
   const target = parseInt(targetEl.value, 10);
-  const reason = (reasonEl && reasonEl.value.trim()) || "導師手動調整金幣";
+  const reason = (reasonEl && reasonEl.value.trim()) || "導師手動調整蘋果";
 
   if (isNaN(target) || target < 0) {
-    alert("請輸入有效的金幣數值（0 或正整數）！");
+    alert("請輸入有效的蘋果數量（0 或正整數）！");
     return;
   }
 
@@ -4280,7 +4322,7 @@ function submitEditStudentPoints(e) {
     if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
       try { window.KingdomApp.sound.playCoin(); } catch (err) {}
     }
-    showToast(`💰 成功將【${updated.name}】的金幣更新為 ${target} 點！`, "👑");
+    showToast(`🍎 成功將【${updated.name}】的蘋果更新為 ${target} 顆！`, "👑");
     closeEditStudentPointsModal();
     if (typeof renderPointsView === 'function') renderPointsView();
     if (typeof renderRosterView === 'function') renderRosterView();
@@ -4297,7 +4339,7 @@ function promptSingleResetPoints(studentId) {
 // 全班寵物飽食度歸零
 function confirmResetAllPetsSatiety() {
   if (!checkTeacherAuth("全班飽食度歸零")) return;
-  const confirmed = confirm("⚠️ 確定要將全班 27 位大臣的萌寵飽食度全數歸零嗎？\n\n・全班萌寵將重回初生幼崽期 (0點)\n・可用金幣將完整保留不受影響\n\n請確認是否執行？");
+  const confirmed = confirm("⚠️ 確定要將全班 27 位大臣的萌寵飽食度全數歸零嗎？\n\n・全班萌寵將重回初生幼崽期 (0點)\n・可用蘋果將完整保留不受影響\n\n請確認是否執行？");
   if (!confirmed) return;
 
   window.KingdomApp.store.resetAllPetsSatiety();
@@ -4336,7 +4378,7 @@ function submitBatchResetPoints(e) {
 
   window.KingdomApp.store.batchResetPoints(target, clearLogs);
   window.KingdomApp.sound.playCoin();
-  showToast(`🔄 已成功將全班 27 位大臣金幣重置為 ${target} 點！`);
+  showToast(`🔄 已成功將全班 27 位大臣蘋果重置為 ${target} 顆！`);
   closeBatchResetPointsModal();
   renderPointsView();
   renderRosterView();
@@ -4444,9 +4486,9 @@ function awardSingleStudent(studentId, points, defaultReason) {
   if (updated) {
     if (points > 0) {
       window.KingdomApp.sound.playCoin();
-      showToast(`🪙 【${student.name}】獲得 ${points} 點皇家金幣！`);
+      showToast(`🍎 【${student.name}】獲得 ${points} 顆榮譽紅蘋果！`);
     } else {
-      showToast(`⚠️ 【${student.name}】扣除 ${Math.abs(points)} 點金幣。`);
+      showToast(`⚠️ 【${student.name}】扣除 ${Math.abs(points)} 顆紅蘋果。`);
     }
 
     showUndoNotificationBanner();
@@ -4515,7 +4557,7 @@ function submitBatchPoints(e) {
     showToast(`👑 聖旨已宣告！獎勵已發放給 ${targetStudents.length} 位大臣！`);
   } else {
     window.KingdomApp.sound.playCoin();
-    showToast(`⚠️ 已對 ${targetStudents.length} 位大臣扣除 ${Math.abs(points)} 點金幣。`);
+    showToast(`⚠️ 已對 ${targetStudents.length} 位大臣扣除 ${Math.abs(points)} 顆紅蘋果。`);
   }
 
   closeBatchPointModal();
@@ -4585,7 +4627,7 @@ function promptUndoLastPointAction() {
     alert("目前沒有可復原的加點操作記錄！");
     return;
   }
-  const ok = confirm(`↩️ 確定要復原上一筆加點操作嗎？\n\n【${act.title}】\n時間：${act.time}\n\n確認後系統將精準還原大臣的金幣與萌寵飽食度至操作前數值。`);
+  const ok = confirm(`↩️ 確定要復原上一筆加點操作嗎？\n\n【${act.title}】\n時間：${act.time}\n\n確認後系統將精準還原大臣的蘋果數量與萌寵成長值至操作前數值。`);
   if (!ok) return;
   executeUndoLastPointAction(act.id);
 }
@@ -4610,7 +4652,7 @@ function executeUndoLastPointAction(actionId = null) {
 function confirmRevokePointLog(logId) {
   const log = window.KingdomApp.store.data.pointLogs.find(l => l.id == logId);
   if (!log) return;
-  const ok = confirm(`↩️ 確定要撤回這筆記功紀錄嗎？\n\n事由：${log.reason}\n變動：${log.points > 0 ? `+${log.points}` : log.points} 點\n時間：${log.time || ''}\n\n確認後系統將自動反向沖銷金幣與飽食度並標記已撤銷。`);
+  const ok = confirm(`↩️ 確定要撤回這筆記功紀錄嗎？\n\n事由：${log.reason}\n變動：${log.points > 0 ? `+${log.points}` : log.points} 點\n時間：${log.time || ''}\n\n確認後系統將自動反向沖銷蘋果並標記已撤銷。`);
   if (!ok) return;
 
   const res = window.KingdomApp.store.revokePointLog(logId);
@@ -4729,7 +4771,7 @@ function renderPetsOverview() {
 
         <div class="mt-3 pt-2 border-t border-amber-200 space-y-2">
           <div class="flex justify-between text-[11px] font-black text-amber-900">
-            <span>🪙 零用金幣: ${st.points || 0}</span>
+            <span>🍎 擁有蘋果: ${st.points || 0} 顆</span>
             <span>🍎 總飽食度: ${lifetime}</span>
           </div>
           <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden" title="動物園長大進度：${petStatus.progressPct}%">
@@ -4830,17 +4872,17 @@ function renderRosterView() {
           </div>
           ${secondPetRosterHtml}
         </td>
-        <!-- 可用金幣 (純數字顯示，不作點擊) -->
+        <!-- 可用蘋果 (純數字顯示，不作點擊) -->
         <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap">
-          <span class="font-black text-amber-600 text-sm block">${st.points || 0} 🪙</span>
+          <span class="font-black text-rose-600 text-sm block">${st.points || 0} 🍎</span>
         </td>
         <!-- 操作按鈕列 (投餵與操作區) -->
         <td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
-          <button onclick="openZooFeedModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-xs font-black shadow-xs transform active:scale-95 transition" title="投餵飼料讓動物長大！">
+          <button onclick="openZooFeedModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-xs font-black shadow-xs transform active:scale-95 transition" title="投餵蘋果讓寵物長大！">
             🍎 投餵
           </button>
-          <button onclick="openEditStudentPointsModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-amber-200 to-amber-300 hover:from-amber-300 hover:to-amber-400 text-amber-950 rounded-lg text-xs font-black border border-amber-400 shadow-xs transform active:scale-95 transition" title="更改此大臣金幣數量">
-            🪙 改金幣
+          <button onclick="openEditStudentPointsModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-rose-200 to-amber-200 hover:from-rose-300 hover:to-amber-300 text-rose-950 rounded-lg text-xs font-black border border-rose-300 shadow-xs transform active:scale-95 transition" title="更改此大臣蘋果數量">
+            ✏️ 改蘋果
           </button>
           <button onclick="copyParentLink(${st.seatNo})" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded text-xs font-black shadow-xs" title="複製家長查閱專用訊息">
             📋 家長連結
@@ -4903,7 +4945,7 @@ function switchBatchTab(tab) {
     textarea.value = students.map(s => s.birthday).join('\n');
     textarea.placeholder = "0101\n0520\n1104\n... (共27行)";
   } else if (tab === 'points') {
-    hintEl.innerHTML = "請直接輸入或複製貼上 27 位大臣的金幣數量（<strong>一行一個金幣數字</strong>，如：50、100、80），依序對應 1 號至 27 號：";
+    hintEl.innerHTML = "請直接輸入或複製貼上 27 位大臣的蘋果數量（<strong>一行一個數字</strong>，如：50、100、80），依序對應 1 號至 27 號：";
     textarea.value = students.map(s => s.points !== undefined ? s.points : 50).join('\n');
     textarea.placeholder = "50\n80\n100\n... (共27行)";
   }
@@ -4934,7 +4976,7 @@ function submitBatchCenterData(e) {
     showToast(`🔑 成功更新全班 ${lines.length} 位大臣國曆生日！（家長密碼自動組合為座號+生日共6碼）`);
   } else if (currentBatchTab === 'points') {
     window.KingdomApp.store.batchUpdatePoints(lines);
-    showToast(`🪙 成功更新全班 ${lines.length} 位大臣金幣數量！`);
+    showToast(`🍎 成功更新全班 ${lines.length} 位大臣蘋果數量！`);
     renderPointsView();
   }
 
@@ -5035,7 +5077,7 @@ function saveStudentData(e) {
           id: Date.now(),
           studentId: student.id,
           points: points - oldPts,
-          reason: `導師修改大臣資料：金幣設為 ${points} 點 (原 ${oldPts} 點)`,
+          reason: `導師修改大臣資料：蘋果設為 ${points} 顆 (原 ${oldPts} 顆)`,
           date: getTodayDateString(),
           time: new Date().toTimeString().slice(0, 5)
         });
@@ -5852,79 +5894,88 @@ function renderSeatingChart() {
   renderSeatingDock();
 }
 
-// --- 渲染下方大臣座號庫 (拖曳移入托盤) ---
+// --- 渲染兩側大臣座號庫 (左側男生 1-13 / 右側女生 14-27) ---
 function renderSeatingDock() {
-  const dock = document.getElementById("seatingStudentDock");
-  if (!dock) return;
+  const boysDock = document.getElementById("seatingBoysDock");
+  const girlsDock = document.getElementById("seatingGirlsDock");
+  if (!boysDock && !girlsDock) return;
 
   const chart = window.KingdomApp.store.getSeatingChart();
   const students = window.KingdomApp.store.data.students || [];
-  const layout = window.KingdomApp.store.getSeatingLayout();
 
-  let assignedCount = 0;
-  students.forEach(s => {
-    if (chart.includes(s.seatNo)) assignedCount++;
-  });
-  const unassignedCount = students.length - assignedCount;
+  // 已有安排到座位者的座號集合 (暫時移出座號庫)
+  const seatedSet = new Set(chart.filter(n => n !== null && n !== undefined));
 
-  const countBadge = document.getElementById("seatingDockCountBadge");
-  if (countBadge) countBadge.textContent = `已入座 ${assignedCount} / ${students.length}`;
+  // 1. 男生座號庫 (1 ~ 13號)：未安排座位者
+  const unassignedBoys = students.filter(s => s.seatNo >= 1 && s.seatNo <= 13 && !seatedSet.has(s.seatNo));
+  // 2. 女生座號庫 (14 ~ 27號)：未安排座位者
+  const unassignedGirls = students.filter(s => s.seatNo >= 14 && s.seatNo <= 27 && !seatedSet.has(s.seatNo));
 
-  const unassignedEl = document.getElementById("dockUnassignedCount");
-  if (unassignedEl) unassignedEl.textContent = unassignedCount;
+  // 更新兩側側欄待排計數徽章
+  const boysBadge = document.getElementById("dockBoysCountBadge");
+  if (boysBadge) boysBadge.textContent = `待排: ${unassignedBoys.length}人`;
 
-  const assignedEl = document.getElementById("dockAssignedCount");
-  if (assignedEl) assignedEl.textContent = assignedCount;
+  const girlsBadge = document.getElementById("dockGirlsCountBadge");
+  if (girlsBadge) girlsBadge.textContent = `待排: ${unassignedGirls.length}人`;
 
-  // 篩選
-  const filteredStudents = students.filter(s => {
-    const isAssigned = chart.includes(s.seatNo);
-    if (currentDockFilter === 'unassigned') return !isAssigned;
-    if (currentDockFilter === 'assigned') return isAssigned;
-    return true; // 'all'
-  });
-
-  dock.innerHTML = filteredStudents.map(student => {
-    const seatedIdx = chart.indexOf(student.seatNo);
-    const isAssigned = seatedIdx !== -1;
+  const buildDockCard = (student, isBoy) => {
     const isSelected = selectedDockSeatNo === student.seatNo;
-    const row = isAssigned ? Math.floor(seatedIdx / layout.cols) + 1 : 0;
-    const col = isAssigned ? (seatedIdx % layout.cols) + 1 : 0;
-
     const petStatus = window.KingdomApp.getAnimalStatus ? window.KingdomApp.getAnimalStatus(student.animalType || student.petType || 'dog', student.points || 0) : null;
     const animalIcon = petStatus ? petStatus.animalIcon : '🐾';
+    const borderClass = isBoy ? 'dock-side-boys' : 'dock-side-girls';
 
     return `
-      <div class="dock-student-card parchment-card p-2 rounded-xl border-2 flex flex-col items-center justify-between transition ${isSelected ? 'dock-selected ring-4 ring-amber-500' : ''} ${isAssigned ? 'bg-amber-50/80 border-amber-300' : 'bg-rose-50/90 border-rose-300 shadow-xs ring-1 ring-rose-200'}"
+      <div class="dock-side-card dock-student-card ${borderClass} p-2 rounded-xl flex items-center justify-between gap-1.5 cursor-grab active:cursor-grabbing transition shadow-2xs ${isSelected ? 'dock-selected ring-4 ring-amber-500' : ''}"
            id="dockStudent-${student.seatNo}"
            draggable="true"
            ondragstart="handleDockStudentDragStart(event, ${student.seatNo})"
            ondragend="handleDockStudentDragEnd(event)"
            onclick="handleDockStudentClick(${student.seatNo})"
-           title="${student.seatNo}號 ${student.name} ${isAssigned ? `(已在第${row}排第${col}列)` : '(待入座)'} - 按住拖曳移入座位，或點擊後點選座位">
-        <div class="w-full flex items-center justify-between text-[10px]">
-          <span class="font-mono font-black ${isAssigned ? 'text-amber-800' : 'text-rose-700'}">${animalIcon}</span>
-          <span class="text-[9px] font-bold ${isAssigned ? 'text-emerald-700 bg-emerald-100 px-1 rounded' : 'text-rose-700 bg-rose-100 px-1 rounded animate-pulse'}">
-            ${isAssigned ? `${row}-${col}` : '待入座'}
+           title="${student.seatNo}號 ${student.name} (待入座) - 按住拖曳入座，或點選後再點擊席位">
+        <div class="flex items-center space-x-1.5 min-w-0">
+          <span class="seat-badge-cute inline-flex items-center justify-center px-1.5 py-0.5 rounded-md text-xs font-black ${isBoy ? 'bg-sky-200 text-sky-950 border border-sky-300' : 'bg-rose-200 text-rose-950 border border-rose-300'} font-mono flex-shrink-0">
+            ${String(student.seatNo).padStart(2, '0')}號
           </span>
-        </div>
-        <div class="my-1 text-center flex flex-col items-center">
-          <span class="seat-badge-cute inline-flex items-center space-x-0.5 px-2 py-0.5 rounded-full text-xs sm:text-sm font-black ${isAssigned ? 'bg-amber-200 text-amber-950 border border-amber-300' : 'bg-rose-200 text-rose-950 border border-rose-300'} font-mono">
-            <span>${String(student.seatNo).padStart(2, '0')}號</span>
-          </span>
-          <span class="font-black text-amber-950 text-sm sm:text-base font-cute mt-0.5 tracking-wide truncate max-w-[85px]">
+          <span class="font-black text-slate-900 text-sm font-cute truncate">
             ${student.name}
           </span>
         </div>
-        <div class="text-[10px] font-bold text-center ${isAssigned ? 'text-slate-500' : 'text-rose-600 font-black'}">
-          ${isAssigned ? `第${row}排${col}列` : '👉 拖曳入座'}
+        <div class="flex items-center space-x-1 flex-shrink-0">
+          <span class="text-xs">${animalIcon}</span>
+          <span class="text-[10px] font-black ${isBoy ? 'text-sky-700 bg-sky-100' : 'text-rose-700 bg-rose-100'} px-1 py-0.5 rounded">
+            入座👉
+          </span>
         </div>
       </div>
     `;
-  }).join('');
+  };
+
+  if (boysDock) {
+    if (unassignedBoys.length === 0) {
+      boysDock.innerHTML = `
+        <div class="p-3 text-center text-xs font-bold text-sky-800 bg-sky-100/80 rounded-xl border border-sky-300 col-span-full">
+          🎉 男生已全員入座！
+        </div>
+      `;
+    } else {
+      boysDock.innerHTML = unassignedBoys.map(s => buildDockCard(s, true)).join('');
+    }
+  }
+
+  if (girlsDock) {
+    if (unassignedGirls.length === 0) {
+      girlsDock.innerHTML = `
+        <div class="p-3 text-center text-xs font-bold text-rose-800 bg-rose-100/80 rounded-xl border border-rose-300 col-span-full">
+          🎉 女生已全員入座！
+        </div>
+      `;
+    } else {
+      girlsDock.innerHTML = unassignedGirls.map(s => buildDockCard(s, false)).join('');
+    }
+  }
 }
 
-// 拖曳下方大臣座號卡片
+// 拖曳座號庫卡片
 function handleDockStudentDragStart(e, seatNo) {
   draggedDockSeatNo = seatNo;
   draggedSeatIndex = null;
@@ -5938,27 +5989,30 @@ function handleDockStudentDragEnd(e) {
   draggedDockSeatNo = null;
   document.querySelectorAll(".seat-dragging").forEach(el => el.classList.remove("seat-dragging"));
   document.querySelectorAll(".seat-drag-over").forEach(el => el.classList.remove("seat-drag-over"));
-  document.getElementById("seatingStudentDockContainer")?.classList.remove("dock-drag-active");
+  document.getElementById("dockBoysContainer")?.classList.remove("dock-drag-active");
+  document.getElementById("dockGirlsContainer")?.classList.remove("dock-drag-active");
 }
 
-function handleDockDragOver(e) {
+function handleDockDragOver(e, side) {
   e.preventDefault();
   e.dataTransfer.dropEffect = "move";
-  const container = document.getElementById("seatingStudentDockContainer");
+  const id = side === 'boys' ? 'dockBoysContainer' : (side === 'girls' ? 'dockGirlsContainer' : 'dockBoysContainer');
+  const container = document.getElementById(id);
   if (container && !container.classList.contains("dock-drag-active")) {
     container.classList.add("dock-drag-active");
   }
 }
 
-function handleDockDragLeave(e) {
-  const container = document.getElementById("seatingStudentDockContainer");
+function handleDockDragLeave(e, side) {
+  const id = side === 'boys' ? 'dockBoysContainer' : (side === 'girls' ? 'dockGirlsContainer' : 'dockBoysContainer');
+  const container = document.getElementById(id);
   if (container) container.classList.remove("dock-drag-active");
 }
 
-function handleDockDrop(e) {
+function handleDockDrop(e, side) {
   e.preventDefault();
-  const container = document.getElementById("seatingStudentDockContainer");
-  if (container) container.classList.remove("dock-drag-active");
+  document.getElementById("dockBoysContainer")?.classList.remove("dock-drag-active");
+  document.getElementById("dockGirlsContainer")?.classList.remove("dock-drag-active");
 
   if (draggedSeatIndex !== null) {
     const idx = draggedSeatIndex;
@@ -5969,70 +6023,9 @@ function handleDockDrop(e) {
     draggedSeatIndex = null;
     document.querySelectorAll(".seat-dragging").forEach(el => el.classList.remove("seat-dragging"));
     window.KingdomApp.sound.playCoin();
-    showToast(`💺 已將【${student ? `${student.seatNo}號 ${student.name}` : '該席位'}】移出座位，回到下方待入座托盤！`, "🎒");
+    showToast(`💺 已將【${student ? `${student.seatNo}號 ${student.name}` : '該席位'}】移出座位，回到座號庫！`, "🎒");
     renderSeatingChart();
   }
-}
-
-function handleSeatDragStart(e, idx) {
-  draggedSeatIndex = idx;
-  draggedDockSeatNo = null;
-  e.dataTransfer.setData("text/plain", `seat:${idx}`);
-  e.dataTransfer.effectAllowed = "move";
-  const el = document.getElementById(`seatDesk-${idx}`);
-  if (el) el.classList.add("seat-dragging");
-}
-
-function handleSeatDragOver(e, idx) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = "move";
-  const el = document.getElementById(`seatDesk-${idx}`);
-  if (el && !el.classList.contains("seat-drag-over")) {
-    el.classList.add("seat-drag-over");
-  }
-}
-
-function handleSeatDragLeave(e, idx) {
-  const el = document.getElementById(`seatDesk-${idx}`);
-  if (el) el.classList.remove("seat-drag-over");
-}
-
-function handleSeatDrop(e, targetIdx) {
-  e.preventDefault();
-  document.querySelectorAll(".seat-drag-over").forEach(el => el.classList.remove("seat-drag-over"));
-  document.querySelectorAll(".seat-dragging").forEach(el => el.classList.remove("seat-dragging"));
-
-  // 1. 若是從下方座號庫拖曳移入
-  if (draggedDockSeatNo !== null) {
-    const seatNo = draggedDockSeatNo;
-    draggedDockSeatNo = null;
-    const student = window.KingdomApp.store.data.students.find(s => s.seatNo === seatNo);
-    window.KingdomApp.store.setSeatStudent(targetIdx, seatNo);
-    window.KingdomApp.sound.playCoin();
-    showToast(`💺 已將【${seatNo}號 ${student ? student.name : ''}】安排入座！`, "🎉");
-    renderSeatingChart();
-    return;
-  }
-
-  // 2. 若是上方座位之間拖曳互換
-  if (draggedSeatIndex !== null && draggedSeatIndex !== targetIdx) {
-    const sourceIdx = draggedSeatIndex;
-    draggedSeatIndex = null;
-    window.KingdomApp.store.swapSeats(sourceIdx, targetIdx);
-    window.KingdomApp.sound.playCoin();
-    showToast(`💺 席位互換成功！`, "👑");
-    renderSeatingChart();
-    return;
-  }
-  draggedSeatIndex = null;
-}
-
-function handleSeatDragEnd(e) {
-  draggedSeatIndex = null;
-  draggedDockSeatNo = null;
-  document.querySelectorAll(".seat-drag-over").forEach(el => el.classList.remove("seat-drag-over"));
-  document.querySelectorAll(".seat-dragging").forEach(el => el.classList.remove("seat-dragging"));
-  document.getElementById("seatingStudentDockContainer")?.classList.remove("dock-drag-active");
 }
 
 function handleDockStudentClick(seatNo) {
@@ -6252,7 +6245,7 @@ function startLuckyDraw() {
       const nameEl = document.getElementById("luckyStudentName");
       const detailEl = document.getElementById("luckyStudentDetail");
       if (nameEl) nameEl.textContent = `🎉 ${winner.seatNo}號 ${winner.name} 🎉`;
-      if (detailEl) detailEl.textContent = `內閣官職：${winner.title || '皇家大臣'} ‧ 目前榮譽金幣：${winner.points} 點`;
+      if (detailEl) detailEl.textContent = `內閣官職：${winner.title || '皇家大臣'} ‧ 目前榮譽蘋果：${winner.points} 顆`;
       if (banner) banner.classList.remove("hidden");
       showToast(`👑 幸運大臣抽籤結果：${winner.seatNo}號 ${winner.name}！`, "🎉");
     }
@@ -7182,13 +7175,13 @@ function executeFeedCustomStudent() {
 }
 
 // ===================================================================
-// 批次更改金幣與生涯累積總額 (Batch Adjust Points & Reset)
+// 批次更改蘋果數量與萌寵成長總額 (Batch Adjust Points & Reset)
 // ===================================================================
 let activeAdjustStudentIds = new Set();
 let currentAdjustMode = 'adjust';
 
 function openBatchAdjustPointsModal() {
-  if (!checkTeacherAuth("批次更改金幣")) return;
+  if (!checkTeacherAuth("批次更改蘋果數量")) return;
   const modal = document.getElementById("batchAdjustPointsModal");
   if (!modal) return;
 
@@ -7273,7 +7266,7 @@ function handleAdjustModeChange(mode) {
     if (syncLabel) syncLabel.classList.remove("hidden");
   } else if (mode === 'set_points') {
     inputGroup.classList.remove("hidden");
-    valueLabel.textContent = "直接設定可用金幣數值 (points)：";
+    valueLabel.textContent = "直接設定可用蘋果數值 (顆)：";
     pointsInput.value = "50";
     if (syncLabel) syncLabel.classList.add("hidden");
   } else if (mode === 'set_lifetime') {
@@ -7297,7 +7290,7 @@ function submitBatchAdjustPoints(e) {
   const ids = Array.from(activeAdjustStudentIds);
   const pointsVal = parseInt(document.getElementById("adjustPointsInput")?.value, 10) || 0;
   const syncLifetime = document.getElementById("adjustSyncLifetimeCheck")?.checked ?? true;
-  const reason = document.getElementById("adjustReasonInput")?.value.trim() || "導師批次金幣調度";
+  const reason = document.getElementById("adjustReasonInput")?.value.trim() || "導師批次蘋果調度";
 
   if (currentAdjustMode.startsWith('reset_')) {
     const confirmReset = confirm(`確定要執行【${currentAdjustMode}】嗎？此操作將重置已選 ${ids.length} 位大臣的點數！`);
@@ -7314,7 +7307,7 @@ function submitBatchAdjustPoints(e) {
   });
 
   window.KingdomApp.sound.playCoin();
-  showToast(`💰 批次金幣調度成功！已更新 ${ids.length} 位大臣資料。`, "👑");
+  showToast(`🍎 批次蘋果調度成功！已更新 ${ids.length} 位大臣資料。`, "👑");
   closeBatchAdjustPointsModal();
   refreshCurrentView();
 }
@@ -7660,7 +7653,7 @@ if (typeof window !== 'undefined') {
   window.closeMorningCheckInChangeModal = closeMorningCheckInChangeModal;
   window.changeMorningAttendanceStatus = changeMorningAttendanceStatus;
 
-  // 大臣金幣數量更改與飽食度控制
+  // 大臣蘋果數量更改與飽食度控制
   window.openEditStudentPointsModal = openEditStudentPointsModal;
   window.closeEditStudentPointsModal = closeEditStudentPointsModal;
   window.setEditPointsQuick = setEditPointsQuick;
@@ -7700,5 +7693,18 @@ if (typeof window !== 'undefined') {
   window.filterDockView = filterDockView;
   window.clearAllSeatsPrompt = clearAllSeatsPrompt;
   window.autoAssignOrderPrompt = autoAssignOrderPrompt;
+
+  // 作業奏章編輯
+  window.openEditHomeworkModal = openEditHomeworkModal;
+  window.closeEditHomeworkModal = closeEditHomeworkModal;
+  window.submitEditHomework = submitEditHomework;
+
+  // 皇室告示欄大屏廣播投影
+  window.openAnnouncementProjectionModal = openAnnouncementProjectionModal;
+  window.closeAnnouncementProjectionModal = closeAnnouncementProjectionModal;
+  window.projectExistingAnnouncement = projectExistingAnnouncement;
+  window.broadcastInstantAnnouncement = broadcastInstantAnnouncement;
+  window.applyBroadcastPreset = applyBroadcastPreset;
+  window.playBroadcastChime = playBroadcastChime;
 }
 
