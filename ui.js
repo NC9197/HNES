@@ -739,16 +739,20 @@ function changeMorningAttendanceStatus(targetStatus) {
   renderTrafficView();
 }
 
-function toggleFullscreen() {
-  const container = document.getElementById("contactBoardContainer");
-  if (!container) return;
-
+function toggleFullscreen(targetEl) {
   if (!document.fullscreenElement) {
-    container.requestFullscreen().catch(err => {
-      alert(`無法進入全螢幕：${err.message}`);
-    });
+    const el = targetEl || document.documentElement;
+    if (el && el.requestFullscreen) {
+      el.requestFullscreen().catch(err => {
+        console.warn(`無法進入全螢幕：${err.message}`);
+      });
+    }
   } else {
-    document.exitFullscreen();
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(err => {
+        console.warn(`無法退出全螢幕：${err.message}`);
+      });
+    }
   }
 }
 
@@ -2302,7 +2306,7 @@ function renderHomeworkSettlementTable() {
 // 5.5 下課紅綠燈通行儀表板 (Traffic Light Break Board Controller)
 // 包含當前即時時鐘、西寧國小作息倒數計時、超緊湊 Mini 學生卡片 (27人一覽無遺)
 // ===================================================================
-let trafficDisplayMode = 'compact'; // 預設為超緊湊 Mini 模式 (大螢幕首選免滾動)
+let trafficDisplayMode = 'grid5x5'; // 預設為 5*5+2 大屏模式 (去除姓名，座號與原因一眼明瞭)
 
 // 西寧國小五年二班課堂作息時程表
 const XINING_BELL_SCHEDULE = [
@@ -2534,12 +2538,12 @@ function toggleTrafficDrawer() {
 }
 
 function toggleTrafficDisplayMode() {
-  trafficDisplayMode = trafficDisplayMode === 'compact' ? 'detailed' : 'compact';
+  trafficDisplayMode = trafficDisplayMode === 'grid5x5' ? 'compact' : 'grid5x5';
   const label = document.getElementById("trafficDisplayModeLabel");
   if (label) {
-    label.textContent = trafficDisplayMode === 'compact' ? '超緊湊 Mini 模式' : '詳細大臣模式';
+    label.textContent = trafficDisplayMode === 'grid5x5' ? '5*5+2 模式' : 'Mini 模式';
   }
-  showToast(`🖥️ 已切換為【${trafficDisplayMode === 'compact' ? '超緊湊 Mini 模式' : '詳細大臣模式'}】`);
+  showToast(`🖥️ 已切換為【${trafficDisplayMode === 'grid5x5' ? '5*5+2 大屏版面' : 'Mini 緊湊模式'}】`);
   renderTrafficView();
 }
 
@@ -2703,7 +2707,135 @@ function renderTrafficView() {
   });
 
   // 根據顯示模式切換網格欄數
-  if (trafficDisplayMode === 'compact') {
+  if (trafficDisplayMode === 'grid5x5') {
+    // 5*5+2 核心大屏版面：5 欄排布 (前 5 列共 25 人，第 6 列 2 人)，去除姓名僅留座號與明確原因
+    grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-2.5";
+    
+    grid.innerHTML = filtered.map(item => {
+      const st = item.student;
+      const seatPad = String(st.seatNo).padStart(2, '0');
+      const rCount = item.reflectionCount || (item.hasReflection ? 1 : 0);
+      const sCount = item.serviceCount || (item.hasService ? 1 : 0);
+      
+      const missingTitles = (item.missingList || []).map(h => {
+        return h.presetName || (h.title ? (h.title.length > 5 ? h.title.slice(0, 4) : h.title) : '作業');
+      });
+      const revisionTitles = (item.revisionList || []).map(h => {
+        return h.presetName || (h.title ? (h.title.length > 5 ? h.title.slice(0, 4) : h.title) : '訂正');
+      });
+
+      let cardClass = '';
+      let seatBgClass = '';
+      let miniOrbClass = '';
+      let orbSymbol = '';
+      let orbTooltip = '';
+      let statusContentHtml = '';
+
+      if (item.light === 'green') {
+        cardClass = 'card-green';
+        seatBgClass = 'bg-emerald-600 text-white';
+        miniOrbClass = 'mini-orb-green';
+        orbSymbol = '✓';
+        orbTooltip = '准許下課';
+
+        statusContentHtml = `
+          <div class="space-y-0.5">
+            <div class="text-xs sm:text-sm font-black text-emerald-800 flex items-center space-x-1">
+              <span>🟢</span><span>准許下課</span>
+            </div>
+            ${sCount > 0 
+              ? `<div class="text-[11px] font-bold text-orange-700">🧹 愛班*${sCount} (特准通行)</div>`
+              : `<div class="text-[11px] font-bold text-emerald-700/80">✨ 功課全齊 ‧ 通行無阻</div>`}
+          </div>
+        `;
+      } else if (item.light === 'yellow') {
+        cardClass = 'card-yellow';
+        seatBgClass = 'bg-amber-600 text-white';
+        miniOrbClass = 'mini-orb-yellow';
+        orbSymbol = '!';
+        orbTooltip = item.label || '待訂正';
+
+        const revText = revisionTitles.length > 0 ? revisionTitles.join('、') : (item.shortReason || '作業訂正');
+        statusContentHtml = `
+          <div class="space-y-0.5">
+            <div class="text-xs font-black text-amber-950 flex items-center space-x-1 truncate" title="待訂正：${revText}">
+              <span>🟡</span><span>待訂正：${revText}</span>
+            </div>
+            <div class="flex items-center space-x-1.5 text-[11px] font-black">
+              ${rCount > 0 ? `<span class="text-rose-800 bg-rose-200/90 px-1 rounded">🪑*${rCount}</span>` : ''}
+              ${sCount > 0 ? `<span class="text-orange-800 bg-orange-200/90 px-1 rounded">🧹*${sCount}</span>` : ''}
+              ${rCount === 0 && sCount === 0 ? `<span class="text-amber-800 font-bold">訂正後即可放行</span>` : ''}
+            </div>
+          </div>
+        `;
+      } else if (item.light === 'red') {
+        cardClass = 'card-red';
+        seatBgClass = 'bg-rose-600 text-white';
+        miniOrbClass = 'mini-orb-red';
+        orbSymbol = '🛑';
+        orbTooltip = item.label || '禁止下課';
+
+        const missText = missingTitles.length > 0 ? missingTitles.join('、') : '';
+        const revText = revisionTitles.length > 0 ? revisionTitles.join('、') : '';
+
+        statusContentHtml = `
+          <div class="space-y-0.5">
+            ${missText ? `
+              <div class="text-xs font-black text-rose-950 flex items-center space-x-1 truncate" title="缺交：${missText}">
+                <span>🔴</span><span>缺交：${missText}</span>
+              </div>
+            ` : ''}
+            ${revText ? `
+              <div class="text-[11px] font-black text-amber-900 flex items-center space-x-1 truncate" title="訂正：${revText}">
+                <span>🟡</span><span>訂正：${revText}</span>
+              </div>
+            ` : ''}
+            <div class="flex items-center flex-wrap gap-1 text-[11px] font-black">
+              ${rCount > 0 ? `<span class="bg-rose-200 text-rose-950 px-1.5 py-0.2 rounded font-bold shadow-2xs">🪑 自省*${rCount}</span>` : ''}
+              ${sCount > 0 ? `<span class="bg-orange-200 text-orange-950 px-1.5 py-0.2 rounded font-bold shadow-2xs">🧹 愛班*${sCount}</span>` : ''}
+              ${!missText && !revText && rCount === 0 && sCount === 0 ? `<span class="text-rose-950 font-black">${item.shortReason || '留座自省'}</span>` : ''}
+            </div>
+          </div>
+        `;
+      } else {
+        cardClass = 'card-leave';
+        seatBgClass = 'bg-slate-500 text-white';
+        miniOrbClass = 'mini-orb-leave';
+        orbSymbol = '🏖️';
+        orbTooltip = '今日請假';
+
+        statusContentHtml = `
+          <div class="space-y-0.5">
+            <div class="text-xs sm:text-sm font-black text-slate-600 flex items-center space-x-1">
+              <span>🏖️</span><span>今日請假</span>
+            </div>
+            <div class="text-[11px] font-bold text-slate-500">免查下課通行</div>
+          </div>
+        `;
+      }
+
+      return `
+        <div onclick="openTrafficDetailModal(${st.id})" 
+          class="traffic-card-5x5 ${cardClass}"
+          title="${seatPad}號 (點擊開啟通行詳情)">
+          
+          <!-- 頂部：座號標示 (去除姓名) 與 發光狀態燈珠 -->
+          <div class="flex items-center justify-between pb-1 border-b border-black/5">
+            <div class="flex items-center space-x-1">
+              <span class="font-cute font-black text-sm px-2 py-0.5 rounded-lg shadow-2xs ${seatBgClass}">${seatPad}號</span>
+            </div>
+            <div class="mini-orb ${miniOrbClass}" title="${orbTooltip}">${orbSymbol}</div>
+          </div>
+
+          <!-- 剩餘版面：明確顯示未繳作業、訂正及愛班卡、自省卡 -->
+          <div class="pt-1 flex-1 flex flex-col justify-center">
+            ${statusContentHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } else if (trafficDisplayMode === 'compact') {
     // 超緊湊 Mini 模式：9 欄排布 (大螢幕剛好 3 列 27 人全顯)
     grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9 gap-2";
     
@@ -5214,10 +5346,32 @@ function openAnnouncementProjectionModal(initialData) {
   playBroadcastChime();
 }
 
+function toggleAnnouncementProjectionFullscreen() {
+  if (!document.fullscreenElement) {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.warn("Announcement projection fullscreen request failed:", err);
+      });
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(err => {
+        console.warn("Exit fullscreen failed:", err);
+      });
+    }
+  }
+}
+
 function closeAnnouncementProjectionModal() {
   const modal = document.getElementById("announcementProjectionModal");
   if (modal) modal.classList.add("hidden");
-  if (projectionClockInterval) clearInterval(projectionClockInterval);
+  if (projectionClockInterval) {
+    clearInterval(projectionClockInterval);
+    projectionClockInterval = null;
+  }
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  }
 }
 
 function projectExistingAnnouncement(id) {
@@ -5230,6 +5384,149 @@ function projectExistingAnnouncement(id) {
     date: a.date,
     badge: a.pinned ? "🚨 全班置頂緊急公文" : "📢 皇室公文公告"
   });
+}
+
+// -------------------------------------------------------------------
+// 教室座位表大屏全螢幕投影管理 (僅顯示中間座位表與講台)
+// -------------------------------------------------------------------
+let seatingProjectionClockInterval = null;
+
+function openSeatingProjectionModal() {
+  const modal = document.getElementById("seatingProjectionModal");
+  if (!modal) return;
+
+  renderSeatingProjectionGrid();
+  modal.classList.remove("hidden");
+
+  function updateSeatingProjClock() {
+    const clockEl = document.getElementById("seatingProjectionLiveClock");
+    if (clockEl) {
+      const now = new Date();
+      clockEl.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }
+  }
+  updateSeatingProjClock();
+  if (seatingProjectionClockInterval) clearInterval(seatingProjectionClockInterval);
+  seatingProjectionClockInterval = setInterval(updateSeatingProjClock, 1000);
+}
+
+function closeSeatingProjectionModal() {
+  const modal = document.getElementById("seatingProjectionModal");
+  if (modal) modal.classList.add("hidden");
+  if (seatingProjectionClockInterval) {
+    clearInterval(seatingProjectionClockInterval);
+    seatingProjectionClockInterval = null;
+  }
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function toggleSeatingProjectionFullscreen() {
+  if (!document.fullscreenElement) {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.warn("Seating projection fullscreen request failed:", err);
+      });
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(err => {
+        console.warn("Exit fullscreen failed:", err);
+      });
+    }
+  }
+}
+
+function renderSeatingProjectionGrid() {
+  const grid = document.getElementById("seatingProjectionGrid");
+  if (!grid) return;
+
+  const layout = window.KingdomApp.store.getSeatingLayout();
+  const chart = window.KingdomApp.store.getSeatingChart();
+  const students = window.KingdomApp.store.data.students || [];
+  const todayStr = window.KingdomApp.getTodayDateString();
+  const attendanceToday = (window.KingdomApp.store.data.attendance && window.KingdomApp.store.data.attendance[todayStr]) || {};
+
+  grid.style.gridTemplateColumns = `repeat(${layout.cols}, minmax(0, 1fr))`;
+
+  const layoutBadge = document.getElementById("seatingProjectionLayoutBadge");
+  if (layoutBadge) {
+    layoutBadge.textContent = `${layout.rows}排 x ${layout.cols}列 (全班27席)`;
+  }
+
+  let html = "";
+  for (let i = 0; i < chart.length; i++) {
+    const seatNo = chart[i];
+    const student = seatNo ? students.find(s => s.seatNo === seatNo) : null;
+    const row = Math.floor(i / layout.cols) + 1;
+    const col = (i % layout.cols) + 1;
+
+    if (student) {
+      const traffic = window.KingdomApp.store.evaluateTrafficStatus(student.id);
+      const att = attendanceToday[student.id];
+
+      let attBadge = "";
+      if (att) {
+        if (att.status === "present") attBadge = `<span class="text-[10px] bg-emerald-900/80 text-emerald-200 border border-emerald-500/50 font-bold px-1.5 py-0.5 rounded">到 ${att.checkInTime || ''}</span>`;
+        else if (att.status === "late") attBadge = `<span class="text-[10px] bg-amber-900/80 text-amber-200 border border-amber-500/50 font-bold px-1.5 py-0.5 rounded">⚠️ 遲到</span>`;
+        else if (att.status === "leave") attBadge = `<span class="text-[10px] bg-sky-900/80 text-sky-200 border border-sky-500/50 font-bold px-1.5 py-0.5 rounded">🏖️ 請假</span>`;
+      } else {
+        attBadge = `<span class="text-[10px] bg-slate-800 text-slate-400 font-bold px-1.5 py-0.5 rounded">未到</span>`;
+      }
+
+      let lightBadge = "";
+      if (traffic && traffic.light === "green") lightBadge = `<span class="text-xs" title="准許下課">🟢</span>`;
+      else if (traffic && traffic.light === "yellow") lightBadge = `<span class="text-xs" title="待訂正">🟡</span>`;
+      else lightBadge = `<span class="text-xs" title="留座自省">🔴</span>`;
+
+      const refCount = traffic ? traffic.reflectionCount : 0;
+      const srvCount = traffic ? traffic.serviceCount : 0;
+      let refChip = refCount > 0 ? `<span class="text-[10px] bg-rose-600 text-white font-bold px-1.5 py-0.2 rounded shadow-xs">🪑 自省${refCount > 1 ? `*${refCount}` : ''}</span>` : "";
+      let srvChip = srvCount > 0 ? `<span class="text-[10px] bg-orange-600 text-white font-bold px-1.5 py-0.2 rounded shadow-xs">🧹 愛班${srvCount > 1 ? `*${srvCount}` : ''}</span>` : "";
+
+      const petStatus = window.KingdomApp.getAnimalStatus ? window.KingdomApp.getAnimalStatus(student.animalType || student.petType || 'dog', student.points || 0) : null;
+      const animalIcon = petStatus ? petStatus.animalIcon : '🐾';
+
+      html += `
+        <div class="seating-proj-desk">
+          <div class="flex items-center justify-between w-full">
+            <span class="text-xs font-mono font-bold text-amber-300/80 bg-black/40 px-1.5 py-0.5 rounded border border-amber-500/30">${row}-${col}</span>
+            <div class="flex items-center space-x-1">
+              ${lightBadge}
+              ${attBadge}
+            </div>
+          </div>
+          <div class="my-2 text-center flex flex-col items-center justify-center">
+            <span class="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950 shadow-md">
+              <span>${animalIcon}</span>
+              <span>${String(student.seatNo).padStart(2, '0')} 號</span>
+            </span>
+            <div class="font-cute font-black text-amber-100 text-xl sm:text-2xl mt-1 tracking-wider drop-shadow-md truncate max-w-[130px]">
+              ${student.name}
+            </div>
+          </div>
+          <div class="flex items-center justify-between w-full pt-1 border-t border-slate-700/80 text-[10px]">
+            <div class="flex items-center space-x-1">
+              ${refChip}
+              ${srvChip}
+              ${!refChip && !srvChip ? `<span class="text-amber-300/70 font-bold">👑 內閣大臣</span>` : ''}
+            </div>
+            <span class="text-slate-400 font-mono">${student.points || 0} 🍎</span>
+          </div>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="seating-proj-desk-empty">
+          <span class="text-xs font-mono text-slate-500">${row}-${col}</span>
+          <span class="text-sm font-bold text-slate-500 mt-1">🪑 空席</span>
+        </div>
+      `;
+    }
+  }
+
+  grid.innerHTML = html;
 }
 
 function broadcastInstantAnnouncement(e) {
@@ -7702,9 +7999,40 @@ if (typeof window !== 'undefined') {
   // 皇室告示欄大屏廣播投影
   window.openAnnouncementProjectionModal = openAnnouncementProjectionModal;
   window.closeAnnouncementProjectionModal = closeAnnouncementProjectionModal;
+  window.toggleAnnouncementProjectionFullscreen = toggleAnnouncementProjectionFullscreen;
   window.projectExistingAnnouncement = projectExistingAnnouncement;
   window.broadcastInstantAnnouncement = broadcastInstantAnnouncement;
   window.applyBroadcastPreset = applyBroadcastPreset;
   window.playBroadcastChime = playBroadcastChime;
+
+  // 下課紅綠燈
+  window.renderTrafficView = renderTrafficView;
+  window.toggleTrafficDisplayMode = toggleTrafficDisplayMode;
+  window.filterTrafficLight = filterTrafficLight;
+  window.openTrafficDetailModal = openTrafficDetailModal;
+  window.closeTrafficDetailModal = closeTrafficDetailModal;
+  window.toggleTrafficDrawer = toggleTrafficDrawer;
+
+  // 教室座位表大屏全螢幕投影 (僅顯示中間座位表與講台)
+  window.openSeatingProjectionModal = openSeatingProjectionModal;
+  window.closeSeatingProjectionModal = closeSeatingProjectionModal;
+  window.toggleSeatingProjectionFullscreen = toggleSeatingProjectionFullscreen;
+  window.renderSeatingProjectionGrid = renderSeatingProjectionGrid;
+}
+
+// 全域鍵盤與投影事件監聽 (支援 Esc 鍵一鍵關閉並退出全螢幕)
+if (typeof window !== 'undefined') {
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const annModal = document.getElementById("announcementProjectionModal");
+      if (annModal && !annModal.classList.contains("hidden")) {
+        closeAnnouncementProjectionModal();
+      }
+      const seatModal = document.getElementById("seatingProjectionModal");
+      if (seatModal && !seatModal.classList.contains("hidden")) {
+        closeSeatingProjectionModal();
+      }
+    }
+  });
 }
 

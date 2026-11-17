@@ -546,9 +546,9 @@
           </div>
 
           <!-- 模式切換 -->
-          <button onclick="toggleTrafficDisplayMode()" id="btnTrafficDisplayMode" class="px-2 py-1 rounded-lg bg-amber-950 text-amber-300 text-xs font-black flex items-center space-x-1 shadow-2xs" title="切換超緊湊 Mini 模式或詳細大臣模式">
+          <button onclick="toggleTrafficDisplayMode()" id="btnTrafficDisplayMode" class="px-2 py-1 rounded-lg bg-amber-950 text-amber-300 text-xs font-black flex items-center space-x-1 shadow-2xs" title="切換 5*5+2 大屏模式或 Mini 緊湊模式">
             <span>🖥️</span>
-            <span id="trafficDisplayModeLabel">Mini 模式</span>
+            <span id="trafficDisplayModeLabel">5*5+2 模式</span>
           </button>
 
           <!-- 派卡快捷按鈕 -->
@@ -668,8 +668,8 @@
         </div>
       </div>
 
-      <!-- 27 位大臣下課通行卡片網格 (超緊湊 Mini 模式，一屏全顯免滾動) -->
-      <div id="trafficCardsGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-9 gap-2">
+      <!-- 27 位大臣下課通行卡片網格 (5*5+2 核心版面配置，去除姓名僅留座號與明確原因) -->
+      <div id="trafficCardsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-2.5">
         <!-- 動態渲染 27 位大臣卡片 -->
       </div>
 
@@ -703,6 +703,11 @@
 
         <!-- 操作按鈕群 -->
         <div class="flex flex-wrap items-center gap-2">
+          <!-- 🖥️ 全螢幕大屏座位投影按鈕 (僅顯示中央座位表與講台) -->
+          <button type="button" onclick="openSeatingProjectionModal()" class="btn-royal-gold px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-md transform hover:scale-105 active:scale-95 transition" title="將座位表以超大字體全螢幕投影給全班查看（僅顯示中央座位表與講台）">
+            <span>🖥️ 大屏座位投影</span>
+          </button>
+
           <!-- 格局微調選單 -->
           <div class="flex items-center space-x-1 bg-white/90 px-2 py-1 rounded-xl border border-amber-300 shadow-sm text-xs font-bold">
             <span class="text-amber-900">格局：</span>
@@ -2366,7 +2371,7 @@
   </div>
 
   <!-- MODAL: 皇室告示欄 ‧ 班級大屏廣播投影 (Big Screen Announcement Broadcaster) -->
-  <div id="announcementProjectionModal" class="hidden fixed inset-0 z-50 projection-overlay flex flex-col p-4 sm:p-8 text-white overflow-y-auto">
+  <div id="announcementProjectionModal" class="hidden fixed inset-0 z-[80] projection-overlay flex flex-col p-4 sm:p-8 text-white overflow-y-auto">
     
     <!-- 頂部導航列：大時鐘、全螢幕與關閉鍵 -->
     <div class="flex items-center justify-between pb-4 border-b border-amber-500/40 flex-shrink-0">
@@ -2394,10 +2399,10 @@
         <button type="button" onclick="playBroadcastChime()" class="px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="響起鐘聲提醒全班注意">
           <span>🔔 廣播鐘聲</span>
         </button>
-        <button type="button" onclick="toggleFullscreen()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-amber-200 border border-amber-400/50 font-black text-xs sm:text-sm shadow" title="切換投影全螢幕 (F11)">
+        <button type="button" onclick="toggleAnnouncementProjectionFullscreen()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-amber-200 border border-amber-400/50 font-black text-xs sm:text-sm shadow" title="切換投影全螢幕 (F11)">
           <span>⛶ 全螢幕</span>
         </button>
-        <button type="button" onclick="closeAnnouncementProjectionModal()" class="w-10 h-10 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-black text-lg flex items-center justify-center shadow transition" title="結束投影 (Esc)">
+        <button type="button" onclick="closeAnnouncementProjectionModal()" class="w-10 h-10 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-black text-lg flex items-center justify-center shadow transition hover:scale-105 active:scale-95 cursor-pointer relative z-30 pointer-events-auto" title="結束投影 (Esc)">
           ✕
         </button>
       </div>
@@ -2481,7 +2486,74 @@
 
   </div>
 
-  <!-- MODAL: 批次加點頒發聖旨彈窗 -->
+  <!-- =============================================================== -->
+  <!-- MODAL: 教室座位表 ‧ 大屏全螢幕投影看板 (Seating Projection Broadcaster) -->
+  <!-- 僅顯示中間座位表與講台方向，徹底不顯示兩側座號庫 -->
+  <!-- =============================================================== -->
+  <div id="seatingProjectionModal" class="hidden fixed inset-0 z-[75] projection-overlay flex flex-col p-4 sm:p-6 text-white overflow-y-auto">
+    
+    <!-- 頂部導航列：大時鐘、全螢幕與關閉鍵 -->
+    <div class="flex items-center justify-between pb-3 border-b border-amber-500/40 flex-shrink-0 max-w-6xl w-full mx-auto">
+      <div class="flex items-center space-x-3">
+        <span class="text-3xl animate-bounce">💺</span>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="bg-amber-400 text-amber-950 text-xs px-2.5 py-0.5 rounded-full font-black shadow">
+              西寧小小兵王國 ‧ 教室座位表大屏投影
+            </span>
+            <span id="seatingProjectionLayoutBadge" class="text-xs text-amber-300/80 font-bold hidden sm:inline">5排 x 6列 (全班27席)</span>
+          </div>
+          <h2 class="text-lg sm:text-xl font-black text-amber-200 mt-0.5">
+            五年二班 內閣座席格局全螢幕投影
+          </h2>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- 投影數位大時鐘 -->
+        <div class="bg-black/60 px-4 py-1.5 rounded-xl border border-amber-400/50 text-center shadow-inner hidden sm:block">
+          <span class="text-[10px] text-amber-300/80 font-bold block">目前時間</span>
+          <span id="seatingProjectionLiveClock" class="font-digital text-xl sm:text-2xl font-black text-amber-300 tracking-wider">--:--:--</span>
+        </div>
+        <button type="button" onclick="toggleSeatingProjectionFullscreen()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-amber-200 border border-amber-400/50 font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="切換座位投影全螢幕">
+          <span>⛶ 全螢幕</span>
+        </button>
+        <button type="button" onclick="closeSeatingProjectionModal()" class="w-10 h-10 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-black text-lg flex items-center justify-center shadow transition hover:scale-105 active:scale-95 cursor-pointer relative z-30 pointer-events-auto" title="結束投影 (Esc)">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- 中央核心區：僅顯示講台黑板、中間座位網格、走廊與後門 -->
+    <div class="flex-1 flex flex-col items-center justify-start my-4 max-w-6xl w-full mx-auto space-y-3">
+      
+      <!-- 黑板與講台指示區 (面向學生席位) -->
+      <div class="w-full bg-emerald-900/90 text-emerald-100 border-2 border-emerald-500/80 rounded-2xl py-2.5 px-4 shadow-lg text-center font-black tracking-widest relative">
+        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-xs bg-emerald-800/90 px-2 py-0.5 rounded text-emerald-200 hidden sm:block">
+          🚪 教室前門
+        </div>
+        <div class="text-sm sm:text-base flex items-center justify-center space-x-2 text-emerald-200">
+          <span>⬛ 講台 / 黑板區（面向學生席位視角） ⬛</span>
+        </div>
+        <div class="absolute right-4 top-1/2 -translate-y-1/2 text-xs bg-emerald-800/90 px-2 py-0.5 rounded text-emerald-200 hidden sm:block">
+          窗戶採光 🪟
+        </div>
+      </div>
+
+      <!-- 座位網格容器 (大字號可愛席位卡) -->
+      <div id="seatingProjectionGrid" class="grid gap-3 w-full p-4 bg-slate-900/70 rounded-2xl border-2 border-amber-500/40 shadow-2xl">
+        <!-- 由 ui.js renderSeatingProjectionGrid() 動態填入 -->
+      </div>
+
+      <!-- 教室後門與走廊標示 -->
+      <div class="w-full bg-slate-900/60 border border-slate-700/80 rounded-xl py-2 px-4 text-center text-xs text-amber-200/80 font-bold flex items-center justify-between">
+        <span>🚪 教室後門（資源回收區）</span>
+        <span>────── 教室中央走廊通道 ──────</span>
+        <span>置物櫃 🎒</span>
+      </div>
+
+    </div>
+  </div>
   <div id="batchPointModal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="parchment-card max-w-lg w-full p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-amber-300 pb-3">
@@ -3843,8 +3915,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111705"></script>
-  <script src="ui.js?v=2026111705"></script>
+  <script src="app.js?v=2026111707"></script>
+  <script src="ui.js?v=2026111707"></script>
 
 </body>
 </html>
