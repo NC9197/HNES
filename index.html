@@ -401,7 +401,93 @@
     <div id="trafficView" class="hidden space-y-3">
       
       <!-- =============================================================== -->
-      <!-- ⏰ 當下時間與距離上課倒數大看板 (Real-Time Clock & Class Countdown) -->
+      <!-- 🌟 第一排：超緊湊單行化通行狀態與導師功能列 (以一排為限，橫向不折行) 🌟 -->
+      <!-- =============================================================== -->
+      <div class="parchment-card px-3 py-1.5 flex flex-nowrap items-center justify-between gap-2 text-xs shadow-xs overflow-x-auto whitespace-nowrap">
+        
+        <!-- 左側：即時狀態指標統計 (綠/黃/紅/愛班) 與 5 燈號篩選器 -->
+        <div class="flex flex-nowrap items-center space-x-2 flex-shrink-0">
+          <!-- 燈號統計指標徽章 -->
+          <div class="flex items-center space-x-1.5 font-bold">
+            <span class="px-2 py-0.5 rounded-lg bg-emerald-100 border border-emerald-400 text-emerald-950 font-black flex items-center space-x-1 shadow-2xs">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>🟢 准許:</span>
+              <span id="trafficStatGreen" class="font-digital text-sm text-emerald-700">0</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-lg bg-amber-100 border border-amber-400 text-amber-950 font-black flex items-center space-x-1 shadow-2xs">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span>🟡 訂正:</span>
+              <span id="trafficStatYellow" class="font-digital text-sm text-amber-700">0</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-lg bg-rose-100 border border-rose-400 text-rose-950 font-black flex items-center space-x-1 shadow-2xs">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+              <span>🔴 自省:</span>
+              <span id="trafficStatRed" class="font-digital text-sm text-rose-700">0</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-lg bg-orange-100 border border-orange-400 text-orange-950 font-black flex items-center space-x-1 shadow-2xs">
+              <span>🧹 愛班:</span>
+              <span id="trafficStatService" class="font-digital text-sm text-orange-700">0</span>
+            </span>
+          </div>
+
+          <span class="text-amber-400/60 font-bold">|</span>
+
+          <!-- 篩選按鈕群 -->
+          <div class="flex items-center space-x-1 font-bold">
+            <button onclick="filterTrafficLight('all')" id="btnTrafficFilter-all" class="px-2 py-0.5 rounded-lg bg-amber-950 text-amber-300 text-xs shadow-2xs">全部(27)</button>
+            <button onclick="filterTrafficLight('green')" id="btnTrafficFilter-green" class="px-2 py-0.5 rounded-lg bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 text-xs">🟢 綠燈</button>
+            <button onclick="filterTrafficLight('yellow')" id="btnTrafficFilter-yellow" class="px-2 py-0.5 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 text-xs">🟡 黃燈</button>
+            <button onclick="filterTrafficLight('red')" id="btnTrafficFilter-red" class="px-2 py-0.5 rounded-lg bg-white border border-rose-300 text-rose-800 hover:bg-rose-50 text-xs">🔴 紅燈</button>
+            <button onclick="filterTrafficLight('service')" id="btnTrafficFilter-service" class="px-2 py-0.5 rounded-lg bg-white border border-orange-300 text-orange-800 hover:bg-orange-50 text-xs">🧹 愛班</button>
+          </div>
+        </div>
+
+        <!-- 右側：導師操作功能列 (單排緊湊排列) -->
+        <div class="flex flex-nowrap items-center space-x-1.5 font-bold flex-shrink-0">
+          <!-- 特赦按鈕群 -->
+          <div class="flex items-center space-x-1 bg-amber-100/90 p-0.5 rounded-lg border border-amber-300 shadow-2xs text-[11px]">
+            <button onclick="confirmPardonAll('reflection')" class="px-1.5 py-0.5 rounded bg-white hover:bg-rose-50 text-rose-800 border border-rose-300 shadow-2xs flex items-center space-x-0.5" title="全班自省卡全部歸零清除">
+              <span>🕊️</span>
+              <span>自省特赦</span>
+            </button>
+            <button onclick="confirmPardonAll('service')" class="px-1.5 py-0.5 rounded bg-white hover:bg-orange-50 text-orange-800 border border-orange-300 shadow-2xs flex items-center space-x-0.5" title="全班愛班服務卡全部歸零清除">
+              <span>🧹</span>
+              <span>愛班特赦</span>
+            </button>
+            <button onclick="confirmPardonAll('all')" class="px-1.5 py-0.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs flex items-center space-x-0.5 font-black" title="完全特赦全部卡牌歸零">
+              <span>✨</span>
+              <span>全免</span>
+            </button>
+          </div>
+
+          <span class="text-amber-400/60 font-bold">|</span>
+
+          <!-- 派卡快捷按鈕 -->
+          <button onclick="openBehaviorCardModal('reflection')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-950 border border-rose-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣派發座位自省卡 (紅燈・留座自省)">
+            <span>🪑 派自省</span>
+          </button>
+          <button onclick="openBehaviorCardModal('service')" class="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣指派愛班服務卡 (課間愛班勞動)">
+            <span>🧹 派愛班</span>
+          </button>
+
+          <span class="text-amber-400/60 font-bold">|</span>
+
+          <!-- 模式切換 -->
+          <button onclick="toggleTrafficDisplayMode()" id="btnTrafficDisplayMode" class="px-2 py-1 rounded-lg bg-amber-950 text-amber-300 text-xs font-black flex items-center space-x-1 shadow-2xs" title="切換 5*5+2 大屏模式或 Mini 緊湊模式">
+            <span>🖥️</span>
+            <span id="trafficDisplayModeLabel">5*5+2 模式</span>
+          </button>
+
+          <!-- 管理抽屜開關 -->
+          <button type="button" onclick="toggleTrafficDrawer()" id="btnTrafficDrawerToggle" class="px-2 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 text-xs transition font-black" title="展開或收合自省卡與愛班服務卡管理專區">
+            <span>📜 抽屜 ▾</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- =============================================================== -->
+      <!-- ⏰ 第二排：當下時間與距離上課倒數大看板 (Real-Time Clock & Class Countdown) -->
       <!-- =============================================================== -->
       <div id="trafficClockBanner" class="traffic-clock-card rounded-2xl p-3 sm:p-4 text-amber-100 shadow-lg border-2 border-amber-500">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
@@ -484,85 +570,6 @@
             </div>
           </div>
 
-        </div>
-      </div>
-
-      <!-- 🌟 超緊湊單行化通行狀態與導師功能列 (通行大看板已移除，右側功能移至此供導師便捷操作) 🌟 -->
-      <div class="parchment-card px-3 py-2 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2 text-xs shadow-xs">
-        
-        <!-- 左側：即時狀態指標統計 (綠/黃/紅/愛班) 與 5 燈號篩選器 -->
-        <div class="flex flex-wrap items-center gap-2">
-          <!-- 燈號統計指標徽章 -->
-          <div class="flex items-center space-x-1.5 font-bold">
-            <span class="px-2 py-0.5 rounded-lg bg-emerald-100 border border-emerald-400 text-emerald-950 font-black flex items-center space-x-1 shadow-2xs">
-              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span>🟢 准許:</span>
-              <span id="trafficStatGreen" class="font-digital text-sm text-emerald-700">0</span>
-            </span>
-            <span class="px-2 py-0.5 rounded-lg bg-amber-100 border border-amber-400 text-amber-950 font-black flex items-center space-x-1 shadow-2xs">
-              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-              <span>🟡 訂正:</span>
-              <span id="trafficStatYellow" class="font-digital text-sm text-amber-700">0</span>
-            </span>
-            <span class="px-2 py-0.5 rounded-lg bg-rose-100 border border-rose-400 text-rose-950 font-black flex items-center space-x-1 shadow-2xs">
-              <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-              <span>🔴 自省:</span>
-              <span id="trafficStatRed" class="font-digital text-sm text-rose-700">0</span>
-            </span>
-            <span class="px-2 py-0.5 rounded-lg bg-orange-100 border border-orange-400 text-orange-950 font-black flex items-center space-x-1 shadow-2xs">
-              <span>🧹 愛班:</span>
-              <span id="trafficStatService" class="font-digital text-sm text-orange-700">0</span>
-            </span>
-          </div>
-
-          <span class="text-slate-300 hidden sm:inline">|</span>
-
-          <!-- 篩選按鈕群 -->
-          <div class="flex items-center space-x-1 font-bold">
-            <button onclick="filterTrafficLight('all')" id="btnTrafficFilter-all" class="px-2 py-0.5 rounded-lg bg-amber-950 text-amber-300 text-xs shadow-2xs">全部(27)</button>
-            <button onclick="filterTrafficLight('green')" id="btnTrafficFilter-green" class="px-2 py-0.5 rounded-lg bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 text-xs">🟢 綠燈</button>
-            <button onclick="filterTrafficLight('yellow')" id="btnTrafficFilter-yellow" class="px-2 py-0.5 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-50 text-xs">🟡 黃燈</button>
-            <button onclick="filterTrafficLight('red')" id="btnTrafficFilter-red" class="px-2 py-0.5 rounded-lg bg-white border border-rose-300 text-rose-800 hover:bg-rose-50 text-xs">🔴 紅燈</button>
-            <button onclick="filterTrafficLight('service')" id="btnTrafficFilter-service" class="px-2 py-0.5 rounded-lg bg-white border border-orange-300 text-orange-800 hover:bg-orange-50 text-xs">🧹 愛班</button>
-          </div>
-        </div>
-
-        <!-- 右側：導師操作功能列 (原大看板右側功能移至此，供導師便捷使用) -->
-        <div class="flex flex-wrap items-center gap-1.5 font-bold">
-          <!-- 特赦按鈕群 -->
-          <div class="flex items-center space-x-1 bg-amber-100/90 p-0.5 rounded-lg border border-amber-300 shadow-2xs text-[11px]">
-            <button onclick="confirmPardonAll('reflection')" class="px-1.5 py-0.5 rounded bg-white hover:bg-rose-50 text-rose-800 border border-rose-300 shadow-2xs flex items-center space-x-0.5" title="全班自省卡全部歸零清除">
-              <span>🕊️</span>
-              <span>自省特赦</span>
-            </button>
-            <button onclick="confirmPardonAll('service')" class="px-1.5 py-0.5 rounded bg-white hover:bg-orange-50 text-orange-800 border border-orange-300 shadow-2xs flex items-center space-x-0.5" title="全班愛班服務卡全部歸零清除">
-              <span>🧹</span>
-              <span>愛班特赦</span>
-            </button>
-            <button onclick="confirmPardonAll('all')" class="px-1.5 py-0.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs flex items-center space-x-0.5 font-black" title="完全特赦全部卡牌歸零">
-              <span>✨</span>
-              <span>全免</span>
-            </button>
-          </div>
-
-          <!-- 模式切換 -->
-          <button onclick="toggleTrafficDisplayMode()" id="btnTrafficDisplayMode" class="px-2 py-1 rounded-lg bg-amber-950 text-amber-300 text-xs font-black flex items-center space-x-1 shadow-2xs" title="切換 5*5+2 大屏模式或 Mini 緊湊模式">
-            <span>🖥️</span>
-            <span id="trafficDisplayModeLabel">5*5+2 模式</span>
-          </button>
-
-          <!-- 派卡快捷按鈕 -->
-          <button onclick="openBehaviorCardModal('reflection')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-950 border border-rose-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣派發座位自省卡 (紅燈・留座自省)">
-            <span>🪑 派自省</span>
-          </button>
-          <button onclick="openBehaviorCardModal('service')" class="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣指派愛班服務卡 (課間愛班勞動)">
-            <span>🧹 派愛班</span>
-          </button>
-
-          <!-- 管理抽屜開關 -->
-          <button type="button" onclick="toggleTrafficDrawer()" id="btnTrafficDrawerToggle" class="px-2 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 text-xs transition" title="展開或收合自省卡與愛班服務卡管理專區">
-            <span>📜 抽屜 ▾</span>
-          </button>
         </div>
       </div>
 
@@ -3915,8 +3922,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111707"></script>
-  <script src="ui.js?v=2026111707"></script>
+  <script src="app.js?v=2026111708"></script>
+  <script src="ui.js?v=2026111708"></script>
 
 </body>
 </html>
