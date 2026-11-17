@@ -256,11 +256,11 @@
         </div>
       </div>
 
-      <!-- ★ 核心版面 (固定左右雙欄：左側打卡座號網格，右側聯絡簿超大字看板，完美同框免滾輪) ★ -->
+      <!-- ★ 核心版面 (固定左右雙欄：左側打卡座號網格，右側聯絡簿擴大超大字看板，教室後排清晰可見) ★ -->
       <div class="grid grid-cols-12 gap-3 sm:gap-4 lg:gap-5 items-start">
         
-        <!-- 【左側 (4欄寬)】：大臣到校打卡區 (僅顯示座號與即時狀態，5排全數排完) -->
-        <div class="col-span-5 md:col-span-4 parchment-card p-3 sm:p-4 space-y-3 shadow-md">
+        <!-- 【左側】：大臣到校打卡區 (每一橫排 5 個座號，5排+2人全數排完) -->
+        <div class="col-span-12 lg:col-span-4 xl:col-span-3 parchment-card p-3 sm:p-4 space-y-3 shadow-md">
           <div class="flex items-center justify-between pb-2 border-b-2 border-amber-300">
             <div>
               <span class="text-[11px] text-amber-800 font-bold block">點擊座號打卡 / 再次點擊快速更改</span>
@@ -278,9 +278,9 @@
             </div>
           </div>
 
-          <!-- 27 位大臣座號打卡按鈕網格 (6 欄排列，僅顯示 01~27 座號，5 排全數排完，省空間免滾輪) -->
-          <div id="checkInGrid" class="grid grid-cols-6 gap-1.5 sm:gap-2">
-            <!-- 動態由 JavaScript 渲染 1 ~ 27 號按鈕 -->
+          <!-- 27 位大臣座號打卡按鈕網格 (每一橫排 5 個座號，僅顯示 01~27 座號，大按鈕省空間免滾輪) -->
+          <div id="checkInGrid" class="grid grid-cols-5 gap-1.5 sm:gap-2">
+            <!-- 動態由 JavaScript 渲染 1 ~ 27 號按鈕 (每一橫排 5 個座號) -->
           </div>
 
           <div class="pt-2 border-t border-amber-200 text-[11px] text-amber-900 space-y-1 font-bold">
@@ -308,8 +308,8 @@
           </div>
         </div>
 
-        <!-- 【右側 (8欄寬)】：今日聯絡簿超大字體看板 (教室後排看得見) -->
-        <div id="contactBoardContainer" class="col-span-7 md:col-span-8 contact-book-board p-4 sm:p-7 space-y-5 shadow-xl">
+        <!-- 【右側擴大聯絡簿版面】：今日聯絡簿超大字體看板 (左右二欄 ‧ 教室後排清晰可見) -->
+        <div id="contactBoardContainer" class="col-span-12 lg:col-span-8 xl:col-span-9 contact-book-board p-4 sm:p-7 space-y-5 shadow-xl">
           
           <!-- 聯絡簿頂部資訊與編輯按鈕 -->
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b-2 border-amber-400">
@@ -344,17 +344,19 @@
             </div>
           </div>
 
-          <!-- 聯絡簿條目 (超大字號 text-xl ~ text-2xl，行距舒適，後排學生看得清清楚楚) -->
+          <!-- 聯絡簿條目 (左右二欄 ‧ 超大字號 text-xl ~ text-3xl，後排學生看得清清楚楚) -->
           <div class="space-y-3">
             <div class="flex items-center space-x-2">
-              <span class="text-lg font-black text-amber-900 bg-amber-200 px-3 py-1 rounded-lg border border-amber-400">
-                ✍️ 今日作業抄寫項目：
+              <span class="text-base sm:text-xl font-black text-amber-900 bg-amber-200 px-3 py-1 rounded-xl border border-amber-400 flex items-center space-x-1">
+                <span>✍️ 今日作業抄寫項目</span>
+                <span class="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-1">左右二欄 ‧ 各四行格式</span>
               </span>
             </div>
 
-            <ol id="contactHomeworkList" class="space-y-2.5 text-lg sm:text-2xl font-black text-slate-900 tracking-wide leading-relaxed pl-2">
-              <!-- 動態渲染各項作業條目 -->
-            </ol>
+            <!-- 左右二欄作業抄寫網格 (由 JavaScript 動態渲染) -->
+            <div id="contactHomeworkList" class="space-y-3">
+              <!-- 動態由 JavaScript 渲染左欄 1~4 行與右欄 5~8 行 -->
+            </div>
           </div>
 
           <!-- 早自修與重要提醒醒目金黃色卡 -->
@@ -1368,82 +1370,60 @@
       </section>
 
       <!-- ------------------------------------------------------------- -->
-      <!-- TAB 4: 可愛守護動物 (Cute Animal Gold Evolution Overview) -->
+      <!-- TAB 4: 🐾 萌寵動物園 (Cute Animal Zoo Sanctuary - 採用生境同樂園排版) -->
       <!-- ------------------------------------------------------------- -->
       <section id="teacherTab-pets" class="hidden space-y-6">
         
-        <div class="parchment-card p-5 sm:p-6">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-amber-300">
+        <div id="petsZooSanctuary" class="bg-gradient-to-b from-sky-100 via-emerald-50 to-emerald-100/90 border-2 border-emerald-400 rounded-3xl p-5 shadow-lg relative overflow-hidden space-y-4">
+          <!-- 自然氛圍背景彩蛋裝飾 -->
+          <div class="absolute -top-6 -right-6 text-7xl opacity-25 select-none pointer-events-none">☀️</div>
+          <div class="absolute top-2 left-10 text-4xl opacity-30 select-none pointer-events-none animate-pulse">☁️</div>
+          <div class="absolute bottom-1 right-10 text-3xl opacity-30 select-none pointer-events-none">🌳</div>
+          <div class="absolute bottom-1 left-6 text-3xl opacity-30 select-none pointer-events-none">🌲</div>
+
+          <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-3 border-b border-emerald-300/80">
             <div>
-              <span class="text-amber-800 text-xs font-bold">🐾 五年二班 ‧ 萌寵動物園認養舍</span>
-              <h2 class="text-2xl font-black text-amber-950 flex items-center space-x-2">
-                <span>🐾 萌寵動物園 ‧ 全班 27 位大臣認養動物與飼育成長區</span>
-              </h2>
-            </div>
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-              <div class="text-xs text-amber-950 bg-amber-100 p-2.5 rounded-xl border border-amber-300 font-bold space-y-1">
-                <div>🍎 <strong>動物園投餵飼料 ‧ 長大五大成長期 (依累積總飽食度)：</strong></div>
-                <div class="text-[11px] text-amber-900">🍼 0~29點 喝奶小幼崽 ➔ 🌿 30~59點 活潑小萌童 ➔ 🏃 60~99點 健壯少年期 ➔ 🦁 100~149點 威風大成體 ➔ 👑 150點以上 動物園人氣巨星！</div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-black text-emerald-800 bg-emerald-200/90 px-2.5 py-0.5 rounded-full border border-emerald-300 shadow-xs">
+                  🐾 西寧五年二班 ‧ 萌寵動物園認養舍
+                </span>
+                <span class="text-xs text-emerald-900 font-bold hidden sm:inline">全班 27 隻認養動物都在這裡共同生活！點擊任一動物可快速投餵或更換陪伴萌寵</span>
               </div>
-              <button onclick="confirmResetAllPetsSatiety()" class="px-3 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-black text-xs shadow-sm flex items-center space-x-1 whitespace-nowrap self-stretch sm:self-auto justify-center" title="將全班 27 位大臣的萌寵飽食度全部歸零重置">
+              <h3 class="text-xl sm:text-2xl font-black text-emerald-950 flex items-center space-x-2 mt-1">
+                <span>🏞️ 班級萌寵大動物園 ‧ 歡樂同樂園</span>
+              </h3>
+            </div>
+
+            <!-- 動物園統計與互動按鈕 -->
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="petsHabitatStatsPill" class="text-xs font-black bg-white/95 text-emerald-900 px-3 py-1.5 rounded-xl border border-emerald-300 shadow-xs flex items-center space-x-1.5">
+                <span>🐾 27 隻動物棲息中</span>
+              </span>
+              <button onclick="feedAllZooAnimalsOne()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs shadow-sm flex items-center space-x-1 transform active:scale-95 transition" title="一鍵為全園 27 隻動物投餵 1 顆蘋果飼料！">
+                <span>🍎</span>
+                <span>全園大餵食 (+1)</span>
+              </button>
+              <button onclick="triggerZooCheerParty()" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs shadow-sm flex items-center space-x-1 transform active:scale-95 transition" title="全園動物集體歡呼跳舞">
+                <span>🎉</span>
+                <span>動物開趴跳舞</span>
+              </button>
+              <button onclick="confirmResetAllPetsSatiety()" class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 font-black text-xs shadow-sm flex items-center space-x-1 transform active:scale-95 transition" title="將全班 27 位大臣的萌寵飽食度全部歸零重置 (重返幼幼期)">
                 <span>🔄</span>
-                <span>全班飽食度歸零</span>
+                <span>飽食度歸零</span>
               </button>
             </div>
           </div>
 
-          <!-- 9大可愛守護動物圖鑑展示區 -->
-          <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2 mt-4 text-center">
-            <div class="bg-amber-50 border border-amber-300 p-2 rounded-xl flex flex-col items-center">
-              <span class="text-2xl">🦁</span>
-              <h4 class="font-black text-amber-950 text-xs mt-1">威嚴戰獅</h4>
-              <p class="text-[10px] text-amber-800">勇氣領導</p>
-            </div>
-            <div class="bg-orange-50 border border-orange-300 p-2 rounded-xl flex flex-col items-center">
-              <span class="text-2xl">🐶</span>
-              <h4 class="font-black text-orange-950 text-xs mt-1">忠誠柴犬</h4>
-              <p class="text-[10px] text-orange-800">忠誠守望</p>
-            </div>
-            <div class="bg-purple-50 border border-purple-300 p-2 rounded-xl flex flex-col items-center">
-              <span class="text-2xl">🐱</span>
-              <h4 class="font-black text-purple-950 text-xs mt-1">敏捷靈貓</h4>
-              <p class="text-[10px] text-purple-800">智慧敏銳</p>
-            </div>
-            <div class="bg-pink-50 border border-pink-300 p-2 rounded-xl flex flex-col items-center">
-              <span class="text-2xl">🐰</span>
-              <h4 class="font-black text-pink-950 text-xs mt-1">活潑飛兔</h4>
-              <p class="text-[10px] text-pink-800">生機飛躍</p>
-            </div>
-            <div class="bg-amber-100/70 border border-amber-300 p-2 rounded-xl flex flex-col items-center">
-              <span class="text-2xl">🐻</span>
-              <h4 class="font-black text-amber-950 text-xs mt-1">沉穩棕熊</h4>
-              <p class="text-[10px] text-amber-800">堅毅後盾</p>
-            </div>
-            <div class="bg-sky-50 border border-sky-300 p-2 rounded-xl flex flex-col items-center">
-              <span class="text-2xl">🐧</span>
-              <h4 class="font-black text-sky-950 text-xs mt-1">冰原企鵝</h4>
-              <p class="text-[10px] text-sky-800">冷靜秩序</p>
-            </div>
-            <div class="bg-teal-50 border border-teal-300 p-2 rounded-xl flex flex-col items-center">
-              <span class="text-2xl">🦉</span>
-              <h4 class="font-black text-teal-950 text-xs mt-1">睿智貓頭鷹</h4>
-              <p class="text-[10px] text-teal-800">學識遠見</p>
-            </div>
-            <div class="bg-amber-50 border border-amber-300 p-2 rounded-xl flex flex-col items-center">
-              <span class="text-2xl">🦊</span>
-              <h4 class="font-black text-amber-950 text-xs mt-1">機智靈狐</h4>
-              <p class="text-[10px] text-amber-800">靈活創造</p>
-            </div>
-            <div class="bg-yellow-50 border border-yellow-300 p-2 rounded-xl flex flex-col items-center">
-              <span class="text-2xl">🐹</span>
-              <h4 class="font-black text-yellow-950 text-xs mt-1">勤奮倉鼠</h4>
-              <p class="text-[10px] text-yellow-800">勤奮自律</p>
-            </div>
+          <!-- 動物園成長五大階段說明橫幅 -->
+          <div class="relative z-10 text-xs text-emerald-950 bg-white/85 p-2.5 rounded-xl border border-emerald-300 font-bold flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+            <span>🍎 <strong>動物園投餵飼料 ‧ 長大五大成長期 (依累積總飽食度)：</strong></span>
+            <span class="text-[11px] text-emerald-900 font-bold">🍼 0~29點 喝奶小幼崽 ➔ 🌿 30~59點 活潑小萌童 ➔ 🏃 60~99點 健壯少年期 ➔ 🦁 100~149點 威風大成體 ➔ 👑 150點以上 動物園人氣巨星！</span>
           </div>
-        </div>
 
-        <div id="petsOverviewGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <!-- 動態渲染 -->
+          <!-- 動物園草皮圍欄：27 隻動物生動棲息網格 (與榮譽集點榜同款簡潔排版) -->
+          <div id="petsOverviewGrid" class="relative z-10 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2.5">
+            <!-- 動態由 renderPetsOverview() 渲染 27 隻生活在一起的萌寵卡 -->
+          </div>
         </div>
 
       </section>
@@ -1821,10 +1801,10 @@
       <form onsubmit="saveContactBookData(event)" class="space-y-3.5 text-xs">
         <div>
           <label class="block font-black text-amber-950 mb-1 flex items-center justify-between">
-            <span>✍️ 今日作業抄寫項目 (一行一項，後排學生大字體呈現)：</span>
+            <span>✍️ 今日作業抄寫項目 (左右二欄格式：左欄1~4行、右欄5~8行，每行一項)：</span>
             <span class="text-[11px] text-amber-800 font-normal">可留空</span>
           </label>
-          <textarea id="editContactHwItems" rows="5" placeholder="例如：&#10;1. 國語習作第 八 課完成&#10;2. 數學習作 P.62 ~ P.65&#10;3. 訂正國語隨堂生字本" class="w-full p-3 rounded-xl border-2 border-amber-300 font-bold text-sm leading-relaxed focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+          <textarea id="editContactHwItems" rows="8" placeholder="例如：&#10;1. 國語習作第八課完成&#10;2. 數學習作 P.62 ~ P.65&#10;3. 訂正國語隨堂生字本&#10;4. 閱讀班書 20 頁&#10;5. 英文聽力掃碼練習&#10;6. 準備明日美勞用具&#10;7. 體能跳繩 200 下&#10;8. 家事服務一項" class="w-full p-3 rounded-xl border-2 border-amber-300 font-bold text-sm leading-relaxed focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
         </div>
 
         <div>
@@ -4011,8 +3991,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111713"></script>
-  <script src="ui.js?v=2026111713"></script>
+  <script src="app.js?v=2026111801"></script>
+  <script src="ui.js?v=2026111801"></script>
 
 </body>
 </html>

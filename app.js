@@ -576,10 +576,10 @@ class KingdomStore {
     }
 
     parsed.students.forEach((st, idx) => {
-      // 確保可用金幣與生涯累積總額 (飽食度歸零，初始值為 0，不可預設為 points)
+      // 確保可用金幣與生涯累積總額 (若 lifetimePoints 為 0 但 points > 0，校準為 points)
       if (st.points === undefined || st.points === null || isNaN(st.points)) st.points = 50;
-      if (st.lifetimePoints === undefined || st.lifetimePoints === null || isNaN(st.lifetimePoints)) {
-        st.lifetimePoints = 0;
+      if (st.lifetimePoints === undefined || st.lifetimePoints === null || isNaN(st.lifetimePoints) || (st.lifetimePoints === 0 && st.points > 0)) {
+        st.lifetimePoints = Math.max(0, parseInt(st.points, 10) || 0);
       }
       st.petExp = st.lifetimePoints;
 
@@ -597,6 +597,9 @@ class KingdomStore {
 
       // 同步多萌寵防呆結構 (每 500 點可多認養一隻，未達標自動裁切超額認養)
       this.syncStudentPets(st);
+
+      // 同步卡牌抽屜結構 (存放已兌換卡牌)
+      this.syncStudentCards(st, parsed);
 
       // 確保行為卡結構
       if (!parsed.behaviorCards[st.id]) {
@@ -911,6 +914,8 @@ class KingdomStore {
       if (student && ptsStr !== undefined && ptsStr !== null && String(ptsStr).trim() !== "") {
         const pts = Math.max(0, parseInt(ptsStr, 10) || 0);
         student.points = pts;
+        student.lifetimePoints = pts;
+        this.syncStudentPets(student);
         modifiedCount++;
       }
     });
@@ -936,7 +941,11 @@ class KingdomStore {
   // --- 同步與防呆校驗學生萌寵 (若蘋果因誤植修改未達標，自動移除超額認養的寵物) ---
   syncStudentPets(student) {
     if (!student) return [];
-    const lifetime = Math.max(0, parseInt(student.lifetimePoints, 10) || 0);
+    let lifetime = parseInt(student.lifetimePoints, 10);
+    if (isNaN(lifetime) || lifetime <= 0) {
+      lifetime = Math.max(0, parseInt(student.points, 10) || 0);
+      student.lifetimePoints = lifetime;
+    }
     const maxAllowed = 1 + Math.floor(lifetime / 500);
 
     // 初始化 pets 陣列 (至少有一隻預設萌寵)
@@ -955,6 +964,7 @@ class KingdomStore {
     }
 
     // 核心防呆裁切：若因誤植修改導致累積蘋果不足，自動移除超出上限之認養寵物
+    // 例如累積未達 1000 顆，第三隻認養寵物自動移除！未達 500 顆，第二隻與第三隻自動移除！
     if (student.pets.length > maxAllowed) {
       student.pets = student.pets.slice(0, maxAllowed);
     }
@@ -975,17 +985,57 @@ class KingdomStore {
     this.save();
   }
 
+  // --- 卡牌抽屜同步 (管理每位大臣持有的已兌換特權卡) ---
+  syncStudentCards(student, dataObj = null) {
+    if (!student) return [];
+    if (!Array.isArray(student.redeemedCards)) {
+      student.redeemedCards = [];
+    }
+    const data = dataObj || this.data;
+    if (data && Array.isArray(data.rewardRedemptions)) {
+      data.rewardRedemptions.forEach(r => {
+        if ((r.studentId === student.id || r.seatNo === student.seatNo) && r.status !== 'used') {
+          const exists = student.redeemedCards.some(c => c.id === r.id);
+          if (!exists) {
+            const cardDef = (data.rewardCards || []).find(cd => cd.id === r.cardId);
+            student.redeemedCards.push({
+              id: r.id,
+              cardId: r.cardId,
+              title: r.cardTitle || (cardDef ? cardDef.title : '特權獎勵卡'),
+              cost: r.cost !== undefined ? r.cost : (cardDef ? cardDef.cost : 0),
+              icon: (cardDef && cardDef.icon) || '🎁',
+              desc: (cardDef && cardDef.desc) || '',
+              category: (cardDef && cardDef.category) || 'special',
+              redeemedAt: (r.date && r.time) ? `${r.date} ${r.time}` : (r.date || '')
+            });
+          }
+        }
+      });
+    }
+    return student.redeemedCards;
+  }
+
+  syncAllStudentsCards() {
+    if (!this.data.students || !Array.isArray(this.data.students)) return;
+    this.data.students.forEach(st => this.syncStudentCards(st));
+    this.save();
+  }
+
   // --- 認養或更換萌寵 (slotIndex: 0 為第1隻主寵，1 為第2隻，2 為第3隻...) ---
   adoptPet(studentId, animalType, slotIndex = 0) {
     const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
     if (!student) return false;
     this.syncStudentPets(student);
-    const lifetime = Math.max(0, parseInt(student.lifetimePoints, 10) || 0);
+    let lifetime = parseInt(student.lifetimePoints, 10);
+    if (isNaN(lifetime) || lifetime <= 0) {
+      lifetime = Math.max(0, parseInt(student.points, 10) || 0);
+      student.lifetimePoints = lifetime;
+    }
     const maxAllowed = 1 + Math.floor(lifetime / 500);
     const slot = parseInt(slotIndex, 10) || 0;
+    const reqPts = slot * 500;
 
-    if (slot >= maxAllowed) {
-      const reqPts = slot * 500;
+    if (slot >= maxAllowed || lifetime < reqPts) {
       if (typeof alert === 'function') {
         alert(`累積總蘋果需滿 ${reqPts} 顆才可認養第 ${slot + 1} 隻萌寵！目前累積為 ${lifetime} 顆。`);
       } else {
@@ -1313,7 +1363,11 @@ class KingdomStore {
           st.lifetimePoints = (st.lifetimePoints || 0) + pts;
         }
       } else if (mode === 'set_points') {
-        st.points = Math.max(0, parseInt(targetPoints, 10) || 0);
+        const target = Math.max(0, parseInt(targetPoints, 10) || 0);
+        st.points = target;
+        if (syncLifetime) {
+          st.lifetimePoints = target;
+        }
       } else if (mode === 'set_lifetime') {
         st.lifetimePoints = Math.max(0, parseInt(targetLifetime, 10) || 0);
       } else if (mode === 'reset_points') {
@@ -1356,7 +1410,10 @@ class KingdomStore {
   resetSingleStudentPoints(studentId, targetPoints = 0) {
     const student = this.data.students.find(s => s.id === studentId || s.seatNo === studentId);
     if (student) {
-      student.points = Math.max(0, parseInt(targetPoints, 10) || 0);
+      const pts = Math.max(0, parseInt(targetPoints, 10) || 0);
+      student.points = pts;
+      student.lifetimePoints = pts;
+      this.syncStudentPets(student);
       this.save();
     }
   }
@@ -1369,6 +1426,8 @@ class KingdomStore {
     const newPts = Math.max(0, parseInt(targetPoints, 10) || 0);
     const diff = newPts - oldPoints;
     student.points = newPts;
+    student.lifetimePoints = newPts; // 導師修正誤植，生涯累積立即同步校正為該數值！
+    this.syncStudentPets(student); // 自動防呆裁切超出上限之認養寵物
     this.data.pointLogs.unshift({
       id: Date.now(),
       studentId: student.id,
@@ -1578,12 +1637,27 @@ class KingdomStore {
       return { success: false, message: `蘋果不足！持有：${student.points} 顆，需要：${card.cost} 顆` };
     }
 
-    // 扣除可用金幣，保留 lifetimePoints！
+    // 扣除可用蘋果，保留 lifetimePoints！
     student.points -= card.cost;
+
+    // 將已兌換卡牌存放在個人卡牌抽屜（不要求兌換當下立即使用）
+    this.syncStudentCards(student);
+    const instanceId = 'rc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    const redeemedCard = {
+      id: instanceId,
+      cardId: card.id,
+      title: card.title,
+      cost: card.cost,
+      icon: card.icon || '🎁',
+      desc: card.desc || '',
+      category: card.category || 'special',
+      redeemedAt: getTodayDateString() + ' ' + new Date().toTimeString().slice(0, 5)
+    };
+    student.redeemedCards.push(redeemedCard);
 
     if (!this.data.rewardRedemptions) this.data.rewardRedemptions = [];
     const record = {
-      id: Date.now(),
+      id: instanceId,
       studentId: student.id,
       seatNo: student.seatNo,
       studentName: student.name,
@@ -1600,13 +1674,62 @@ class KingdomStore {
       id: Date.now() + 1,
       studentId: student.id,
       points: -card.cost,
-      reason: `兌換卡牌【${card.title}】`,
+      reason: `兌換特權卡【${card.title}】（已存入卡牌抽屜）`,
       date: getTodayDateString(),
       time: new Date().toTimeString().slice(0, 5)
     });
 
     this.save();
-    return { success: true, message: `成功兌換【${card.title}】！已扣除 ${card.cost} 顆可用蘋果，萌寵陪伴成長不減退！` };
+    return {
+      success: true,
+      studentName: student.name,
+      cardTitle: card.title,
+      card: redeemedCard,
+      message: `成功兌換【${card.title}】！已扣除 ${card.cost} 顆可用蘋果並存入卡牌抽屜，隨時可取用！`
+    };
+  }
+
+  // --- 使用大臣已兌換的卡牌 (自抽屜中移除並生效) ---
+  useRedeemedCard(studentId, instanceId) {
+    const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
+    if (!student) return { success: false, message: "查無此大臣" };
+    this.syncStudentCards(student);
+    if (!Array.isArray(student.redeemedCards) || student.redeemedCards.length === 0) {
+      return { success: false, message: "該大臣卡牌抽屜中無可用卡牌" };
+    }
+    const idx = student.redeemedCards.findIndex(c => c.id == instanceId || c.cardId == instanceId);
+    if (idx === -1) {
+      return { success: false, message: "卡牌抽屜中查無此卡牌" };
+    }
+    const usedCard = student.redeemedCards.splice(idx, 1)[0];
+
+    // 同步更新 rewardRedemptions 紀錄狀態為 used
+    if (Array.isArray(this.data.rewardRedemptions)) {
+      const rec = this.data.rewardRedemptions.find(r => r.id == usedCard.id || (r.studentId == student.id && r.cardId == usedCard.cardId && r.status !== 'used'));
+      if (rec) {
+        rec.status = 'used';
+        rec.usedAt = getTodayDateString() + ' ' + new Date().toTimeString().slice(0, 5);
+      }
+    }
+
+    if (!Array.isArray(this.data.pointLogs)) this.data.pointLogs = [];
+    this.data.pointLogs.unshift({
+      id: Date.now(),
+      studentId: student.id,
+      points: 0,
+      reason: `✨ 使用特權卡【${usedCard.title}】（已自卡牌抽屜移除）`,
+      date: getTodayDateString(),
+      time: new Date().toTimeString().slice(0, 5)
+    });
+
+    this.save();
+    return {
+      success: true,
+      studentName: student.name,
+      cardTitle: usedCard.title,
+      usedCard: usedCard,
+      message: `【${student.name}】已成功使用【${usedCard.title}】！已自卡牌抽屜中移除。`
+    };
   }
 
   toggleRedemptionStatus(redemptionId) {

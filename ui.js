@@ -530,22 +530,77 @@ function renderMorningBoard() {
   const hwList = document.getElementById("contactHomeworkList");
   if (hwList) {
     const items = (contactBook && contactBook.homeworkItems) ? contactBook.homeworkItems : [];
-    if (items.length === 0) {
-      hwList.innerHTML = `
-        <li class="flex items-center space-x-2 py-4 text-amber-900/70 text-lg sm:text-xl font-bold bg-amber-50/60 p-4 rounded-xl border border-dashed border-amber-300">
-          <span>📝 導師今日尚未指派作業（點擊右上角「✏️ 編輯聯絡簿項目」開始輸入）</span>
-        </li>
+
+    const renderCardItem = (slotIdx, text) => {
+      const isFilled = Boolean(text && text.trim());
+      if (isFilled) {
+        return `
+          <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/95 border-2 border-amber-300 shadow-sm transition hover:border-amber-500 min-h-[4.5rem]">
+            <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-xs border border-amber-500/40">
+              ${slotIdx}
+            </span>
+            <span class="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+              ${text}
+            </span>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[4.5rem]">
+            <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
+              ${slotIdx}
+            </span>
+            <span class="text-lg sm:text-xl font-bold text-amber-900/35 italic">
+              （留白）
+            </span>
+          </div>
+        `;
+      }
+    };
+
+    const leftColHtml = [1, 2, 3, 4].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+    const rightColHtml = [5, 6, 7, 8].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+
+    let extraRowsHtml = '';
+    if (items.length > 8) {
+      const extraItems = items.slice(8);
+      extraRowsHtml = `
+        <div class="col-span-1 md:col-span-2 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
+          <span class="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md">追加項目：</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            ${extraItems.map((item, idx) => renderCardItem(9 + idx, item)).join('')}
+          </div>
+        </div>
       `;
-    } else {
-      hwList.innerHTML = items.map((item, idx) => `
-        <li class="flex items-start space-x-2 py-1 border-b border-amber-200/60 last:border-0">
-          <span class="bg-amber-400 text-amber-950 w-8 h-8 rounded-full flex items-center justify-center text-base sm:text-lg font-black flex-shrink-0 shadow-sm">
-            ${idx + 1}
-          </span>
-          <span class="pt-0.5">${item}</span>
-        </li>
-      `).join('');
     }
+
+    hwList.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
+        <!-- 左欄 (第 1 ~ 4 行) -->
+        <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
+          <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
+            <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 4 項)</span></span>
+            <span class="text-[11px] text-amber-800 font-mono">1 - 4</span>
+          </div>
+          <div class="space-y-2.5">
+            ${leftColHtml}
+          </div>
+        </div>
+
+        <!-- 右欄 (第 5 ~ 8 行) -->
+        <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
+          <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
+            <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 5 ~ 8 項)</span></span>
+            <span class="text-[11px] text-amber-800 font-mono">5 - 8</span>
+          </div>
+          <div class="space-y-2.5">
+            ${rightColHtml}
+          </div>
+        </div>
+
+        ${extraRowsHtml}
+      </div>
+    `;
   }
 
   const reminderList = document.getElementById("contactReminderList");
@@ -3623,10 +3678,10 @@ function setTrafficOverrideFromModal(studentId, overrideLight) {
 }
 
 // ===================================================================
-// 加點區 ‧ 王國全班萌寵大動物園 (Kingdom Class Pet Sanctuary in Points View)
+// 加點區 ‧ 王國全班萌寵大動物園 (Kingdom Class Pet Sanctuary Shared Renderer)
 // ===================================================================
-function renderPointsZooHabitat() {
-  const container = document.getElementById("pointsZooGrid");
+function renderZooHabitatShared(containerId = "pointsZooGrid", statsPillId = "zooHabitatStatsPill") {
+  const container = document.getElementById(containerId);
   if (!container) return;
 
   const students = window.KingdomApp.store.data.students || [];
@@ -3637,13 +3692,17 @@ function renderPointsZooHabitat() {
   const cardsHtml = students.map(st => {
     const seatPad = String(st.seatNo).padStart(2, '0');
     const aType = (st.animalType || st.petType || 'lion').toLowerCase();
-    const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0);
+    window.KingdomApp.store.syncStudentPets(st);
+    let lifetime = parseInt(st.lifetimePoints, 10);
+    if (isNaN(lifetime) || lifetime <= 0) {
+      lifetime = Math.max(0, parseInt(st.points, 10) || 0);
+      st.lifetimePoints = lifetime;
+    }
     totalFood += lifetime;
     const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
     if (petStatus.isGolden) goldenCount++;
     const svgCode = window.KingdomApp.renderAnimalSVG(aType, petStatus.stageIndex);
 
-    window.KingdomApp.store.syncStudentPets(st);
     const pets = st.pets || [{ type: aType }];
     const maxAllowed = 1 + Math.floor(lifetime / 500);
     if (pets.length > 1) doublePetCount++;
@@ -3658,35 +3717,40 @@ function renderPointsZooHabitat() {
         return `
           <div class="mt-1 flex items-center justify-between w-full bg-purple-50 px-1.5 py-0.5 rounded-lg border border-purple-200" title="第${slotIdx + 1}守護萌寵：${sStatus.animalName} (${sExp}點)">
             <span class="text-[9px] font-black text-purple-900 truncate">👑 ${sStatus.animalIcon} ${sStatus.animalName}</span>
-            <span class="text-[8px] font-bold text-purple-700 bg-purple-200/80 px-1 rounded">${sStatus.stageTitle}</span>
+            <button type="button" onclick="openChangeAnimalModal(${st.id}, ${slotIdx})" class="text-[8px] text-purple-700 hover:underline font-bold" title="更換第${slotIdx + 1}隻萌寵">[換]</button>
           </div>
         `;
       }).join('');
     }
-    if (pets.length < maxAllowed) {
+    const nextSlot = pets.length;
+    const reqPtsForNext = nextSlot * 500;
+    if (pets.length < maxAllowed && lifetime >= reqPtsForNext) {
       multiPetPills += `
-        <button type="button" onclick="openChangeAnimalModal(${st.id}, ${pets.length})" class="mt-1 w-full bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded px-1 py-0.5 text-[9px] font-black shadow-2xs">
-          🐣 認養第${pets.length + 1}萌寵！
+        <button type="button" onclick="openChangeAnimalModal(${st.id}, ${nextSlot})" class="mt-1 w-full bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded px-1 py-0.5 text-[9px] font-black shadow-2xs">
+          🐣 認養第${nextSlot + 1}萌寵！
         </button>
       `;
     }
 
     return `
-      <div id="zooAnimalCard-${st.id}" class="bg-white/90 hover:bg-white rounded-2xl p-2 border ${petStatus.isGolden ? 'border-amber-400 ring-2 ring-amber-300 shadow-md bg-gradient-to-b from-amber-50 to-white' : 'border-emerald-300/80 hover:border-emerald-500'} shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col items-center justify-between text-center relative group transform hover:-translate-y-1">
+      <div id="zooAnimalCard-${containerId}-${st.id}" class="bg-white/90 hover:bg-white rounded-2xl p-2 border ${petStatus.isGolden ? 'border-amber-400 ring-2 ring-amber-300 shadow-md bg-gradient-to-b from-amber-50 to-white' : 'border-emerald-300/80 hover:border-emerald-500'} shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col items-center justify-between text-center relative group transform hover:-translate-y-1">
         <!-- 學生座號姓名 (保證同一行) -->
         <span class="text-[11px] font-mono font-black text-emerald-950 bg-emerald-100/90 px-1.5 py-0.5 rounded-full mb-1 truncate max-w-full whitespace-nowrap">
           ${seatPad} ${st.name} ${pets.length > 1 ? `👑x${pets.length}` : ''}
         </span>
 
         <!-- 萌寵 SVG 生動頭像 (點擊可開啟投餵舍) -->
-        <div onclick="openZooFeedModal(${st.id})" class="w-14 h-14 flex items-center justify-center p-0.5 cursor-pointer transform group-hover:scale-110 transition-transform duration-200" title="點擊投餵 ${st.name} 的 ${petStatus.animalName}">
+        <div onclick="openZooFeedModal(${st.id})" class="w-14 h-14 flex items-center justify-center p-0.5 cursor-pointer transform group-hover:scale-110 transition-transform duration-200" title="點擊投餵 ${st.name} 的 ${petStatus.animalName} (投餵飼料伴寵物長大)">
           ${svgCode}
         </div>
 
-        <!-- 動物名稱與階段 -->
+        <!-- 動物名稱與階段 (附帶更換動物捷徑) -->
         <div class="mt-1 w-full">
-          <div class="text-[10px] font-black text-slate-800 truncate" title="${petStatus.animalName}">
-            ${petStatus.animalIcon} ${petStatus.animalName}
+          <div class="flex items-center justify-center space-x-1">
+            <span class="text-[10px] font-black text-slate-800 truncate" title="${petStatus.animalName}">
+              ${petStatus.animalIcon} ${petStatus.animalName}
+            </span>
+            <button type="button" onclick="openChangeAnimalModal(${st.id}, 0)" class="text-[9px] text-emerald-800 hover:text-emerald-950 hover:underline font-bold" title="換第1隻動物">[換動物]</button>
           </div>
           <div class="text-[9px] font-bold px-1.5 py-0.2 rounded-full mt-0.5 inline-block ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 border border-amber-400 font-black' : 'bg-emerald-100 text-emerald-900'}">
             ${petStatus.stageTitle}
@@ -3703,13 +3767,13 @@ function renderPointsZooHabitat() {
           <span class="text-emerald-800" title="累積成長經驗">🐾${lifetime}</span>
         </div>
 
-        <!-- 快捷互動按鈕：+1 🍎 與 🍎 投餵 -->
+        <!-- 快捷互動按鈕：+1 🍎 與 🍎 投餵飼料 -->
         <div class="mt-1.5 flex items-center space-x-1 w-full pt-1 border-t border-emerald-100">
           <button onclick="awardSingleStudent(${st.id}, 1, '課堂嘉獎獎勵蘋果')" class="flex-1 py-0.5 rounded-md bg-rose-100 hover:bg-rose-200 text-rose-950 font-black text-[10px] transition border border-rose-300 shadow-xs" title="給予 +1 顆紅蘋果">
             +1🍎
           </button>
-          <button onclick="quickFeedStudentInZoo(${st.id})" class="flex-1 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] transition shadow-xs" title="投餵 1 顆蘋果伴寵物長大">
-            🍎餵食
+          <button onclick="quickFeedStudentInZoo(${st.id})" class="flex-1 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] transition shadow-xs" title="投餵飼料 1 顆蘋果伴寵物長大">
+            🍎投餵飼料
           </button>
         </div>
       </div>
@@ -3718,7 +3782,7 @@ function renderPointsZooHabitat() {
 
   container.innerHTML = cardsHtml;
 
-  const statsPill = document.getElementById("zooHabitatStatsPill");
+  const statsPill = document.getElementById(statsPillId);
   if (statsPill) {
     statsPill.innerHTML = `
       <span>🐾 全園 <strong>${students.length + doublePetCount}</strong> 隻動物棲息</span>
@@ -3729,6 +3793,10 @@ function renderPointsZooHabitat() {
       ${doublePetCount > 0 ? `<span class="text-emerald-300">·</span><span>✨ 雙寵大臣 <strong>${doublePetCount}</strong> 位</span>` : ''}
     `;
   }
+}
+
+function renderPointsZooHabitat() {
+  renderZooHabitatShared("pointsZooGrid", "zooHabitatStatsPill");
 }
 
 function quickFeedStudentInZoo(studentId) {
@@ -3822,6 +3890,7 @@ function renderPointsView() {
   renderPointPresets();
   renderRewardCards();
   renderPointsZooHabitat();
+  renderPetsOverview();
 
   if (grid) {
     grid.innerHTML = students.map(st => {
@@ -3829,6 +3898,11 @@ function renderPointsView() {
       const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0);
       const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
       const isSelected = selectedStudentIdsForPoints.has(st.id);
+
+      window.KingdomApp.store.syncStudentCards(st);
+      const heldCards = st.redeemedCards || [];
+      const isDrawerOpen = window.openCardDrawerStudentIds && window.openCardDrawerStudentIds.has(st.id);
+
       return `
         <div id="pointStudentCard-${st.id}" class="parchment-card p-3 sm:p-3.5 minister-card flex flex-col justify-between rounded-2xl border-2 transition-all hover:shadow-md ${isSelected ? 'student-multi-selected border-amber-500 bg-amber-50/90' : 'border-amber-200/90 bg-white/95'}">
           <div>
@@ -3849,52 +3923,90 @@ function renderPointsView() {
               </div>
             </div>
 
-            <!-- 核心大字：可用蘋果與萌寵成長 (簡單、清楚、明瞭) -->
-            <div class="my-2.5 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-50 via-amber-50 to-emerald-50 border border-rose-300/80 flex items-center justify-between shadow-2xs">
-              <div class="flex items-center space-x-2">
-                <span class="text-2xl leading-none">🍎</span>
-                <div>
-                  <span class="text-[10px] text-rose-800 font-bold block leading-tight">可用蘋果</span>
-                  <div class="flex items-baseline space-x-0.5">
-                    <span class="text-2xl font-black text-rose-600 font-digital leading-none">${st.points || 0}</span>
-                    <span class="text-xs font-black text-rose-800">顆</span>
+            <!-- 核心大字：可用蘋果與萌寵成長 + 抽屜方式顯示已兌換特權卡牌 -->
+            <div class="my-2 p-2.5 rounded-xl bg-gradient-to-r from-rose-50 via-amber-50 to-emerald-50 border border-rose-300/80 shadow-2xs space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <span class="text-2xl leading-none">🍎</span>
+                  <div>
+                    <span class="text-[10px] text-rose-800 font-bold block leading-tight">可用蘋果</span>
+                    <div class="flex items-baseline space-x-0.5">
+                      <span class="text-2xl font-black text-rose-600 font-digital leading-none">${st.points || 0}</span>
+                      <span class="text-xs font-black text-rose-800">顆</span>
+                    </div>
                   </div>
                 </div>
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-500 font-bold block leading-tight">🐾 寵物成長</span>
+                  <span class="text-xs font-black text-emerald-800 font-digital">${lifetime} 點</span>
+                </div>
               </div>
-              <div class="text-right">
-                <span class="text-[10px] text-slate-500 font-bold block leading-tight">🐾 寵物成長</span>
-                <span class="text-xs font-black text-emerald-800 font-digital">${lifetime} 點</span>
-              </div>
+
+              <!-- 🗃️ 已兌換卡牌抽屜展開/收合開關按鈕 (先存後用 ‧ 隨時取用) -->
+              <button type="button" onclick="toggleStudentCardDrawer(${st.id})" 
+                class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition shadow-2xs ${heldCards.length > 0 ? 'bg-amber-100 hover:bg-amber-200 border-amber-300 text-amber-950 font-black' : 'bg-white/80 hover:bg-white border-amber-200 text-amber-900/80 font-bold'}"
+                title="點擊展開/收合此大臣已兌換特權卡牌抽屜">
+                <span class="flex items-center space-x-1.5 truncate">
+                  <span class="text-sm">🗃️</span>
+                  <span class="text-xs font-black">卡牌抽屜</span>
+                  <span class="px-1.5 py-0.2 rounded-full text-[10px] font-black ${heldCards.length > 0 ? 'bg-amber-500 text-white shadow-2xs' : 'bg-slate-200 text-slate-600'}">
+                    ${heldCards.length} 張已兌換
+                  </span>
+                </span>
+                <span class="text-[10px] font-bold text-amber-800 transform transition-transform ${isDrawerOpen ? 'rotate-180' : ''}">
+                  ▼
+                </span>
+              </button>
+
+              <!-- 卡牌抽屜內容面板 -->
+              ${isDrawerOpen ? `
+                <div class="p-2 rounded-xl bg-amber-50/95 border-2 border-amber-300 shadow-inner space-y-1.5">
+                  <div class="flex items-center justify-between pb-1 border-b border-amber-200 text-[10px] font-black text-amber-950">
+                    <span>🎒 存放卡牌 (${heldCards.length}張)</span>
+                    <span class="text-[9px] text-amber-800 font-normal">先存後用 ‧ 隨時取用</span>
+                  </div>
+                  ${heldCards.length === 0 ? `
+                    <div class="py-2.5 text-center text-[10px] text-slate-500 font-bold bg-white/70 rounded-lg border border-dashed border-amber-200">
+                      📭 抽屜目前無存放卡牌<br>
+                      <span class="text-[9px] text-amber-800">（點擊下方「🎁 換卡」兌換）</span>
+                    </div>
+                  ` : `
+                    <div class="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+                      ${heldCards.map(c => `
+                        <div class="p-1.5 rounded-lg bg-white border border-amber-300 shadow-2xs flex items-center justify-between gap-1 hover:border-amber-500 transition">
+                          <div class="min-w-0 flex-1">
+                            <div class="flex items-center space-x-1 truncate">
+                              <span class="text-sm shrink-0">${c.icon || '🎁'}</span>
+                              <span class="text-[11px] font-black text-amber-950 truncate" title="${c.title}">${c.title}</span>
+                            </div>
+                            ${c.desc ? `<div class="text-[9px] text-slate-500 truncate mt-0.5" title="${c.desc}">${c.desc}</div>` : ''}
+                          </div>
+                          <button type="button" onclick="confirmUseStudentCard(${st.id}, '${c.id}', '${(c.title || '').replace(/'/g, "\\'")}')"
+                            class="px-2 py-0.5 rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-95 text-white font-black text-[10px] shadow-2xs shrink-0 flex items-center space-x-0.5 transition"
+                            title="立即使用此張卡牌並自抽屜移除">
+                            <span>✨</span>
+                            <span>使用</span>
+                          </button>
+                        </div>
+                      `).join('')}
+                    </div>
+                  `}
+                </div>
+              ` : ''}
             </div>
           </div>
 
-          <!-- 底部操作列：好點的大按鍵快速加蘋果 + 投餵與操作按鈕 -->
-          <div class="space-y-1.5 pt-1">
-            <!-- 快速加蘋果主按鈕 (+1, +2, +5) -->
-            <div class="grid grid-cols-3 gap-1.5">
-              <button onclick="awardSingleStudent(${st.id}, 1, '課堂嘉獎獎勵蘋果')" class="py-1 rounded-xl bg-rose-100 hover:bg-rose-200 active:scale-95 text-rose-950 font-black text-xs sm:text-sm transition border border-rose-300 shadow-2xs flex items-center justify-center space-x-0.5" title="獎勵 +1 顆紅蘋果">
-                <span>+1</span><span class="text-xs">🍎</span>
-              </button>
-              <button onclick="awardSingleStudent(${st.id}, 2, '表現優良獎勵蘋果')" class="py-1 rounded-xl bg-rose-100 hover:bg-rose-200 active:scale-95 text-rose-950 font-black text-xs sm:text-sm transition border border-rose-300 shadow-2xs flex items-center justify-center space-x-0.5" title="獎勵 +2 顆紅蘋果">
-                <span>+2</span><span class="text-xs">🍎</span>
-              </button>
-              <button onclick="awardSingleStudent(${st.id}, 5, '建樹卓越獎勵蘋果')" class="py-1 rounded-xl bg-gradient-to-r from-rose-400 to-amber-500 hover:from-rose-500 hover:to-amber-600 active:scale-95 text-white font-black text-xs sm:text-sm transition shadow-2xs flex items-center justify-center space-x-0.5" title="大賞 +5 顆紅蘋果">
-                <span>+5</span><span class="text-xs">🍎</span>
-              </button>
-            </div>
-
-            <!-- 輔助操作按鈕 (🐾投餵寵物 / 🎁換卡 / ✏️改蘋果) -->
-            <div class="grid grid-cols-3 gap-1.5">
-              <button onclick="openZooFeedModal(${st.id})" class="py-1 px-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-950 font-bold text-xs transition border border-emerald-300 shadow-2xs flex items-center justify-center space-x-0.5" title="投餵認養萌寵長大">
-                <span>🐾</span><span>投餵</span>
-              </button>
-              <button onclick="openRedeemCardForStudent(${st.id})" class="py-1 px-1.5 rounded-lg bg-white hover:bg-amber-100 active:scale-95 text-amber-950 font-bold text-xs transition border border-amber-300 shadow-2xs flex items-center justify-center space-x-0.5" title="以蘋果兌換特權卡">
-                <span>🎁</span><span>換卡</span>
-              </button>
-              <button onclick="openEditStudentPointsModal(${st.id})" class="py-1 px-1.5 rounded-lg bg-white hover:bg-rose-100 active:scale-95 text-rose-950 font-bold text-xs transition border border-rose-300 shadow-2xs flex items-center justify-center space-x-0.5" title="更改此大臣蘋果數量">
-                <span>✏️</span><span>改蘋果</span>
-              </button>
-            </div>
+          <!-- 底部輔助操作按鈕 (🐾投餵寵物 / 🎁換卡 / ✏️改蘋果) -->
+          <div class="grid grid-cols-3 gap-1.5 pt-1">
+            <button onclick="openZooFeedModal(${st.id})" class="py-1 px-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-950 font-bold text-xs transition border border-emerald-300 shadow-2xs flex items-center justify-center space-x-0.5" title="投餵認養萌寵長大">
+              <span>🐾</span><span>投餵</span>
+            </button>
+            <button onclick="openRedeemCardForStudent(${st.id})" class="py-1 px-1.5 rounded-lg bg-white hover:bg-amber-100 active:scale-95 text-amber-950 font-bold text-xs transition border border-amber-300 shadow-2xs flex items-center justify-center space-x-0.5" title="以蘋果兌換特權卡">
+              <span>🎁</span><span>換卡</span>
+            </button>
+            <button onclick="openEditStudentPointsModal(${st.id})" class="py-1 px-1.5 rounded-lg bg-white hover:bg-rose-100 active:scale-95 text-rose-950 font-bold text-xs transition border border-rose-300 shadow-2xs flex items-center justify-center space-x-0.5" title="更改此大臣蘋果數量">
+              <span>✏️</span><span>改蘋果</span>
+            </button>
           </div>
         </div>
       `;
@@ -4332,13 +4444,56 @@ function submitRedeemCard(e) {
     const record = window.KingdomApp.store.redeemCard(studentId, cardId);
     window.KingdomApp.sound.playFanfare();
     window.KingdomApp.triggerConfetti();
-    showToast(`🎉 恭喜【${record.studentName}】成功兌換【${record.cardTitle}】！`);
+
+    // 自動展開該大臣的卡牌抽屜，方便立即查看已兌換卡牌
+    if (!window.openCardDrawerStudentIds) window.openCardDrawerStudentIds = new Set();
+    window.openCardDrawerStudentIds.add(studentId);
+
+    showToast(`🎉 恭喜【${record.studentName}】成功兌換【${record.cardTitle}】！已存入卡牌抽屜，隨時可取用！`);
     closeRedeemCardModal();
     renderRewardCards();
     renderPointsView();
     renderRosterView();
   } catch (err) {
     alert(err.message);
+  }
+}
+
+// ===================================================================
+// 大臣個人卡牌抽屜與特權卡使用 (Card Drawer & Activation)
+// ===================================================================
+window.openCardDrawerStudentIds = window.openCardDrawerStudentIds || new Set();
+
+function toggleStudentCardDrawer(studentId) {
+  if (!window.openCardDrawerStudentIds) {
+    window.openCardDrawerStudentIds = new Set();
+  }
+  if (window.openCardDrawerStudentIds.has(studentId)) {
+    window.openCardDrawerStudentIds.delete(studentId);
+  } else {
+    window.openCardDrawerStudentIds.add(studentId);
+  }
+  renderPointsView();
+}
+
+function confirmUseStudentCard(studentId, instanceId, cardTitle) {
+  const student = (window.KingdomApp.store.data.students || []).find(s => s.id === studentId || s.seatNo === studentId);
+  const stName = student ? student.name : '大臣';
+  if (!confirm(`確定要讓【${stName}】使用特權卡牌【${cardTitle}】嗎？\n\n使用後將自動在可使用的卡牌抽屜中移除該張卡牌！`)) {
+    return;
+  }
+  const result = window.KingdomApp.store.useRedeemedCard(studentId, instanceId);
+  if (result && result.success) {
+    if (window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+      window.KingdomApp.sound.playFanfare();
+    }
+    if (window.KingdomApp.triggerConfetti) {
+      window.KingdomApp.triggerConfetti();
+    }
+    showToast(`✨ 【${result.studentName}】成功使用了【${result.cardTitle}】！已自卡牌抽屜扣除。`, "🎉");
+    renderPointsView();
+  } else {
+    alert((result && result.message) || "使用卡牌失敗");
   }
 }
 
@@ -4809,149 +4964,10 @@ function confirmRevokePointLog(logId) {
 }
 
 // ===================================================================
-// 7. 班級萌寵動物園 ‧ 飼育成長舍 (Zoo Feeding & Animal Care View)
+// 7. 班級萌寵動物園 ‧ 飼育成長舍 (Zoo Feeding & Animal Care View - 採用生境同樂園排版)
 // ===================================================================
 function renderPetsOverview() {
-  const grid = document.getElementById("petsOverviewGrid");
-  if (!grid) return;
-
-  const students = window.KingdomApp.store.data.students;
-
-  grid.innerHTML = students.map(st => {
-    window.KingdomApp.store.syncStudentPets(st);
-    const pets = st.pets || [{ type: st.animalType || 'dog' }];
-    const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0);
-    const maxAllowed = 1 + Math.floor(lifetime / 500);
-
-    const mainType = pets[0]?.type || 'dog';
-    const mainStatus = window.KingdomApp.getAnimalStatus(mainType, lifetime);
-    const mainSvg = window.KingdomApp.renderAnimalSVG(mainType, mainStatus.stageIndex);
-
-    // 徽章與稱號
-    let masterBadge = "";
-    if (pets.length >= 3) {
-      masterBadge = `<span class="bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-black px-2 py-0.5 rounded-full text-[10px] shadow-xs">👑 ${pets.length}寵尊爵大師</span>`;
-    } else if (pets.length === 2) {
-      masterBadge = `<span class="bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 font-black px-2 py-0.5 rounded-full text-[10px] shadow-xs">🏆 雙寵大師</span>`;
-    } else {
-      masterBadge = `<span class="font-black px-2 py-0.5 rounded-full ${mainStatus.isGolden ? 'bg-amber-300 text-amber-950 border border-amber-500 shadow-xs' : 'bg-amber-100 text-amber-900'}">${mainStatus.stageTitle}</span>`;
-    }
-
-    // 寵物圖標合集
-    const petIconsHtml = pets.map((p, idx) => {
-      const pExp = Math.max(0, lifetime - idx * 500);
-      const ps = window.KingdomApp.getAnimalStatus(p.type, pExp);
-      return `<span class="text-xs" title="第${idx + 1}寵：${ps.animalName} (${pExp}點)">${ps.animalIcon}</span>`;
-    }).join(' ');
-
-    // 寵物展示網格
-    let petsDisplayHtml = "";
-    if (pets.length > 1) {
-      const cols = pets.length === 2 ? 'grid-cols-2' : (pets.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4');
-      const petCards = pets.map((p, idx) => {
-        const pExp = Math.max(0, lifetime - idx * 500);
-        const pStatus = window.KingdomApp.getAnimalStatus(p.type, pExp);
-        const pSvg = window.KingdomApp.renderAnimalSVG(p.type, pStatus.stageIndex);
-        return `
-          <div class="p-1.5 rounded-xl ${idx === 0 ? 'bg-amber-50/90 border border-amber-300' : 'bg-purple-50/90 border border-purple-200'} text-center shadow-2xs">
-            <span class="text-[9px] font-black ${idx === 0 ? 'text-amber-800' : 'text-purple-800'} block">第${idx + 1}寵 (${pExp}點)</span>
-            <div class="w-14 h-14 mx-auto my-0.5">${pSvg}</div>
-            <span class="text-[10px] font-black text-slate-900 block truncate">${pStatus.animalName}</span>
-            <span class="text-[8px] font-bold text-slate-500 block">${pStatus.stageTitle}</span>
-            <button type="button" onclick="openChangeAnimalModal(${st.id}, ${idx})" class="text-[9px] text-amber-700 hover:text-amber-900 hover:underline font-bold mt-0.5">[換第${idx + 1}寵]</button>
-          </div>
-        `;
-      }).join('');
-
-      petsDisplayHtml = `
-        <div class="my-2 p-2 rounded-xl bg-white/95 border border-amber-300 shadow-inner">
-          <div class="text-[10px] font-black text-amber-950 mb-1 flex items-center justify-center space-x-1">
-            <span>👑 守護萌寵同聚 (${pets.length}隻神獸)</span>
-          </div>
-          <div class="grid ${cols} gap-1.5 items-center">
-            ${petCards}
-          </div>
-        </div>
-      `;
-    } else {
-      petsDisplayHtml = `
-        <div class="w-28 h-28 mx-auto my-2 pet-animated relative">
-          ${mainSvg}
-          ${mainStatus.isGolden ? '<span class="absolute -top-1 -right-1 text-[10px] bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-full font-black animate-bounce shadow">人氣巨星</span>' : ''}
-        </div>
-        <p class="text-[10px] text-slate-600 line-clamp-2 px-1">${mainStatus.stageDesc}</p>
-      `;
-    }
-
-    // 滿 500/1000/1500 點認養解鎖專區
-    let adoptSectionHtml = "";
-    if (pets.length < maxAllowed) {
-      adoptSectionHtml = `
-        <div class="my-2 p-2 bg-gradient-to-r from-amber-200 via-yellow-200 to-amber-300 rounded-xl border-2 border-amber-400 shadow-sm text-center animate-pulse">
-          <div class="text-[11px] font-black text-amber-950">🏆 累積滿 ${pets.length * 500} 點！解鎖第 ${pets.length + 1} 隻萌寵特權！</div>
-          <button type="button" onclick="openChangeAnimalModal(${st.id}, ${pets.length})" class="mt-1.5 w-full py-1.5 px-2 rounded-lg btn-royal-gold text-xs font-black shadow flex items-center justify-center space-x-1">
-            <span>🐣</span>
-            <span>立即認養第 ${pets.length + 1} 隻萌寵！</span>
-          </button>
-        </div>
-      `;
-    } else {
-      const nextThreshold = pets.length * 500;
-      adoptSectionHtml = `
-        <div class="text-[9px] text-slate-500 font-bold mt-1">
-          🐣 滿 ${nextThreshold} 點可認養第 ${pets.length + 1} 隻萌寵 (還差 ${nextThreshold - lifetime} 點)
-        </div>
-      `;
-    }
-
-    return `
-      <div class="parchment-card p-4 minister-card flex flex-col justify-between text-center ${pets.length > 1 ? 'ring-2 ring-amber-400 bg-amber-50/90' : (mainStatus.isGolden ? 'ring-2 ring-amber-300' : '')}">
-        <div>
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-mono font-black text-amber-950 bg-amber-200 px-2 py-0.5 rounded">
-              座號 ${String(st.seatNo).padStart(2, '0')}
-            </span>
-            <div class="flex items-center space-x-1">
-              ${masterBadge}
-            </div>
-          </div>
-
-          <div class="mt-2 text-sm font-black text-slate-800 flex items-center justify-center space-x-1">
-            <span>${st.name}</span>
-            ${petIconsHtml}
-          </div>
-          <div class="text-[11px] text-amber-800 font-bold">${st.title}</div>
-
-          <!-- 動物形象展示區 (單寵 or 多寵) -->
-          ${petsDisplayHtml}
-
-          <!-- 滿 500/1000/1500 點認養解鎖專區 -->
-          ${adoptSectionHtml}
-        </div>
-
-        <div class="mt-3 pt-2 border-t border-amber-200 space-y-2">
-          <div class="flex justify-between text-[11px] font-black text-amber-900">
-            <span>🍎 擁有蘋果: ${st.points || 0} 顆</span>
-            <span>🍎 總飽食度: ${lifetime}</span>
-          </div>
-          <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden" title="動物園長大進度：${mainStatus.progressPct}%">
-            <div class="h-full bg-gradient-to-r from-emerald-400 to-amber-500 rounded-full" style="width: ${Math.min(100, (lifetime / (pets.length * 500)) * 100)}%"></div>
-          </div>
-          <div class="grid grid-cols-2 gap-1.5">
-            <button type="button" onclick="openZooFeedModal(${st.id})" class="w-full py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-black shadow-xs flex items-center justify-center space-x-1 transition active:scale-95">
-              <span>🍎</span>
-              <span>投餵飼料</span>
-            </button>
-            <button type="button" onclick="openChangeAnimalModal(${st.id}, 0)" class="w-full py-1.5 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-xs flex items-center justify-center space-x-1 transition">
-              <span>🔄</span>
-              <span>換第1隻動物</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-
+  renderZooHabitatShared("petsOverviewGrid", "petsHabitatStatsPill");
   initLucideIcons();
 }
 
@@ -4966,11 +4982,15 @@ function renderRosterView() {
     const bdayPad = (st.birthday || '0101').replace(/[^0-9]/g, '').padStart(4, '0');
     const passCode = seatPad + bdayPad;
     const aType = (st.animalType || st.petType || 'lion').toLowerCase();
-    const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0);
+    window.KingdomApp.store.syncStudentPets(st);
+    let lifetime = parseInt(st.lifetimePoints, 10);
+    if (isNaN(lifetime) || lifetime <= 0) {
+      lifetime = Math.max(0, parseInt(st.points, 10) || 0);
+      st.lifetimePoints = lifetime;
+    }
     const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
     const svgCode = window.KingdomApp.renderAnimalSVG(aType, petStatus.stageIndex);
 
-    window.KingdomApp.store.syncStudentPets(st);
     const pets = st.pets || [{ type: aType }];
     const maxAllowed = 1 + Math.floor(lifetime / 500);
 
@@ -4995,11 +5015,13 @@ function renderRosterView() {
         `;
       }).join('');
     }
-    if (pets.length < maxAllowed) {
+    const nextSlot = pets.length;
+    const reqPtsForNext = nextSlot * 500;
+    if (pets.length < maxAllowed && lifetime >= reqPtsForNext) {
       secondPetRosterHtml += `
         <div class="mt-1 pt-1 border-t border-amber-200/60">
-          <button type="button" onclick="openChangeAnimalModal(${st.id}, ${pets.length})" class="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-1.5 py-0.5 rounded border border-amber-400">
-            🐣 認養第${pets.length + 1}萌寵！
+          <button type="button" onclick="openChangeAnimalModal(${st.id}, ${nextSlot})" class="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-1.5 py-0.5 rounded border border-amber-400">
+            🐣 認養第${nextSlot + 1}萌寵！
           </button>
         </div>
       `;
@@ -5544,7 +5566,7 @@ function renderSeatingProjectionGrid() {
       html += `
         <div class="seating-proj-desk">
           <div class="flex items-center justify-between w-full">
-            <span class="text-xs font-mono font-bold text-amber-300/90 bg-black/50 px-2 py-0.5 rounded border border-amber-500/40">${colName} ‧ 第${row}列</span>
+            <span class="text-xs font-mono font-bold text-amber-300/90 bg-black/50 px-2 py-0.5 rounded border border-amber-500/40">${colName}</span>
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
@@ -5572,7 +5594,7 @@ function renderSeatingProjectionGrid() {
     } else {
       html += `
         <div class="seating-proj-desk-empty">
-          <span class="text-xs font-mono text-slate-400 font-bold">${colName} ‧ 第${row}列</span>
+          <span class="text-xs font-mono text-slate-400 font-bold">${colName}</span>
           <span class="text-sm font-bold text-slate-500 mt-1">🪑 空席</span>
         </div>
       `;
@@ -6125,7 +6147,7 @@ let luckyDrawTimeout = null;
 function getSeatingColName(colNumber, totalCols = 6) {
   if (totalCols === 6) {
     const colNames = ["第五排", "第五排", "第四排", "第三排", "第二排", "第一排"];
-    return colNames[colNumber - 1] || `第${colNumber}列`;
+    return colNames[colNumber - 1] || `第${colNumber}排`;
   }
   const fromRight = totalCols - colNumber + 1;
   const digitMap = { 1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八', 9: '九', 10: '十' };
@@ -6218,7 +6240,7 @@ function renderSeatingChart() {
              ondragend="handleSeatDragEnd(event)"
              onclick="handleSeatClick(${i})">
           <div class="flex items-center justify-between text-xs w-full">
-            <span class="font-bold text-amber-800/80 text-[11px] bg-amber-100/90 px-1 rounded border border-amber-300/60">${colName} ‧ 第${row}列</span>
+            <span class="font-bold text-amber-800/80 text-[11px] bg-amber-100/90 px-1 rounded border border-amber-300/60">${colName}</span>
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
@@ -6256,7 +6278,7 @@ function renderSeatingChart() {
              ondragleave="handleSeatDragLeave(event, ${i})"
              ondrop="handleSeatDrop(event, ${i})"
              onclick="handleSeatClick(${i})">
-          <div class="text-[11px] text-amber-700/70 font-bold w-full text-left">${colName} ‧ 第${row}列</div>
+          <div class="text-[11px] text-amber-700/70 font-bold w-full text-left">${colName}</div>
           <div class="my-1 text-center flex flex-col items-center justify-center">
             <span class="text-2xl opacity-75">🪑</span>
             <span class="text-xs sm:text-sm font-black text-amber-900/80 font-cute mt-0.5">空席</span>
@@ -6750,6 +6772,7 @@ let timerInterval = null;
 let timerActivity = "抄寫家庭聯絡簿";
 
 function openTimerModal() {
+  switchTimerTab('countdown');
   const modal = document.getElementById("timerModal");
   if (modal) modal.classList.remove("hidden");
   updateTimerUI();
@@ -7686,11 +7709,16 @@ function openChangeAnimalModal(studentId, slot = 0) {
   if (!student) return;
 
   window.KingdomApp.store.syncStudentPets(student);
-  const lifetime = student.lifetimePoints || 0;
+  let lifetime = parseInt(student.lifetimePoints, 10);
+  if (isNaN(lifetime) || lifetime <= 0) {
+    lifetime = Math.max(0, parseInt(student.points, 10) || 0);
+    student.lifetimePoints = lifetime;
+  }
   const maxAllowed = 1 + Math.floor(lifetime / 500);
+  const requiredPoints = slotIndex * 500;
 
-  if (slotIndex >= maxAllowed) {
-    showToast(`需累積滿 ${slotIndex * 500} 顆蘋果才可認養第 ${slotIndex + 1} 隻萌寵！目前累積為 ${lifetime} 顆。`, "⚠️");
+  if (slotIndex >= maxAllowed || lifetime < requiredPoints) {
+    showToast(`需累積滿 ${requiredPoints} 顆蘋果才可認養第 ${slotIndex + 1} 隻萌寵！目前累積為 ${lifetime} 顆。`, "⚠️");
     return;
   }
 
@@ -8174,7 +8202,8 @@ function openAssignSeatModal(seatIdx) {
   const currentLabel = document.getElementById("assignSeatCurrentStudent");
   const grid = document.getElementById("assignStudentButtonsGrid");
 
-  if (coordsLabel) coordsLabel.textContent = `第 ${row} 排 第 ${col} 列 (席位 ${seatIdx + 1})`;
+  const colName = getSeatingColName(col, layout.cols);
+  if (coordsLabel) coordsLabel.textContent = `${colName} (席位 ${seatIdx + 1})`;
   if (currentLabel) {
     currentLabel.textContent = currentStudent ? `${currentStudent.name} (${String(currentStudent.seatNo).padStart(2, '0')}號)` : '🈳 走道空位';
   }
@@ -8298,11 +8327,16 @@ if (typeof window !== 'undefined') {
   window.submitChangePasswordForm = submitChangePasswordForm;
   window.promptChangeQueenPassword = promptChangeQueenPassword;
   window.lockTeacherSession = lockTeacherSession;
+  window.renderZooHabitatShared = renderZooHabitatShared;
   window.renderPointsZooHabitat = renderPointsZooHabitat;
   window.renderPetsOverview = renderPetsOverview;
   window.quickFeedStudentInZoo = quickFeedStudentInZoo;
   window.feedAllZooAnimalsOne = feedAllZooAnimalsOne;
   window.triggerZooCheerParty = triggerZooCheerParty;
+  window.renderMorningBoard = renderMorningBoard;
+  window.renderPointsView = renderPointsView;
+  window.toggleStudentCardDrawer = toggleStudentCardDrawer;
+  window.confirmUseStudentCard = confirmUseStudentCard;
   window.openEditContactModal = openEditContactModal;
   window.closeEditContactModal = closeEditContactModal;
   window.saveContactBookData = saveContactBookData;
