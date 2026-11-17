@@ -7,33 +7,33 @@
 // 1. 27位大臣初始名冊資料 (支援雙軌金幣制度：可用金幣 points 與生涯累積總額 lifetimePoints)
 // ============================================================================
 const DEFAULT_STUDENTS_27 = [
-  { id: 1, seatNo: 1, name: "王品捷", gender: "M", title: "內閣首輔大臣", birthday: "0315", points: 85, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 2, seatNo: 2, name: "李宇軒", gender: "M", title: "皇家騎士團長", birthday: "0520", points: 160, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 3, seatNo: 3, name: "林冠廷", gender: "M", title: "國庫財政大臣", birthday: "0812", points: 210, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 4, seatNo: 4, name: "張宸睿", gender: "M", title: "宮廷禮儀大臣", birthday: "1104", points: 65, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 5, seatNo: 5, name: "陳奕安", gender: "M", title: "皇家文書大臣", birthday: "0228", points: 130, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 6, seatNo: 6, name: "黃柏瀚", gender: "M", title: "奇蹟魔法大臣", birthday: "0709", points: 520, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 7, seatNo: 7, name: "楊子賢", gender: "M", title: "守護壁壘大將", birthday: "0923", points: 95, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 8, seatNo: 8, name: "趙偉豪", gender: "M", title: "皇家圖書大臣", birthday: "0416", points: 145, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 9, seatNo: 9, name: "劉承佑", gender: "M", title: "生態綠意大臣", birthday: "1205", points: 50, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 10, seatNo: 10, name: "蔡秉恩", gender: "M", title: "國境先鋒騎士", birthday: "0630", points: 175, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 11, seatNo: 11, name: "吳宗翰", gender: "M", title: "皇家衛隊隊長", birthday: "0118", points: 115, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 12, seatNo: 12, name: "許翔宇", gender: "M", title: "智慧科技大臣", birthday: "1010", points: 240, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 13, seatNo: 13, name: "鄭予涵", gender: "F", title: "體育競技女將軍", birthday: "0403", points: 190, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 14, seatNo: 14, name: "謝孟庭", gender: "F", title: "藝術壁畫大臣", birthday: "0825", points: 155, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 15, seatNo: 15, name: "周語晴", gender: "F", title: "皇家音樂總監", birthday: "0614", points: 535, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 16, seatNo: 16, name: "郭心妍", gender: "F", title: "晨曦敲鐘官", birthday: "0329", points: 80, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 17, seatNo: 17, name: "曾詩涵", gender: "F", title: "皇家糧餉大臣", birthday: "1119", points: 125, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 18, seatNo: 18, name: "洪若菲", gender: "F", title: "萬國外交特使", birthday: "0508", points: 205, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 19, seatNo: 19, name: "邱品萱", gender: "F", title: "秩序執法女官", birthday: "0915", points: 140, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 20, seatNo: 20, name: "孫瑀恩", gender: "F", title: "歡樂慶典大臣", birthday: "0722", points: 165, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 21, seatNo: 21, name: "莊宜璇", gender: "F", title: "皇家天文占星官", birthday: "0107", points: 280, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 22, seatNo: 22, name: "賴采婕", gender: "F", title: "星光守望騎士", birthday: "1224", points: 90, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 23, seatNo: 23, name: "鍾佩芸", gender: "F", title: "皇宮環境大臣", birthday: "0214", points: 135, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 24, seatNo: 24, name: "方雅筑", gender: "F", title: "皇家廣播宣令官", birthday: "1002", points: 70, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 25, seatNo: 25, name: "羅晴文", gender: "F", title: "智慧博學顧問", birthday: "0606", points: 225, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 26, seatNo: 26, name: "簡宏宇", gender: "M", title: "皇家工務大臣", birthday: "0918", points: 110, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 },
-  { id: 27, seatNo: 27, name: "蘇品睿", gender: "M", title: "皇家巡察御史", birthday: "0425", points: 140, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0 }
+  { id: 1, seatNo: 1, name: "王品捷", gender: "M", title: "內閣首輔大臣", birthday: "0315", points: 85, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 2, seatNo: 2, name: "李宇軒", gender: "M", title: "皇家騎士團長", birthday: "0520", points: 160, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 3, seatNo: 3, name: "林冠廷", gender: "M", title: "國庫財政大臣", birthday: "0812", points: 210, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 4, seatNo: 4, name: "張宸睿", gender: "M", title: "宮廷禮儀大臣", birthday: "1104", points: 65, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 5, seatNo: 5, name: "陳奕安", gender: "M", title: "皇家文書大臣", birthday: "0228", points: 130, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 6, seatNo: 6, name: "黃柏瀚", gender: "M", title: "奇蹟魔法大臣", birthday: "0709", points: 520, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 7, seatNo: 7, name: "楊子賢", gender: "M", title: "守護壁壘大將", birthday: "0923", points: 95, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 8, seatNo: 8, name: "趙偉豪", gender: "M", title: "皇家圖書大臣", birthday: "0416", points: 145, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 9, seatNo: 9, name: "劉承佑", gender: "M", title: "生態綠意大臣", birthday: "1205", points: 50, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 10, seatNo: 10, name: "蔡秉恩", gender: "M", title: "國境先鋒騎士", birthday: "0630", points: 175, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 11, seatNo: 11, name: "吳宗翰", gender: "M", title: "皇家衛隊隊長", birthday: "0118", points: 115, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 12, seatNo: 12, name: "許翔宇", gender: "M", title: "智慧科技大臣", birthday: "1010", points: 240, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 13, seatNo: 13, name: "鄭予涵", gender: "F", title: "體育競技女將軍", birthday: "0403", points: 190, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 14, seatNo: 14, name: "謝孟庭", gender: "F", title: "藝術壁畫大臣", birthday: "0825", points: 155, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 15, seatNo: 15, name: "周語晴", gender: "F", title: "皇家音樂總監", birthday: "0614", points: 535, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 16, seatNo: 16, name: "郭心妍", gender: "F", title: "晨曦敲鐘官", birthday: "0329", points: 80, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 17, seatNo: 17, name: "曾詩涵", gender: "F", title: "皇家糧餉大臣", birthday: "1119", points: 125, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 18, seatNo: 18, name: "洪若菲", gender: "F", title: "萬國外交特使", birthday: "0508", points: 205, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 19, seatNo: 19, name: "邱品萱", gender: "F", title: "秩序執法女官", birthday: "0915", points: 140, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 20, seatNo: 20, name: "孫瑀恩", gender: "F", title: "歡樂慶典大臣", birthday: "0722", points: 165, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 21, seatNo: 21, name: "莊宜璇", gender: "F", title: "皇家天文占星官", birthday: "0107", points: 280, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 22, seatNo: 22, name: "賴采婕", gender: "F", title: "星光守望騎士", birthday: "1224", points: 90, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 23, seatNo: 23, name: "鍾佩芸", gender: "F", title: "皇宮環境大臣", birthday: "0214", points: 135, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 24, seatNo: 24, name: "方雅筑", gender: "F", title: "皇家廣播宣令官", birthday: "1002", points: 70, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 25, seatNo: 25, name: "羅晴文", gender: "F", title: "智慧博學顧問", birthday: "0606", points: 225, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 26, seatNo: 26, name: "簡宏宇", gender: "M", title: "皇家工務大臣", birthday: "0918", points: 110, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 27, seatNo: 27, name: "蘇品睿", gender: "M", title: "皇家巡察御史", birthday: "0425", points: 140, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] }
 ];
 
 // 預設自訂集點項目庫 (加分 & 扣分，導師可自由新增、修改、刪除)
@@ -595,6 +595,9 @@ class KingdomStore {
       if (st.secondPetType === undefined) st.secondPetType = null;
       if (st.secondPetExp === undefined) st.secondPetExp = Math.max(0, (st.lifetimePoints || 0) - 500);
 
+      // 同步多萌寵防呆結構 (每 500 點可多認養一隻，未達標自動裁切超額認養)
+      this.syncStudentPets(st);
+
       // 確保行為卡結構
       if (!parsed.behaviorCards[st.id]) {
         parsed.behaviorCards[st.id] = {
@@ -924,51 +927,101 @@ class KingdomStore {
     }
   }
 
-  // --- 守護動物自選設定 ---
-  setStudentAnimal(studentId, animalType) {
-    const student = this.data.students.find(s => s.id === studentId || s.seatNo === studentId);
+  // --- 萌寵認養上限計算 (0~499顆 1隻，滿500顆 2隻，滿1000顆 3隻，以此類推) ---
+  getMaxAllowedPets(lifetimePoints) {
+    const pts = Math.max(0, parseInt(lifetimePoints, 10) || 0);
+    return 1 + Math.floor(pts / 500);
+  }
+
+  // --- 同步與防呆校驗學生萌寵 (若蘋果因誤植修改未達標，自動移除超額認養的寵物) ---
+  syncStudentPets(student) {
+    if (!student) return [];
+    const lifetime = Math.max(0, parseInt(student.lifetimePoints, 10) || 0);
+    const maxAllowed = 1 + Math.floor(lifetime / 500);
+
+    // 初始化 pets 陣列 (至少有一隻預設萌寵)
+    if (!Array.isArray(student.pets)) {
+      student.pets = [];
+      const p1 = (student.animalType || student.petType || 'dog').toLowerCase();
+      student.pets.push({ type: ANIMAL_DEFINITIONS[p1] ? p1 : 'dog' });
+      if (student.secondPetType && ANIMAL_DEFINITIONS[student.secondPetType.toLowerCase()]) {
+        student.pets.push({ type: student.secondPetType.toLowerCase() });
+      }
+    }
+
+    if (student.pets.length === 0) {
+      const p1 = (student.animalType || student.petType || 'dog').toLowerCase();
+      student.pets.push({ type: ANIMAL_DEFINITIONS[p1] ? p1 : 'dog' });
+    }
+
+    // 核心防呆裁切：若因誤植修改導致累積蘋果不足，自動移除超出上限之認養寵物
+    if (student.pets.length > maxAllowed) {
+      student.pets = student.pets.slice(0, maxAllowed);
+    }
+
+    // 同步向下相容欄位
+    student.animalType = student.pets[0]?.type || 'dog';
+    student.petType = student.animalType;
+    student.petExp = lifetime;
+    student.secondPetType = student.pets[1]?.type || null;
+    student.secondPetExp = student.secondPetType ? Math.max(0, lifetime - 500) : 0;
+
+    return student.pets;
+  }
+
+  syncAllStudentsPets() {
+    if (!this.data.students || !Array.isArray(this.data.students)) return;
+    this.data.students.forEach(st => this.syncStudentPets(st));
+    this.save();
+  }
+
+  // --- 認養或更換萌寵 (slotIndex: 0 為第1隻主寵，1 為第2隻，2 為第3隻...) ---
+  adoptPet(studentId, animalType, slotIndex = 0) {
+    const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
     if (!student) return false;
-    let aKey = (animalType || 'lion').toLowerCase();
+    this.syncStudentPets(student);
+    const lifetime = Math.max(0, parseInt(student.lifetimePoints, 10) || 0);
+    const maxAllowed = 1 + Math.floor(lifetime / 500);
+    const slot = parseInt(slotIndex, 10) || 0;
+
+    if (slot >= maxAllowed) {
+      const reqPts = slot * 500;
+      if (typeof alert === 'function') {
+        alert(`累積總蘋果需滿 ${reqPts} 顆才可認養第 ${slot + 1} 隻萌寵！目前累積為 ${lifetime} 顆。`);
+      } else {
+        console.warn(`累積總蘋果需滿 ${reqPts} 顆才可認養第 ${slot + 1} 隻萌寵！目前累積為 ${lifetime} 顆。`);
+      }
+      return false;
+    }
+
+    let aKey = (animalType || 'dog').toLowerCase();
     if (aKey === 'dragon') aKey = 'lion';
     if (aKey === 'unicorn') aKey = 'rabbit';
-    if (!ANIMAL_DEFINITIONS[aKey]) aKey = 'lion';
-    student.animalType = aKey;
-    student.petType = aKey;
+    if (!ANIMAL_DEFINITIONS[aKey]) aKey = 'dog';
+
+    if (slot < student.pets.length) {
+      student.pets[slot].type = aKey;
+    } else {
+      student.pets.push({ type: aKey });
+    }
+
+    this.syncStudentPets(student);
     this.save();
     return true;
+  }
+
+  // --- 守護動物自選設定 (更換第1隻主寵) ---
+  setStudentAnimal(studentId, animalType) {
+    return this.adoptPet(studentId, animalType, 0);
   }
 
   // --- 認養與更換第二隻守護動物 (滿 500 點皇家特權) ---
   adoptSecondPet(studentId, animalType) {
-    const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
-    if (!student) return false;
-    const lifetime = student.lifetimePoints !== undefined ? student.lifetimePoints : (student.points || 0);
-    if (lifetime < 500) {
-      alert(`累積總飽食度需滿 500 點才可認養第二隻萌寵！目前累積為 ${lifetime} 點。`);
-      return false;
-    }
-    let aKey = (animalType || 'cat').toLowerCase();
-    if (aKey === 'dragon') aKey = 'lion';
-    if (aKey === 'unicorn') aKey = 'rabbit';
-    if (!ANIMAL_DEFINITIONS[aKey]) aKey = 'cat';
-
-    student.secondPetType = aKey;
-    student.secondPetExp = Math.max(0, lifetime - 500);
-    this.save();
-    return true;
+    return this.adoptPet(studentId, animalType, 1);
   }
 
   setSecondPet(studentId, animalType) {
-    const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
-    if (!student) return false;
-    let aKey = (animalType || 'cat').toLowerCase();
-    if (aKey === 'dragon') aKey = 'lion';
-    if (aKey === 'unicorn') aKey = 'rabbit';
-    if (!ANIMAL_DEFINITIONS[aKey]) aKey = 'cat';
-
-    student.secondPetType = aKey;
-    this.save();
-    return true;
+    return this.adoptPet(studentId, animalType, 1);
   }
 
   // --- 動物園餵食投餵飼料讓動物長大 (Zoo Feeding) ---
@@ -984,10 +1037,7 @@ class KingdomStore {
 
     student.points = (student.points || 0) + pts;
     student.lifetimePoints = (student.lifetimePoints || 0) + pts;
-    student.petExp = student.lifetimePoints;
-    if (student.secondPetType) {
-      student.secondPetExp = Math.max(0, student.lifetimePoints - 500);
-    }
+    this.syncStudentPets(student);
 
     const newStatus = getAnimalStatus(aKey, student.lifetimePoints);
 
@@ -1069,10 +1119,7 @@ class KingdomStore {
         if (pts > 0) {
           student.points = (student.points || 0) + pts;
           student.lifetimePoints = (student.lifetimePoints || 0) + pts;
-          student.petExp = student.lifetimePoints;
-          if (student.secondPetType) {
-            student.secondPetExp = Math.max(0, student.lifetimePoints - 500);
-          }
+          this.syncStudentPets(student);
         } else {
           student.points = Math.max(0, (student.points || 0) + pts);
         }
@@ -1149,10 +1196,7 @@ class KingdomStore {
         if (student) {
           student.points = snap.pointsBefore;
           student.lifetimePoints = snap.lifetimeBefore;
-          student.petExp = snap.lifetimeBefore;
-          if (snap.secondPetExpBefore !== undefined) {
-            student.secondPetExp = snap.secondPetExpBefore;
-          }
+          this.syncStudentPets(student);
           restoredCount++;
         }
       });
@@ -1214,8 +1258,8 @@ class KingdomStore {
         st.points = Math.max(0, (st.points || 0) - delta);
         if (delta > 0 && st.lifetimePoints !== undefined) {
           st.lifetimePoints = Math.max(0, st.lifetimePoints - delta);
-          st.petExp = st.lifetimePoints;
         }
+        this.syncStudentPets(st);
         count++;
       });
     } else if (log.studentId !== 'batch_adjust' && log.studentId !== 'multi') {
@@ -1224,8 +1268,8 @@ class KingdomStore {
         st.points = Math.max(0, (st.points || 0) - delta);
         if (delta > 0 && st.lifetimePoints !== undefined) {
           st.lifetimePoints = Math.max(0, st.lifetimePoints - delta);
-          st.petExp = st.lifetimePoints;
         }
+        this.syncStudentPets(st);
         count++;
       }
     }
@@ -1280,7 +1324,7 @@ class KingdomStore {
         st.points = 0;
         st.lifetimePoints = 0;
       }
-      st.petExp = st.lifetimePoints;
+      this.syncStudentPets(st);
       updated.push(st);
     });
 
@@ -1341,9 +1385,8 @@ class KingdomStore {
   resetAllPetsSatiety() {
     this.data.students.forEach(st => {
       st.lifetimePoints = 0;
-      st.petExp = 0;
-      st.secondPetExp = 0;
-      st.secondPetType = null;
+      st.pets = [{ type: st.animalType || 'dog' }];
+      this.syncStudentPets(st);
     });
     this.data.pointLogs.unshift({
       id: Date.now(),
