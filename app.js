@@ -78,6 +78,19 @@ const DEFAULT_BEHAVIOR_REASONS = [
   { id: 'br_srv_5', type: 'service', label: '公物使用後未歸位', text: '公物使用後未歸位' }
 ];
 
+// 預設課堂作息鐘聲快捷項目庫 (導師可自由新增、修改、刪除、恢復預設)
+const DEFAULT_ALARM_PRESETS = [
+  { id: 'alarm_pre_1', time: '08:40', btnText: '08:40 一上', label: '第一節上課', highlight: false },
+  { id: 'alarm_pre_2', time: '09:20', btnText: '09:20 一休', label: '第一節下課', highlight: false },
+  { id: 'alarm_pre_3', time: '10:10', btnText: '10:10 大下課 🌟', label: '第二節下課 (大下課)', highlight: true },
+  { id: 'alarm_pre_4', time: '11:10', btnText: '11:10 三休', label: '第三節下課', highlight: false },
+  { id: 'alarm_pre_5', time: '12:00', btnText: '12:00 午餐 🍱', label: '午餐御膳時間', highlight: false },
+  { id: 'alarm_pre_6', time: '13:20', btnText: '13:20 午休畢', label: '午休結束醒盹', highlight: false },
+  { id: 'alarm_pre_7', time: '14:10', btnText: '14:10 五休', label: '第五節下課', highlight: false },
+  { id: 'alarm_pre_8', time: '15:00', btnText: '15:00 六休', label: '第六節下課', highlight: false },
+  { id: 'alarm_pre_9', time: '15:55', btnText: '15:55 放學 🎒', label: '放學鐘聲回家', highlight: true }
+];
+
 // 預設教室座位表 (5行 x 6列 = 30格)
 const DEFAULT_SEATING_CHART = [
   1, 2, 3, 4, 5, 6,
@@ -453,6 +466,9 @@ class KingdomStore {
     if (!parsed.pointPresets) parsed.pointPresets = JSON.parse(JSON.stringify(DEFAULT_POINT_PRESETS));
     if (!parsed.homeworkPresets) parsed.homeworkPresets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
     if (!parsed.behaviorReasons) parsed.behaviorReasons = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS));
+    if (!parsed.alarmPresets || !Array.isArray(parsed.alarmPresets) || parsed.alarmPresets.length === 0) {
+      parsed.alarmPresets = JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS));
+    }
     if (!parsed.contactBook) parsed.contactBook = JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK));
     if (!parsed.contactBookHistory || typeof parsed.contactBookHistory !== 'object') {
       parsed.contactBookHistory = JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK_HISTORY));
@@ -638,6 +654,7 @@ class KingdomStore {
       pointPresets: JSON.parse(JSON.stringify(DEFAULT_POINT_PRESETS)),
       homeworkPresets: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS)),
       behaviorReasons: JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS)),
+      alarmPresets: JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS)),
       contactBook: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)),
       contactBookHistory: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK_HISTORY)),
       attendance: JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE)),
@@ -1360,6 +1377,54 @@ class KingdomStore {
     this.data.pointPresets = this.data.pointPresets.filter(p => p.id !== presetId);
     this.save();
     return true;
+  }
+
+  // --- 課堂作息鐘聲快捷管理 ---
+  getAlarmPresets() {
+    if (!this.data.alarmPresets || !Array.isArray(this.data.alarmPresets) || this.data.alarmPresets.length === 0) {
+      this.data.alarmPresets = JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS));
+    }
+    return this.data.alarmPresets;
+  }
+
+  addAlarmPreset({ time, btnText, label, highlight = false }) {
+    if (!time) return null;
+    if (!this.data.alarmPresets) this.data.alarmPresets = [];
+    const newPreset = {
+      id: 'alarm_pre_' + Date.now(),
+      time: String(time).trim(),
+      btnText: String(btnText || time).trim(),
+      label: String(label || '課堂鐘聲').trim(),
+      highlight: !!highlight
+    };
+    this.data.alarmPresets.push(newPreset);
+    this.save();
+    return newPreset;
+  }
+
+  updateAlarmPreset(id, { time, btnText, label, highlight }) {
+    if (!this.data.alarmPresets) return false;
+    const preset = this.data.alarmPresets.find(p => p.id === id);
+    if (!preset) return false;
+    if (time !== undefined) preset.time = String(time).trim();
+    if (btnText !== undefined) preset.btnText = String(btnText).trim();
+    if (label !== undefined) preset.label = String(label).trim();
+    if (highlight !== undefined) preset.highlight = !!highlight;
+    this.save();
+    return true;
+  }
+
+  deleteAlarmPreset(id) {
+    if (!this.data.alarmPresets) return false;
+    this.data.alarmPresets = this.data.alarmPresets.filter(p => p.id !== id);
+    this.save();
+    return true;
+  }
+
+  resetAlarmPresets() {
+    this.data.alarmPresets = JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS));
+    this.save();
+    return this.data.alarmPresets;
   }
 
   // --- 作業快捷與行為原因庫 ---
@@ -2813,6 +2878,7 @@ if (typeof window !== 'undefined') {
     DEFAULT_CONTACT_BOOK,
     DEFAULT_HOMEWORK_PRESETS,
     DEFAULT_BEHAVIOR_REASONS,
+    DEFAULT_ALARM_PRESETS,
     DEFAULT_SEATING_CHART
   };
 }
@@ -2832,6 +2898,7 @@ if (typeof module !== 'undefined' && module.exports) {
     DEFAULT_SEATING_CHART,
     DEFAULT_CONTACT_BOOK,
     DEFAULT_HOMEWORK_PRESETS,
-    DEFAULT_BEHAVIOR_REASONS
+    DEFAULT_BEHAVIOR_REASONS,
+    DEFAULT_ALARM_PRESETS
   };
 }

@@ -3188,19 +3188,17 @@
           </div>
         </div>
 
-        <!-- 國小常用作息快捷鍵 -->
+        <!-- 國小常用作息快捷鍵 (支援自由自訂與編輯) -->
         <div>
-          <label class="block text-xs font-bold text-amber-900 mb-1.5">常用課堂作息鐘聲快捷：</label>
-          <div class="grid grid-cols-3 gap-1.5 text-xs font-bold">
-            <button type="button" onclick="setAlarmPreset('08:40', '第一節上課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">08:40 一上</button>
-            <button type="button" onclick="setAlarmPreset('09:20', '第一節下課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">09:20 一休</button>
-            <button type="button" onclick="setAlarmPreset('10:10', '第二節下課 (大下課)')" class="px-2 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 text-center font-black">10:10 大下課 🌟</button>
-            <button type="button" onclick="setAlarmPreset('11:10', '第三節下課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">11:10 三休</button>
-            <button type="button" onclick="setAlarmPreset('12:00', '午餐御膳時間')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">12:00 午餐 🍱</button>
-            <button type="button" onclick="setAlarmPreset('13:20', '午休結束醒盹')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">13:20 午休畢</button>
-            <button type="button" onclick="setAlarmPreset('14:10', '第五節下課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">14:10 五休</button>
-            <button type="button" onclick="setAlarmPreset('15:00', '第六節下課')" class="px-2 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 text-center">15:00 六休</button>
-            <button type="button" onclick="setAlarmPreset('15:55', '放學鐘聲回家')" class="px-2 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 text-center font-black">15:55 放學 🎒</button>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold text-amber-900">常用課堂作息鐘聲快捷：</label>
+            <button type="button" onclick="openManageAlarmPresetsModal()" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 flex items-center space-x-1 shadow-xs transition cursor-pointer">
+              <span>✏️</span>
+              <span>編輯管理快捷</span>
+            </button>
+          </div>
+          <div id="alarmPresetsGrid" class="grid grid-cols-3 gap-1.5 text-xs font-bold">
+            <!-- 動態渲染鬧鐘作息快捷按鈕 -->
           </div>
         </div>
 
@@ -3899,6 +3897,85 @@
   </div>
 
   <!-- =============================================================== -->
+  <!-- MODAL: 課堂作息鬧鐘快捷管理 (Alarm Presets Manager) -->
+  <!-- =============================================================== -->
+  <div id="manageAlarmPresetsModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-lg w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3">
+        <h3 class="text-base font-black text-amber-950 flex items-center space-x-2">
+          <span>⏰ 課堂作息鐘聲快捷設定庫</span>
+        </h3>
+        <button onclick="closeManageAlarmPresetsModal()" class="text-slate-500 hover:text-slate-800 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 現有快捷按鈕清單 -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-amber-950">目前常用鐘聲快捷清單：</span>
+          <span id="alarmPresetsCountBadge" class="text-xs font-bold text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded-full border border-amber-300">9 項</span>
+        </div>
+        <div id="alarmPresetsManageList" class="space-y-1.5 max-h-52 overflow-y-auto p-2 bg-white rounded-xl border border-amber-300 text-xs font-bold">
+          <!-- 動態渲染快捷列表 -->
+        </div>
+      </div>
+
+      <!-- 新增 / 編輯快捷表單 -->
+      <form id="alarmPresetForm" onsubmit="submitAlarmPresetForm(event)" class="space-y-3 pt-3 border-t border-amber-200 text-xs font-bold">
+        <div class="flex items-center justify-between">
+          <span id="alarmPresetFormTitle" class="text-xs font-black text-amber-950">➕ 新增作息鐘聲快捷：</span>
+          <button type="button" id="btnCancelEditAlarmPreset" onclick="cancelEditAlarmPreset()" class="hidden text-xs text-slate-500 hover:text-slate-700 underline font-bold">
+            取消編輯模式
+          </button>
+        </div>
+        <input type="hidden" id="editAlarmPresetId" value="">
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-700 mb-1">定時時間 (時:分)：</label>
+            <input type="time" id="newAlarmPresetTime" required class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold text-center font-digital text-base">
+          </div>
+          <div>
+            <label class="block text-slate-700 mb-1">按鈕顯示文字：</label>
+            <input type="text" id="newAlarmPresetBtnText" required placeholder="例如：10:10 大下課 🌟" class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 mb-1">提醒事由 (響鈴大看板顯示內容)：</label>
+          <input type="text" id="newAlarmPresetLabel" required placeholder="例如：第二節下課 (大下課)" class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold">
+        </div>
+
+        <div class="flex items-center justify-between bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+          <label class="flex items-center space-x-2 cursor-pointer text-xs font-bold text-amber-950">
+            <input type="checkbox" id="newAlarmPresetHighlight" class="rounded text-amber-600 focus:ring-amber-500 w-4 h-4">
+            <span>金黃醒目按鈕樣式 (適合大下課、放學等重要作息)</span>
+          </label>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-1">
+          <button type="submit" id="btnSaveAlarmPreset" class="flex-1 btn-royal-gold py-2 rounded-xl font-black text-xs shadow-sm flex items-center justify-center space-x-1 cursor-pointer">
+            <span id="btnSaveAlarmPresetIcon">➕</span>
+            <span id="btnSaveAlarmPresetText">新增至快捷庫</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- 底部快捷操作：一鍵恢復預設作息 -->
+      <div class="pt-2 border-t border-amber-200 flex items-center justify-between text-xs">
+        <button type="button" onclick="confirmResetAlarmPresetsToDefault()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold flex items-center space-x-1 transition cursor-pointer">
+          <span>🔄</span>
+          <span>恢復國小預設作息</span>
+        </button>
+        <button type="button" onclick="closeManageAlarmPresetsModal()" class="px-4 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 font-black transition cursor-pointer">
+          完成關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
   <!-- MODAL: 課堂定時鬧鐘響起大橫幅 (Alarm Ringing Alert Overlay) -->
   <!-- =============================================================== -->
   <div id="alarmAlertOverlay" class="hidden fixed inset-0 z-50 bg-amber-950/85 backdrop-blur-md flex items-center justify-center p-6 animate-pulse">
@@ -3922,8 +3999,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111708"></script>
-  <script src="ui.js?v=2026111708"></script>
+  <script src="app.js?v=2026111709"></script>
+  <script src="ui.js?v=2026111709"></script>
 
 </body>
 </html>

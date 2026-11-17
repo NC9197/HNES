@@ -228,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 啟動晨間大螢幕即時跳動秒針時鐘
   startMorningClock();
+  renderAlarmPresets();
 
   // 檢查 URL 參數
   const urlParams = new URLSearchParams(window.location.search);
@@ -6570,6 +6571,7 @@ function openTimerModal() {
   const modal = document.getElementById("timerModal");
   if (modal) modal.classList.remove("hidden");
   updateTimerUI();
+  renderAlarmPresets();
 }
 
 function closeTimerModal() {
@@ -7190,7 +7192,213 @@ function switchTimerTab(tab) {
     if (panelCountdown) panelCountdown.classList.add("hidden");
     if (panelAlarm) panelAlarm.classList.remove("hidden");
     updateAlarmUI();
+    renderAlarmPresets();
   }
+}
+
+// ===================================================================
+// 課堂作息鐘聲快捷管理 (Alarm Presets Manager)
+// ===================================================================
+function renderAlarmPresets() {
+  const grid = document.getElementById("alarmPresetsGrid");
+  if (!grid) return;
+  const presets = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getAlarmPresets === 'function')
+    ? window.KingdomApp.store.getAlarmPresets()
+    : [];
+
+  if (!presets || presets.length === 0) {
+    grid.innerHTML = `<div class="col-span-3 text-center py-2 text-xs text-amber-800/70 font-bold bg-amber-50/80 rounded-lg border border-dashed border-amber-300">尚未建立快捷，請點擊上方「編輯管理快捷」新增</div>`;
+    return;
+  }
+
+  grid.innerHTML = presets.map(p => {
+    const isHl = !!p.highlight;
+    const bgClass = isHl
+      ? "bg-amber-200 hover:bg-amber-300 text-amber-950 border-amber-400 font-black shadow-xs"
+      : "bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-300 font-bold";
+    const safeTime = (p.time || "").replace(/'/g, "\\'");
+    const safeLabel = (p.label || "").replace(/'/g, "\\'");
+    const safeBtnText = (p.btnText || p.time || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const safeTitle = `${p.time} - ${p.label || ''}`.replace(/"/g, '&quot;');
+    return `
+      <button type="button" onclick="setAlarmPreset('${safeTime}', '${safeLabel}')" class="px-2 py-1.5 rounded-lg ${bgClass} border text-center transition truncate cursor-pointer" title="${safeTitle}">
+        ${safeBtnText}
+      </button>
+    `;
+  }).join('');
+}
+
+function openManageAlarmPresetsModal() {
+  if (!checkTeacherAuth("設定課堂作息鐘聲快捷")) return;
+  const modal = document.getElementById("manageAlarmPresetsModal");
+  if (!modal) return;
+  cancelEditAlarmPreset();
+  renderAlarmPresetsManageList();
+  modal.classList.remove("hidden");
+}
+
+function closeManageAlarmPresetsModal() {
+  const modal = document.getElementById("manageAlarmPresetsModal");
+  if (modal) modal.classList.add("hidden");
+  renderAlarmPresets();
+}
+
+function renderAlarmPresetsManageList() {
+  const list = document.getElementById("alarmPresetsManageList");
+  const countBadge = document.getElementById("alarmPresetsCountBadge");
+  if (!list) return;
+
+  const presets = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getAlarmPresets === 'function')
+    ? window.KingdomApp.store.getAlarmPresets()
+    : [];
+
+  if (countBadge) countBadge.textContent = `${presets.length} 項`;
+
+  if (presets.length === 0) {
+    list.innerHTML = `<div class="p-4 text-center text-slate-400 font-bold">目前無任何鐘聲快捷，請利用下方表單新增</div>`;
+    return;
+  }
+
+  list.innerHTML = presets.map((p) => {
+    const isHl = !!p.highlight;
+    const safeId = (p.id || '').replace(/'/g, "\\'");
+    const safeBtnText = (p.btnText || p.time || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const safeLabel = (p.label || "無事由備註").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `
+      <div class="flex items-center justify-between p-2 rounded-lg ${isHl ? 'bg-amber-50 border border-amber-300' : 'bg-slate-50 border border-slate-200'} hover:shadow-xs transition">
+        <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+          <span class="font-digital font-black text-sm px-2 py-0.5 rounded bg-amber-950 text-amber-300 shrink-0">
+            ${p.time}
+          </span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center space-x-1.5">
+              <span class="font-black text-amber-950 text-xs truncate">${safeBtnText}</span>
+              ${isHl ? '<span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-300 text-amber-950 font-black shrink-0">醒目</span>' : ''}
+            </div>
+            <div class="text-[11px] text-slate-500 truncate">${safeLabel}</div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-1 shrink-0 ml-2">
+          <button type="button" onclick="editAlarmPresetInline('${safeId}')" class="px-2 py-1 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 text-xs font-bold transition cursor-pointer" title="編輯此快捷">
+            ✏️
+          </button>
+          <button type="button" onclick="deleteAlarmPresetItem('${safeId}')" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition cursor-pointer" title="刪除此快捷">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function editAlarmPresetInline(id) {
+  const presets = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getAlarmPresets === 'function')
+    ? window.KingdomApp.store.getAlarmPresets()
+    : [];
+  const preset = presets.find(p => p.id === id);
+  if (!preset) return;
+
+  const idInput = document.getElementById("editAlarmPresetId");
+  const timeInput = document.getElementById("newAlarmPresetTime");
+  const btnTextInput = document.getElementById("newAlarmPresetBtnText");
+  const labelInput = document.getElementById("newAlarmPresetLabel");
+  const hlInput = document.getElementById("newAlarmPresetHighlight");
+
+  const formTitle = document.getElementById("alarmPresetFormTitle");
+  const btnCancel = document.getElementById("btnCancelEditAlarmPreset");
+  const btnSaveIcon = document.getElementById("btnSaveAlarmPresetIcon");
+  const btnSaveText = document.getElementById("btnSaveAlarmPresetText");
+
+  if (idInput) idInput.value = preset.id;
+  if (timeInput) timeInput.value = preset.time || "";
+  if (btnTextInput) btnTextInput.value = preset.btnText || "";
+  if (labelInput) labelInput.value = preset.label || "";
+  if (hlInput) hlInput.checked = !!preset.highlight;
+
+  if (formTitle) formTitle.textContent = `✏️ 正在編輯快捷【${preset.btnText}】：`;
+  if (btnCancel) btnCancel.classList.remove("hidden");
+  if (btnSaveIcon) btnSaveIcon.textContent = "💾";
+  if (btnSaveText) btnSaveText.textContent = "儲存修改";
+
+  if (timeInput) timeInput.focus();
+}
+
+function cancelEditAlarmPreset() {
+  const idInput = document.getElementById("editAlarmPresetId");
+  const timeInput = document.getElementById("newAlarmPresetTime");
+  const btnTextInput = document.getElementById("newAlarmPresetBtnText");
+  const labelInput = document.getElementById("newAlarmPresetLabel");
+  const hlInput = document.getElementById("newAlarmPresetHighlight");
+
+  const formTitle = document.getElementById("alarmPresetFormTitle");
+  const btnCancel = document.getElementById("btnCancelEditAlarmPreset");
+  const btnSaveIcon = document.getElementById("btnSaveAlarmPresetIcon");
+  const btnSaveText = document.getElementById("btnSaveAlarmPresetText");
+
+  if (idInput) idInput.value = "";
+  if (timeInput) timeInput.value = "";
+  if (btnTextInput) btnTextInput.value = "";
+  if (labelInput) labelInput.value = "";
+  if (hlInput) hlInput.checked = false;
+
+  if (formTitle) formTitle.textContent = "➕ 新增作息鐘聲快捷：";
+  if (btnCancel) btnCancel.classList.add("hidden");
+  if (btnSaveIcon) btnSaveIcon.textContent = "➕";
+  if (btnSaveText) btnSaveText.textContent = "新增至快捷庫";
+}
+
+function submitAlarmPresetForm(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const id = (document.getElementById("editAlarmPresetId")?.value || "").trim();
+  const time = (document.getElementById("newAlarmPresetTime")?.value || "").trim();
+  const btnText = (document.getElementById("newAlarmPresetBtnText")?.value || "").trim();
+  const label = (document.getElementById("newAlarmPresetLabel")?.value || "").trim();
+  const highlight = !!document.getElementById("newAlarmPresetHighlight")?.checked;
+
+  if (!time || !btnText) {
+    alert("請填寫定時時間與按鈕顯示文字！");
+    return;
+  }
+
+  if (id) {
+    window.KingdomApp.store.updateAlarmPreset(id, { time, btnText, label, highlight });
+    showToast(`✅ 已更新作息快捷【${btnText}】！`, "⏰");
+  } else {
+    window.KingdomApp.store.addAlarmPreset({ time, btnText, label, highlight });
+    showToast(`✅ 已新增作息快捷【${btnText}】！`, "⏰");
+  }
+
+  cancelEditAlarmPreset();
+  renderAlarmPresetsManageList();
+  renderAlarmPresets();
+}
+
+function deleteAlarmPresetItem(id) {
+  const presets = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getAlarmPresets === 'function')
+    ? window.KingdomApp.store.getAlarmPresets()
+    : [];
+  const found = presets.find(p => p.id === id);
+  const name = found ? found.btnText : "此項目";
+
+  if (!confirm(`確定要刪除作息鐘聲快捷【${name}】嗎？`)) return;
+
+  window.KingdomApp.store.deleteAlarmPreset(id);
+  showToast(`🗑️ 已刪除作息快捷【${name}】`, "✨");
+
+  cancelEditAlarmPreset();
+  renderAlarmPresetsManageList();
+  renderAlarmPresets();
+}
+
+function confirmResetAlarmPresetsToDefault() {
+  if (!confirm("確定要將課堂作息鐘聲快捷恢復為國小預設作息（一上、一休、大下課、三休、午餐、午休畢、五休、六休、放學）嗎？自訂的項目將會被重設。")) return;
+
+  window.KingdomApp.store.resetAlarmPresets();
+  showToast("🔄 已成功恢復國小預設作息鐘聲快捷！", "🔔");
+
+  cancelEditAlarmPreset();
+  renderAlarmPresetsManageList();
+  renderAlarmPresets();
 }
 
 function setAlarmPreset(timeStr, label) {
@@ -8018,6 +8226,17 @@ if (typeof window !== 'undefined') {
   window.closeSeatingProjectionModal = closeSeatingProjectionModal;
   window.toggleSeatingProjectionFullscreen = toggleSeatingProjectionFullscreen;
   window.renderSeatingProjectionGrid = renderSeatingProjectionGrid;
+
+  // 課堂作息鬧鐘快捷管理
+  window.renderAlarmPresets = renderAlarmPresets;
+  window.openManageAlarmPresetsModal = openManageAlarmPresetsModal;
+  window.closeManageAlarmPresetsModal = closeManageAlarmPresetsModal;
+  window.renderAlarmPresetsManageList = renderAlarmPresetsManageList;
+  window.editAlarmPresetInline = editAlarmPresetInline;
+  window.cancelEditAlarmPreset = cancelEditAlarmPreset;
+  window.submitAlarmPresetForm = submitAlarmPresetForm;
+  window.deleteAlarmPresetItem = deleteAlarmPresetItem;
+  window.confirmResetAlarmPresetsToDefault = confirmResetAlarmPresetsToDefault;
 }
 
 // 全域鍵盤與投影事件監聽 (支援 Esc 鍵一鍵關閉並退出全螢幕)
