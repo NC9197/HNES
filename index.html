@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=2026111705">
+  <link rel="stylesheet" href="styles.css?v=2026111712">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -45,14 +45,14 @@
   <!-- 頂部明亮黃金導航列 (Bright Royal Golden Navbar) -->
   <!-- ================================================================= -->
   <header class="no-print sticky top-0 z-40 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 border-b-2 border-amber-500/50 text-amber-950 shadow-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+    <div class="w-full max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-6 min-h-[4.75rem] py-1.5 flex items-center justify-between gap-3 overflow-x-auto whitespace-nowrap">
       
-      <!-- 王國校徽與標題 (單排行進，乾淨明朗) -->
-      <div class="flex items-center space-x-3 cursor-pointer shrink-0" onclick="switchMainView('morning')">
-        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white border-2 border-amber-500 p-0.5 shadow-md flex items-center justify-center text-2xl sm:text-3xl font-black shrink-0">
+      <!-- 王國校徽與標題 (單排行進，乾淨明朗，縮放不折疊) -->
+      <div class="flex items-center space-x-2.5 cursor-pointer shrink-0 whitespace-nowrap" onclick="switchMainView('morning')">
+        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white border-2 border-amber-500 p-0.5 shadow-md flex items-center justify-center text-2xl font-black shrink-0">
           👑
         </div>
-        <div class="flex items-center space-x-2.5">
+        <div class="flex items-center space-x-2 shrink-0">
           <h1 class="text-xl sm:text-2xl font-black tracking-wide text-amber-950 drop-shadow-sm flex items-center space-x-1.5 whitespace-nowrap">
             <span>🏰 西寧小小兵王國</span>
           </h1>
@@ -60,82 +60,82 @@
         </div>
       </div>
 
-      <!-- 導航切換按鈕區 -->
-      <div class="flex items-center space-x-2 sm:space-x-3">
+      <!-- 導航切換按鈕區 (嚴格不折行、縮放不破版) -->
+      <div class="flex items-center space-x-2 sm:space-x-3 shrink-0 whitespace-nowrap">
         <!-- 主視角切換器 (晨間朝會 大螢幕 vs 下課 紅綠燈 vs 教室 座位表 vs 皇后 議政廳 vs 家長 專區) -->
-        <div class="bg-amber-500/40 p-1 rounded-xl border border-amber-600/40 flex items-center shadow-inner">
-          <button id="btnNavMorning" onclick="switchMainView('morning')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-black transition flex items-center space-x-1.5 bg-amber-950 text-amber-300 shadow leading-tight">
+        <div class="bg-amber-500/40 p-1 rounded-xl border border-amber-600/40 flex items-center shadow-inner shrink-0 whitespace-nowrap">
+          <button id="btnNavMorning" onclick="switchMainView('morning')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-black transition flex items-center space-x-1.5 bg-amber-950 text-amber-300 shadow leading-tight whitespace-nowrap shrink-0">
             <span class="text-base sm:text-lg shrink-0">🌅</span>
-            <span class="flex flex-col text-center">
-              <span>晨間朝會</span>
-              <span>大螢幕</span>
+            <span class="nav-btn-wordbreak">
+              <span class="font-bold whitespace-nowrap">晨間朝會</span>
+              <span class="font-bold text-[11px] sm:text-xs opacity-90 whitespace-nowrap">大螢幕</span>
             </span>
           </button>
-          <button id="btnNavTraffic" onclick="switchMainView('traffic')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight">
+          <button id="btnNavTraffic" onclick="switchMainView('traffic')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight whitespace-nowrap shrink-0">
             <span class="text-base sm:text-lg shrink-0">🚦</span>
-            <span class="flex flex-col text-center">
-              <span>下課</span>
-              <span>紅綠燈</span>
+            <span class="nav-btn-wordbreak">
+              <span class="font-bold whitespace-nowrap">下課</span>
+              <span class="font-bold text-[11px] sm:text-xs opacity-90 whitespace-nowrap">紅綠燈</span>
             </span>
           </button>
-          <button id="btnNavSeating" onclick="switchMainView('seating')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight">
+          <button id="btnNavSeating" onclick="switchMainView('seating')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight whitespace-nowrap shrink-0">
             <span class="text-base sm:text-lg shrink-0">💺</span>
-            <span class="flex flex-col text-center">
-              <span>教室</span>
-              <span>座位表</span>
+            <span class="nav-btn-wordbreak">
+              <span class="font-bold whitespace-nowrap">教室</span>
+              <span class="font-bold text-[11px] sm:text-xs opacity-90 whitespace-nowrap">座位表</span>
             </span>
           </button>
-          <button id="btnNavTeacher" onclick="switchMainView('teacher')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight">
+          <button id="btnNavTeacher" onclick="switchMainView('teacher')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight whitespace-nowrap shrink-0">
             <span class="text-base sm:text-lg shrink-0">👑</span>
-            <span class="flex flex-col text-center">
-              <span>皇后</span>
-              <span>議政廳</span>
+            <span class="nav-btn-wordbreak">
+              <span class="font-bold whitespace-nowrap">皇后</span>
+              <span class="font-bold text-[11px] sm:text-xs opacity-90 whitespace-nowrap">議政廳</span>
             </span>
           </button>
-          <button id="btnNavParent" onclick="switchMainView('parent')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight">
+          <button id="btnNavParent" onclick="switchMainView('parent')" class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight whitespace-nowrap shrink-0">
             <span class="text-base sm:text-lg shrink-0">👨‍👩‍👧</span>
-            <span class="flex flex-col text-center">
-              <span>家長</span>
-              <span>專區</span>
+            <span class="nav-btn-wordbreak">
+              <span class="font-bold whitespace-nowrap">家長</span>
+              <span class="font-bold text-[11px] sm:text-xs opacity-90 whitespace-nowrap">專區</span>
             </span>
           </button>
         </div>
 
-        <!-- 課堂常規與實用神器快捷組 -->
-        <div class="flex items-center space-x-1.5">
+        <!-- 課堂常規與實用神器快捷組 (全時保持單排、字樣完整不折疊) -->
+        <div class="flex items-center space-x-1.5 shrink-0 whitespace-nowrap">
           <!-- 課堂定時鬧鐘快捷鈕 -->
-          <button onclick="openAlarmDirectModal()" id="btnNavAlarm" class="px-2.5 py-1.5 rounded-xl bg-amber-100/90 border border-amber-500 text-amber-950 font-black hover:bg-amber-200 transition shadow-sm flex items-center space-x-1 text-xs" title="課堂作息定時鬧鐘與下課鐘聲">
+          <button onclick="openAlarmDirectModal()" id="btnNavAlarm" class="px-2.5 py-1.5 rounded-xl bg-amber-100/90 border border-amber-500 text-amber-950 font-black hover:bg-amber-200 transition shadow-sm flex items-center space-x-1 text-xs whitespace-nowrap shrink-0" title="課堂作息定時鬧鐘與下課鐘聲">
             <span>⏰</span>
-            <span class="hidden md:inline">定時鬧鐘</span>
+            <span class="whitespace-nowrap font-bold">定時鬧鐘</span>
           </button>
 
           <!-- 倒數計時快捷鈕 -->
-          <button onclick="openTimerModal()" class="px-2.5 py-1.5 rounded-xl bg-white/90 border border-amber-500 text-amber-950 font-bold hover:bg-white transition shadow-sm flex items-center space-x-1 text-xs" title="課堂活動倒數計時器">
+          <button onclick="openTimerModal()" class="px-2.5 py-1.5 rounded-xl bg-white/90 border border-amber-500 text-amber-950 font-bold hover:bg-white transition shadow-sm flex items-center space-x-1 text-xs whitespace-nowrap shrink-0" title="課堂活動倒數計時器">
             <span>⏱️</span>
-            <span class="hidden md:inline">倒數計時</span>
+            <span class="whitespace-nowrap font-bold">倒數計時</span>
           </button>
 
           <!-- 安靜提醒快捷鈕 -->
-          <button onclick="openSilenceModal()" class="px-2.5 py-1.5 rounded-xl bg-white/90 border border-amber-500 text-amber-950 font-bold hover:bg-white transition shadow-sm flex items-center space-x-1 text-xs" title="安靜提醒與音量守護者">
+          <button onclick="openSilenceModal()" class="px-2.5 py-1.5 rounded-xl bg-white/90 border border-amber-500 text-amber-950 font-bold hover:bg-white transition shadow-sm flex items-center space-x-1 text-xs whitespace-nowrap shrink-0" title="安靜提醒與音量守護者">
             <span>🤫</span>
-            <span class="hidden md:inline">安靜提醒</span>
+            <span class="whitespace-nowrap font-bold">安靜提醒</span>
           </button>
 
           <!-- 雲端同步狀態徽章按鈕 -->
-          <button id="btnCloudSyncStatus" onclick="openCloudSyncModal()" class="px-2.5 py-1.5 rounded-xl bg-amber-950 text-amber-300 border border-amber-400 font-bold hover:bg-amber-900 transition shadow-sm flex items-center space-x-1 text-xs" title="跨裝置雲端同步狀態與設定">
+          <button id="btnCloudSyncStatus" onclick="openCloudSyncModal()" class="px-2.5 py-1.5 rounded-xl bg-amber-950 text-amber-300 border border-amber-400 font-bold hover:bg-amber-900 transition shadow-sm flex items-center space-x-1 text-xs whitespace-nowrap shrink-0" title="跨裝置雲端同步狀態與設定">
             <span id="cloudSyncDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-            <span id="cloudSyncLabel" class="hidden sm:inline">雲端同步</span>
+            <span id="cloudSyncLabel" class="whitespace-nowrap font-bold">雲端同步</span>
           </button>
         </div>
 
         <!-- 音效開關 -->
-        <button onclick="toggleSound()" id="soundToggleBtn" class="p-2 rounded-xl bg-white/80 border border-amber-500 text-amber-900 hover:bg-white transition shadow-sm" title="切換音效">
+        <button onclick="toggleSound()" id="soundToggleBtn" class="p-2 rounded-xl bg-white/80 border border-amber-500 text-amber-900 hover:bg-white transition shadow-sm shrink-0" title="切換音效">
           <i data-lucide="volume-2" class="w-5 h-5"></i>
         </button>
 
         <!-- 系統管理選單 -->
-        <div class="relative">
-          <button onclick="toggleSystemMenu()" class="p-2 rounded-xl bg-white/80 border border-amber-500 text-amber-900 hover:bg-white transition shadow-sm" title="系統備份與名冊設定">
+        <div class="relative shrink-0">
+          <button onclick="toggleSystemMenu()" class="p-2 rounded-xl bg-white/80 border border-amber-500 text-amber-900 hover:bg-white transition shadow-sm shrink-0" title="系統備份與名冊設定">
             <i data-lucide="settings" class="w-5 h-5"></i>
           </button>
           <div id="systemDropdown" class="hidden absolute right-0 mt-2 w-60 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl py-2 z-50 text-sm font-bold">
@@ -217,7 +217,7 @@
   <!-- ================================================================= -->
   <!-- 主內容容器 -->
   <!-- ================================================================= -->
-  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5">
+  <main class="w-full max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-6 py-4">
 
     <!-- =============================================================== -->
     <!-- VIEW 0: 晨間朝會大螢幕模式 (打卡 30% : 聯絡簿 70%) -->
@@ -226,22 +226,22 @@
     <div id="morningBoardView" class="space-y-4">
       
       <!-- 頂部即時朝會資訊條 -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-amber-200/90 border-2 border-amber-400 p-3 sm:px-5 rounded-2xl shadow-sm">
-        <div class="flex items-center space-x-3">
-          <span class="text-2xl sm:text-3xl">🌅</span>
+      <div class="flex flex-row items-center justify-between gap-3 bg-amber-200/90 border-2 border-amber-400 p-3 sm:px-5 rounded-2xl shadow-sm overflow-x-auto whitespace-nowrap">
+        <div class="flex items-center space-x-3 shrink-0">
+          <span class="text-2xl sm:text-3xl shrink-0">🌅</span>
           <div>
             <h2 class="text-lg sm:text-xl font-black text-amber-950 flex items-center space-x-2">
               <span>晨間朝會大螢幕 ‧ 大臣打卡與聯絡簿</span>
             </h2>
-            <p class="text-xs text-amber-800 font-bold">
+            <p class="text-xs text-amber-800 font-bold hidden sm:block">
               到校大臣請至大螢幕前點擊您的座號打卡；已打卡大臣請抬頭對照右側聯絡簿認真抄寫！
             </p>
           </div>
         </div>
         
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-3 shrink-0">
           <!-- 即時大時鐘 -->
-          <div class="bg-white border-2 border-amber-400 px-3.5 py-1 rounded-xl text-center shadow-sm">
+          <div class="bg-white border-2 border-amber-400 px-3.5 py-1 rounded-xl text-center shadow-sm shrink-0">
             <span class="text-[10px] text-amber-800 font-black block">目前朝會時間 (07:40截止)</span>
             <span id="morningClockDisplay" class="font-digital text-xl sm:text-2xl font-black text-amber-900 tracking-wider">
               07:30:00
@@ -249,18 +249,18 @@
           </div>
 
           <!-- 全螢幕投影切換按鈕 -->
-          <button onclick="toggleFullscreen()" class="btn-royal-gold px-3 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow" title="切換投影機全螢幕模式">
+          <button onclick="toggleFullscreen()" class="btn-royal-gold px-3 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow shrink-0" title="切換投影機全螢幕模式">
             <i data-lucide="maximize" class="w-4 h-4"></i>
-            <span class="hidden sm:inline">全螢幕投影</span>
+            <span class="whitespace-nowrap">全螢幕投影</span>
           </button>
         </div>
       </div>
 
-      <!-- ★ 核心版面 (左側打卡座號網格，右側聯絡簿超大字看板，完美同框免滾輪) ★ -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <!-- ★ 核心版面 (固定左右雙欄：左側打卡座號網格，右側聯絡簿超大字看板，完美同框免滾輪) ★ -->
+      <div class="grid grid-cols-12 gap-3 sm:gap-4 lg:gap-5 items-start">
         
         <!-- 【左側 (4欄寬)】：大臣到校打卡區 (僅顯示座號與即時狀態，5排全數排完) -->
-        <div class="lg:col-span-4 parchment-card p-4 space-y-3 shadow-md">
+        <div class="col-span-5 md:col-span-4 parchment-card p-3 sm:p-4 space-y-3 shadow-md">
           <div class="flex items-center justify-between pb-2 border-b-2 border-amber-300">
             <div>
               <span class="text-[11px] text-amber-800 font-bold block">點擊座號打卡 / 再次點擊快速更改</span>
@@ -309,7 +309,7 @@
         </div>
 
         <!-- 【右側 (8欄寬)】：今日聯絡簿超大字體看板 (教室後排看得見) -->
-        <div id="contactBoardContainer" class="lg:col-span-8 contact-book-board p-5 sm:p-7 space-y-5 shadow-xl">
+        <div id="contactBoardContainer" class="col-span-7 md:col-span-8 contact-book-board p-4 sm:p-7 space-y-5 shadow-xl">
           
           <!-- 聯絡簿頂部資訊與編輯按鈕 -->
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b-2 border-amber-400">
@@ -497,7 +497,7 @@
       <!-- ⏰ 第二排：當下時間與距離上課倒數大看板 (Real-Time Clock & Class Countdown) -->
       <!-- =============================================================== -->
       <div id="trafficClockBanner" class="traffic-clock-card rounded-2xl p-3 sm:p-4 text-amber-100 shadow-lg border-2 border-amber-500">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <div class="flex flex-row items-center justify-between gap-3 overflow-x-auto whitespace-nowrap">
           
           <!-- 左側：當前即時時鐘 -->
           <div class="flex items-center space-x-3 sm:space-x-4 flex-shrink-0">
@@ -682,8 +682,8 @@
         </div>
       </div>
 
-      <!-- 27 位大臣下課通行卡片網格 (5*5+2 核心版面配置，去除姓名僅留座號與明確原因) -->
-      <div id="trafficCardsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-2.5">
+      <!-- 27 位大臣下課通行卡片網格 (大屏模式固定 5 欄排版，縮放絕不折疊變更) -->
+      <div id="trafficCardsGrid" class="traffic-grid-5x5">
         <!-- 動態渲染 27 位大臣卡片 -->
       </div>
 
@@ -783,15 +783,15 @@
         <button onclick="cancelSeatSelection()" class="text-amber-800 hover:text-rose-600 underline">取消選取</button>
       </div>
 
-      <!-- 🌟 三欄式版面：左側男生座號庫 (1-13) | 中央座位表 (5x6) | 右側女生座號庫 (14-27) 🌟 -->
-      <div class="flex flex-col lg:flex-row items-start gap-3 w-full">
+      <!-- 🌟 三欄式版面：左側男生座號庫 (1-13) | 中央座位表 (5x6) | 右側女生座號庫 (14-27) 🌟 (固定三欄排列，縮放絕不折疊) -->
+      <div class="flex flex-row items-start gap-3 w-full overflow-x-auto pb-2">
         
         <!-- 左側側欄：👦 男生座號庫 (1-13號) -->
         <div id="dockBoysContainer" 
              ondragover="handleDockDragOver(event, 'boys')" 
              ondragleave="handleDockDragLeave(event, 'boys')" 
              ondrop="handleDockDrop(event, 'boys')"
-             class="w-full lg:w-52 xl:w-60 bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/90 rounded-2xl border-2 border-sky-400 p-3 shadow-sm flex-shrink-0 space-y-2.5 transition">
+             class="w-52 sm:w-56 lg:w-60 bg-gradient-to-b from-sky-50 via-blue-50/90 to-sky-100/90 rounded-2xl border-2 border-sky-400 p-3 shadow-sm flex-shrink-0 space-y-2.5 transition">
           <div class="flex items-center justify-between pb-2 border-b border-sky-200">
             <div class="flex items-center space-x-1.5">
               <span class="text-2xl">👦</span>
@@ -808,14 +808,16 @@
             💡 拖曳入座或點選安排；已有座位者暫移出
           </p>
           <!-- 男生待排卡片列表 (已安排座位者自動移出) -->
-          <div id="seatingBoysDock" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-1.5 max-h-[500px] overflow-y-auto p-1.5 bg-white/70 rounded-xl border border-sky-200 min-h-[120px]">
+          <div id="seatingBoysDock" class="grid grid-cols-2 lg:grid-cols-1 gap-1.5 max-h-[500px] overflow-y-auto p-1.5 bg-white/70 rounded-xl border border-sky-200 min-h-[120px]">
             <!-- 由 ui.js renderSeatingDock() 動態填入 -->
           </div>
         </div>
 
-        <!-- 中央主區：5列 x 6排 座位網格容器 (支援自訂排數與即時拖曳交換) -->
-        <div class="flex-1 w-full overflow-x-auto pb-2 space-y-2">
-          <div id="seatingGridContainer" class="grid gap-2.5 p-3 bg-amber-50/70 rounded-2xl border-2 border-amber-300/80 shadow-inner min-h-[460px] min-w-[540px]">
+        <!-- 中央主區：5列 x 6排 座位網格容器 (最右邊第一排，向左依序為第二、三、四排，最左兩排皆為第五排) -->
+        <div class="flex-1 min-w-[520px] overflow-x-auto pb-2 space-y-2 shrink-0">
+          <!-- 座位表每排標頭 (最左兩排皆為第五排、第四排、第三排、第二排、最右邊為第一排) -->
+          <div id="seatingColHeadersBar" class="grid gap-2.5 px-3 py-1.5 text-center font-black text-xs text-amber-950 bg-amber-200/80 rounded-xl border border-amber-300 shadow-xs"></div>
+          <div id="seatingGridContainer" class="grid gap-2.5 p-3 bg-amber-50/70 rounded-2xl border-2 border-amber-300/80 shadow-inner min-h-[460px]">
             <!-- 由 ui.js renderSeatingChart() 動態填入 -->
           </div>
 
@@ -841,7 +843,7 @@
              ondragover="handleDockDragOver(event, 'girls')" 
              ondragleave="handleDockDragLeave(event, 'girls')" 
              ondrop="handleDockDrop(event, 'girls')"
-             class="w-full lg:w-52 xl:w-60 bg-gradient-to-b from-rose-50 via-pink-50/90 to-rose-100/90 rounded-2xl border-2 border-rose-400 p-3 shadow-sm flex-shrink-0 space-y-2.5 transition">
+             class="w-52 sm:w-56 lg:w-60 bg-gradient-to-b from-rose-50 via-pink-50/90 to-rose-100/90 rounded-2xl border-2 border-rose-400 p-3 shadow-sm flex-shrink-0 space-y-2.5 transition">
           <div class="flex items-center justify-between pb-2 border-b border-rose-200">
             <div class="flex items-center space-x-1.5">
               <span class="text-2xl">👧</span>
@@ -858,7 +860,7 @@
             💡 拖曳入座或點選安排；已有座位者暫移出
           </p>
           <!-- 女生待排卡片列表 (已安排座位者自動移出) -->
-          <div id="seatingGirlsDock" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-1 gap-1.5 max-h-[500px] overflow-y-auto p-1.5 bg-white/70 rounded-xl border border-rose-200 min-h-[120px]">
+          <div id="seatingGirlsDock" class="grid grid-cols-2 lg:grid-cols-1 gap-1.5 max-h-[500px] overflow-y-auto p-1.5 bg-white/70 rounded-xl border border-rose-200 min-h-[120px]">
             <!-- 由 ui.js renderSeatingDock() 動態填入 -->
           </div>
         </div>
@@ -2554,6 +2556,9 @@
         </div>
       </div>
 
+      <!-- 座位投影每排標頭 (最右邊第一排，向左依序為第二、三、四排，最左兩排皆為第五排) -->
+      <div id="seatingProjectionColHeadersBar" class="grid gap-3 w-full px-4 py-1.5 text-center font-black text-xs sm:text-sm text-amber-300 bg-amber-950/80 rounded-xl border border-amber-500/40 shadow-xs"></div>
+
       <!-- 座位網格容器 (大字號可愛席位卡) -->
       <div id="seatingProjectionGrid" class="grid gap-3 w-full p-4 bg-slate-900/70 rounded-2xl border-2 border-amber-500/40 shadow-2xl">
         <!-- 由 ui.js renderSeatingProjectionGrid() 動態填入 -->
@@ -4006,8 +4011,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111710"></script>
-  <script src="ui.js?v=2026111710"></script>
+  <script src="app.js?v=2026111712"></script>
+  <script src="ui.js?v=2026111712"></script>
 
 </body>
 </html>

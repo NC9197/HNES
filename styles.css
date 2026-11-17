@@ -711,8 +711,32 @@ body {
 }
 
 /* =================================================================== */
-/* 下課紅綠燈 5*5+2 核心版面樣式 (去除姓名、大字號座號與明確原因) */
+/* 縮放恆定排版規則 (Fixed Layout Architecture for Projector & Zoom)   */
+/* 當頁面放大或縮小時，版面結構嚴格固定，僅文字依比例縮放，絕不破版折疊 */
 /* =================================================================== */
+
+/* 下課紅綠燈大屏模式：固定 5 欄 (5*5+2) 嚴格不隨視窗縮放改變 */
+.traffic-grid-5x5,
+#trafficCardsGrid.traffic-grid-5x5 {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 0.625rem !important;
+}
+
+/* 頂部導航列：固定單排，按鈕與文字以語詞為單位對齊，絕不單字任意折行 */
+header .nav-btn-wordbreak {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  line-height: 1.15 !important;
+}
+
+header .nav-btn-wordbreak > span {
+  white-space: nowrap !important;
+}
 .traffic-card-5x5 {
   min-height: 86px;
   border-radius: 1rem;

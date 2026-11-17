@@ -92,12 +92,13 @@ const DEFAULT_ALARM_PRESETS = [
 ];
 
 // 預設教室座位表 (5行 x 6列 = 30格)
+// 最右邊為第一排 (1~5號)，向左依序為第二排 (6~10號)、第三排 (11~15號)、第四排 (16~20號)，最左邊兩排皆為第五排 (21~27號)
 const DEFAULT_SEATING_CHART = [
-  1, 2, 3, 4, 5, 6,
-  7, 8, 9, 10, 11, 12,
-  13, 14, 15, 16, 17, 18,
-  19, 20, 21, 22, 23, 24,
-  25, 26, 27, null, null, null
+  22, 21, 16, 11,  6,  1,
+  24, 23, 17, 12,  7,  2,
+  26, 25, 18, 13,  8,  3,
+  null, 27, 19, 14,  9,  4,
+  null, null, 20, 15, 10,  5
 ];
 
 // 預設今日聯絡簿資料 (全新初始純淨版，作業由導師每日自行填寫發布，系統不自動生成假作業)
@@ -566,6 +567,14 @@ class KingdomStore {
       parsed.behaviorCardsResetV20261117 = true;
     }
 
+    // 座位表最右邊第一排校驗遷移 (v20261117: 最右邊為第一排，向左依序為二、三、四排，最左邊兩排皆為第五排)
+    if (!parsed.seatingColsV20261117) {
+      if (parsed.seatingChart && (parsed.seatingChart[0] === 1 && parsed.seatingChart[5] === 6)) {
+        parsed.seatingChart = [...DEFAULT_SEATING_CHART];
+      }
+      parsed.seatingColsV20261117 = true;
+    }
+
     parsed.students.forEach((st, idx) => {
       // 確保可用金幣與生涯累積總額 (飽食度歸零，初始值為 0，不可預設為 points)
       if (st.points === undefined || st.points === null || isNaN(st.points)) st.points = 50;
@@ -772,6 +781,11 @@ class KingdomStore {
   assignSeatsInOrder() {
     const layout = this.getSeatingLayout();
     const total = layout.rows * layout.cols;
+    if (layout.rows === 5 && layout.cols === 6) {
+      this.data.seatingChart = [...DEFAULT_SEATING_CHART];
+      this.save();
+      return this.data.seatingChart;
+    }
     const chart = new Array(total).fill(null);
     const seatNos = this.data.students.map(s => s.seatNo).sort((a, b) => a - b);
     for (let i = 0; i < total && i < seatNos.length; i++) {

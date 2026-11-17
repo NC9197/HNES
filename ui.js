@@ -317,8 +317,8 @@ function switchMainView(view) {
   if (teacherView) teacherView.classList.add("hidden");
   if (parentView) parentView.classList.add("hidden");
 
-  const defaultBtnClass = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight";
-  const activeBtnClass = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-black transition flex items-center space-x-1.5 bg-amber-950 text-amber-300 shadow leading-tight";
+  const defaultBtnClass = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center space-x-1.5 text-amber-950 hover:bg-amber-300/60 leading-tight whitespace-nowrap shrink-0";
+  const activeBtnClass = "px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-black transition flex items-center space-x-1.5 bg-amber-950 text-amber-300 shadow leading-tight whitespace-nowrap shrink-0";
 
   if (btnMorning) btnMorning.className = defaultBtnClass;
   if (btnTraffic) btnTraffic.className = defaultBtnClass;
@@ -2709,8 +2709,8 @@ function renderTrafficView() {
 
   // 根據顯示模式切換網格欄數
   if (trafficDisplayMode === 'grid5x5') {
-    // 大屏模式核心版面：5 欄排布 (前 5 列共 25 人，第 6 列 2 人)，去除姓名僅留座號與明確原因
-    grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-2.5";
+    // 大屏模式核心版面：固定 5 欄排布 (前 5 列共 25 人，第 6 列 2 人)，排版嚴格不隨視窗縮放改變
+    grid.className = "traffic-grid-5x5";
     
     grid.innerHTML = filtered.map(item => {
       const st = item.student;
@@ -5451,9 +5451,21 @@ function renderSeatingProjectionGrid() {
 
   grid.style.gridTemplateColumns = `repeat(${layout.cols}, minmax(0, 1fr))`;
 
+  // 渲染大屏座位投影上方每排標頭 (最左兩排皆為第五排 -> 最右第一排)
+  const projColHeadersBar = document.getElementById("seatingProjectionColHeadersBar");
+  if (projColHeadersBar) {
+    projColHeadersBar.style.gridTemplateColumns = `repeat(${layout.cols}, minmax(0, 1fr))`;
+    let headersHtml = "";
+    for (let c = 1; c <= layout.cols; c++) {
+      const name = getSeatingColName(c, layout.cols);
+      headersHtml += `<div class="py-1.5 px-2 rounded-lg bg-slate-800/95 border border-amber-500/40 font-black text-amber-300 text-xs sm:text-sm shadow-xs">${name}</div>`;
+    }
+    projColHeadersBar.innerHTML = headersHtml;
+  }
+
   const layoutBadge = document.getElementById("seatingProjectionLayoutBadge");
   if (layoutBadge) {
-    layoutBadge.textContent = `${layout.rows}排 x ${layout.cols}列 (全班27席)`;
+    layoutBadge.textContent = `${layout.rows}列 x ${layout.cols}排 (最右為第一排，最左兩排皆為第五排)`;
   }
 
   let html = "";
@@ -5462,6 +5474,7 @@ function renderSeatingProjectionGrid() {
     const student = seatNo ? students.find(s => s.seatNo === seatNo) : null;
     const row = Math.floor(i / layout.cols) + 1;
     const col = (i % layout.cols) + 1;
+    const colName = getSeatingColName(col, layout.cols);
 
     if (student) {
       const traffic = window.KingdomApp.store.evaluateTrafficStatus(student.id);
@@ -5492,7 +5505,7 @@ function renderSeatingProjectionGrid() {
       html += `
         <div class="seating-proj-desk">
           <div class="flex items-center justify-between w-full">
-            <span class="text-xs font-mono font-bold text-amber-300/80 bg-black/40 px-1.5 py-0.5 rounded border border-amber-500/30">${row}-${col}</span>
+            <span class="text-xs font-mono font-bold text-amber-300/90 bg-black/50 px-2 py-0.5 rounded border border-amber-500/40">${colName} ‧ 第${row}列</span>
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
@@ -5520,7 +5533,7 @@ function renderSeatingProjectionGrid() {
     } else {
       html += `
         <div class="seating-proj-desk-empty">
-          <span class="text-xs font-mono text-slate-500">${row}-${col}</span>
+          <span class="text-xs font-mono text-slate-400 font-bold">${colName} ‧ 第${row}列</span>
           <span class="text-sm font-bold text-slate-500 mt-1">🪑 空席</span>
         </div>
       `;
@@ -6069,6 +6082,17 @@ let draggedDockSeatNo = null;
 let currentDockFilter = 'all';
 let luckyDrawTimeout = null;
 
+// 計算座位排別名稱 (最右邊為第一排，向左依序為第二、三、四排，最左邊兩排皆為第五排)
+function getSeatingColName(colNumber, totalCols = 6) {
+  if (totalCols === 6) {
+    const colNames = ["第五排", "第五排", "第四排", "第三排", "第二排", "第一排"];
+    return colNames[colNumber - 1] || `第${colNumber}列`;
+  }
+  const fromRight = totalCols - colNumber + 1;
+  const digitMap = { 1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八', 9: '九', 10: '十' };
+  return `第${digitMap[fromRight] || fromRight}排`;
+}
+
 function renderSeatingChart() {
   const container = document.getElementById("seatingGridContainer");
   if (!container) return;
@@ -6082,9 +6106,21 @@ function renderSeatingChart() {
   // 動態調整 CSS Grid 列數
   container.style.gridTemplateColumns = `repeat(${layout.cols}, minmax(0, 1fr))`;
 
+  // 渲染座位表上方每排標頭 (最左兩排第五排 -> 最右第一排)
+  const colHeadersBar = document.getElementById("seatingColHeadersBar");
+  if (colHeadersBar) {
+    colHeadersBar.style.gridTemplateColumns = `repeat(${layout.cols}, minmax(0, 1fr))`;
+    let headersHtml = "";
+    for (let c = 1; c <= layout.cols; c++) {
+      const name = getSeatingColName(c, layout.cols);
+      headersHtml += `<div class="py-1 px-1 rounded-lg bg-amber-100/90 border border-amber-300 font-black text-amber-950 text-xs shadow-2xs">${name}</div>`;
+    }
+    colHeadersBar.innerHTML = headersHtml;
+  }
+
   const statusLabel = document.getElementById("seatingLayoutStatusLabel");
   if (statusLabel) {
-    statusLabel.textContent = `目前格局：${layout.rows}排 x ${layout.cols}列 (共 ${chart.length} 席位)`;
+    statusLabel.textContent = `目前格局：${layout.rows}列 x ${layout.cols}排 (共 ${chart.length} 席位，最右為第一排，最左兩排皆為第五排)`;
   }
 
   const rowsInput = document.getElementById("seatingRowsInput");
@@ -6100,6 +6136,7 @@ function renderSeatingChart() {
 
     const row = Math.floor(i / layout.cols) + 1;
     const col = (i % layout.cols) + 1;
+    const colName = getSeatingColName(col, layout.cols);
 
     if (student) {
       const traffic = window.KingdomApp.store.evaluateTrafficStatus(student.id);
@@ -6138,7 +6175,7 @@ function renderSeatingChart() {
              ondragend="handleSeatDragEnd(event)"
              onclick="handleSeatClick(${i})">
           <div class="flex items-center justify-between text-xs w-full">
-            <span class="font-mono font-bold text-amber-700/60 text-[11px] bg-amber-100/70 px-1 rounded">${row}-${col}</span>
+            <span class="font-bold text-amber-800/80 text-[11px] bg-amber-100/90 px-1 rounded border border-amber-300/60">${colName} ‧ 第${row}列</span>
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
@@ -6176,7 +6213,7 @@ function renderSeatingChart() {
              ondragleave="handleSeatDragLeave(event, ${i})"
              ondrop="handleSeatDrop(event, ${i})"
              onclick="handleSeatClick(${i})">
-          <div class="text-[11px] text-amber-700/60 font-mono font-bold w-full text-left">${row}-${col}</div>
+          <div class="text-[11px] text-amber-700/70 font-bold w-full text-left">${colName} ‧ 第${row}列</div>
           <div class="my-1 text-center flex flex-col items-center justify-center">
             <span class="text-2xl opacity-75">🪑</span>
             <span class="text-xs sm:text-sm font-black text-amber-900/80 font-cute mt-0.5">空席</span>
@@ -7459,11 +7496,11 @@ function updateAlarmUI() {
   const navBtn = document.getElementById("btnNavAlarm");
   if (navBtn) {
     if (isAlarmActive) {
-      navBtn.className = "px-2.5 py-1.5 rounded-xl bg-rose-600 text-white border border-rose-400 font-black hover:bg-rose-500 transition shadow-sm flex items-center space-x-1 text-xs animate-pulse";
-      navBtn.innerHTML = `<span>⏰</span><span>鬧鐘: ${alarmTargetTime}</span>`;
+      navBtn.className = "px-2.5 py-1.5 rounded-xl bg-rose-600 text-white border border-rose-400 font-black hover:bg-rose-500 transition shadow-sm flex items-center space-x-1 text-xs animate-pulse whitespace-nowrap shrink-0";
+      navBtn.innerHTML = `<span>⏰</span><span class="whitespace-nowrap font-bold">鬧鐘: ${alarmTargetTime}</span>`;
     } else {
-      navBtn.className = "px-2.5 py-1.5 rounded-xl bg-amber-100/90 border border-amber-500 text-amber-950 font-black hover:bg-amber-200 transition shadow-sm flex items-center space-x-1 text-xs";
-      navBtn.innerHTML = `<span>⏰</span><span class="hidden md:inline">定時鬧鐘</span>`;
+      navBtn.className = "px-2.5 py-1.5 rounded-xl bg-amber-100/90 border border-amber-500 text-amber-950 font-black hover:bg-amber-200 transition shadow-sm flex items-center space-x-1 text-xs whitespace-nowrap shrink-0";
+      navBtn.innerHTML = `<span>⏰</span><span class="whitespace-nowrap font-bold">定時鬧鐘</span>`;
     }
   }
 
@@ -8077,6 +8114,7 @@ if (typeof window !== 'undefined') {
   window.updateAlarmUI = updateAlarmUI;
   window.triggerAlarmRing = triggerAlarmRing;
   window.dismissAlarmAlert = dismissAlarmAlert;
+  window.getSeatingColName = getSeatingColName;
   window.renderSeatingChart = renderSeatingChart;
   window.applyCustomSeatingLayout = applyCustomSeatingLayout;
   window.setPredefinedSeatingLayout = setPredefinedSeatingLayout;
