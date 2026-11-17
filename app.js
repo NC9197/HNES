@@ -427,11 +427,8 @@ const DEFAULT_REWARD_CARDS = [
   { id: 'rc_6', title: '國王特赦奏章豁免卷', cost: 50, icon: '📜', desc: '可減免一項指定短篇日常作業（不含段考與作文）', category: 'special' }
 ];
 
-// 行為卡累計資料 (座位自省卡：作業未交自動新增/導師手動控制；愛班服務卡：打卡遲到自動設定為「遲到」/導師手動控制)
-const DEFAULT_BEHAVIOR_CARDS = {
-  8: { reflectionCount: 0, serviceCount: 1, serviceReason: "遲到", serviceReasons: [{ text: "遲到", date: getTodayDateString(), time: "07:46" }] },
-  22: { reflectionCount: 1, serviceCount: 1, reflectionReason: "作業未交（國語習作第十課）", reflectionReasons: [{ text: "作業未交（國語習作第十課）", hwId: "1", isAutoHw: true, date: getTodayDateString(), time: "08:00" }], serviceReason: "遲到", serviceReasons: [{ text: "遲到", date: getTodayDateString(), time: "07:48" }] }
-};
+// 行為卡累計資料 (座位自省卡：作業未交自動新增/導師手動控制；愛班服務卡：打卡遲到自動設定為「遲到」/導師手動控制，全班預設全數歸零)
+const DEFAULT_BEHAVIOR_CARDS = {};
 
 const DEFAULT_ANNOUNCEMENTS = [
   { id: 1, title: "五年二班班親會將於本週五晚間隆重召開", content: "歡迎全體皇親國戚（各位家長）蒞臨王國議政廳，共同研商小兵成長大計！", date: "2026-11-12", important: true },
@@ -492,7 +489,9 @@ class KingdomStore {
     if (!parsed.announcements) parsed.announcements = JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS));
     if (!parsed.rewardCards) parsed.rewardCards = JSON.parse(JSON.stringify(DEFAULT_REWARD_CARDS));
     if (!parsed.rewardRedemptions) parsed.rewardRedemptions = [];
-    if (!parsed.behaviorCards) parsed.behaviorCards = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_CARDS));
+    if (!parsed.behaviorCards || (parsed.behaviorCards[8] && parsed.behaviorCards[8].serviceReason === "遲到")) {
+      parsed.behaviorCards = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_CARDS));
+    }
     if (!parsed.trafficOverrides) parsed.trafficOverrides = {};
     if (!parsed.seatingLayout || !parsed.seatingLayout.rows || !parsed.seatingLayout.cols) {
       parsed.seatingLayout = { rows: 5, cols: 6 };

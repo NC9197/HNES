@@ -348,6 +348,7 @@ function switchMainView(view) {
     renderParentPortal();
   }
   initLucideIcons();
+  updateTrafficCountdownClock();
 }
 
 function switchTeacherTab(tab) {
@@ -418,6 +419,11 @@ function startMorningClock() {
 
     const navDateEl = document.getElementById("navTodayDate");
     if (navDateEl) navDateEl.textContent = window.KingdomApp.getTodayDateString();
+
+    // 即時更新下課紅綠燈即時時鐘與作息倒數看板
+    if (typeof updateTrafficCountdownClock === 'function') {
+      updateTrafficCountdownClock();
+    }
 
     // 比對課堂定時鬧鐘
     if (typeof isAlarmActive !== 'undefined' && isAlarmActive && alarmTargetTime === timeHM) {
@@ -1653,6 +1659,10 @@ function renderHomeworkSummaryBoard() {
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
+            <button onclick="openEditHomeworkModal('${hw.id}')" class="px-2.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs shadow-xs flex items-center space-x-1" title="修改此作業的科目、名稱、截止日期或說明備註">
+              <span>✏️</span>
+              <span>編輯作業</span>
+            </button>
             <button onclick="openSetRevisionModal('${hw.id}')" class="px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-xs shadow-xs flex items-center space-x-1">
               <span>⚠️</span>
               <span>設置需訂正名冊</span>
@@ -2005,6 +2015,82 @@ function saveRevisionSelection() {
   renderHomeworkSettlementTable();
 }
 
+// -------------------------------------------------------------------
+// 編輯既有作業奏章 (修改作業名稱、科目、日期、備註等)
+// -------------------------------------------------------------------
+let currentEditingHomeworkId = null;
+
+function openEditHomeworkModal(hwId) {
+  if (!checkTeacherAuth("編輯作業奏章內容")) return;
+  const homeworkList = window.KingdomApp.store.data.homework || [];
+  const hw = homeworkList.find(h => String(h.id) === String(hwId));
+  if (!hw) {
+    showToast("⚠️ 找不到該項作業，無法編輯！", "⚠️");
+    return;
+  }
+
+  currentEditingHomeworkId = hwId;
+  const idInput = document.getElementById("editHwId");
+  const subjectSelect = document.getElementById("editHwSubject");
+  const dueDateInput = document.getElementById("editHwDueDate");
+  const titleInput = document.getElementById("editHwTitle");
+  const descInput = document.getElementById("editHwDesc");
+
+  if (idInput) idInput.value = hw.id;
+  if (subjectSelect) subjectSelect.value = hw.subject || '國語';
+  if (dueDateInput) dueDateInput.value = hw.dueDate || hw.date || window.KingdomApp.getTodayDateString();
+  if (titleInput) titleInput.value = hw.title || '';
+  if (descInput) descInput.value = hw.desc || '';
+
+  const modal = document.getElementById("editHomeworkModal");
+  if (modal) modal.classList.remove("hidden");
+  initLucideIcons();
+}
+
+function closeEditHomeworkModal() {
+  currentEditingHomeworkId = null;
+  const modal = document.getElementById("editHomeworkModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function submitEditHomework(e) {
+  e.preventDefault();
+  if (!currentEditingHomeworkId) return;
+
+  const homeworkList = window.KingdomApp.store.data.homework || [];
+  const hw = homeworkList.find(h => String(h.id) === String(currentEditingHomeworkId));
+  if (!hw) {
+    showToast("⚠️ 找不到該項作業紀錄！", "⚠️");
+    return;
+  }
+
+  const subject = document.getElementById("editHwSubject").value;
+  const dueDate = document.getElementById("editHwDueDate").value;
+  const title = document.getElementById("editHwTitle").value.trim();
+  const desc = document.getElementById("editHwDesc").value.trim();
+
+  if (!title) {
+    showToast("請輸入作業名稱！", "⚠️");
+    return;
+  }
+
+  hw.subject = subject;
+  hw.dueDate = dueDate;
+  hw.date = dueDate;
+  hw.title = title;
+  hw.desc = desc;
+
+  // 同步自省卡中關聯作業的名稱
+  window.KingdomApp.store.syncAllHomeworkReflectionCards();
+  window.KingdomApp.store.save();
+
+  closeEditHomeworkModal();
+  renderHomeworkSummaryBoard();
+  renderTrafficView();
+  renderHomeworkSettlementTable();
+  showToast(`✏️ 作業【${title}】資訊已成功更新！`, "✅");
+}
+
 function batchMarkAllHwSubmitted(hwId) {
   if (!checkTeacherAuth("全體作業標記為繳交")) return;
   const hw = window.KingdomApp.store.data.homework.find(h => h.id == hwId);
@@ -2036,7 +2122,6 @@ function deleteHomework(hwId) {
   renderHomeworkSettlementTable();
 }
 
-// --- 作業常用快捷範本 (國習、造詞、生字本、數習等) 渲染與套用 ---
 function renderHomeworkPresetButtons() {
   const container = document.getElementById("hwPresetButtonsBar");
   if (!container) return;
@@ -2157,7 +2242,6 @@ function submitNewHomework(e) {
   renderHomeworkSettlementTable();
 }
 
-// --- 學期平時成績與作業總結算表 ---
 function renderHomeworkSettlementTable() {
   const tbody = document.getElementById("homeworkSettlementTableBody");
   if (!tbody) return;
@@ -2216,16 +2300,246 @@ function renderHomeworkSettlementTable() {
 
 // ===================================================================
 // 5.5 下課紅綠燈通行儀表板 (Traffic Light Break Board Controller)
+// 包含當前即時時鐘、西寧國小作息倒數計時、超緊湊 Mini 學生卡片 (27人一覽無遺)
 // ===================================================================
-let trafficDisplayMode = 'compact'; // 預設為大屏極簡大字模式 (大螢幕首選)
+let trafficDisplayMode = 'compact'; // 預設為超緊湊 Mini 模式 (大螢幕首選免滾動)
+
+// 西寧國小五年二班課堂作息時程表
+const XINING_BELL_SCHEDULE = [
+  { label: "早自習・晨會活動", start: "07:40", end: "08:40", type: "morning", targetLabel: "第一節上課", targetTime: "08:40", isBreak: true },
+  { label: "第一節 課堂進行中", start: "08:40", end: "09:20", type: "class", period: 1, targetLabel: "第一節下課", targetTime: "09:20", isBreak: false },
+  { label: "第一節 下課時間", start: "09:20", end: "09:30", type: "break", duration: 10, targetLabel: "第二節上課", targetTime: "09:30", isBreak: true },
+  { label: "第二節 課堂進行中", start: "09:30", end: "10:10", type: "class", period: 2, targetLabel: "第二節大下課", targetTime: "10:10", isBreak: false },
+  { label: "第二節 大下課時間 🌟", start: "10:10", end: "10:30", type: "break", isBigBreak: true, duration: 20, targetLabel: "第三節上課", targetTime: "10:30", isBreak: true },
+  { label: "第三節 課堂進行中", start: "10:30", end: "11:10", type: "class", period: 3, targetLabel: "第三節下課", targetTime: "11:10", isBreak: false },
+  { label: "第三節 下課時間", start: "11:10", end: "11:20", type: "break", duration: 10, targetLabel: "第四節上課", targetTime: "11:20", isBreak: true },
+  { label: "第四節 課堂進行中", start: "11:20", end: "12:00", type: "class", period: 4, targetLabel: "午餐時間", targetTime: "12:00", isBreak: false },
+  { label: "午餐御膳時間 🍱", start: "12:00", end: "12:40", type: "lunch", targetLabel: "午休開始", targetTime: "12:40", isBreak: true },
+  { label: "午休靜心休養 💤", start: "12:40", end: "13:20", type: "nap", targetLabel: "午休起床", targetTime: "13:20", isBreak: false },
+  { label: "午休起床預備 🌤️", start: "13:20", end: "13:30", type: "break", duration: 10, targetLabel: "第五節上課", targetTime: "13:30", isBreak: true },
+  { label: "第五節 課堂進行中", start: "13:30", end: "14:10", type: "class", period: 5, targetLabel: "第五節下課", targetTime: "14:10", isBreak: false },
+  { label: "第五節 下課時間", start: "14:10", end: "14:20", type: "break", duration: 10, targetLabel: "第六節上課", targetTime: "14:20", isBreak: true },
+  { label: "第六節 課堂進行中", start: "14:20", end: "15:00", type: "class", period: 6, targetLabel: "第六節下課", targetTime: "15:00", isBreak: false },
+  { label: "第六節 下課時間", start: "15:00", end: "15:10", type: "break", duration: 10, targetLabel: "第七節上課", targetTime: "15:10", isBreak: true },
+  { label: "第七節 課堂進行中", start: "15:10", end: "15:50", type: "class", period: 7, targetLabel: "放學整理", targetTime: "15:50", isBreak: false },
+  { label: "放學整理準備 🎒", start: "15:50", end: "15:55", type: "dismissal", targetLabel: "放學鐘聲", targetTime: "15:55", isBreak: true }
+];
+
+let manualTrafficCountdownEnd = null;
+let manualTrafficCountdownLabel = '';
+
+// 更新當下時間與距離上課/下課即時倒數
+function updateTrafficCountdownClock() {
+  const clockEl = document.getElementById("trafficCurrentClock");
+  if (!clockEl) return;
+
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  clockEl.textContent = `${h}:${m}:${s}`;
+
+  const dateEl = document.getElementById("trafficClockDate");
+  if (dateEl) {
+    const weekDays = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+    const dayStr = weekDays[now.getDay()];
+    const y = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, '0');
+    const da = String(now.getDate()).padStart(2, '0');
+    dateEl.textContent = `${y}/${mo}/${da} (${dayStr})`;
+  }
+
+  const iconEl = document.getElementById("trafficStatusIcon");
+  const badgeEl = document.getElementById("trafficPeriodBadge");
+  const targetEl = document.getElementById("trafficScheduleTarget");
+  const titleEl = document.getElementById("trafficCountdownTitle");
+  const digitsEl = document.getElementById("trafficCountdownDigits");
+  const subEl = document.getElementById("trafficCountdownSub");
+  const resetBtn = document.getElementById("btnTrafficResetSchedule");
+
+  // 1. 若處於導師手動覆蓋倒數模式
+  if (manualTrafficCountdownEnd) {
+    const remainingMs = manualTrafficCountdownEnd - Date.now();
+    if (resetBtn) resetBtn.classList.remove("hidden");
+
+    if (remainingMs <= 0) {
+      manualTrafficCountdownEnd = null;
+      if (resetBtn) resetBtn.classList.add("hidden");
+      if (digitsEl) {
+        digitsEl.textContent = "00:00";
+        digitsEl.classList.remove("countdown-urgent");
+      }
+      ringBreakBell();
+      showToast("🔔 倒數結束！請大臣們回座準備上課！", "🔔");
+      return;
+    }
+
+    const totalSec = Math.ceil(remainingMs / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    const minStr = String(min).padStart(2, '0');
+    const secStr = String(sec).padStart(2, '0');
+
+    if (iconEl) iconEl.textContent = "⏱️";
+    if (badgeEl) {
+      badgeEl.textContent = manualTrafficCountdownLabel || "自訂倒數計時";
+      badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-400 text-amber-950 shadow-xs";
+    }
+    if (targetEl) targetEl.textContent = "倒數鐘響提醒";
+    if (titleEl) titleEl.textContent = "倒數剩餘時間：";
+    if (digitsEl) {
+      digitsEl.textContent = `${minStr}:${secStr}`;
+      if (totalSec <= 120) {
+        digitsEl.classList.add("countdown-urgent");
+      } else {
+        digitsEl.classList.remove("countdown-urgent");
+      }
+    }
+    if (subEl) subEl.textContent = totalSec <= 60 ? "🔔 即將到時！" : "自訂計時中";
+    return;
+  }
+
+  if (resetBtn) resetBtn.classList.add("hidden");
+
+  // 2. 西寧國小課表自動作息判定
+  const curSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  const toSec = (t) => {
+    const [hh, mm] = t.split(':').map(Number);
+    return hh * 3600 + mm * 60;
+  };
+
+  if (curSec < toSec('07:40')) {
+    const diff = toSec('07:40') - curSec;
+    const min = Math.floor(diff / 60);
+    const sec = diff % 60;
+    if (iconEl) iconEl.textContent = "🌅";
+    if (badgeEl) {
+      badgeEl.textContent = "清晨晨光時段";
+      badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-400 text-blue-950 shadow-xs";
+    }
+    if (targetEl) targetEl.textContent = "目標：早自習 (07:40)";
+    if (titleEl) titleEl.textContent = "距離早自習開始還剩：";
+    if (digitsEl) {
+      digitsEl.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+      digitsEl.classList.remove("countdown-urgent");
+    }
+    if (subEl) subEl.textContent = "大臣早安！請整理書包";
+    return;
+  }
+
+  if (curSec >= toSec('15:55')) {
+    if (iconEl) iconEl.textContent = "🎒";
+    if (badgeEl) {
+      badgeEl.textContent = "放學休息時段";
+      badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-400 text-purple-950 shadow-xs";
+    }
+    if (targetEl) targetEl.textContent = "今日課程圓滿結束";
+    if (titleEl) titleEl.textContent = "今日已放學，大臣們平安回家！";
+    if (digitsEl) {
+      digitsEl.textContent = "00:00";
+      digitsEl.classList.remove("countdown-urgent");
+    }
+    if (subEl) subEl.textContent = "明天見！";
+    return;
+  }
+
+  let activeItem = null;
+  for (const item of XINING_BELL_SCHEDULE) {
+    const sSec = toSec(item.start);
+    const eSec = toSec(item.end);
+    if (curSec >= sSec && curSec < eSec) {
+      activeItem = item;
+      break;
+    }
+  }
+
+  if (!activeItem) return;
+
+  const diffSec = toSec(activeItem.end) - curSec;
+  const min = Math.floor(diffSec / 60);
+  const sec = diffSec % 60;
+  const timeStr = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+
+  if (activeItem.isBreak) {
+    // 下課或午餐休息時段
+    if (iconEl) iconEl.textContent = activeItem.isBigBreak ? "🌟" : (activeItem.type === 'lunch' ? "🍱" : "🏃");
+    if (badgeEl) {
+      badgeEl.textContent = activeItem.label;
+      badgeEl.className = activeItem.isBigBreak 
+        ? "px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-300 text-amber-950 shadow-xs animate-bounce"
+        : "px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-400 text-emerald-950 shadow-xs";
+    }
+    if (targetEl) targetEl.textContent = `目標：${activeItem.targetLabel} (${activeItem.targetTime})`;
+    if (titleEl) titleEl.textContent = `距離【${activeItem.targetLabel}】鐘聲還剩：`;
+    if (digitsEl) {
+      digitsEl.textContent = timeStr;
+      if (diffSec <= 120) {
+        digitsEl.classList.add("countdown-urgent");
+      } else {
+        digitsEl.classList.remove("countdown-urgent");
+      }
+    }
+    if (subEl) {
+      if (diffSec <= 120) {
+        subEl.textContent = "🔔 快回教室喝水、上廁所、就座！";
+      } else {
+        subEl.textContent = activeItem.isBigBreak ? "大下課盡情活動！" : "自由活動時間";
+      }
+    }
+  } else {
+    // 課堂進行中或午休
+    if (iconEl) iconEl.textContent = activeItem.type === 'nap' ? "💤" : "📖";
+    if (badgeEl) {
+      badgeEl.textContent = activeItem.label;
+      badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-300 text-blue-950 shadow-xs";
+    }
+    if (targetEl) targetEl.textContent = `目標：${activeItem.targetLabel} (${activeItem.targetTime})`;
+    if (titleEl) titleEl.textContent = `課堂進行中・距離【${activeItem.targetLabel}】還剩：`;
+    if (digitsEl) {
+      digitsEl.textContent = timeStr;
+      digitsEl.classList.remove("countdown-urgent");
+    }
+    if (subEl) subEl.textContent = "專心聽講・勇於思考";
+  }
+}
+
+function setManualTrafficCountdown(minutes, label) {
+  manualTrafficCountdownEnd = Date.now() + minutes * 60 * 1000;
+  manualTrafficCountdownLabel = label || `${minutes}分鐘倒數`;
+  updateTrafficCountdownClock();
+  showToast(`⏱️ 已啟動【${manualTrafficCountdownLabel}】倒數計時！`, "⏱️");
+}
+
+function resetTrafficToSchedule() {
+  manualTrafficCountdownEnd = null;
+  manualTrafficCountdownLabel = '';
+  updateTrafficCountdownClock();
+  showToast("🔄 已恢復西寧國小課表自動作息連動！", "🔄");
+}
+
+function toggleTrafficDrawer() {
+  const drawer = document.getElementById("trafficManagementDrawer");
+  const btn = document.getElementById("btnTrafficDrawerToggle");
+  if (!drawer) return;
+  const isHidden = drawer.classList.contains("hidden");
+  if (isHidden) {
+    drawer.classList.remove("hidden");
+    drawer.classList.add("grid");
+    if (btn) btn.innerHTML = `<span>📜 收合抽屜 ▴</span>`;
+  } else {
+    drawer.classList.add("hidden");
+    drawer.classList.remove("grid");
+    if (btn) btn.innerHTML = `<span>📜 管理抽屜 ▾</span>`;
+  }
+}
 
 function toggleTrafficDisplayMode() {
   trafficDisplayMode = trafficDisplayMode === 'compact' ? 'detailed' : 'compact';
   const label = document.getElementById("trafficDisplayModeLabel");
   if (label) {
-    label.textContent = trafficDisplayMode === 'compact' ? '極簡大屏模式' : '詳細大臣模式';
+    label.textContent = trafficDisplayMode === 'compact' ? '超緊湊 Mini 模式' : '詳細大臣模式';
   }
-  showToast(`🖥️ 已切換為【${trafficDisplayMode === 'compact' ? '極簡大屏模式' : '詳細大臣模式'}】`);
+  showToast(`🖥️ 已切換為【${trafficDisplayMode === 'compact' ? '超緊湊 Mini 模式' : '詳細大臣模式'}】`);
   renderTrafficView();
 }
 
@@ -2313,6 +2627,31 @@ function renderTrafficView() {
     }
   }
 
+  // 更新快速受限通報條 (#trafficCompactRestrictedPills)
+  const compactRestrictedPills = document.getElementById("trafficCompactRestrictedPills");
+  if (compactRestrictedPills) {
+    const restrictedList = evaluatedList.filter(item => item.light === 'red' || item.hasService);
+    if (restrictedList.length === 0) {
+      compactRestrictedPills.innerHTML = `<span class="text-xs text-emerald-700 font-black">🎉 全班目前通行無阻，無自省與愛班限制！</span>`;
+    } else {
+      compactRestrictedPills.innerHTML = restrictedList.map(item => {
+        const st = item.student;
+        const seatPad = String(st.seatNo).padStart(2, '0');
+        const rCount = item.reflectionCount || (item.hasReflection ? 1 : 0);
+        const sCount = item.serviceCount || (item.hasService ? 1 : 0);
+        const tags = [];
+        if (rCount > 0) tags.push(`🪑${rCount}`);
+        if (sCount > 0) tags.push(`🧹${sCount}`);
+        return `
+          <button type="button" onclick="openTrafficDetailModal(${st.id})" class="px-2 py-0.5 rounded-md bg-rose-100 hover:bg-rose-200 text-rose-950 font-black text-xs border border-rose-300 shadow-2xs transition flex items-center space-x-1" title="點擊檢視 ${st.name} 通行詳情">
+            <span>${seatPad} ${st.name}</span>
+            <span class="text-rose-700 text-[10px] font-mono">${tags.join(' ')}</span>
+          </button>
+        `;
+      }).join('');
+    }
+  }
+
   // 依篩選條件過濾
   const filtered = evaluatedList.filter(item => {
     if (currentTrafficFilter === 'all') return true;
@@ -2325,106 +2664,89 @@ function renderTrafficView() {
 
   // 根據顯示模式切換網格欄數
   if (trafficDisplayMode === 'compact') {
-    grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3";
+    // 超緊湊 Mini 模式：9 欄排布 (大螢幕剛好 3 列 27 人全顯，高度省半免滾動)
+    grid.className = "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-9 gap-2";
     
     grid.innerHTML = filtered.map(item => {
       const st = item.student;
       const seatPad = String(st.seatNo).padStart(2, '0');
 
-      // 服務卡標籤 (超過07:40未打卡或愛班勞動，請假者豁免)
-      const serviceBadge = item.hasService
-        ? `<span class="badge-service text-[11px] font-black px-1.5 py-0.5 rounded-full flex items-center space-x-1 shadow-2xs flex-shrink-0">
-             <span>🧹</span>
-             <span>補打掃</span>
-           </span>`
-        : '';
+      // 迷你行為徽章
+      let badgesHtml = '';
+      if (item.hasReflection) {
+        const rCount = item.reflectionCount || 1;
+        badgesHtml += `<span class="badge-reflection text-[10px] font-black px-1 rounded flex items-center shadow-2xs" title="座位自省卡 ${rCount}張">🪑${rCount > 1 ? rCount : ''}</span>`;
+      }
+      if (item.hasService) {
+        const sCount = item.serviceCount || 1;
+        badgesHtml += `<span class="badge-service text-[10px] font-black px-1 rounded flex items-center shadow-2xs" title="愛班服務卡 ${sCount}張">🧹${sCount > 1 ? sCount : ''}</span>`;
+      }
 
-      // 1. 綠燈：僅顯示大綠燈 + 座號 + 姓名，不需多餘冗長理由
+      // 1. 綠燈：超緊湊 Mini 徽章卡片
       if (item.light === 'green') {
         return `
           <div onclick="openTrafficDetailModal(${st.id})" 
-            class="parchment-card p-3 rounded-2xl border-2 border-emerald-400 bg-emerald-50/90 hover:bg-emerald-100 transition shadow-sm cursor-pointer flex flex-col justify-between min-h-[96px] group"
-            title="點擊查看或調整 ${st.name} 通行狀態">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2">
-                <div class="w-9 h-9 rounded-full light-orb-green flex items-center justify-center text-white font-black text-lg shadow flex-shrink-0">✓</div>
-                <div class="flex items-center space-x-1.5">
-                  <span class="text-xs font-mono font-black text-emerald-900 bg-emerald-200 px-1.5 py-0.5 rounded">${seatPad}</span>
-                  <span class="text-base font-black text-slate-900">${st.name}</span>
-                </div>
-              </div>
-              ${serviceBadge}
+            class="traffic-mini-card mini-green p-2 flex items-center justify-between gap-1 cursor-pointer group"
+            title="${seatPad}號 ${st.name} 准許通行 (點擊開啟通行詳情)">
+            <div class="flex items-center space-x-1.5 min-w-0 flex-1">
+              <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-950 flex-shrink-0">${seatPad}</span>
+              <span class="font-cute font-black text-sm text-slate-900 truncate">${st.name}</span>
             </div>
-            <div class="mt-2 flex items-center justify-between text-[11px]">
-              <span class="font-black text-emerald-800">🟢 准許下課</span>
-              <span class="text-slate-400 text-[10px] opacity-0 group-hover:opacity-100 transition">管理 ❯</span>
+            <div class="flex items-center space-x-1 flex-shrink-0">
+              ${badgesHtml}
+              <div class="mini-orb mini-orb-green" title="准許下課">✓</div>
             </div>
           </div>
         `;
       }
 
-      // 2. 黃燈：顯示黃燈 + 座號 + 姓名 + 理由 (如：黃燈(國習訂正未繳交))
+      // 2. 黃燈：待訂正 Mini 卡片
       if (item.light === 'yellow') {
         return `
           <div onclick="openTrafficDetailModal(${st.id})" 
-            class="parchment-card p-3 rounded-2xl border-2 border-amber-400 bg-amber-50/95 hover:bg-amber-100 transition shadow-sm cursor-pointer flex flex-col justify-between min-h-[96px] group"
-            title="點擊查看或調整 ${st.name} 訂正名冊">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2">
-                <div class="w-9 h-9 rounded-full light-orb-yellow flex items-center justify-center text-amber-950 font-black text-lg shadow flex-shrink-0">!</div>
-                <div class="flex items-center space-x-1.5">
-                  <span class="text-xs font-mono font-black text-amber-950 bg-amber-200 px-1.5 py-0.5 rounded">${seatPad}</span>
-                  <span class="text-base font-black text-slate-900">${st.name}</span>
-                </div>
-              </div>
-              ${serviceBadge}
+            class="traffic-mini-card mini-yellow p-2 flex items-center justify-between gap-1 cursor-pointer group"
+            title="${seatPad}號 ${st.name}：${item.label} (點擊開啟訂正核銷)">
+            <div class="flex items-center space-x-1.5 min-w-0 flex-1">
+              <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 flex-shrink-0">${seatPad}</span>
+              <span class="font-cute font-black text-sm text-amber-950 truncate">${st.name}</span>
             </div>
-            <div class="mt-2 text-xs font-black text-amber-950 bg-amber-200/90 px-2 py-1 rounded-lg truncate shadow-2xs" title="${item.label}">
-              ${item.label}
+            <div class="flex items-center space-x-1 flex-shrink-0">
+              ${badgesHtml}
+              <div class="mini-orb mini-orb-yellow" title="${item.label}">!</div>
             </div>
           </div>
         `;
       }
 
-      // 3. 紅燈：顯示紅燈 + 座號 + 姓名 + 理由 (如：紅燈(數習未交) 或 紅燈(座位自省))
+      // 3. 紅燈：留座自省/缺交 Mini 卡片
       if (item.light === 'red') {
         return `
           <div onclick="openTrafficDetailModal(${st.id})" 
-            class="parchment-card p-3 rounded-2xl border-2 border-rose-500 bg-rose-50/95 hover:bg-rose-100 transition shadow-sm cursor-pointer flex flex-col justify-between min-h-[96px] group"
-            title="點擊查看或調整 ${st.name} 缺交與自省狀態">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-2">
-                <div class="w-9 h-9 rounded-full light-orb-red flex items-center justify-center text-white font-black text-lg shadow flex-shrink-0">🛑</div>
-                <div class="flex items-center space-x-1.5">
-                  <span class="text-xs font-mono font-black text-rose-950 bg-rose-200 px-1.5 py-0.5 rounded">${seatPad}</span>
-                  <span class="text-base font-black text-slate-900">${st.name}</span>
-                </div>
-              </div>
-              ${serviceBadge}
+            class="traffic-mini-card mini-red p-2 flex items-center justify-between gap-1 cursor-pointer group"
+            title="${seatPad}號 ${st.name}：${item.label} (點擊開啟管理)">
+            <div class="flex items-center space-x-1.5 min-w-0 flex-1">
+              <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded bg-rose-200 text-rose-950 flex-shrink-0">${seatPad}</span>
+              <span class="font-cute font-black text-sm text-rose-950 truncate">${st.name}</span>
             </div>
-            <div class="mt-2 text-xs font-black text-rose-950 bg-rose-200/90 px-2 py-1 rounded-lg truncate shadow-2xs" title="${item.label}">
-              ${item.label}
+            <div class="flex items-center space-x-1 flex-shrink-0">
+              ${badgesHtml}
+              <div class="mini-orb mini-orb-red" title="${item.label}">🛑</div>
             </div>
           </div>
         `;
       }
 
-      // 4. 請假：顯示🏖️ + 座號 + 姓名 + (請假在府)，嚴格免頒發愛班卡
+      // 4. 請假：免查 Mini 卡片
       return `
         <div onclick="openTrafficDetailModal(${st.id})" 
-          class="parchment-card p-3 rounded-2xl border-2 border-slate-300 bg-slate-100/80 hover:bg-slate-200/70 transition shadow-2xs cursor-pointer flex flex-col justify-between min-h-[96px] opacity-75"
-          title="${st.name} 今日請假在府休養，免查通行">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-              <div class="w-9 h-9 rounded-full bg-slate-300 flex items-center justify-center text-slate-700 font-black text-sm flex-shrink-0">🏖️</div>
-              <div class="flex items-center space-x-1.5">
-                <span class="text-xs font-mono font-black text-slate-600 bg-slate-200 px-1.5 py-0.5 rounded">${seatPad}</span>
-                <span class="text-base font-black text-slate-600">${st.name}</span>
-              </div>
-            </div>
+          class="traffic-mini-card mini-leave p-2 flex items-center justify-between gap-1 cursor-pointer group"
+          title="${seatPad}號 ${st.name} 今日請假在府休養">
+          <div class="flex items-center space-x-1.5 min-w-0 flex-1">
+            <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 flex-shrink-0">${seatPad}</span>
+            <span class="font-cute font-black text-sm text-slate-600 truncate">${st.name}</span>
           </div>
-          <div class="mt-2 text-xs font-bold text-slate-500 bg-slate-200/70 px-2 py-1 rounded-lg">
-            🏖️ 請假在府 (免愛班服務)
+          <div class="flex items-center space-x-1 flex-shrink-0">
+            <div class="mini-orb mini-orb-leave" title="請假在府">🏖️</div>
           </div>
         </div>
       `;
@@ -4780,9 +5102,14 @@ function renderAnnouncementsView() {
               ${a.pinned ? '<span class="text-xs bg-amber-200 text-amber-950 font-black px-1.5 py-0.5 rounded">置頂</span>' : ''}
               <h4 class="font-black text-amber-950 text-sm">${a.title}</h4>
             </div>
-            <button onclick="deleteAnnouncement(${a.id})" class="text-rose-500 hover:text-rose-700 text-xs font-bold">
-              刪除
-            </button>
+            <div class="flex items-center space-x-2">
+              <button onclick="projectExistingAnnouncement(${a.id})" class="text-xs px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-black border border-amber-300 flex items-center space-x-1 shadow-2xs" title="大屏全螢幕投影此公告給全班">
+                <span>🖥️ 投影</span>
+              </button>
+              <button onclick="deleteAnnouncement(${a.id})" class="text-rose-500 hover:text-rose-700 text-xs font-bold">
+                刪除
+              </button>
+            </div>
           </div>
           <p class="text-xs text-slate-700 mt-1.5 leading-relaxed whitespace-pre-line">${a.content}</p>
           <span class="text-[10px] text-slate-400 mt-2 block font-bold">${a.date}</span>
@@ -4792,6 +5119,150 @@ function renderAnnouncementsView() {
   }
 
   initLucideIcons();
+}
+
+// -------------------------------------------------------------------
+// 皇室告示大屏全螢幕投影管理
+// -------------------------------------------------------------------
+let projectionClockInterval = null;
+
+function openAnnouncementProjectionModal(initialData) {
+  const modal = document.getElementById("announcementProjectionModal");
+  if (!modal) return;
+
+  const data = initialData || (window.KingdomApp.store.data.announcements && window.KingdomApp.store.data.announcements[0]) || {
+    title: "📢 歡迎全體大臣蒞臨西寧王國！",
+    content: "請全體小兵大臣調養精神、專注思考，爭取至高班級榮譽！",
+    date: window.KingdomApp.getTodayDateString(),
+    badge: "👑 皇室重要公文公告"
+  };
+
+  const titleEl = document.getElementById("projectionDisplayTitle");
+  const contentEl = document.getElementById("projectionDisplayContent");
+  const dateEl = document.getElementById("projectionDisplayDate");
+  const badgeEl = document.getElementById("projectionDisplayBadge");
+  const timeEl = document.getElementById("projectionDisplayTime");
+
+  if (titleEl) titleEl.textContent = data.title || "📢 皇室重要公告";
+  if (contentEl) contentEl.textContent = data.content || "請全體大臣遵照導師指示！";
+  if (dateEl) dateEl.textContent = data.date || window.KingdomApp.getTodayDateString();
+  if (badgeEl) badgeEl.textContent = data.badge || (data.pinned ? "🚨 全班置頂緊急公文" : "📢 皇室公文速報");
+  if (timeEl) timeEl.textContent = new Date().toTimeString().slice(0, 5) + " 發布";
+
+  // 填入即時輸入框便於修改
+  const inputTitle = document.getElementById("instantBroadcastTitle");
+  const inputContent = document.getElementById("instantBroadcastContent");
+  if (inputTitle) inputTitle.value = data.title || "";
+  if (inputContent) inputContent.value = data.content || "";
+
+  modal.classList.remove("hidden");
+
+  // 啟動大時鐘
+  function updateProjClock() {
+    const clockEl = document.getElementById("projectionLiveClock");
+    if (clockEl) {
+      const now = new Date();
+      clockEl.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }
+  }
+  updateProjClock();
+  if (projectionClockInterval) clearInterval(projectionClockInterval);
+  projectionClockInterval = setInterval(updateProjClock, 1000);
+
+  playBroadcastChime();
+}
+
+function closeAnnouncementProjectionModal() {
+  const modal = document.getElementById("announcementProjectionModal");
+  if (modal) modal.classList.add("hidden");
+  if (projectionClockInterval) clearInterval(projectionClockInterval);
+}
+
+function projectExistingAnnouncement(id) {
+  const announcements = window.KingdomApp.store.data.announcements || [];
+  const a = announcements.find(item => item.id === id);
+  if (!a) return;
+  openAnnouncementProjectionModal({
+    title: a.title,
+    content: a.content,
+    date: a.date,
+    badge: a.pinned ? "🚨 全班置頂緊急公文" : "📢 皇室公文公告"
+  });
+}
+
+function broadcastInstantAnnouncement(e) {
+  if (e) e.preventDefault();
+  const title = document.getElementById("instantBroadcastTitle").value.trim();
+  const content = document.getElementById("instantBroadcastContent").value.trim();
+
+  if (!title || !content) {
+    showToast("請輸入公告標題與詳細內容！", "⚠️");
+    return;
+  }
+
+  const titleEl = document.getElementById("projectionDisplayTitle");
+  const contentEl = document.getElementById("projectionDisplayContent");
+  const dateEl = document.getElementById("projectionDisplayDate");
+  const badgeEl = document.getElementById("projectionDisplayBadge");
+  const timeEl = document.getElementById("projectionDisplayTime");
+
+  if (titleEl) titleEl.textContent = title;
+  if (contentEl) contentEl.textContent = content;
+  if (dateEl) dateEl.textContent = window.KingdomApp.getTodayDateString();
+  if (badgeEl) badgeEl.textContent = "⚡ 現場臨時公文速報";
+  if (timeEl) timeEl.textContent = new Date().toTimeString().slice(0, 5) + " 剛剛發布";
+
+  // 同步存入告示欄
+  const newAnnounce = {
+    id: Date.now(),
+    title,
+    content,
+    pinned: true,
+    date: window.KingdomApp.getTodayDateString()
+  };
+  window.KingdomApp.store.data.announcements.unshift(newAnnounce);
+  window.KingdomApp.store.save();
+  renderAnnouncementsView();
+
+  playBroadcastChime();
+  showToast("🚀 大屏重要資訊已成功投影發布！", "📢");
+}
+
+function applyBroadcastPreset(presetKey) {
+  const presets = {
+    pe: {
+      title: "🏃 第四節體育課集合通知",
+      content: "因今日天氣炎熱/下雨，第四節體育課改至活動中心二樓室內集合！請大臣們攜帶水壺就定位！"
+    },
+    lunch: {
+      title: "🍱 今日午餐提早用餐通知",
+      content: "全班大臣注意！今日第四節提早於 11:50 展開午餐御膳，請值日生提前洗手並排好餐具！"
+    },
+    form: {
+      title: "📋 家長回條繳交提醒",
+      content: "請全體大臣確認校外教學家長同意回條是否已簽章，請於今日午休前送至導師桌前繳交！"
+    },
+    dismissal: {
+      title: "🎒 今日放學重要叮嚀",
+      content: "今日放學請攜帶直笛、美勞用具與聯絡簿回家，路口請依號誌通行並注意交通安全，明天見！"
+    }
+  };
+
+  const p = presets[presetKey];
+  if (!p) return;
+
+  const titleInput = document.getElementById("instantBroadcastTitle");
+  const contentInput = document.getElementById("instantBroadcastContent");
+  if (titleInput) titleInput.value = p.title;
+  if (contentInput) contentInput.value = p.content;
+
+  broadcastInstantAnnouncement();
+}
+
+function playBroadcastChime() {
+  if (window.KingdomApp && window.KingdomApp.sound && typeof window.KingdomApp.sound.playBreakBell === 'function') {
+    window.KingdomApp.sound.playBreakBell();
+  }
 }
 
 function submitNewAnnouncement(e) {
