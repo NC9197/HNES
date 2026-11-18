@@ -3894,7 +3894,6 @@ function renderPointsView() {
 
   renderPointPresets();
   renderRewardCards();
-  renderPointsZooHabitat();
   renderPetsOverview();
 
   if (grid) {
@@ -5576,25 +5575,16 @@ function renderSeatingProjectionGrid() {
       let refChip = refCount > 0 ? `<span class="text-[10px] bg-rose-600 text-white font-bold px-1.5 py-0.2 rounded shadow-xs">🪑 自省${refCount > 1 ? `*${refCount}` : ''}</span>` : "";
       let srvChip = srvCount > 0 ? `<span class="text-[10px] bg-orange-600 text-white font-bold px-1.5 py-0.2 rounded shadow-xs">🧹 愛班${srvCount > 1 ? `*${srvCount}` : ''}</span>` : "";
 
-      window.KingdomApp.store.syncStudentPets(student);
-      const pets = student.pets || [{ type: student.animalType || 'dog' }];
-      const animalIcons = pets.map(p => {
-        const ps = window.KingdomApp.getAnimalStatus ? window.KingdomApp.getAnimalStatus(p.type, 0) : null;
-        return ps ? ps.animalIcon : '🐾';
-      }).join('');
-
       html += `
         <div class="seating-proj-desk">
-          <div class="flex items-center justify-between w-full">
-            <span class="text-xs font-mono font-bold text-amber-300/90 bg-black/50 px-2 py-0.5 rounded border border-amber-500/40">${colName}</span>
+          <div class="flex items-center justify-end w-full">
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
             </div>
           </div>
-          <div class="my-2 text-center flex flex-col items-center justify-center">
-            <span class="inline-flex items-center space-x-1.5 px-3 py-0.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950 shadow-md">
-              <span>${animalIcons}</span>
+          <div class="my-auto text-center flex flex-col items-center justify-center">
+            <span class="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950 shadow-md whitespace-nowrap">
               <span>${String(student.seatNo).padStart(2, '0')} 號</span>
             </span>
             <div class="font-cute font-black text-amber-100 text-xl sm:text-2xl mt-1 tracking-wider drop-shadow-md truncate max-w-[130px]">
@@ -5614,8 +5604,8 @@ function renderSeatingProjectionGrid() {
     } else {
       html += `
         <div class="seating-proj-desk-empty">
-          <span class="text-xs font-mono text-slate-400 font-bold">${colName}</span>
-          <span class="text-sm font-bold text-slate-500 mt-1">🪑 空席</span>
+          <span class="text-2xl opacity-60">🪑</span>
+          <span class="text-sm font-bold text-slate-400 mt-1">空席</span>
         </div>
       `;
     }
@@ -6834,13 +6824,6 @@ function renderSeatingChart() {
       let refChip = refCount > 0 ? `<span class="text-[9px] bg-rose-600 text-white font-bold px-1 rounded shadow-xs">自省${refCount > 1 ? `x${refCount}` : ''}</span>` : "";
       let serviceChip = srvCount > 0 ? `<span class="text-[9px] bg-orange-600 text-white font-bold px-1 rounded shadow-xs">愛班${srvCount > 1 ? `x${srvCount}` : ''}</span>` : "";
 
-      window.KingdomApp.store.syncStudentPets(student);
-      const pets = student.pets || [{ type: student.animalType || 'dog' }];
-      const animalIcons = pets.map(p => {
-        const ps = window.KingdomApp.getAnimalStatus ? window.KingdomApp.getAnimalStatus(p.type, 0) : null;
-        return ps ? ps.animalIcon : '🐾';
-      }).join('');
-
       html += `
         <div class="seat-desk-card ${isSelected ? 'seat-selected ring-4 ring-amber-500' : ''}" 
              id="seatDesk-${i}"
@@ -6851,19 +6834,17 @@ function renderSeatingChart() {
              ondrop="handleSeatDrop(event, ${i})"
              ondragend="handleSeatDragEnd(event)"
              onclick="handleSeatClick(${i})">
-          <div class="flex items-center justify-between text-xs w-full">
-            <span class="font-bold text-amber-800/80 text-[11px] bg-amber-100/90 px-1 rounded border border-amber-300/60">${colName}</span>
+          <div class="flex items-center justify-end text-xs w-full">
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
             </div>
           </div>
-          <div class="my-1.5 text-center flex flex-col items-center justify-center">
-            <span class="seat-badge-cute inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-200 text-amber-950 border border-amber-400 shadow-xs tracking-wider font-mono">
-              <span>${animalIcons}</span>
+          <div class="my-auto text-center flex flex-col items-center justify-center">
+            <span class="seat-badge-cute inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-200 text-amber-950 border border-amber-400 shadow-xs tracking-wider font-mono whitespace-nowrap">
               <span>${String(student.seatNo).padStart(2, '0')} 號</span>
             </span>
-            <div class="seat-student-name font-black text-amber-950 text-base sm:text-lg mt-1 tracking-wide font-cute truncate max-w-[110px] mx-auto filter drop-shadow-xs">
+            <div class="seat-student-name font-black text-amber-950 text-base sm:text-lg mt-1 tracking-wide font-cute truncate max-w-[105px] mx-auto filter drop-shadow-xs">
               ${student.name}
             </div>
           </div>
@@ -6890,13 +6871,11 @@ function renderSeatingChart() {
              ondragleave="handleSeatDragLeave(event, ${i})"
              ondrop="handleSeatDrop(event, ${i})"
              onclick="handleSeatClick(${i})">
-          <div class="text-[11px] text-amber-700/70 font-bold w-full text-left">${colName}</div>
-          <div class="my-1 text-center flex flex-col items-center justify-center">
+          <div class="my-auto text-center flex flex-col items-center justify-center">
             <span class="text-2xl opacity-75">🪑</span>
             <span class="text-xs sm:text-sm font-black text-amber-900/80 font-cute mt-0.5">空席</span>
-            <span class="text-[10px] text-amber-700/60 font-bold">拖曳下方座號移入</span>
+            <span class="text-[10px] text-amber-700/60 font-bold mt-0.5">點擊或拖曳入座</span>
           </div>
-          <div class="text-[10px] text-amber-600/70 text-center font-bold">點擊或拖曳入座</div>
         </div>
       `;
     }
