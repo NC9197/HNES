@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=2026111807">
+  <link rel="stylesheet" href="styles.css?v=2026111808">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -251,6 +251,11 @@
           <!-- 大屏聯絡簿投影切換按鈕 (含到校打卡功能) -->
           <button onclick="openContactProjectionModal()" class="btn-royal-gold px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-md transform hover:scale-105 active:scale-95 transition shrink-0" title="開啟聯絡簿超大字大屏投影（含座號晨檢打卡功能）">
             <span>🖥️ 大屏聯絡簿投影</span>
+          </button>
+
+          <!-- 💺 大屏座位投影快捷按鈕 (藍天白雲朝氣一屏全覽) -->
+          <button type="button" onclick="openSeatingProjectionModal()" class="btn-royal-gold px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-md transform hover:scale-105 active:scale-95 transition shrink-0" title="開啟教室座位表大屏全螢幕投影（藍天白雲朝氣一屏全覽）">
+            <span>💺 大屏座位投影</span>
           </button>
         </div>
       </div>
@@ -664,8 +669,6 @@
       <div id="trafficCardsGrid" class="traffic-grid-5x5">
         <!-- 動態渲染 27 位大臣卡片 -->
       </div>
-
-    </div>
 
     </div>
 
@@ -2424,7 +2427,7 @@
   <!-- MODAL: 教室座位表 ‧ 大屏全螢幕投影看板 (Seating Projection Broadcaster) -->
   <!-- 藍天白雲朝氣明亮背景・左右可愛小插圖・長方形無須滾輪一屏全覽 -->
   <!-- =============================================================== -->
-  <div id="seatingProjectionModal" class="hidden fixed inset-0 z-[75] bg-gradient-to-b from-sky-400 via-sky-200 to-amber-50 flex flex-col p-3 sm:p-4 text-slate-800 overflow-y-auto relative">
+  <div id="seatingProjectionModal" class="hidden fixed inset-0 z-[90] bg-gradient-to-b from-sky-400 via-sky-200 to-amber-50 flex flex-col p-3 sm:p-4 text-slate-800 overflow-y-auto">
     
     <!-- 頂部導航列：大時鐘、全螢幕與關閉鍵 (明亮白雲朝氣風格) -->
     <div class="flex items-center justify-between pb-2.5 px-4 py-2 bg-white/85 backdrop-blur-md rounded-2xl border-2 border-sky-300 shadow-md flex-shrink-0 max-w-6xl w-full mx-auto">
@@ -4232,8 +4235,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111807"></script>
-  <script src="ui.js?v=2026111807"></script>
+  <script src="app.js?v=2026111808"></script>
+  <script src="ui.js?v=2026111808"></script>
 
 </body>
 </html>

@@ -805,6 +805,24 @@ header .nav-btn-wordbreak > span {
 /* =================================================================== */
 /* 教室座位表大屏全螢幕投影樣式 (藍天白雲朝氣風格・長方形高可視排版) */
 /* =================================================================== */
+#seatingProjectionModal {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+}
+#seatingProjectionModal.hidden {
+  display: none !important;
+}
+#seatingProjectionModal:not(.hidden) {
+  display: flex !important;
+}
+
 .seating-proj-desk {
   background: linear-gradient(145deg, #ffffff 0%, #fffef0 45%, #fef3c7 100%);
   border: 2px solid #f59e0b;

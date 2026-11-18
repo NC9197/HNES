@@ -5488,8 +5488,14 @@ function openSeatingProjectionModal() {
   const modal = document.getElementById("seatingProjectionModal");
   if (!modal) return;
 
-  renderSeatingProjectionGrid();
   modal.classList.remove("hidden");
+  modal.style.display = "flex";
+
+  try {
+    renderSeatingProjectionGrid();
+  } catch (err) {
+    console.error("renderSeatingProjectionGrid error:", err);
+  }
 
   function updateSeatingProjClock() {
     const clockEl = document.getElementById("seatingProjectionLiveClock");
@@ -5505,7 +5511,10 @@ function openSeatingProjectionModal() {
 
 function closeSeatingProjectionModal() {
   const modal = document.getElementById("seatingProjectionModal");
-  if (modal) modal.classList.add("hidden");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.style.display = "none";
+  }
   if (seatingProjectionClockInterval) {
     clearInterval(seatingProjectionClockInterval);
     seatingProjectionClockInterval = null;
@@ -5570,7 +5579,7 @@ function renderSeatingProjectionGrid() {
 
     if (student) {
       const traffic = window.KingdomApp.store.evaluateTrafficStatus(student.id);
-      const att = attendanceToday[student.id];
+      const att = attendanceToday[student.id] || attendanceToday[student.seatNo];
 
       let attBadge = "";
       if (att) {
@@ -6827,7 +6836,7 @@ function renderSeatingChart() {
 
     if (student) {
       const traffic = window.KingdomApp.store.evaluateTrafficStatus(student.id);
-      const att = attendanceToday[student.id];
+      const att = attendanceToday[student.id] || attendanceToday[student.seatNo];
 
       let attBadge = "";
       if (att) {
