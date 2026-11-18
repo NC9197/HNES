@@ -941,9 +941,15 @@ class KingdomStore {
   // --- 同步與防呆校驗學生萌寵 (若蘋果因誤植修改未達標，自動移除超額認養的寵物) ---
   syncStudentPets(student) {
     if (!student) return [];
+    const pts = Math.max(0, parseInt(student.points, 10) || 0);
+    const cardsSpent = Array.isArray(student.redeemedCards)
+      ? student.redeemedCards.reduce((sum, c) => sum + (parseInt(c.cost, 10) || 0), 0)
+      : 0;
+
     let lifetime = parseInt(student.lifetimePoints, 10);
-    if (isNaN(lifetime) || lifetime <= 0) {
-      lifetime = Math.max(0, parseInt(student.points, 10) || 0);
+    // 生涯累積若未初始化、或因導師修改誤植蘋果而高於 (當前蘋果 + 已換卡消費)，自動校準回正確累積值！
+    if (isNaN(lifetime) || lifetime <= 0 || lifetime > (pts + cardsSpent)) {
+      lifetime = pts + cardsSpent;
       student.lifetimePoints = lifetime;
     }
     const maxAllowed = 1 + Math.floor(lifetime / 500);

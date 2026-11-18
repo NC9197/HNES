@@ -717,7 +717,11 @@ body {
 
 /* 下課紅綠燈大屏模式：固定 5 欄 (5*5+2) 嚴格不隨視窗縮放改變 */
 .traffic-grid-5x5,
-#trafficCardsGrid.traffic-grid-5x5 {
+#trafficCardsGrid.traffic-grid-5x5,
+.points-proj-grid-5x5,
+#pointsProjectionGrid.points-proj-grid-5x5,
+.zoo-proj-grid-5x5,
+#zooProjectionGrid.zoo-proj-grid-5x5 {
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   gap: 0.625rem !important;

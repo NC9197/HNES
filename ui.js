@@ -624,6 +624,11 @@ function renderMorningBoard() {
 
   // 同步渲染歷日聯絡簿歷史紀錄簿 (各日奏章檔案庫)
   renderContactBookHistoryList();
+
+  // 同步刷新聯絡簿大屏全螢幕投影畫面 (若開啟中，打卡與作業項目即時雙向連動)
+  if (typeof renderContactProjectionView === 'function') {
+    renderContactProjectionView();
+  }
 }
 
 let activeMorningChangeStudentId = null;
@@ -3880,7 +3885,7 @@ function triggerZooCheerParty() {
 }
 
 // ===================================================================
-// 6. 榮譽集點榜與批次/單獨重置點數 (Points Management)
+// 6. 紅蘋果集點榜與批次/單獨重置點數 (Points Management)
 // ===================================================================
 function renderPointsView() {
   const students = window.KingdomApp.store.data.students;
@@ -4975,6 +4980,11 @@ function renderRosterView() {
   const tbody = document.getElementById("studentRosterTableBody");
   if (!tbody) return;
 
+  // 全域名冊萌寵同步防呆校驗 (保證未達 500/1000 門檻時絕對同步截斷超額寵物)
+  if (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.syncAllStudentsPets === 'function') {
+    window.KingdomApp.store.syncAllStudentsPets();
+  }
+
   const students = window.KingdomApp.store.data.students;
 
   tbody.innerHTML = students.map(st => {
@@ -4991,12 +5001,12 @@ function renderRosterView() {
     const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
     const svgCode = window.KingdomApp.renderAnimalSVG(aType, petStatus.stageIndex);
 
-    const pets = st.pets || [{ type: aType }];
     const maxAllowed = 1 + Math.floor(lifetime / 500);
+    const validPets = (st.pets || [{ type: aType }]).slice(0, maxAllowed);
 
     let secondPetRosterHtml = '';
-    if (pets.length > 1) {
-      secondPetRosterHtml = pets.slice(1).map((p, idx) => {
+    if (validPets.length > 1) {
+      secondPetRosterHtml = validPets.slice(1).map((p, idx) => {
         const slotIdx = idx + 1;
         const sType = p.type.toLowerCase();
         const sExp = Math.max(0, lifetime - slotIdx * 500);
@@ -5015,9 +5025,9 @@ function renderRosterView() {
         `;
       }).join('');
     }
-    const nextSlot = pets.length;
+    const nextSlot = validPets.length;
     const reqPtsForNext = nextSlot * 500;
-    if (pets.length < maxAllowed && lifetime >= reqPtsForNext) {
+    if (validPets.length < maxAllowed && lifetime >= reqPtsForNext) {
       secondPetRosterHtml += `
         <div class="mt-1 pt-1 border-t border-amber-200/60">
           <button type="button" onclick="openChangeAnimalModal(${st.id}, ${nextSlot})" class="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-1.5 py-0.5 rounded border border-amber-400">
@@ -5038,7 +5048,7 @@ function renderRosterView() {
           <span class="font-mono font-bold text-slate-800">${st.birthday}</span>
           <span class="block text-[10px] text-amber-800 font-mono font-bold">密碼: ${passCode}</span>
         </td>
-        <!-- 認養萌寵成長度 (精簡版：頭像+名稱階段+進度條緊湊同行) -->
+        <!-- 認養萌寵成長度 (包含寵物數量徽章 + 嚴格同步) -->
         <td class="py-2.5 px-3 text-xs whitespace-nowrap">
           <div class="flex items-center space-x-2">
             <div class="w-9 h-9 flex-shrink-0 bg-white rounded-xl p-0.5 border border-amber-300 shadow-xs cursor-pointer hover:border-amber-500 transition" onclick="openChangeAnimalModal(${st.id})" title="點擊更換萌寵">
@@ -5048,6 +5058,7 @@ function renderRosterView() {
               <div class="flex items-center space-x-1.5">
                 <span class="font-black text-amber-950 text-xs">${petStatus.animalName}</span>
                 <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black border border-amber-400' : 'bg-amber-100 text-amber-900'}">${petStatus.stageTitle}</span>
+                <span class="text-[9px] font-black px-1.5 py-0.2 rounded-full ${validPets.length > 1 ? 'bg-purple-100 text-purple-900 border border-purple-300' : 'bg-emerald-100 text-emerald-900'}">🐾 ${validPets.length} 隻</span>
                 <button type="button" onclick="openChangeAnimalModal(${st.id})" class="text-[10px] text-amber-700 hover:text-amber-900 hover:underline font-bold" title="更換認養萌寵">
                   [換]
                 </button>
@@ -5262,6 +5273,13 @@ function saveStudentData(e) {
       student.petType = petType;
       const oldPts = student.points || 0;
       student.points = points;
+      // 導師手動修改大臣蘋果，同步更新 lifetimePoints 並防呆校正寵物認養數量
+      const cardsSpent = Array.isArray(student.redeemedCards)
+        ? student.redeemedCards.reduce((sum, c) => sum + (parseInt(c.cost, 10) || 0), 0)
+        : 0;
+      student.lifetimePoints = points + cardsSpent;
+      window.KingdomApp.store.syncStudentPets(student);
+
       if (oldPts !== points) {
         window.KingdomApp.store.data.pointLogs.unshift({
           id: Date.now(),
@@ -5284,11 +5302,13 @@ function saveStudentData(e) {
       animalType: petType,
       petType,
       points,
-      lifetimePoints: 0,
-      petExp: 0,
+      lifetimePoints: points,
+      petExp: points,
       secondPetType: null,
-      secondPetExp: 0
+      secondPetExp: 0,
+      pets: [{ type: petType }]
     };
+    window.KingdomApp.store.syncStudentPets(newStudent);
     window.KingdomApp.store.data.students.push(newStudent);
     window.KingdomApp.store.data.students.sort((a, b) => a.seatNo - b.seatNo);
     showToast(`🎉 成功冊封新大臣【${name}】進入西寧小小兵王國！`);
@@ -5602,6 +5622,598 @@ function renderSeatingProjectionGrid() {
   }
 
   grid.innerHTML = html;
+}
+
+// ===================================================================
+// 晨間朝會 ‧ 聯絡簿與大臣晨檢打卡大屏全螢幕投影管理
+// (Contact Book & Morning Check-In Big Screen Projection Broadcaster)
+// ===================================================================
+let contactProjectionClockInterval = null;
+
+function openContactProjectionModal() {
+  const modal = document.getElementById("contactProjectionModal");
+  if (!modal) return;
+
+  modal.classList.remove("hidden");
+  renderContactProjectionView();
+
+  function updateContactProjClock() {
+    const clockEl = document.getElementById("contactProjectionLiveClock");
+    if (clockEl) {
+      const now = new Date();
+      clockEl.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }
+  }
+  updateContactProjClock();
+  if (contactProjectionClockInterval) clearInterval(contactProjectionClockInterval);
+  contactProjectionClockInterval = setInterval(updateContactProjClock, 1000);
+}
+
+function closeContactProjectionModal() {
+  const modal = document.getElementById("contactProjectionModal");
+  if (modal) modal.classList.add("hidden");
+  if (contactProjectionClockInterval) {
+    clearInterval(contactProjectionClockInterval);
+    contactProjectionClockInterval = null;
+  }
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function toggleContactProjectionFullscreen() {
+  const modal = document.getElementById("contactProjectionModal");
+  if (!document.fullscreenElement) {
+    const target = modal || document.documentElement;
+    if (target.requestFullscreen) {
+      target.requestFullscreen().catch(err => {
+        console.warn("Contact projection fullscreen request failed:", err);
+      });
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(err => {
+        console.warn("Exit fullscreen failed:", err);
+      });
+    }
+  }
+}
+
+function renderContactProjectionView() {
+  const modal = document.getElementById("contactProjectionModal");
+  if (!modal || modal.classList.contains("hidden")) return;
+
+  const todayStr = window.KingdomApp.getTodayDateString();
+  const students = window.KingdomApp.store.data.students || [];
+  const attendanceData = (window.KingdomApp.store.data.attendance && window.KingdomApp.store.data.attendance[todayStr]) || {};
+
+  // 1. 渲染左側 27 位大臣打卡按鈕 (大按鈕、清晰時間與紅綠燈標示，每橫排 5 個，在大屏投影下可直接觸控打卡)
+  const projCheckInGrid = document.getElementById("contactProjCheckInGrid");
+  let checkedCount = 0;
+
+  if (projCheckInGrid) {
+    projCheckInGrid.innerHTML = students.map(st => {
+      const rec = attendanceData[st.id] || null;
+      let statusClass = "seat-uncheck";
+      let statusBadge = "🔴 未到";
+      let timeText = "";
+
+      if (rec) {
+        if (rec.status === 'present') {
+          checkedCount++;
+          statusClass = "seat-present";
+          statusBadge = "🟢 準時";
+          timeText = rec.checkInTime || "準時";
+        } else if (rec.status === 'late') {
+          checkedCount++;
+          statusClass = "seat-late";
+          statusBadge = "🟡 遲到";
+          timeText = rec.checkInTime || "遲到";
+        } else if (rec.status === 'leave') {
+          statusClass = "seat-leave";
+          statusBadge = "🏖️ 請假";
+          timeText = "告假";
+        }
+      }
+
+      return `
+        <button onclick="handleMorningSeatCheckIn(${st.id}, ${st.seatNo})" 
+          class="checkin-seat-btn ${statusClass} h-11 sm:h-12 w-full rounded-2xl text-center flex flex-col items-center justify-center border-2 transition shadow-md hover:scale-105 active:scale-95"
+          title="${st.seatNo}號 ${st.name} | ${statusBadge} ${timeText ? '(' + timeText + ')' : ''}（點擊打卡 / 更改狀態）">
+          <span class="font-mono text-lg sm:text-xl font-black tracking-wider leading-none">${String(st.seatNo).padStart(2, '0')}</span>
+          <span class="text-[10px] font-bold mt-0.5 leading-none opacity-90 truncate max-w-full px-1">${timeText || statusBadge.slice(2)}</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  // 更新大屏到校打卡人數
+  const projCountBadge = document.getElementById("contactProjCheckedCount");
+  if (projCountBadge) {
+    projCountBadge.textContent = `${checkedCount} / ${students.length} 人`;
+  }
+
+  // 2. 渲染右側聯絡簿超大字看板
+  const dateStr = currentContactDate || todayStr;
+  const contactBook = window.KingdomApp.store.getContactBook(dateStr);
+
+  const projDateDisplay = document.getElementById("contactProjDateDisplay");
+  if (projDateDisplay) {
+    projDateDisplay.textContent = dateStr;
+  }
+
+  const projHwList = document.getElementById("contactProjHomeworkList");
+  if (projHwList) {
+    const items = (contactBook && contactBook.homeworkItems) ? contactBook.homeworkItems : [];
+
+    const renderCardItem = (slotIdx, text) => {
+      const isFilled = Boolean(text && text.trim());
+      if (isFilled) {
+        return `
+          <div class="flex items-center space-x-3.5 p-3 rounded-2xl bg-white border-2 border-amber-300 shadow-md transition hover:border-amber-500 min-h-[4.5rem]">
+            <span class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-sm border border-amber-500/50">
+              ${slotIdx}
+            </span>
+            <span class="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+              ${text}
+            </span>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="flex items-center space-x-3.5 p-2.5 rounded-2xl bg-amber-50/60 border-2 border-dashed border-amber-300/70 min-h-[4.5rem]">
+            <span class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-200/50 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
+              ${slotIdx}
+            </span>
+            <span class="text-lg sm:text-xl font-bold text-amber-900/30 italic">
+              （留白）
+            </span>
+          </div>
+        `;
+      }
+    };
+
+    const leftColHtml = [1, 2, 3, 4].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+    const rightColHtml = [5, 6, 7, 8].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+
+    let extraRowsHtml = '';
+    if (items.length > 8) {
+      const extraItems = items.slice(8);
+      extraRowsHtml = `
+        <div class="col-span-1 md:col-span-2 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
+          <span class="text-xs font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-md">追加項目：</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            ${extraItems.map((item, idx) => renderCardItem(9 + idx, item)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    projHwList.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
+        <!-- 左欄 (第 1 ~ 4 行) -->
+        <div class="space-y-2.5 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300 shadow-2xs">
+          <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
+            <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 4 項)</span></span>
+            <span class="text-[11px] text-amber-800 font-mono">1 - 4</span>
+          </div>
+          <div class="space-y-2.5">
+            ${leftColHtml}
+          </div>
+        </div>
+
+        <!-- 右欄 (第 5 ~ 8 行) -->
+        <div class="space-y-2.5 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300 shadow-2xs">
+          <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
+            <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 5 ~ 8 項)</span></span>
+            <span class="text-[11px] text-amber-800 font-mono">5 - 8</span>
+          </div>
+          <div class="space-y-2.5">
+            ${rightColHtml}
+          </div>
+        </div>
+
+        ${extraRowsHtml}
+      </div>
+    `;
+  }
+
+  const projReminderList = document.getElementById("contactProjReminderList");
+  if (projReminderList) {
+    const reminders = (contactBook && contactBook.reminders) ? contactBook.reminders : [];
+    if (reminders.length === 0) {
+      projReminderList.innerHTML = `
+        <li class="text-amber-900/60 text-base sm:text-xl font-bold list-none">（今日無特殊早自修或重要提醒）</li>
+      `;
+    } else {
+      projReminderList.innerHTML = reminders.map(item => `
+        <li class="leading-relaxed py-0.5">${item}</li>
+      `).join('');
+    }
+  }
+
+  const projMottoEl = document.getElementById("contactProjQueenMotto");
+  if (projMottoEl) {
+    const motto = (contactBook && contactBook.motto) ? contactBook.motto : "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！";
+    projMottoEl.textContent = motto;
+  }
+}
+
+// ===================================================================
+// 8. 🍎 紅蘋果集點榜 ‧ 大屏全螢幕投影看板控制器 (Points Leaderboard Big Screen Projection)
+// ===================================================================
+const selectedStudentIdsForPointsProjection = new Set();
+let openCardDrawerInProjectionIds = new Set();
+
+function openPointsProjectionModal() {
+  const modal = document.getElementById("pointsProjectionModal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  renderPointsProjection();
+}
+
+function closePointsProjectionModal() {
+  const modal = document.getElementById("pointsProjectionModal");
+  if (modal) modal.classList.add("hidden");
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function togglePointsProjectionFullscreen() {
+  const modal = document.getElementById("pointsProjectionModal");
+  if (!document.fullscreenElement) {
+    const target = modal || document.documentElement;
+    if (target.requestFullscreen) {
+      target.requestFullscreen().catch(err => console.warn(err));
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(err => console.warn(err));
+    }
+  }
+}
+
+function toggleProjectionStudentSelection(studentId) {
+  if (selectedStudentIdsForPointsProjection.has(studentId)) {
+    selectedStudentIdsForPointsProjection.delete(studentId);
+  } else {
+    selectedStudentIdsForPointsProjection.add(studentId);
+  }
+  renderPointsProjection();
+}
+
+function selectAllProjectionPoints(selectAll = true) {
+  const students = window.KingdomApp.store.data.students || [];
+  if (selectAll) {
+    students.forEach(s => selectedStudentIdsForPointsProjection.add(s.id));
+  } else {
+    selectedStudentIdsForPointsProjection.clear();
+  }
+  renderPointsProjection();
+}
+
+function awardSelectedInPointsProjection(points = 1) {
+  if (selectedStudentIdsForPointsProjection.size === 0) {
+    showToast("請先勾選欲嘉獎的大臣！", "⚠️");
+    return;
+  }
+  const ids = Array.from(selectedStudentIdsForPointsProjection);
+  window.KingdomApp.store.batchAwardMultipleStudents(ids, points, `大屏模式課堂嘉獎 (+${points} 🍎)`);
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+    try { window.KingdomApp.sound.playCoin(); } catch (e) {}
+  }
+  showToast(`🎉 成功為 ${ids.length} 位大臣各賞賜 +${points} 顆紅蘋果！`, "🍎");
+  renderPointsProjection();
+  renderPointsView();
+}
+
+function awardSingleStudentInProjection(studentId, points = 1) {
+  const st = window.KingdomApp.store.data.students.find(s => s.id === studentId || s.seatNo === studentId);
+  if (!st) return;
+  window.KingdomApp.store.awardSingleStudent(st.id, points, `大屏課堂即時嘉獎 (+${points} 🍎)`);
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+    try { window.KingdomApp.sound.playCoin(); } catch (e) {}
+  }
+  showToast(`🍎 已為【${st.name}】賞賜 +${points} 顆紅蘋果！`, "👑");
+  renderPointsProjection();
+  renderPointsView();
+}
+
+function toggleCardDrawerInProjection(studentId) {
+  if (openCardDrawerInProjectionIds.has(studentId)) {
+    openCardDrawerInProjectionIds.delete(studentId);
+  } else {
+    openCardDrawerInProjectionIds.add(studentId);
+  }
+  renderPointsProjection();
+}
+
+function useCardInPointsProjection(studentId, redemptionId) {
+  const res = window.KingdomApp.store.useRedeemedCard(studentId, redemptionId);
+  if (res && res.success) {
+    if (window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+      try { window.KingdomApp.sound.playFanfare(); } catch (e) {}
+    }
+    showToast(`✨ ${res.message}`, "🎉");
+    renderPointsProjection();
+    renderPointsView();
+  } else {
+    showToast((res && res.message) || "使用卡牌失敗！", "⚠️");
+  }
+}
+
+function renderPointsProjection() {
+  const modal = document.getElementById("pointsProjectionModal");
+  if (!modal || modal.classList.contains("hidden")) return;
+
+  const students = window.KingdomApp.store.data.students || [];
+  const grid = document.getElementById("pointsProjectionGrid");
+  const totalPointsEl = document.getElementById("pointsProjTotalPoints");
+  const selectedBadgeEl = document.getElementById("pointsProjSelectedBadge");
+
+  // 計算全班總蘋果數
+  let totalPts = 0;
+  students.forEach(s => totalPts += (s.points || 0));
+  if (totalPointsEl) totalPointsEl.textContent = `${totalPts} 顆`;
+  if (selectedBadgeEl) {
+    selectedBadgeEl.textContent = `已選取 ${selectedStudentIdsForPointsProjection.size} 位大臣`;
+  }
+
+  if (grid) {
+    grid.innerHTML = students.map(st => {
+      const seatPad = String(st.seatNo).padStart(2, '0');
+      const isSelected = selectedStudentIdsForPointsProjection.has(st.id);
+      const aType = (st.animalType || st.petType || 'dog').toLowerCase();
+      window.KingdomApp.store.syncStudentPets(st);
+      window.KingdomApp.store.syncStudentCards(st);
+      const pts = st.points || 0;
+      const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : pts;
+      const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
+      const heldCards = st.redeemedCards || [];
+      const isDrawerOpen = openCardDrawerInProjectionIds.has(st.id);
+
+      const pets = st.pets || [{ type: aType }];
+      let petLabel = `${petStatus.animalIcon} ${petStatus.animalName}`;
+      if (pets.length > 1) {
+        petLabel += ` (👑x${pets.length})`;
+      }
+
+      return `
+        <div class="rounded-2xl p-3 border-2 transition-all flex flex-col justify-between shadow-lg backdrop-blur-md ${isSelected ? 'bg-amber-900/90 border-amber-400 ring-2 ring-amber-300' : 'bg-slate-900/85 border-amber-500/50 hover:border-amber-400'}">
+          <div>
+            <!-- 頂部身分列：勾選、座號、姓名、官職 -->
+            <div class="flex items-center justify-between pb-1.5 border-b border-amber-500/40">
+              <div class="flex items-center space-x-1.5 min-w-0">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleProjectionStudentSelection(${st.id})" class="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer">
+                <span class="text-xs font-mono font-black text-amber-950 bg-amber-300 px-1.5 py-0.5 rounded shadow-2xs">
+                  ${seatPad}號
+                </span>
+                <span class="text-base sm:text-lg font-black text-white truncate tracking-wide">${st.name}</span>
+              </div>
+              <span class="text-[10px] font-bold text-amber-300 bg-amber-950/90 border border-amber-500/50 px-1.5 py-0.5 rounded truncate max-w-[70px]">
+                ${st.title}
+              </span>
+            </div>
+
+            <!-- 中央核心：大蘋果數量 + 萌寵標籤 -->
+            <div class="my-2 p-2 bg-black/40 rounded-xl border border-amber-500/30 text-center">
+              <div class="text-2xl sm:text-3xl font-mono font-black text-amber-300 tracking-wider flex items-center justify-center space-x-1">
+                <span>🍎</span>
+                <span>${pts}</span>
+                <span class="text-xs text-amber-400/80 font-normal">顆</span>
+              </div>
+              <div class="mt-1 flex items-center justify-center space-x-1.5 text-[11px] text-amber-200/90 font-bold">
+                <span>${petLabel}</span>
+                <span class="text-amber-400/60">·</span>
+                <span class="text-[10px] text-amber-300/80 font-mono">🌱${lifetime}點</span>
+              </div>
+            </div>
+
+            <!-- 特權卡牌抽屜 (支援大屏直接點擊展開與一鍵使用) -->
+            <div class="mb-2">
+              <button type="button" onclick="toggleCardDrawerInProjection(${st.id})" class="w-full py-1 px-2 rounded-lg bg-purple-950/80 hover:bg-purple-900 border border-purple-400/60 text-purple-200 text-xs font-bold flex items-center justify-between transition shadow-2xs">
+                <span class="flex items-center space-x-1">
+                  <span>🎁 卡牌抽屜</span>
+                  <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full ${heldCards.length > 0 ? 'bg-purple-400 text-purple-950 font-black' : 'bg-purple-900 text-purple-300'}">
+                    ${heldCards.length} 張
+                  </span>
+                </span>
+                <span class="text-[10px]">${isDrawerOpen ? '▲ 收合' : '▼ 展開'}</span>
+              </button>
+
+              ${isDrawerOpen ? `
+                <div class="mt-1.5 p-2 bg-purple-950/90 rounded-xl border border-purple-400/50 space-y-1.5 max-h-36 overflow-y-auto">
+                  ${heldCards.length === 0 ? `
+                    <div class="text-center py-2 text-[11px] text-purple-300/70">
+                      <span>暫無存放卡牌</span>
+                    </div>
+                  ` : heldCards.map(c => `
+                    <div class="flex items-center justify-between p-1.5 bg-purple-900/80 rounded-lg border border-purple-400/40 text-xs">
+                      <div class="flex items-center space-x-1.5 truncate">
+                        <span>${c.icon || '🎁'}</span>
+                        <span class="font-black text-purple-100 truncate">${c.title}</span>
+                      </div>
+                      <button type="button" onclick="useCardInPointsProjection(${st.id}, '${c.id}')" class="px-2 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-[10px] shadow-xs flex items-center space-x-0.5 shrink-0 transform active:scale-95 transition">
+                        <span>✨使用</span>
+                      </button>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- 底部快速嘉獎互動列 (+1🍎 / +2🍎 / +5🍎) -->
+          <div class="grid grid-cols-3 gap-1 pt-1.5 border-t border-amber-500/40">
+            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 1)" class="py-1 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="為 ${st.name} +1 顆紅蘋果">
+              +1🍎
+            </button>
+            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 2)" class="py-1 rounded-lg bg-teal-600/90 hover:bg-teal-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="為 ${st.name} +2 顆紅蘋果">
+              +2🍎
+            </button>
+            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 5)" class="py-1 rounded-lg bg-purple-600/90 hover:bg-purple-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="為 ${st.name} +5 顆紅蘋果">
+              +5🍎
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+// ===================================================================
+// 9. 🐾 班級萌寵動物園 ‧ 大屏全螢幕投影看板控制器 (Zoo Sanctuary Big Screen Projection)
+// ===================================================================
+function openZooProjectionModal() {
+  const modal = document.getElementById("zooProjectionModal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  renderZooProjection();
+}
+
+function closeZooProjectionModal() {
+  const modal = document.getElementById("zooProjectionModal");
+  if (modal) modal.classList.add("hidden");
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function toggleZooProjectionFullscreen() {
+  const modal = document.getElementById("zooProjectionModal");
+  if (!document.fullscreenElement) {
+    const target = modal || document.documentElement;
+    if (target.requestFullscreen) {
+      target.requestFullscreen().catch(err => console.warn(err));
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(err => console.warn(err));
+    }
+  }
+}
+
+function feedStudentInZooProjection(studentId) {
+  const result = window.KingdomApp.store.feedStudentAnimal(studentId, 1, "大屏美味蘋果");
+  if (!result) return;
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playFeedMunch) {
+    try { window.KingdomApp.sound.playFeedMunch(); } catch (e) {}
+  }
+  showToast(`🍎 嘎嘣脆！已為【${result.student.name}】的【${result.status.animalName}】投餵 1 顆蘋果！`, "🐾");
+  renderZooProjection();
+  renderPetsOverview();
+  renderPointsView();
+}
+
+function renderZooProjection() {
+  const modal = document.getElementById("zooProjectionModal");
+  if (!modal || modal.classList.contains("hidden")) return;
+
+  const students = window.KingdomApp.store.data.students || [];
+  const grid = document.getElementById("zooProjectionGrid");
+  const statsPill = document.getElementById("zooProjStatsPill");
+
+  let totalFood = 0;
+  let goldenCount = 0;
+  let doublePetCount = 0;
+
+  if (grid) {
+    grid.innerHTML = students.map(st => {
+      const seatPad = String(st.seatNo).padStart(2, '0');
+      const aType = (st.animalType || st.petType || 'lion').toLowerCase();
+      window.KingdomApp.store.syncStudentPets(st);
+      let lifetime = parseInt(st.lifetimePoints, 10);
+      if (isNaN(lifetime) || lifetime <= 0) {
+        lifetime = Math.max(0, parseInt(st.points, 10) || 0);
+        st.lifetimePoints = lifetime;
+      }
+      totalFood += lifetime;
+      const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
+      if (petStatus.isGolden) goldenCount++;
+      const svgCode = window.KingdomApp.renderAnimalSVG(aType, petStatus.stageIndex);
+
+      const pets = st.pets || [{ type: aType }];
+      if (pets.length > 1) doublePetCount++;
+
+      let multiPetPills = '';
+      if (pets.length > 1) {
+        multiPetPills = pets.slice(1).map((p, idx) => {
+          const slotIdx = idx + 1;
+          const sType = p.type.toLowerCase();
+          const sExp = Math.max(0, lifetime - slotIdx * 500);
+          const sStatus = window.KingdomApp.getAnimalStatus(sType, sExp);
+          return `
+            <div class="mt-1 flex items-center justify-between w-full bg-purple-900/60 px-2 py-0.5 rounded-lg border border-purple-400/50 text-[10px]">
+              <span class="font-black text-purple-200 truncate">👑 第${slotIdx + 1}寵：${sStatus.animalIcon} ${sStatus.animalName}</span>
+              <span class="font-mono text-purple-300 font-bold">${sExp}點</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      return `
+        <div class="rounded-2xl p-3 border-2 transition-all flex flex-col justify-between shadow-lg backdrop-blur-md ${petStatus.isGolden ? 'bg-gradient-to-b from-amber-950/85 to-slate-900/90 border-amber-400 ring-2 ring-amber-300' : 'bg-slate-900/85 border-emerald-500/50 hover:border-emerald-400'}">
+          <div>
+            <!-- 座號姓名列 -->
+            <div class="flex items-center justify-between pb-1.5 border-b border-emerald-500/30">
+              <span class="text-xs font-mono font-black text-emerald-950 bg-emerald-300 px-1.5 py-0.5 rounded shadow-2xs">
+                ${seatPad}號
+              </span>
+              <span class="text-base sm:text-lg font-black text-white truncate tracking-wide">${st.name}</span>
+              ${pets.length > 1 ? `<span class="text-[10px] font-black text-amber-300 bg-amber-950/90 border border-amber-400/60 px-1.5 py-0.5 rounded">👑x${pets.length}</span>` : '<span class="text-[10px] text-emerald-400/70 font-mono">單寵</span>'}
+            </div>
+
+            <!-- 超大動態萌寵 SVG 圖繪 (點擊直接投餵長大) -->
+            <div onclick="feedStudentInZooProjection(${st.id})" class="w-20 h-20 mx-auto my-2 p-1 cursor-pointer transform hover:scale-110 active:scale-95 transition-transform duration-200 filter drop-shadow-md flex items-center justify-center" title="在大屏上點擊為 ${st.name} 的 ${petStatus.animalName} 投餵 1 顆蘋果！">
+              ${svgCode}
+            </div>
+
+            <!-- 萌寵名稱與階段徽章 -->
+            <div class="text-center space-y-1">
+              <div class="text-sm font-black text-emerald-200">
+                ${petStatus.animalIcon} ${petStatus.animalName}
+              </div>
+              <div class="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black shadow' : 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/50'}">
+                ${petStatus.stageTitle}
+              </div>
+            </div>
+
+            <!-- 多寵列表展示 -->
+            ${multiPetPills}
+
+            <!-- 蘋果與成長飽食度狀態 -->
+            <div class="mt-2 flex items-center justify-center space-x-2 text-xs font-mono font-bold text-slate-200 bg-black/40 py-1 rounded-xl border border-emerald-500/30">
+              <span class="font-black text-rose-400">🍎 ${st.points || 0} 顆</span>
+              <span class="text-slate-500">|</span>
+              <span class="text-emerald-300">🐾 飽食 ${lifetime} 點</span>
+            </div>
+          </div>
+
+          <!-- 底部大屏快捷投餵按鈕 -->
+          <div class="mt-2 pt-1.5 border-t border-emerald-500/30 flex items-center space-x-1">
+            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 1)" class="flex-1 py-1 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="賞賜 +1 顆紅蘋果">
+              +1🍎
+            </button>
+            <button type="button" onclick="feedStudentInZooProjection(${st.id})" class="flex-1 py-1 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="投餵飼料 1 顆蘋果">
+              🍎投餵
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (statsPill) {
+    statsPill.innerHTML = `
+      <span>🐾 全園 <strong>${students.length + doublePetCount}</strong> 隻動物棲息</span>
+      <span class="text-emerald-400">·</span>
+      <span>🍎 總飽食 <strong>${totalFood}</strong> 點</span>
+      <span class="text-emerald-400">·</span>
+      <span>👑 巨星 <strong>${goldenCount}</strong> 隻</span>
+      ${doublePetCount > 0 ? `<span class="text-emerald-400">·</span><span>✨ 雙寵 <strong>${doublePetCount}</strong> 位</span>` : ''}
+    `;
+  }
 }
 
 function broadcastInstantAnnouncement(e) {
@@ -8451,6 +9063,12 @@ if (typeof window !== 'undefined') {
   window.toggleSeatingProjectionFullscreen = toggleSeatingProjectionFullscreen;
   window.renderSeatingProjectionGrid = renderSeatingProjectionGrid;
 
+  // 晨間朝會聯絡簿與晨檢打卡大屏全螢幕投影
+  window.openContactProjectionModal = openContactProjectionModal;
+  window.closeContactProjectionModal = closeContactProjectionModal;
+  window.toggleContactProjectionFullscreen = toggleContactProjectionFullscreen;
+  window.renderContactProjectionView = renderContactProjectionView;
+
   // 課堂作息鬧鐘快捷管理
   window.renderAlarmPresets = renderAlarmPresets;
   window.openManageAlarmPresetsModal = openManageAlarmPresetsModal;
@@ -8461,6 +9079,25 @@ if (typeof window !== 'undefined') {
   window.submitAlarmPresetForm = submitAlarmPresetForm;
   window.deleteAlarmPresetItem = deleteAlarmPresetItem;
   window.confirmResetAlarmPresetsToDefault = confirmResetAlarmPresetsToDefault;
+
+  // 🍎 紅蘋果集點榜大屏全螢幕投影
+  window.openPointsProjectionModal = openPointsProjectionModal;
+  window.closePointsProjectionModal = closePointsProjectionModal;
+  window.togglePointsProjectionFullscreen = togglePointsProjectionFullscreen;
+  window.toggleProjectionStudentSelection = toggleProjectionStudentSelection;
+  window.selectAllProjectionPoints = selectAllProjectionPoints;
+  window.awardSelectedInPointsProjection = awardSelectedInPointsProjection;
+  window.awardSingleStudentInProjection = awardSingleStudentInProjection;
+  window.toggleCardDrawerInProjection = toggleCardDrawerInProjection;
+  window.useCardInPointsProjection = useCardInPointsProjection;
+  window.renderPointsProjection = renderPointsProjection;
+
+  // 🐾 班級萌寵動物園大屏全螢幕投影
+  window.openZooProjectionModal = openZooProjectionModal;
+  window.closeZooProjectionModal = closeZooProjectionModal;
+  window.toggleZooProjectionFullscreen = toggleZooProjectionFullscreen;
+  window.feedStudentInZooProjection = feedStudentInZooProjection;
+  window.renderZooProjection = renderZooProjection;
 }
 
 // 全域鍵盤與投影事件監聽 (支援 Esc 鍵一鍵關閉並退出全螢幕)
@@ -8474,6 +9111,18 @@ if (typeof window !== 'undefined') {
       const seatModal = document.getElementById("seatingProjectionModal");
       if (seatModal && !seatModal.classList.contains("hidden")) {
         closeSeatingProjectionModal();
+      }
+      const contactModal = document.getElementById("contactProjectionModal");
+      if (contactModal && !contactModal.classList.contains("hidden")) {
+        closeContactProjectionModal();
+      }
+      const pointsModal = document.getElementById("pointsProjectionModal");
+      if (pointsModal && !pointsModal.classList.contains("hidden")) {
+        closePointsProjectionModal();
+      }
+      const zooModal = document.getElementById("zooProjectionModal");
+      if (zooModal && !zooModal.classList.contains("hidden")) {
+        closeZooProjectionModal();
       }
     }
   });
