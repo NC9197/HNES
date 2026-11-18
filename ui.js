@@ -6348,9 +6348,10 @@ function renderParentPortal() {
   const dashboard = document.getElementById("parentDashboard");
 
   if (select) {
+    // 依使用者隱私保護要求：家長專區選單僅保留座號，絕不洩漏學生姓名與職稱
     select.innerHTML = students.map(st => `
       <option value="${st.seatNo}">
-        座號 ${String(st.seatNo).padStart(2, '0')} ── ${st.name}（${st.title}）
+        座號 ${String(st.seatNo).padStart(2, '0')} 號
       </option>
     `).join('');
   }
