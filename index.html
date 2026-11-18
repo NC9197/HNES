@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=2026111808">
+  <link rel="stylesheet" href="styles.css?v=2026111811">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -254,7 +254,7 @@
           </button>
 
           <!-- 💺 大屏座位投影快捷按鈕 (藍天白雲朝氣一屏全覽) -->
-          <button type="button" onclick="openSeatingProjectionModal()" class="btn-royal-gold px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-md transform hover:scale-105 active:scale-95 transition shrink-0" title="開啟教室座位表大屏全螢幕投影（藍天白雲朝氣一屏全覽）">
+          <button type="button" id="btnOpenSeatingProjNav" onclick="openSeatingProjectionModal()" class="btn-royal-gold px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-md transform hover:scale-105 active:scale-95 transition shrink-0" title="開啟教室座位表大屏全螢幕投影（藍天白雲朝氣一屏全覽）">
             <span>💺 大屏座位投影</span>
           </button>
         </div>
@@ -505,31 +505,31 @@
       <!-- =============================================================== -->
       <!-- ⏰ 第二排：當下時間與距離上課倒數看板 (單行化排版：由左而右為日期、現在時間、剩餘時間，右方快捷功能排版均不變) -->
       <!-- =============================================================== -->
-      <div id="trafficClockBanner" class="traffic-clock-card rounded-xl p-2 sm:px-4 text-amber-100 shadow-md border-2 border-amber-500">
-        <div class="flex flex-nowrap items-center justify-between gap-3 overflow-x-auto whitespace-nowrap">
+      <div id="trafficClockBanner" class="traffic-clock-card rounded-2xl p-2.5 sm:px-5 text-amber-100 shadow-md border-2 border-amber-500">
+        <div class="flex flex-nowrap items-center justify-between gap-3 sm:gap-4 overflow-x-auto whitespace-nowrap">
           
-          <!-- 左側區塊：單行排列（由左而右：日期 -> 現在時間 -> 剩餘時間） -->
-          <div class="flex items-center space-x-2 sm:space-x-3 flex-shrink-0 text-xs font-bold">
-            <!-- 1. 日期 -->
-            <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-200 font-mono shadow-xs">
-              <span>📅</span>
-              <span id="trafficClockDate"></span>
+          <!-- 左側區塊：單行排列（由左而右：日期 -> 現在時間 -> 剩餘時間，字體放大補滿整行） -->
+          <div class="flex flex-1 items-center justify-start space-x-2.5 sm:space-x-4 min-w-0">
+            <!-- 1. 日期 (放大顯眼) -->
+            <div class="flex items-center space-x-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-amber-500/25 border-2 border-amber-400/50 text-amber-200 font-mono shadow-xs shrink-0">
+              <span class="text-base sm:text-xl">📅</span>
+              <span id="trafficClockDate" class="text-sm sm:text-base lg:text-lg font-black tracking-wide"></span>
             </div>
 
-            <!-- 2. 現在時間 -->
-            <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/60 border border-amber-400/50 shadow-inner">
-              <span>⏰</span>
-              <span class="text-[11px] text-amber-300/80">現在時間:</span>
-              <span id="trafficCurrentClock" class="font-digital text-xl sm:text-2xl font-black text-amber-300 tracking-wider">--:--:--</span>
+            <!-- 2. 現在時間 (大字體數位時鐘) -->
+            <div class="flex items-center space-x-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-black/70 border-2 border-amber-400/60 shadow-inner shrink-0">
+              <span class="text-base sm:text-xl">⏰</span>
+              <span class="text-xs sm:text-sm lg:text-base text-amber-300/90 font-bold whitespace-nowrap">現在時間:</span>
+              <span id="trafficCurrentClock" class="font-digital text-2xl sm:text-3xl lg:text-4xl font-black text-amber-300 tracking-wider">--:--:--</span>
             </div>
 
-            <!-- 3. 剩餘時間 -->
-            <div class="flex items-center space-x-2 px-3 py-1 rounded-lg bg-amber-950/80 border border-amber-500/40 shadow-inner">
-              <span id="trafficStatusIcon" class="text-sm">🏃</span>
-              <span id="trafficPeriodBadge" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-400 text-emerald-950 shadow-xs">下課休息時間</span>
-              <span id="trafficScheduleTarget" class="text-[11px] text-amber-300/90 font-bold hidden lg:inline">目標：第三節上課 (10:30)</span>
-              <span id="trafficCountdownTitle" class="text-[11px] text-amber-200 font-black">剩餘:</span>
-              <span id="trafficCountdownDigits" class="font-digital text-xl sm:text-2xl font-black text-amber-300 tracking-wider">--:--</span>
+            <!-- 3. 剩餘時間 (加大倒數計時補滿橫向空間) -->
+            <div class="flex items-center space-x-2.5 sm:space-x-3 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl bg-amber-950/90 border-2 border-amber-500/60 shadow-inner flex-1 min-w-[280px]">
+              <span id="trafficStatusIcon" class="text-xl sm:text-2xl shrink-0">🏃</span>
+              <span id="trafficPeriodBadge" class="px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-black bg-emerald-400 text-emerald-950 shadow-xs whitespace-nowrap shrink-0">下課休息時間</span>
+              <span id="trafficScheduleTarget" class="text-xs sm:text-sm lg:text-base text-amber-300/90 font-bold hidden xl:inline truncate">目標：第三節上課 (10:30)</span>
+              <span id="trafficCountdownTitle" class="text-xs sm:text-sm lg:text-base text-amber-200 font-black whitespace-nowrap shrink-0">剩餘:</span>
+              <span id="trafficCountdownDigits" class="font-digital text-2xl sm:text-3xl lg:text-4xl font-black text-amber-300 tracking-wider">--:--</span>
               <span id="trafficCountdownSub" class="hidden">倒數計時</span>
             </div>
           </div>
@@ -699,7 +699,7 @@
         <!-- 操作按鈕群 -->
         <div class="flex flex-wrap items-center gap-2">
           <!-- 🖥️ 全螢幕大屏座位投影按鈕 (僅顯示中央座位表與講台) -->
-          <button type="button" onclick="openSeatingProjectionModal()" class="btn-royal-gold px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-md transform hover:scale-105 active:scale-95 transition" title="將座位表以超大字體全螢幕投影給全班查看（僅顯示中央座位表與講台）">
+          <button type="button" id="btnOpenSeatingProjView" onclick="openSeatingProjectionModal()" class="btn-royal-gold px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-md transform hover:scale-105 active:scale-95 transition" title="將座位表以超大字體全螢幕投影給全班查看（僅顯示中央座位表與講台）">
             <span>🖥️ 大屏座位投影</span>
           </button>
 
@@ -1003,9 +1003,18 @@
           <span class="text-xs text-amber-900 font-medium">💡 絕不自動產生假打卡：一律由學生按座號自主簽到，或導師手動登記！</span>
         </div>
 
-        <!-- 27位大臣簽到名冊網格 -->
-        <div id="attendanceGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- 動態由 JavaScript 渲染 -->
+        <!-- 27位大臣簽到名冊網格 (5*5+2 排版與抽屜控制列) -->
+        <div class="flex items-center justify-between pb-1 text-xs">
+          <div class="flex items-center space-x-2">
+            <span class="font-black text-amber-950">📋 全班大臣簽到名冊 (5*5+2 版面)：</span>
+            <span class="text-[11px] text-amber-800">可點擊每位大臣卡片下方的「登記 ▾」展開出席/請假/遲到操作抽屜</span>
+          </div>
+          <button type="button" onclick="toggleAllAttendanceDrawers()" class="px-3 py-1 rounded-xl bg-amber-200/90 hover:bg-amber-300 border border-amber-400 text-amber-950 font-black shadow-2xs flex items-center space-x-1.5 transition active:scale-95">
+            <span id="btnToggleAllAttText">📂 展開全班登記抽屜</span>
+          </button>
+        </div>
+        <div id="attendanceGrid" class="attendance-grid-5x5">
+          <!-- 動態由 JavaScript 渲染 (5*5+2 排版) -->
         </div>
 
         <!-- =============================================================== -->
@@ -1413,21 +1422,22 @@
             </div>
           </div>
 
-          <!-- 大臣名冊表格 -->
+          <!-- 大臣名冊表格 (字體放大、全欄置中、獨立累計蘋果欄、萌寵抽屜下拉) -->
           <div class="mt-4 overflow-x-auto">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-amber-200 text-amber-950 font-black border-b border-amber-400">
+            <table class="w-full text-center text-sm">
+              <thead class="bg-gradient-to-r from-amber-200 via-amber-300 to-yellow-200 text-amber-950 font-black border-b-2 border-amber-400">
                 <tr>
-                  <th class="py-2.5 px-3 whitespace-nowrap text-center">座號</th>
-                  <th class="py-2.5 px-3 whitespace-nowrap">姓名</th>
-                  <th class="py-2.5 px-3 whitespace-nowrap">大臣官職/幹部名稱</th>
-                  <th class="py-2.5 px-3 whitespace-nowrap">生日 / 家長密碼</th>
-                  <th class="py-2.5 px-3 whitespace-nowrap">🐾 認養萌寵 (成長度)</th>
-                  <th class="py-2.5 px-3 whitespace-nowrap">🍎 可用蘋果</th>
-                  <th class="py-2.5 px-3 text-right whitespace-nowrap">🍎 投餵與操作</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">座號</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">姓名</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">大臣官職/幹部名稱</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">生日 / 家長密碼</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">🌱 累計獲得蘋果</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">🍎 目前可用</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">🐾 認養萌寵</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">⚙️ 投餵與操作</th>
                 </tr>
               </thead>
-              <tbody id="studentRosterTableBody" class="divide-y divide-amber-200/80 bg-white/60">
+              <tbody id="studentRosterTableBody" class="divide-y divide-amber-200/80 bg-white/70 text-center">
                 <!-- 動態填入 -->
               </tbody>
             </table>
@@ -2427,7 +2437,7 @@
   <!-- MODAL: 教室座位表 ‧ 大屏全螢幕投影看板 (Seating Projection Broadcaster) -->
   <!-- 藍天白雲朝氣明亮背景・左右可愛小插圖・長方形無須滾輪一屏全覽 -->
   <!-- =============================================================== -->
-  <div id="seatingProjectionModal" class="hidden fixed inset-0 z-[90] bg-gradient-to-b from-sky-400 via-sky-200 to-amber-50 flex flex-col p-3 sm:p-4 text-slate-800 overflow-y-auto">
+  <div id="seatingProjectionModal" class="hidden fixed inset-0 z-[99999] flex flex-col p-3 sm:p-4 text-slate-800 overflow-y-auto" style="position: fixed !important; inset: 0 !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 25%, #fef08a 65%, #facc15 100%) !important;">
     
     <!-- 頂部導航列：大時鐘、全螢幕與關閉鍵 (明亮白雲朝氣風格) -->
     <div class="flex items-center justify-between pb-2.5 px-4 py-2 bg-white/85 backdrop-blur-md rounded-2xl border-2 border-sky-300 shadow-md flex-shrink-0 max-w-6xl w-full mx-auto">
@@ -2659,10 +2669,10 @@
   <!-- MODAL: 🍎 紅蘋果集點榜 ‧ 大屏全螢幕投影看板 (Points Leaderboard Big Screen Projection) -->
   <!-- 5*5+2 大屏超大字體、支援卡牌抽屜與大屏直接點擊加點/使用卡牌 -->
   <!-- =============================================================== -->
-  <div id="pointsProjectionModal" class="hidden fixed inset-0 z-[75] projection-overlay flex flex-col p-3 sm:p-5 text-white overflow-y-auto">
+  <div id="pointsProjectionModal" class="hidden fixed inset-0 z-[99999] flex flex-col p-3 sm:p-5 text-slate-800 overflow-y-auto" style="position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background: radial-gradient(circle at 50% 15%, #fef3c7 0%, #fde68a 35%, #fbbf24 75%, #f59e0b 100%) !important;">
     
-    <!-- 頂部導航列：大標題、班級蘋果統計、批次加點、全螢幕與關閉鍵 -->
-    <div class="flex items-center justify-between pb-3 border-b border-amber-500/40 flex-shrink-0 w-full max-w-[1600px] mx-auto gap-3">
+    <!-- 頂部導航列：大標題、班級蘋果統計、批次加點、全螢幕與關閉鍵 (鮮豔陽光朝氣風格) -->
+    <div class="flex items-center justify-between pb-3 border-b-2 border-amber-400/80 flex-shrink-0 w-full max-w-[1600px] mx-auto gap-3 bg-white/85 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-md">
       <div class="flex items-center space-x-3 shrink-0">
         <span class="text-3xl sm:text-4xl animate-bounce">🍎</span>
         <div>
@@ -2670,56 +2680,56 @@
             <span class="bg-amber-400 text-amber-950 text-xs px-2.5 py-0.5 rounded-full font-black shadow">
               西寧小小兵王國 ‧ 紅蘋果集點榜大屏投影
             </span>
-            <span class="text-xs text-amber-300/80 font-bold hidden md:inline">27 位內閣大臣個人榮譽紅蘋果與特權卡抽屜</span>
+            <span class="text-xs text-amber-900 font-bold hidden md:inline">27 位內閣大臣個人榮譽紅蘋果與特權卡抽屜</span>
           </div>
-          <h2 class="text-lg sm:text-2xl font-black text-amber-200 mt-0.5 tracking-wide">
-            五年二班 大臣紅蘋果集點榜 ‧ 大屏互動模式
+          <h2 class="text-lg sm:text-2xl font-black text-amber-950 mt-0.5 tracking-wide">
+            五年二班 大臣紅蘋果集點榜 ‧ 大屏互動模式 ☀️
           </h2>
         </div>
       </div>
 
       <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
         <!-- 蘋果總計統計徽章 -->
-        <div id="pointsProjStatsPill" class="bg-amber-950/80 border-2 border-amber-400 px-3.5 py-1.5 rounded-xl text-center shadow-md hidden sm:block">
-          <span class="text-[10px] text-amber-300 font-bold block">全班蘋果總量</span>
-          <span id="pointsProjTotalPoints" class="font-mono text-sm sm:text-base font-black text-amber-300">0 顆</span>
+        <div id="pointsProjStatsPill" class="bg-amber-100 border-2 border-amber-400 px-3.5 py-1.5 rounded-xl text-center shadow-xs hidden sm:block">
+          <span class="text-[10px] text-amber-800 font-black block">全班蘋果總量</span>
+          <span id="pointsProjTotalPoints" class="font-mono text-sm sm:text-base font-black text-rose-600">0 顆</span>
         </div>
 
         <!-- 大屏多選批次快速加點群 -->
-        <div class="hidden lg:flex items-center space-x-1.5 bg-black/40 p-1 rounded-xl border border-amber-500/30">
-          <button type="button" onclick="selectAllProjectionPoints(true)" class="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs">
+        <div class="hidden lg:flex items-center space-x-1.5 bg-amber-900/10 p-1 rounded-xl border border-amber-400">
+          <button type="button" onclick="selectAllProjectionPoints(true)" class="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs shadow-2xs">
             全選
           </button>
-          <button type="button" onclick="selectAllProjectionPoints(false)" class="px-2 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white font-bold text-xs">
+          <button type="button" onclick="selectAllProjectionPoints(false)" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-50 text-slate-800 border border-amber-300 font-bold text-xs shadow-2xs">
             清除
           </button>
-          <button type="button" onclick="awardSelectedInPointsProjection(1)" class="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs">
+          <button type="button" onclick="awardSelectedInPointsProjection(1)" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-2xs">
             +1🍎
           </button>
-          <button type="button" onclick="awardSelectedInPointsProjection(2)" class="px-2.5 py-1 rounded-lg bg-teal-500 hover:bg-teal-600 text-white font-black text-xs">
+          <button type="button" onclick="awardSelectedInPointsProjection(2)" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-black text-xs shadow-2xs">
             +2🍎
           </button>
-          <button type="button" onclick="awardSelectedInPointsProjection(5)" class="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-black text-xs">
+          <button type="button" onclick="awardSelectedInPointsProjection(5)" class="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-black text-xs shadow-2xs">
             +5🍎
           </button>
         </div>
 
         <!-- 切換全螢幕 -->
-        <button type="button" onclick="togglePointsProjectionFullscreen()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-amber-200 border border-amber-400/50 font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="切換大屏投影全螢幕 (F11)">
+        <button type="button" onclick="togglePointsProjectionFullscreen()" class="px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="切換大屏投影全螢幕 (F11)">
           <span>⛶ 全螢幕</span>
         </button>
 
         <!-- 關閉投影按鈕 -->
-        <button type="button" onclick="closePointsProjectionModal()" class="w-10 h-10 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-black text-lg flex items-center justify-center shadow transition hover:scale-105 active:scale-95 cursor-pointer relative z-30 pointer-events-auto" title="結束投影 (Esc)">
+        <button type="button" onclick="closePointsProjectionModal()" class="w-10 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-lg flex items-center justify-center shadow transition hover:scale-105 active:scale-95 cursor-pointer relative z-30 pointer-events-auto" title="結束投影 (Esc)">
           ✕
         </button>
       </div>
     </div>
 
-    <!-- 大屏提示橫幅 -->
-    <div class="w-full max-w-[1600px] mx-auto my-2 text-xs bg-amber-950/60 border border-amber-500/40 px-4 py-2 rounded-xl text-amber-200 flex flex-wrap items-center justify-between gap-2">
-      <span>💡 <strong>大屏互動模式提示：</strong>每一橫排固定 5 位座號大臣（5*5+2 大屏模式），點擊卡片上的「+1🍎 / +2🍎」可在大屏前直接獎勵；持有的特權卡以抽屜方式呈現，點擊「✨使用」即可兌現特權！</span>
-      <span id="pointsProjSelectedBadge" class="text-amber-300 font-bold">已選取 0 位大臣</span>
+    <!-- 大屏提示橫幅 (鮮豔陽光朝氣明亮風格) -->
+    <div class="w-full max-w-[1600px] mx-auto my-2 text-xs bg-white/85 border-2 border-amber-400 px-4 py-2 rounded-2xl text-amber-950 font-bold flex flex-wrap items-center justify-between gap-2 shadow-sm">
+      <span>💡 <strong>大屏互動模式提示：</strong>每一橫排固定 5 位座號大臣（5*5+2 大屏模式），點擊卡片上的「+1🍎 / +2🍎 / +5🍎」可在大屏前直接獎勵；持有的特權卡以抽屜方式呈現，點擊「✨使用」即可兌現特權！</span>
+      <span id="pointsProjSelectedBadge" class="text-amber-950 font-black bg-amber-200 border border-amber-300 px-2 py-0.5 rounded-lg shadow-2xs">已選取 0 位大臣</span>
     </div>
 
     <!-- 核心 5*5+2 大屏卡片網格 -->
@@ -4235,8 +4245,33 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111808"></script>
-  <script src="ui.js?v=2026111808"></script>
+  <script src="app.js?v=2026111811"></script>
+  <script src="ui.js?v=2026111811"></script>
+
+  <!-- 保障座位表大屏投影與點名簿抽屜 100% 正常響應之備援守護腳本 -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // 確保按鈕綁定
+      ['btnOpenSeatingProjNav', 'btnOpenSeatingProjView'].forEach(function(btnId) {
+        var btn = document.getElementById(btnId);
+        if (btn) {
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeof window.openSeatingProjectionModal === 'function') {
+              window.openSeatingProjectionModal();
+            } else {
+              var modal = document.getElementById('seatingProjectionModal');
+              if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.setProperty('display', 'flex', 'important');
+                modal.style.setProperty('z-index', '99999', 'important');
+              }
+            }
+          });
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

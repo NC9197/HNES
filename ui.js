@@ -904,6 +904,36 @@ function updateLateThreshold(val) {
   renderTrafficView(); // 連動下課紅綠燈與愛班卡判定
 }
 
+// 皇室點名簿抽屜展開狀態集合 (預設皆收合以節省版面)
+window.attendanceOpenDrawers = window.attendanceOpenDrawers || new Set();
+
+function toggleAttendanceDrawer(studentId) {
+  if (!window.attendanceOpenDrawers) window.attendanceOpenDrawers = new Set();
+  const id = Number(studentId);
+  if (window.attendanceOpenDrawers.has(id)) {
+    window.attendanceOpenDrawers.delete(id);
+  } else {
+    window.attendanceOpenDrawers.add(id);
+  }
+  renderAttendanceView();
+}
+
+function toggleAllAttendanceDrawers() {
+  if (!window.attendanceOpenDrawers) window.attendanceOpenDrawers = new Set();
+  const students = window.KingdomApp.store.data.students || [];
+  if (window.attendanceOpenDrawers.size >= students.length) {
+    window.attendanceOpenDrawers.clear();
+  } else {
+    students.forEach(st => window.attendanceOpenDrawers.add(st.id));
+  }
+  renderAttendanceView();
+}
+
+if (typeof window !== 'undefined') {
+  window.toggleAttendanceDrawer = toggleAttendanceDrawer;
+  window.toggleAllAttendanceDrawers = toggleAllAttendanceDrawers;
+}
+
 function renderAttendanceView() {
   const date = getSelectedAttendanceDate();
   const students = window.KingdomApp.store.data.students;
@@ -947,6 +977,13 @@ function renderAttendanceView() {
   document.getElementById("statLeaveStudents").textContent = leaveCount;
   document.getElementById("statLateStudents").textContent = lateCount;
   document.getElementById("statAttendanceRate").textContent = `${rate}%`;
+
+  // 同步全班抽屜切換按鈕文字
+  const btnToggleAllText = document.getElementById("btnToggleAllAttText");
+  if (btnToggleAllText) {
+    const isAllOpen = window.attendanceOpenDrawers && window.attendanceOpenDrawers.size >= total && total > 0;
+    btnToggleAllText.textContent = isAllOpen ? "📁 收合全班登記抽屜" : "📂 展開全班登記抽屜";
+  }
 
   // 頂部醒目的【出席狀況即時看板】（禁止無打卡時宣稱全員到齊）
   const topAlertBoard = document.getElementById("topAbsenteeAlertBoard");
@@ -1070,7 +1107,7 @@ function renderAttendanceView() {
     }
   }
 
-  // 渲染學生名冊卡片
+  // 渲染學生名冊卡片 (5*5+2 版面，加大姓名，出缺席操作以抽屜方式折疊)
   const grid = document.getElementById("attendanceGrid");
   if (!grid) return;
 
@@ -1086,75 +1123,103 @@ function renderAttendanceView() {
     const rec = attendanceData[st.id] || null;
     const status = rec ? rec.status : 'uncheck';
     const checkInTime = (rec && rec.checkInTime) || '';
+    const isDrawerOpen = window.attendanceOpenDrawers && window.attendanceOpenDrawers.has(st.id);
 
     let badgeHtml = '';
     let detailHtml = '';
 
     if (status === 'present') {
-      badgeHtml = `<span class="badge-present text-xs font-black px-2 py-0.5 rounded-full">✅ 在朝出席 ${checkInTime ? `(${checkInTime})` : ''}</span>`;
+      badgeHtml = `<span class="badge-present text-xs font-black px-2 py-0.5 rounded-full whitespace-nowrap">✅ 出席 ${checkInTime ? `(${checkInTime})` : ''}</span>`;
     } else if (status === 'leave') {
       const typeMap = { sick: '病假', personal: '事假', official: '公假', bereavement: '喪假', other: '其他' };
       const scopeDesc = rec.leaveScope === 'periods' 
-        ? `節數：第 ${rec.leavePeriods ? rec.leavePeriods.join(', ') : '未定'} 節` 
+        ? `第 ${rec.leavePeriods ? rec.leavePeriods.join(', ') : '未定'} 節` 
         : '整天告假';
-      badgeHtml = `<span class="badge-leave text-xs font-black px-2 py-0.5 rounded-full">🏖️ 告假 (${typeMap[rec.leaveType] || '事假'})</span>`;
+      badgeHtml = `<span class="badge-leave text-xs font-black px-2 py-0.5 rounded-full whitespace-nowrap">🏖️ 告假 (${typeMap[rec.leaveType] || '事假'})</span>`;
       detailHtml = `
-        <div class="mt-2 text-[11px] text-rose-800 bg-rose-50 p-2 rounded-lg border border-rose-200 font-bold">
-          <div>${scopeDesc}</div>
-          ${rec.note ? `<div class="text-slate-600 font-normal mt-0.5">${rec.note}</div>` : ''}
+        <div class="mt-1 text-[11px] text-rose-800 bg-rose-50 p-1.5 rounded-lg border border-rose-200 font-bold truncate">
+          ${scopeDesc} ${rec.note ? `‧ ${rec.note}` : ''}
         </div>
       `;
     } else if (status === 'late') {
-      badgeHtml = `<span class="badge-late text-xs font-black px-2 py-0.5 rounded-full">⏳ 遲到 ${checkInTime ? `(${checkInTime})` : ''}</span>`;
+      badgeHtml = `<span class="badge-late text-xs font-black px-2 py-0.5 rounded-full whitespace-nowrap">⏳ 遲到 ${checkInTime ? `(${checkInTime})` : ''}</span>`;
       detailHtml = `
-        <div class="mt-2 text-[11px] text-amber-900 bg-amber-50 p-2 rounded-lg border border-amber-300 font-bold">
+        <div class="mt-1 text-[11px] text-amber-900 bg-amber-50 p-1.5 rounded-lg border border-amber-300 font-bold truncate">
           超過門檻 ${lateThreshold} ${rec.note ? `‧ ${rec.note}` : ''}
         </div>
       `;
     } else {
-      badgeHtml = `<span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-rose-700 border border-rose-300">🔴 尚未打卡 (未到)</span>`;
-      detailHtml = `
-        <div class="mt-2 text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200">
-          大臣尚未於晨會打卡，可由學生自主按座號簽到，或導師手動登記。
-        </div>
-      `;
+      badgeHtml = `<span class="text-xs font-black px-2 py-0.5 rounded-full bg-slate-100 text-rose-700 border border-rose-300 whitespace-nowrap">🔴 尚未打卡</span>`;
     }
 
     return `
-      <div class="parchment-card p-4 minister-card flex flex-col justify-between">
+      <div class="parchment-card p-3 sm:p-3.5 minister-card flex flex-col justify-between transition-all hover:shadow-md">
         <div>
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-black text-amber-950 bg-amber-200 px-2 py-0.5 rounded">
-              座號 ${String(st.seatNo).padStart(2, '0')}
+          <!-- 座號與狀態列 -->
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="text-xs font-mono font-black text-amber-950 bg-amber-200/90 border border-amber-300/80 px-2 py-0.5 rounded-md shadow-2xs whitespace-nowrap">
+              ${String(st.seatNo).padStart(2, '0')} 號
             </span>
-            ${badgeHtml}
+            <div class="truncate text-right">
+              ${badgeHtml}
+            </div>
           </div>
-          <div class="mt-2 flex items-center space-x-2">
-            <span class="text-lg font-black text-slate-800">${st.name}</span>
-            <span class="text-xs text-amber-950 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded font-bold">${st.title}</span>
+
+          <!-- 學生姓名 (字體放大顯眼，後排清晰可見) 與 官職徽章 -->
+          <div class="mt-2 flex items-center justify-between gap-2">
+            <span class="text-xl sm:text-2xl font-cute font-black text-slate-900 tracking-wide filter drop-shadow-2xs truncate">
+              ${st.name}
+            </span>
+            <span class="text-[11px] text-amber-950 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-md font-bold truncate shrink-0 max-w-[90px]">
+              ${st.title}
+            </span>
           </div>
           ${detailHtml}
         </div>
 
-        <div class="mt-3 pt-2.5 border-t border-amber-200 flex items-center space-x-1.5 flex-wrap gap-1">
-          <button onclick="setStudentAttendance(${st.id}, 'present')" class="flex-1 py-1 px-1.5 text-xs font-black rounded-lg ${status === 'present' ? 'bg-emerald-600 text-white shadow' : 'bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300'}">
-            出席
+        <!-- 抽屜式點名操作區塊 (預設折疊節省版面，點擊展開出席/請假/遲到/未到操作) -->
+        <div class="mt-2.5 pt-2 border-t border-amber-200/80">
+          <button type="button" onclick="toggleAttendanceDrawer(${st.id})" 
+            class="w-full py-1 px-2.5 rounded-xl ${isDrawerOpen ? 'bg-amber-300 text-amber-950 border-amber-500 font-black' : 'bg-amber-100/80 hover:bg-amber-200 text-amber-900 border-amber-300 font-bold'} border text-xs flex items-center justify-between transition shadow-2xs cursor-pointer">
+            <span class="flex items-center space-x-1">
+              <span>⚡</span>
+              <span>登記點名</span>
+            </span>
+            <span class="text-[11px] font-mono">${isDrawerOpen ? '▲ 收合' : '▼ 展開'}</span>
           </button>
-          <button onclick="openLeaveModal(${st.id})" class="flex-1 py-1 px-1.5 text-xs font-black rounded-lg ${status === 'leave' ? 'bg-rose-600 text-white shadow' : 'bg-white hover:bg-rose-50 text-rose-800 border border-rose-300'}">
-            請假
-          </button>
-          <button onclick="setStudentAttendance(${st.id}, 'late')" class="flex-1 py-1 px-1.5 text-xs font-black rounded-lg ${status === 'late' ? 'bg-amber-600 text-white shadow' : 'bg-white hover:bg-amber-50 text-amber-800 border border-amber-300'}">
-            遲到
-          </button>
-          ${status !== 'uncheck' ? `
-            <button onclick="setStudentAttendance(${st.id}, 'uncheck')" title="重設為未打卡（未到）" class="py-1 px-2 text-xs font-black rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 border border-slate-300">
-              設未到
-            </button>
+
+          ${isDrawerOpen ? `
+            <div class="mt-2 pt-1.5 grid grid-cols-2 gap-1.5">
+              <button type="button" onclick="setStudentAttendance(${st.id}, 'present')" 
+                class="py-1 px-1.5 text-xs font-black rounded-lg ${status === 'present' ? 'bg-emerald-600 text-white shadow ring-2 ring-emerald-400' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300'} transition flex items-center justify-center space-x-1">
+                <span>✅</span>
+                <span>出席</span>
+              </button>
+              <button type="button" onclick="openLeaveModal(${st.id})" 
+                class="py-1 px-1.5 text-xs font-black rounded-lg ${status === 'leave' ? 'bg-rose-600 text-white shadow ring-2 ring-rose-400' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300'} transition flex items-center justify-center space-x-1">
+                <span>🏖️</span>
+                <span>請假</span>
+              </button>
+              <button type="button" onclick="setStudentAttendance(${st.id}, 'late')" 
+                class="py-1 px-1.5 text-xs font-black rounded-lg ${status === 'late' ? 'bg-amber-600 text-white shadow ring-2 ring-amber-400' : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300'} transition flex items-center justify-center space-x-1">
+                <span>⏳</span>
+                <span>遲到</span>
+              </button>
+              <button type="button" onclick="setStudentAttendance(${st.id}, 'uncheck')" 
+                class="py-1 px-1.5 text-xs font-black rounded-lg ${status === 'uncheck' ? 'bg-slate-700 text-white shadow' : 'bg-slate-100 hover:bg-rose-100 text-slate-700 hover:text-rose-800 border border-slate-300'} transition flex items-center justify-center space-x-1" title="重設為未打卡 (未到)">
+                <span>🔴</span>
+                <span>未到</span>
+              </button>
+            </div>
           ` : ''}
         </div>
       </div>
     `;
   }).join('');
+
+  initLucideIcons();
+  renderAttendanceHistoryTable();
+}
 
   initLucideIcons();
   renderAttendanceHistoryTable();
@@ -4987,6 +5052,33 @@ function renderPetsOverview() {
   initLucideIcons();
 }
 
+// 大臣名冊中學生當前選定預覽之萌寵索引 (預設為最新認養寵物)
+window.rosterActivePetIndex = window.rosterActivePetIndex || {};
+// 大臣名冊中萌寵收藏抽屜展開集合
+window.rosterOpenPetDrawers = window.rosterOpenPetDrawers || new Set();
+
+function changeRosterActivePet(studentId, petIndex) {
+  if (!window.rosterActivePetIndex) window.rosterActivePetIndex = {};
+  window.rosterActivePetIndex[Number(studentId)] = parseInt(petIndex, 10);
+  renderRosterView();
+}
+
+function toggleRosterPetDrawer(studentId) {
+  if (!window.rosterOpenPetDrawers) window.rosterOpenPetDrawers = new Set();
+  const id = Number(studentId);
+  if (window.rosterOpenPetDrawers.has(id)) {
+    window.rosterOpenPetDrawers.delete(id);
+  } else {
+    window.rosterOpenPetDrawers.add(id);
+  }
+  renderRosterView();
+}
+
+if (typeof window !== 'undefined') {
+  window.changeRosterActivePet = changeRosterActivePet;
+  window.toggleRosterPetDrawer = toggleRosterPetDrawer;
+}
+
 function renderRosterView() {
   const tbody = document.getElementById("studentRosterTableBody");
   if (!tbody) return;
@@ -5002,7 +5094,7 @@ function renderRosterView() {
     const seatPad = String(st.seatNo).padStart(2, '0');
     const bdayPad = (st.birthday || '0101').replace(/[^0-9]/g, '').padStart(4, '0');
     const passCode = seatPad + bdayPad;
-    const aType = (st.animalType || st.petType || 'lion').toLowerCase();
+    const defaultPet = (st.animalType || st.petType || 'lion').toLowerCase();
     window.KingdomApp.store.syncStudentPets(st);
     const currentPts = Math.max(0, parseInt(st.points, 10) || 0);
     let lifetime = parseInt(st.lifetimePoints, 10);
@@ -5012,107 +5104,185 @@ function renderRosterView() {
     }
     const effectivePts = Math.min(currentPts, lifetime);
     st.lifetimePoints = effectivePts;
-    const petStatus = window.KingdomApp.getAnimalStatus(aType, effectivePts);
-    const svgCode = window.KingdomApp.renderAnimalSVG(aType, petStatus.stageIndex);
 
     const maxAllowed = 1 + Math.floor(effectivePts / 500);
-    const validPets = (st.pets || [{ type: aType }]).slice(0, maxAllowed);
+    const validPets = (st.pets || [{ type: defaultPet }]).slice(0, maxAllowed);
     st.pets = validPets;
 
-    let secondPetRosterHtml = '';
-    if (validPets.length > 1) {
-      secondPetRosterHtml = validPets.slice(1).map((p, idx) => {
-        const slotIdx = idx + 1;
-        const sType = p.type.toLowerCase();
-        const sExp = Math.max(0, effectivePts - slotIdx * 500);
-        const sStatus = window.KingdomApp.getAnimalStatus(sType, sExp);
-        const sSvg = window.KingdomApp.renderAnimalSVG(sType, sStatus.stageIndex);
-        return `
-          <div class="flex items-center space-x-1.5 mt-1 pt-1 border-t border-purple-200/80">
-            <div class="w-6 h-6 flex-shrink-0 bg-white rounded-lg p-0.5 border border-purple-300 shadow-2xs cursor-pointer" onclick="openChangeAnimalModal(${st.id}, ${slotIdx})" title="第${slotIdx + 1}萌寵：點擊更換">
-              ${sSvg}
-            </div>
-            <span class="font-bold text-purple-900 text-[11px]">${sStatus.animalName}</span>
-            <span class="text-[9px] font-bold px-1 rounded ${sStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black' : 'bg-purple-100 text-purple-900'}">${sStatus.stageTitle}</span>
-            <span class="text-[9px] font-mono font-bold text-purple-700">🌱 ${sExp}點</span>
-            <button type="button" onclick="openChangeAnimalModal(${st.id}, ${slotIdx})" class="text-[9px] text-purple-700 hover:text-purple-900 hover:underline font-bold" title="更換第${slotIdx + 1}萌寵">[換]</button>
-          </div>
-        `;
-      }).join('');
-    }
-    const nextSlot = validPets.length;
-    const reqPtsForNext = nextSlot * 500;
-    if (validPets.length < maxAllowed && effectivePts >= reqPtsForNext) {
-      secondPetRosterHtml += `
-        <div class="mt-1 pt-1 border-t border-amber-200/60">
-          <button type="button" onclick="openChangeAnimalModal(${st.id}, ${nextSlot})" class="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-1.5 py-0.5 rounded border border-amber-400">
-            🐣 認養第${nextSlot + 1}萌寵！
-          </button>
-        </div>
-      `;
+    // 當前顯示之萌寵索引 (若已認養多隻，預設顯示最新認養寵物)
+    let activeIdx = validPets.length - 1;
+    if (window.rosterActivePetIndex && window.rosterActivePetIndex[st.id] !== undefined) {
+      const savedIdx = window.rosterActivePetIndex[st.id];
+      if (savedIdx >= 0 && savedIdx < validPets.length) {
+        activeIdx = savedIdx;
+      }
     }
 
+    const curPet = validPets[activeIdx] || validPets[0];
+    const curType = curPet.type.toLowerCase();
+    const curExp = activeIdx === 0 ? effectivePts : Math.max(0, effectivePts - activeIdx * 500);
+    const curStatus = window.KingdomApp.getAnimalStatus(curType, curExp);
+    const curSvg = window.KingdomApp.renderAnimalSVG(curType, curStatus.stageIndex);
+
+    const isDrawerOpen = window.rosterOpenPetDrawers && window.rosterOpenPetDrawers.has(st.id);
+    const reqPtsForNext = validPets.length * 500;
+
     return `
-      <tr class="hover:bg-amber-100/60 transition">
-        <td class="py-2.5 px-3 font-mono font-black text-amber-950 whitespace-nowrap text-center">${seatPad}</td>
-        <td class="py-2.5 px-3 font-black text-slate-900 whitespace-nowrap text-sm sm:text-base">${st.name}</td>
-        <td class="py-2.5 px-3 text-xs whitespace-nowrap">
-          <span class="bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded font-bold inline-block">${st.title}</span>
+      <tr class="hover:bg-amber-100/60 transition text-center">
+        <!-- 1. 座號 (加大字體並居中) -->
+        <td class="py-3 px-3 text-center whitespace-nowrap">
+          <span class="font-mono font-black text-amber-950 text-base sm:text-lg bg-amber-200/90 border border-amber-300 px-2.5 py-1 rounded-xl shadow-2xs inline-block">
+            ${seatPad}
+          </span>
         </td>
-        <td class="py-2.5 px-3 text-xs bg-amber-50/80 rounded whitespace-nowrap">
+
+        <!-- 2. 姓名 (字體放大顯眼並居中) -->
+        <td class="py-3 px-3 text-center whitespace-nowrap font-cute font-black text-slate-900 text-base sm:text-lg tracking-wide">
+          ${st.name}
+        </td>
+
+        <!-- 3. 大臣官職 (居中標籤) -->
+        <td class="py-3 px-3 text-center whitespace-nowrap">
+          <span class="bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1 rounded-xl font-bold text-xs sm:text-sm inline-block shadow-2xs">
+            ${st.title}
+          </span>
+        </td>
+
+        <!-- 4. 生日 / 家長密碼 (居中排列) -->
+        <td class="py-3 px-3 text-center whitespace-nowrap text-xs sm:text-sm bg-amber-50/70 rounded-xl">
           <span class="font-mono font-bold text-slate-800">${st.birthday}</span>
-          <span class="block text-[10px] text-amber-800 font-mono font-bold">密碼: ${passCode}</span>
+          <span class="block text-[11px] text-amber-900 font-mono font-black mt-0.5">密碼: ${passCode}</span>
         </td>
-        <!-- 認養萌寵成長度 (包含寵物數量徽章 + 嚴格同步) -->
-        <td class="py-2.5 px-3 text-xs whitespace-nowrap">
-          <div class="flex items-center space-x-2">
-            <div class="w-9 h-9 flex-shrink-0 bg-white rounded-xl p-0.5 border border-amber-300 shadow-xs cursor-pointer hover:border-amber-500 transition" onclick="openChangeAnimalModal(${st.id})" title="點擊更換萌寵">
-              ${svgCode}
+
+        <!-- 5. 🌱 累計獲得蘋果 (從萌寵中獨立出來！居中大字體) -->
+        <td class="py-3 px-3 text-center whitespace-nowrap">
+          <span class="font-mono font-black text-amber-900 text-base sm:text-lg bg-amber-100/90 border border-amber-300 px-3 py-1 rounded-xl shadow-2xs inline-block">
+            ${effectivePts} 🍎
+          </span>
+          <span class="block text-[10px] text-amber-800 font-bold mt-0.5">總累計獲得</span>
+        </td>
+
+        <!-- 6. 🍎 目前可用 (居中大字體) -->
+        <td class="py-3 px-3 text-center whitespace-nowrap">
+          <span class="font-mono font-black text-rose-600 text-base sm:text-lg bg-rose-50 border border-rose-200 px-3 py-1 rounded-xl shadow-2xs inline-block">
+            ${currentPts} 🍎
+          </span>
+          <span class="block text-[10px] text-rose-700 font-bold mt-0.5">可用存量</span>
+        </td>
+
+        <!-- 7. 🐾 認養萌寵 (顯示最新認養寵物，支援下拉選擇與抽屜收藏) -->
+        <td class="py-3 px-3 text-center whitespace-nowrap">
+          <div class="inline-flex flex-col items-center justify-center max-w-[210px]">
+            <!-- 當前預覽萌寵：大頭像 + 名稱 + 階級 + 更換按鈕 -->
+            <div class="flex items-center justify-center space-x-2">
+              <div class="w-10 h-10 flex-shrink-0 bg-white rounded-xl p-0.5 border-2 border-amber-300 shadow-xs cursor-pointer hover:border-amber-500 hover:scale-105 transition" onclick="openChangeAnimalModal(${st.id}, ${activeIdx})" title="點擊更換此萌寵種類">
+                ${curSvg}
+              </div>
+              <div class="text-left">
+                <div class="flex items-center space-x-1">
+                  <span class="font-black text-amber-950 text-xs sm:text-sm">${curStatus.animalName}</span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${curStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black border border-amber-400' : 'bg-amber-100 text-amber-900'}">${curStatus.stageTitle}</span>
+                  <button type="button" onclick="openChangeAnimalModal(${st.id}, ${activeIdx})" class="text-[11px] text-amber-700 hover:text-amber-950 font-bold ml-0.5" title="更換此萌寵">[換]</button>
+                </div>
+                <!-- 成長進度條 -->
+                <div class="w-20 bg-slate-200 h-1.5 rounded-full overflow-hidden mt-1">
+                  <div class="h-full bg-gradient-to-r from-emerald-400 to-amber-500 rounded-full" style="width: ${curStatus.progressPct}%"></div>
+                </div>
+              </div>
             </div>
-            <div>
-              <div class="flex items-center space-x-1.5">
-                <span class="font-black text-amber-950 text-xs">${petStatus.animalName}</span>
-                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black border border-amber-400' : 'bg-amber-100 text-amber-900'}">${petStatus.stageTitle}</span>
-                <span class="text-[9px] font-black px-1.5 py-0.2 rounded-full ${validPets.length > 1 ? 'bg-purple-100 text-purple-900 border border-purple-300' : 'bg-emerald-100 text-emerald-900'}">🐾 ${validPets.length} 隻</span>
-                <button type="button" onclick="openChangeAnimalModal(${st.id})" class="text-[10px] text-amber-700 hover:text-amber-900 hover:underline font-bold" title="更換認養萌寵">
-                  [換]
+
+            <!-- 超過一隻寵物時：提供下拉選單選擇顯示，以及抽屜收藏按鈕 -->
+            ${validPets.length > 1 ? `
+              <div class="mt-1.5 flex flex-col items-center space-y-1 w-full">
+                <!-- 下拉選單：供學生自由選擇想顯示的寵物 -->
+                <div class="flex items-center space-x-1">
+                  <span class="text-[10px] text-purple-900 font-bold">顯示：</span>
+                  <select onchange="changeRosterActivePet(${st.id}, this.value)" class="text-[11px] font-black bg-purple-50 text-purple-950 border border-purple-300 rounded-md px-1.5 py-0.5 shadow-2xs cursor-pointer">
+                    ${validPets.map((p, pIdx) => {
+                      const sType = p.type.toLowerCase();
+                      const sExp = pIdx === 0 ? effectivePts : Math.max(0, effectivePts - pIdx * 500);
+                      const sStatus = window.KingdomApp.getAnimalStatus(sType, sExp);
+                      const isLatest = pIdx === validPets.length - 1;
+                      return `<option value="${pIdx}" ${pIdx === activeIdx ? 'selected' : ''}>${isLatest ? '🌟 ' : '🐾 '}第${pIdx + 1}隻: ${sStatus.animalName} (${sStatus.stageTitle})</option>`;
+                    }).join('')}
+                  </select>
+                </div>
+
+                <!-- 抽屜收藏按鈕 -->
+                <button type="button" onclick="toggleRosterPetDrawer(${st.id})" class="text-[10px] font-bold text-purple-800 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded-md border border-purple-300 transition cursor-pointer">
+                  <span>${isDrawerOpen ? '▲ 收藏其餘寵物' : `📂 收藏抽屜 (${validPets.length}隻萌寵) ▼`}</span>
                 </button>
               </div>
-              <div class="flex items-center space-x-1.5 mt-0.5">
-                <div class="w-16 bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                  <div class="h-full bg-gradient-to-r from-emerald-400 to-amber-500 rounded-full" style="width: ${petStatus.progressPct}%"></div>
+
+              <!-- 抽屜內容：展開後列出全部認養寵物與狀態 -->
+              ${isDrawerOpen ? `
+                <div class="mt-2 p-2 bg-purple-50 rounded-xl border border-purple-300 w-full space-y-1.5 text-left animate-fadeIn">
+                  <span class="text-[10px] font-black text-purple-900 block border-b border-purple-200 pb-1">🐾 已認養寵物收藏庫 (${validPets.length}隻)：</span>
+                  ${validPets.map((p, pIdx) => {
+                    const sType = p.type.toLowerCase();
+                    const sExp = pIdx === 0 ? effectivePts : Math.max(0, effectivePts - pIdx * 500);
+                    const sStatus = window.KingdomApp.getAnimalStatus(sType, sExp);
+                    const sSvg = window.KingdomApp.renderAnimalSVG(sType, sStatus.stageIndex);
+                    const isLatest = pIdx === validPets.length - 1;
+                    return `
+                      <div class="flex items-center justify-between p-1 bg-white rounded-lg border ${pIdx === activeIdx ? 'border-purple-500 ring-1 ring-purple-400 bg-purple-50/50' : 'border-purple-200'}">
+                        <div class="flex items-center space-x-1.5">
+                          <div class="w-6 h-6 flex-shrink-0 bg-white rounded p-0.5 border border-purple-300">
+                            ${sSvg}
+                          </div>
+                          <div>
+                            <span class="text-[11px] font-bold text-purple-950">${isLatest ? '🌟 ' : ''}${sStatus.animalName}</span>
+                            <span class="text-[9px] font-bold px-1 rounded bg-purple-100 text-purple-900 ml-1">${sStatus.stageTitle}</span>
+                          </div>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                          <button type="button" onclick="changeRosterActivePet(${st.id}, ${pIdx})" class="text-[10px] px-1 py-0.5 rounded bg-purple-200 hover:bg-purple-300 text-purple-900 font-bold">${pIdx === activeIdx ? '顯示中' : '切換'}</button>
+                          <button type="button" onclick="openChangeAnimalModal(${st.id}, ${pIdx})" class="text-[10px] text-purple-700 hover:underline font-bold">[換]</button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
                 </div>
-                <span class="text-[10px] font-mono font-bold text-slate-600">🍎 ${lifetime} 點</span>
+              ` : ''}
+            ` : ''}
+
+            <!-- 若達門檻但尚未認養新寵物 -->
+            ${validPets.length < maxAllowed && effectivePts >= reqPtsForNext ? `
+              <div class="mt-1">
+                <button type="button" onclick="openChangeAnimalModal(${st.id}, ${validPets.length})" class="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-2 py-0.5 rounded-lg border border-amber-400 shadow-2xs">
+                  🐣 認養第${validPets.length + 1}萌寵！
+                </button>
               </div>
-            </div>
+            ` : ''}
           </div>
-          ${secondPetRosterHtml}
         </td>
-        <!-- 可用蘋果 (純數字顯示，不作點擊) -->
-        <td class="py-2.5 px-3 font-mono text-xs whitespace-nowrap">
-          <span class="font-black text-rose-600 text-sm block">${st.points || 0} 🍎</span>
-        </td>
-        <!-- 操作按鈕列 (投餵與操作區) -->
-        <td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
-          <button onclick="openZooFeedModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-xs font-black shadow-xs transform active:scale-95 transition" title="投餵蘋果讓寵物長大！">
-            🍎 投餵
-          </button>
-          <button onclick="openEditStudentPointsModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-rose-200 to-amber-200 hover:from-rose-300 hover:to-amber-300 text-rose-950 rounded-lg text-xs font-black border border-rose-300 shadow-xs transform active:scale-95 transition" title="更改此大臣蘋果數量">
-            ✏️ 改蘋果
-          </button>
-          <button onclick="copyParentLink(${st.seatNo})" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded text-xs font-black shadow-xs" title="複製家長查閱專用訊息">
-            📋 家長連結
-          </button>
-          <button onclick="openEditStudentModal(${st.id})" class="px-1.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-xs font-bold">
-            修改
-          </button>
-          <button onclick="deleteStudent(${st.id})" class="px-1.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded text-xs font-bold">
-            除名
-          </button>
+
+        <!-- 8. ⚙️ 投餵與操作區 (居中對齊) -->
+        <td class="py-3 px-3 text-center whitespace-nowrap">
+          <div class="flex items-center justify-center space-x-1 flex-wrap gap-y-1">
+            <button onclick="openZooFeedModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-xs font-black shadow-xs transform active:scale-95 transition" title="投餵蘋果讓寵物長大！">
+              🍎 投餵
+            </button>
+            <button onclick="openEditStudentPointsModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-rose-200 to-amber-200 hover:from-rose-300 hover:to-amber-300 text-rose-950 rounded-lg text-xs font-black border border-rose-300 shadow-xs transform active:scale-95 transition" title="更改此大臣蘋果數量">
+              ✏️ 改蘋果
+            </button>
+            <button onclick="copyParentLink(${st.seatNo})" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg text-xs font-black border border-amber-300 shadow-xs" title="複製家長查閱專用訊息">
+              📋 家長連結
+            </button>
+            <button onclick="openEditStudentModal(${st.id})" class="px-1.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold">
+              修改
+            </button>
+            <button onclick="deleteStudent(${st.id})" class="px-1.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-xs font-bold">
+              除名
+            </button>
+          </div>
         </td>
       </tr>
     `;
   }).join('');
+
+  initLucideIcons();
+}
 
   initLucideIcons();
 }
@@ -5301,7 +5471,7 @@ function saveStudentData(e) {
           studentId: student.id,
           points: points - oldPts,
           reason: `導師修改大臣資料：蘋果設為 ${points} 顆 (原 ${oldPts} 顆)`,
-          date: getTodayDateString(),
+          date: window.KingdomApp.getTodayDateString(),
           time: new Date().toTimeString().slice(0, 5)
         });
       }
@@ -5486,10 +5656,20 @@ let seatingProjectionClockInterval = null;
 
 function openSeatingProjectionModal() {
   const modal = document.getElementById("seatingProjectionModal");
-  if (!modal) return;
+  if (!modal) {
+    console.error("seatingProjectionModal element not found!");
+    return;
+  }
 
   modal.classList.remove("hidden");
-  modal.style.display = "flex";
+  modal.style.setProperty("display", "flex", "important");
+  modal.style.setProperty("visibility", "visible", "important");
+  modal.style.setProperty("opacity", "1", "important");
+  modal.style.setProperty("z-index", "99999", "important");
+  modal.style.setProperty("position", "fixed", "important");
+  modal.style.setProperty("inset", "0", "important");
+  modal.style.setProperty("width", "100vw", "important");
+  modal.style.setProperty("height", "100vh", "important");
 
   try {
     renderSeatingProjectionGrid();
@@ -5507,13 +5687,19 @@ function openSeatingProjectionModal() {
   updateSeatingProjClock();
   if (seatingProjectionClockInterval) clearInterval(seatingProjectionClockInterval);
   seatingProjectionClockInterval = setInterval(updateSeatingProjClock, 1000);
+
+  if (typeof showToast === "function") {
+    showToast("💺 已開啟教室座位表大屏全螢幕投影", "☀️");
+  }
 }
 
 function closeSeatingProjectionModal() {
   const modal = document.getElementById("seatingProjectionModal");
   if (modal) {
     modal.classList.add("hidden");
-    modal.style.display = "none";
+    modal.style.setProperty("display", "none", "important");
+    modal.style.setProperty("visibility", "hidden", "important");
+    modal.style.setProperty("opacity", "0", "important");
   }
   if (seatingProjectionClockInterval) {
     clearInterval(seatingProjectionClockInterval);
@@ -5522,6 +5708,12 @@ function closeSeatingProjectionModal() {
   if (document.fullscreenElement) {
     document.exitFullscreen().catch(() => {});
   }
+}
+
+// 立即掛載至全域，防止腳本後續任何例外導致未掛載
+if (typeof window !== 'undefined') {
+  window.openSeatingProjectionModal = openSeatingProjectionModal;
+  window.closeSeatingProjectionModal = closeSeatingProjectionModal;
 }
 
 function toggleSeatingProjectionFullscreen() {
@@ -5864,17 +6056,43 @@ let openCardDrawerInProjectionIds = new Set();
 
 function openPointsProjectionModal() {
   const modal = document.getElementById("pointsProjectionModal");
-  if (!modal) return;
+  if (!modal) {
+    console.error("pointsProjectionModal not found!");
+    return;
+  }
   modal.classList.remove("hidden");
+  modal.style.setProperty("display", "flex", "important");
+  modal.style.setProperty("visibility", "visible", "important");
+  modal.style.setProperty("opacity", "1", "important");
+  modal.style.setProperty("z-index", "99999", "important");
+  modal.style.setProperty("position", "fixed", "important");
+  modal.style.setProperty("inset", "0", "important");
+  modal.style.setProperty("width", "100vw", "important");
+  modal.style.setProperty("height", "100vh", "important");
+  modal.style.setProperty("background", "radial-gradient(circle at 50% 15%, #fef3c7 0%, #fde68a 35%, #fbbf24 75%, #f59e0b 100%)", "important");
   renderPointsProjection();
+  if (typeof showToast === "function") {
+    showToast("🍎 已開啟紅蘋果集點榜大屏投影", "☀️");
+  }
 }
 
 function closePointsProjectionModal() {
   const modal = document.getElementById("pointsProjectionModal");
-  if (modal) modal.classList.add("hidden");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.style.setProperty("display", "none", "important");
+    modal.style.setProperty("visibility", "hidden", "important");
+    modal.style.setProperty("opacity", "0", "important");
+  }
   if (document.fullscreenElement) {
     document.exitFullscreen().catch(() => {});
   }
+}
+
+// 立即掛載至全域
+if (typeof window !== 'undefined') {
+  window.openPointsProjectionModal = openPointsProjectionModal;
+  window.closePointsProjectionModal = closePointsProjectionModal;
 }
 
 function togglePointsProjectionFullscreen() {
@@ -6004,19 +6222,19 @@ function renderPointsProjection() {
       }
 
       return `
-        <div class="rounded-2xl p-3 border-2 transition-all flex flex-col justify-between shadow-lg backdrop-blur-md ${isSelected ? 'bg-amber-900/90 border-amber-400 ring-2 ring-amber-300' : 'bg-slate-900/85 border-amber-500/50 hover:border-amber-400'}">
+        <div class="rounded-2xl p-3 border-2 transition-all flex flex-col justify-between shadow-md hover:shadow-xl backdrop-blur-md ${isSelected ? 'bg-amber-100/95 border-amber-500 ring-2 ring-amber-400 shadow-amber-300/50' : 'bg-white/95 border-amber-400 hover:border-amber-500'}">
           <div>
-            <!-- 頂部身分列：勾選、座號、姓名、官職與認養寵物圖示 -->
-            <div class="flex items-center justify-between pb-1.5 border-b border-amber-500/40">
+            <!-- 頂部身分列：勾選、座號、姓名、官職與認養寵物圖示 (明亮高可視) -->
+            <div class="flex items-center justify-between pb-1.5 border-b border-amber-300">
               <div class="flex items-center space-x-1.5 min-w-0">
-                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleProjectionStudentSelection(${st.id})" class="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer">
-                <span class="text-xs font-mono font-black text-amber-950 bg-amber-300 px-1.5 py-0.5 rounded shadow-2xs">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleProjectionStudentSelection(${st.id})" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer">
+                <span class="text-xs font-mono font-black text-amber-950 bg-amber-200 border border-amber-300 px-1.5 py-0.5 rounded shadow-2xs">
                   ${seatPad}號
                 </span>
-                <span class="text-base sm:text-lg font-black text-white truncate tracking-wide">${st.name}</span>
+                <span class="text-base sm:text-lg font-cute font-black text-slate-900 truncate tracking-wide filter drop-shadow-2xs">${st.name}</span>
               </div>
               <div class="flex items-center space-x-1 flex-shrink-0">
-                <span class="text-[10px] font-bold text-amber-300 bg-amber-950/90 border border-amber-500/50 px-1.5 py-0.5 rounded truncate max-w-[70px]">
+                <span class="text-[10px] font-bold text-amber-950 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded truncate max-w-[70px]">
                   ${st.title}
                 </span>
                 <div class="flex items-center space-x-0.5">
@@ -6025,45 +6243,45 @@ function renderPointsProjection() {
               </div>
             </div>
 
-            <!-- 中央核心：大蘋果數量 + 萌寵標籤 -->
-            <div class="my-2 p-2 bg-black/40 rounded-xl border border-amber-500/30 text-center">
-              <div class="text-2xl sm:text-3xl font-mono font-black text-amber-300 tracking-wider flex items-center justify-center space-x-1">
+            <!-- 中央核心：大蘋果數量 (鮮豔明亮) + 萌寵標籤 -->
+            <div class="my-2 p-2 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 rounded-xl border border-amber-300/80 text-center shadow-inner">
+              <div class="text-2xl sm:text-3xl font-mono font-black text-rose-600 tracking-wider flex items-center justify-center space-x-1 drop-shadow-2xs">
                 <span>🍎</span>
                 <span>${pts}</span>
-                <span class="text-xs text-amber-400/80 font-normal">顆</span>
+                <span class="text-xs text-amber-900 font-bold">顆</span>
               </div>
-              <div class="mt-1 flex items-center justify-center space-x-1.5 text-[11px] text-amber-200/90 font-bold">
+              <div class="mt-1 flex items-center justify-center space-x-1.5 text-[11px] text-amber-950 font-bold">
                 <span>${petLabel}</span>
-                <span class="text-amber-400/60">·</span>
-                <span class="text-[10px] text-amber-300/80 font-mono">🌱${lifetime}點</span>
+                <span class="text-amber-400">·</span>
+                <span class="text-[10px] text-amber-800 font-mono font-bold">🌱${lifetime}點</span>
               </div>
             </div>
 
             <!-- 特權卡牌抽屜 (支援大屏直接點擊展開與一鍵使用) -->
             <div class="mb-2">
-              <button type="button" onclick="toggleCardDrawerInProjection(${st.id})" class="w-full py-1 px-2 rounded-lg bg-purple-950/80 hover:bg-purple-900 border border-purple-400/60 text-purple-200 text-xs font-bold flex items-center justify-between transition shadow-2xs">
+              <button type="button" onclick="toggleCardDrawerInProjection(${st.id})" class="w-full py-1 px-2 rounded-lg bg-purple-100 hover:bg-purple-200 border border-purple-300 text-purple-950 text-xs font-bold flex items-center justify-between transition shadow-2xs cursor-pointer">
                 <span class="flex items-center space-x-1">
                   <span>🎁 卡牌抽屜</span>
-                  <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full ${heldCards.length > 0 ? 'bg-purple-400 text-purple-950 font-black' : 'bg-purple-900 text-purple-300'}">
+                  <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full ${heldCards.length > 0 ? 'bg-purple-600 text-white font-black' : 'bg-purple-200 text-purple-800'}">
                     ${heldCards.length} 張
                   </span>
                 </span>
-                <span class="text-[10px]">${isDrawerOpen ? '▲ 收合' : '▼ 展開'}</span>
+                <span class="text-[10px] font-mono">${isDrawerOpen ? '▲ 收合' : '▼ 展開'}</span>
               </button>
 
               ${isDrawerOpen ? `
-                <div class="mt-1.5 p-2 bg-purple-950/90 rounded-xl border border-purple-400/50 space-y-1.5 max-h-36 overflow-y-auto">
+                <div class="mt-1.5 p-2 bg-purple-50 rounded-xl border border-purple-200 space-y-1.5 max-h-36 overflow-y-auto">
                   ${heldCards.length === 0 ? `
-                    <div class="text-center py-2 text-[11px] text-purple-300/70">
+                    <div class="text-center py-2 text-[11px] text-purple-700 font-medium">
                       <span>暫無存放卡牌</span>
                     </div>
                   ` : heldCards.map(c => `
-                    <div class="flex items-center justify-between p-1.5 bg-purple-900/80 rounded-lg border border-purple-400/40 text-xs">
+                    <div class="flex items-center justify-between p-1.5 bg-white rounded-lg border border-purple-200 text-xs shadow-2xs">
                       <div class="flex items-center space-x-1.5 truncate">
                         <span>${c.icon || '🎁'}</span>
-                        <span class="font-black text-purple-100 truncate">${c.title}</span>
+                        <span class="font-black text-purple-950 truncate">${c.title}</span>
                       </div>
-                      <button type="button" onclick="useCardInPointsProjection(${st.id}, '${c.id}')" class="px-2 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-[10px] shadow-xs flex items-center space-x-0.5 shrink-0 transform active:scale-95 transition">
+                      <button type="button" onclick="useCardInPointsProjection(${st.id}, '${c.id}')" class="px-2 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-[10px] shadow-xs flex items-center space-x-0.5 shrink-0 transform active:scale-95 transition cursor-pointer">
                         <span>✨使用</span>
                       </button>
                     </div>
@@ -6074,14 +6292,14 @@ function renderPointsProjection() {
           </div>
 
           <!-- 底部快速嘉獎互動列 (+1🍎 / +2🍎 / +5🍎) -->
-          <div class="grid grid-cols-3 gap-1 pt-1.5 border-t border-amber-500/40">
-            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 1)" class="py-1 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="為 ${st.name} +1 顆紅蘋果">
+          <div class="grid grid-cols-3 gap-1 pt-1.5 border-t border-amber-300">
+            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 1)" class="py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-xs transition active:scale-95 cursor-pointer" title="為 ${st.name} +1 顆紅蘋果">
               +1🍎
             </button>
-            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 2)" class="py-1 rounded-lg bg-teal-600/90 hover:bg-teal-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="為 ${st.name} +2 顆紅蘋果">
+            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 2)" class="py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-black text-xs shadow-xs transition active:scale-95 cursor-pointer" title="為 ${st.name} +2 顆紅蘋果">
               +2🍎
             </button>
-            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 5)" class="py-1 rounded-lg bg-purple-600/90 hover:bg-purple-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="為 ${st.name} +5 顆紅蘋果">
+            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 5)" class="py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-black text-xs shadow-xs transition active:scale-95 cursor-pointer" title="為 ${st.name} +5 顆紅蘋果">
               +5🍎
             </button>
           </div>
@@ -9110,6 +9328,14 @@ if (typeof window !== 'undefined') {
   window.toggleZooProjectionFullscreen = toggleZooProjectionFullscreen;
   window.feedStudentInZooProjection = feedStudentInZooProjection;
   window.renderZooProjection = renderZooProjection;
+
+  // 皇室點名簿抽屜展開控制
+  window.toggleAttendanceDrawer = toggleAttendanceDrawer;
+  window.toggleAllAttendanceDrawers = toggleAllAttendanceDrawers;
+
+  // 大臣名冊萌寵切換與抽屜控制
+  window.changeRosterActivePet = changeRosterActivePet;
+  window.toggleRosterPetDrawer = toggleRosterPetDrawer;
 }
 
 // 全域鍵盤與投影事件監聽 (支援 Esc 鍵一鍵關閉並退出全螢幕)

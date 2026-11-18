@@ -721,7 +721,7 @@ body {
 /* 當頁面放大或縮小時，版面結構嚴格固定，僅文字依比例縮放，絕不破版折疊 */
 /* =================================================================== */
 
-/* 下課紅綠燈大屏模式、紅蘋果集點榜 (5*5+2)：固定 5 欄嚴格不隨視窗縮放改變 */
+/* 下課紅綠燈大屏模式、紅蘋果集點榜、皇室點名簿 (5*5+2)：固定 5 欄嚴格不隨視窗縮放改變 */
 .traffic-grid-5x5,
 #trafficCardsGrid.traffic-grid-5x5,
 .points-grid-5x5,
@@ -730,7 +730,10 @@ body {
 .points-proj-grid-5x5,
 #pointsProjectionGrid.points-proj-grid-5x5,
 .zoo-proj-grid-5x5,
-#zooProjectionGrid.zoo-proj-grid-5x5 {
+#zooProjectionGrid.zoo-proj-grid-5x5,
+.attendance-grid-5x5,
+#attendanceGrid.attendance-grid-5x5,
+#attendanceGrid {
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   gap: 0.625rem !important;
@@ -814,13 +817,48 @@ header .nav-btn-wordbreak > span {
   bottom: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  z-index: 9999 !important;
+  z-index: 99999 !important;
+  background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 25%, #fef08a 65%, #facc15 100%) !important;
 }
 #seatingProjectionModal.hidden {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 #seatingProjectionModal:not(.hidden) {
   display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* =================================================================== */
+/* 🍎 紅蘋果集點榜大屏全螢幕投影 (鮮豔陽光金色・朝氣蓬勃風格) */
+/* =================================================================== */
+#pointsProjectionModal {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  background: radial-gradient(circle at 50% 15%, #fef3c7 0%, #fde68a 35%, #fbbf24 75%, #f59e0b 100%) !important;
+}
+#pointsProjectionModal.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+#pointsProjectionModal:not(.hidden) {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .seating-proj-desk {
