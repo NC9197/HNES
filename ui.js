@@ -1221,10 +1221,6 @@ function renderAttendanceView() {
   renderAttendanceHistoryTable();
 }
 
-  initLucideIcons();
-  renderAttendanceHistoryTable();
-}
-
 // --- TAB 1: 皇室點名簿【歷日出席歷史紀錄總表】 ---
 function renderAttendanceHistoryTable() {
   const container = document.getElementById("attendanceHistoryTableContainer");
@@ -5280,9 +5276,6 @@ function renderRosterView() {
       </tr>
     `;
   }).join('');
-
-  initLucideIcons();
-}
 
   initLucideIcons();
 }
