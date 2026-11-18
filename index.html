@@ -498,65 +498,39 @@
       </div>
 
       <!-- =============================================================== -->
-      <!-- ⏰ 第二排：當下時間與距離上課倒數大看板 (Real-Time Clock & Class Countdown) -->
+      <!-- ⏰ 第二排：當下時間與距離上課倒數看板 (單行化排版：由左而右為日期、現在時間、剩餘時間，右方快捷功能排版均不變) -->
       <!-- =============================================================== -->
-      <div id="trafficClockBanner" class="traffic-clock-card rounded-2xl p-3 sm:p-4 text-amber-100 shadow-lg border-2 border-amber-500">
-        <div class="flex flex-row items-center justify-between gap-3 overflow-x-auto whitespace-nowrap">
+      <div id="trafficClockBanner" class="traffic-clock-card rounded-xl p-2 sm:px-4 text-amber-100 shadow-md border-2 border-amber-500">
+        <div class="flex flex-nowrap items-center justify-between gap-3 overflow-x-auto whitespace-nowrap">
           
-          <!-- 左側：當前即時時鐘 -->
-          <div class="flex items-center space-x-3 sm:space-x-4 flex-shrink-0">
-            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-3xl shadow-inner flex-shrink-0">
-              ⏰
+          <!-- 左側區塊：單行排列（由左而右：日期 -> 現在時間 -> 剩餘時間） -->
+          <div class="flex items-center space-x-2 sm:space-x-3 flex-shrink-0 text-xs font-bold">
+            <!-- 1. 日期 -->
+            <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-200 font-mono shadow-xs">
+              <span>📅</span>
+              <span id="trafficClockDate"></span>
             </div>
-            <div>
-              <div class="flex items-center space-x-2">
-                <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full font-bold">
-                  現在時間
-                </span>
-                <span id="trafficClockDate" class="text-xs text-amber-200/80 font-mono font-bold"></span>
-              </div>
-              <div class="flex items-baseline space-x-1 mt-0.5">
-                <span id="trafficCurrentClock" class="font-digital text-3xl sm:text-4xl font-black text-amber-300 tracking-wider">
-                  --:--:--
-                </span>
-              </div>
+
+            <!-- 2. 現在時間 -->
+            <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/60 border border-amber-400/50 shadow-inner">
+              <span>⏰</span>
+              <span class="text-[11px] text-amber-300/80">現在時間:</span>
+              <span id="trafficCurrentClock" class="font-digital text-xl sm:text-2xl font-black text-amber-300 tracking-wider">--:--:--</span>
+            </div>
+
+            <!-- 3. 剩餘時間 -->
+            <div class="flex items-center space-x-2 px-3 py-1 rounded-lg bg-amber-950/80 border border-amber-500/40 shadow-inner">
+              <span id="trafficStatusIcon" class="text-sm">🏃</span>
+              <span id="trafficPeriodBadge" class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-400 text-emerald-950 shadow-xs">下課休息時間</span>
+              <span id="trafficScheduleTarget" class="text-[11px] text-amber-300/90 font-bold hidden lg:inline">目標：第三節上課 (10:30)</span>
+              <span id="trafficCountdownTitle" class="text-[11px] text-amber-200 font-black">剩餘:</span>
+              <span id="trafficCountdownDigits" class="font-digital text-xl sm:text-2xl font-black text-amber-300 tracking-wider">--:--</span>
+              <span id="trafficCountdownSub" class="hidden">倒數計時</span>
             </div>
           </div>
 
-          <!-- 中央核心：作息狀態與距離上課/下課倒數看板 -->
-          <div class="flex-1 bg-amber-950/70 rounded-xl p-2.5 sm:p-3 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-inner">
-            <div class="flex items-center space-x-3">
-              <div id="trafficStatusIcon" class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs">
-                🏃
-              </div>
-              <div>
-                <div class="flex flex-wrap items-center gap-1.5">
-                  <span id="trafficPeriodBadge" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-400 text-emerald-950 shadow-xs">
-                    下課休息時間
-                  </span>
-                  <span id="trafficScheduleTarget" class="text-xs text-amber-300/90 font-bold">
-                    目標：第三節上課 (10:30)
-                  </span>
-                </div>
-                <div class="text-xs sm:text-sm text-amber-100 font-black mt-0.5 flex items-center space-x-1">
-                  <span id="trafficCountdownTitle">距離下一節上課還剩：</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 大字倒數數字 -->
-            <div class="flex items-center sm:justify-end">
-              <div class="bg-black/60 px-4 py-1.5 rounded-xl border border-amber-500/40 text-center shadow-inner min-w-[130px]">
-                <span id="trafficCountdownDigits" class="font-digital text-3xl sm:text-4xl font-black text-amber-300 tracking-wider">
-                  --:--
-                </span>
-                <span id="trafficCountdownSub" class="text-[10px] text-amber-300/70 block -mt-1 font-bold">倒數計時</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 右側：快捷倒數與鐘聲功能鍵 -->
-          <div class="flex flex-wrap lg:flex-col items-center justify-between lg:justify-end gap-1.5 flex-shrink-0">
+          <!-- 右側：快捷倒數與鐘聲功能鍵 (排版均不變) -->
+          <div class="flex items-center space-x-1.5 flex-shrink-0">
             <div class="flex items-center space-x-1 bg-black/40 p-1 rounded-xl border border-amber-500/30">
               <button type="button" onclick="setManualTrafficCountdown(10, '10分鐘下課')" class="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition" title="快捷倒數 10 分鐘下課">
                 ⏱️ 10分
@@ -1310,8 +1284,8 @@
             </div>
           </div>
 
-          <!-- 27 位大臣榮譽蘋果網格 -->
-          <div id="pointsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+          <!-- 27 位大臣榮譽蘋果網格 (固定 5*5+2 版面排版) -->
+          <div id="pointsGrid" class="points-grid-5x5 gap-3.5">
             <!-- 動態渲染 -->
           </div>
         </div>
@@ -2448,71 +2422,94 @@
 
   <!-- =============================================================== -->
   <!-- MODAL: 教室座位表 ‧ 大屏全螢幕投影看板 (Seating Projection Broadcaster) -->
-  <!-- 僅顯示中間座位表與講台方向，徹底不顯示兩側座號庫 -->
+  <!-- 藍天白雲朝氣明亮背景・左右可愛小插圖・長方形無須滾輪一屏全覽 -->
   <!-- =============================================================== -->
-  <div id="seatingProjectionModal" class="hidden fixed inset-0 z-[75] projection-overlay flex flex-col p-4 sm:p-6 text-white overflow-y-auto">
+  <div id="seatingProjectionModal" class="hidden fixed inset-0 z-[75] bg-gradient-to-b from-sky-400 via-sky-200 to-amber-50 flex flex-col p-3 sm:p-4 text-slate-800 overflow-y-auto relative">
     
-    <!-- 頂部導航列：大時鐘、全螢幕與關閉鍵 -->
-    <div class="flex items-center justify-between pb-3 border-b border-amber-500/40 flex-shrink-0 max-w-6xl w-full mx-auto">
+    <!-- 頂部導航列：大時鐘、全螢幕與關閉鍵 (明亮白雲朝氣風格) -->
+    <div class="flex items-center justify-between pb-2.5 px-4 py-2 bg-white/85 backdrop-blur-md rounded-2xl border-2 border-sky-300 shadow-md flex-shrink-0 max-w-6xl w-full mx-auto">
       <div class="flex items-center space-x-3">
         <span class="text-3xl animate-bounce">💺</span>
         <div>
           <div class="flex items-center space-x-2">
-            <span class="bg-amber-400 text-amber-950 text-xs px-2.5 py-0.5 rounded-full font-black shadow">
+            <span class="bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950 text-xs px-2.5 py-0.5 rounded-full font-black shadow-xs">
               西寧小小兵王國 ‧ 教室座位表大屏投影
             </span>
-            <span id="seatingProjectionLayoutBadge" class="text-xs text-amber-300/80 font-bold hidden sm:inline">5排 x 6列 (全班27席)</span>
+            <span id="seatingProjectionLayoutBadge" class="text-xs text-sky-900 font-black hidden sm:inline">5排 x 6列 (全班27席)</span>
           </div>
-          <h2 class="text-lg sm:text-xl font-black text-amber-200 mt-0.5">
-            五年二班 內閣座席格局全螢幕投影
+          <h2 class="text-lg sm:text-xl font-black text-sky-950 mt-0.5">
+            五年二班 內閣座席格局全螢幕投影 ☀️
           </h2>
         </div>
       </div>
 
       <div class="flex items-center space-x-2 sm:space-x-3">
         <!-- 投影數位大時鐘 -->
-        <div class="bg-black/60 px-4 py-1.5 rounded-xl border border-amber-400/50 text-center shadow-inner hidden sm:block">
-          <span class="text-[10px] text-amber-300/80 font-bold block">目前時間</span>
-          <span id="seatingProjectionLiveClock" class="font-digital text-xl sm:text-2xl font-black text-amber-300 tracking-wider">--:--:--</span>
+        <div class="bg-sky-50 px-3.5 py-1.5 rounded-xl border border-sky-300 text-center shadow-inner hidden sm:block">
+          <span class="text-[10px] text-sky-800 font-bold block">目前時間</span>
+          <span id="seatingProjectionLiveClock" class="font-digital text-xl sm:text-2xl font-black text-sky-950 tracking-wider">--:--:--</span>
         </div>
-        <button type="button" onclick="toggleSeatingProjectionFullscreen()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-amber-200 border border-amber-400/50 font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="切換座位投影全螢幕">
+        <button type="button" onclick="toggleSeatingProjectionFullscreen()" class="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="切換座位投影全螢幕">
           <span>⛶ 全螢幕</span>
         </button>
-        <button type="button" onclick="closeSeatingProjectionModal()" class="w-10 h-10 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-black text-lg flex items-center justify-center shadow transition hover:scale-105 active:scale-95 cursor-pointer relative z-30 pointer-events-auto" title="結束投影 (Esc)">
+        <button type="button" onclick="closeSeatingProjectionModal()" class="w-10 h-10 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white font-black text-lg flex items-center justify-center shadow transition hover:scale-105 active:scale-95 cursor-pointer relative z-30 pointer-events-auto" title="結束投影 (Esc)">
           ✕
         </button>
       </div>
     </div>
 
-    <!-- 中央核心區：僅顯示講台黑板、中間座位網格、走廊與後門 -->
-    <div class="flex-1 flex flex-col items-center justify-start my-4 max-w-6xl w-full mx-auto space-y-3">
+    <!-- 中央核心區：左右可愛小插圖 + 講台黑板 + 座位網格 (扁長方形一屏盡收眼底) -->
+    <div class="flex-1 flex items-start justify-center max-w-7xl w-full mx-auto my-2 gap-4">
       
-      <!-- 黑板與講台指示區 (面向學生席位) -->
-      <div class="w-full bg-emerald-900/90 text-emerald-100 border-2 border-emerald-500/80 rounded-2xl py-2.5 px-4 shadow-lg text-center font-black tracking-widest relative">
-        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-xs bg-emerald-800/90 px-2 py-0.5 rounded text-emerald-200 hidden sm:block">
-          🚪 教室前門
+      <!-- 左右兩側新增可愛小插圖：左翼插圖欄 (朝氣陽光風) -->
+      <div class="hidden xl:flex flex-col items-center justify-around w-16 py-4 space-y-6 pointer-events-none select-none flex-shrink-0">
+        <span class="text-4xl animate-sun-spin" title="小太陽">☀️</span>
+        <span class="text-3xl animate-cute-float" title="彩虹">🌈</span>
+        <span class="text-3xl animate-cute-float-slow" title="白雲">☁️</span>
+        <span class="text-3xl animate-cute-float" title="熱氣球">🎈</span>
+        <span class="text-3xl animate-cute-float-slow" title="可愛柴犬">🐶</span>
+        <span class="text-3xl animate-cute-float" title="向日葵">🌻</span>
+      </div>
+
+      <!-- 中央主投影區 -->
+      <div class="flex-1 flex flex-col items-center justify-start max-w-5xl w-full space-y-2">
+        <!-- 黑板與講台指示區 (面向學生席位) -->
+        <div class="w-full bg-emerald-800 text-emerald-100 border-2 border-emerald-600 rounded-2xl py-2 px-4 shadow-md text-center font-black tracking-widest relative">
+          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-xs bg-emerald-700/90 px-2 py-0.5 rounded text-emerald-100 hidden sm:block">
+            🚪 教室前門
+          </div>
+          <div class="text-sm sm:text-base flex items-center justify-center space-x-2 text-emerald-100">
+            <span>⬛ 講台 / 黑板區（面向學生席位視角） ⬛</span>
+          </div>
+          <div class="absolute right-4 top-1/2 -translate-y-1/2 text-xs bg-emerald-700/90 px-2 py-0.5 rounded text-emerald-100 hidden sm:block">
+            窗戶採光 🪟
+          </div>
         </div>
-        <div class="text-sm sm:text-base flex items-center justify-center space-x-2 text-emerald-200">
-          <span>⬛ 講台 / 黑板區（面向學生席位視角） ⬛</span>
+
+        <!-- 座位投影每排標頭 (最右邊第一排，向左依序為第二、三、四排，最左兩排皆為第五排) -->
+        <div id="seatingProjectionColHeadersBar" class="grid gap-2.5 w-full px-4 py-1 text-center font-black text-xs sm:text-sm text-sky-950 bg-white/80 rounded-xl border border-sky-300 shadow-xs"></div>
+
+        <!-- 座位網格容器 (大屏長方形卡片，一屏全覽無需上下滾輪) -->
+        <div id="seatingProjectionGrid" class="grid gap-2.5 w-full p-3 bg-white/75 backdrop-blur-md rounded-2xl border-2 border-sky-300/80 shadow-lg">
+          <!-- 由 ui.js renderSeatingProjectionGrid() 動態填入 -->
         </div>
-        <div class="absolute right-4 top-1/2 -translate-y-1/2 text-xs bg-emerald-800/90 px-2 py-0.5 rounded text-emerald-200 hidden sm:block">
-          窗戶採光 🪟
+
+        <!-- 教室後門與走廊標示 -->
+        <div class="w-full bg-white/70 border border-sky-300 rounded-xl py-1.5 px-4 text-center text-xs text-sky-900 font-bold flex items-center justify-between">
+          <span>🚪 教室後門（資源回收區）</span>
+          <span>────── 教室中央走廊通道 ──────</span>
+          <span>置物櫃 🎒</span>
         </div>
       </div>
 
-      <!-- 座位投影每排標頭 (最右邊第一排，向左依序為第二、三、四排，最左兩排皆為第五排) -->
-      <div id="seatingProjectionColHeadersBar" class="grid gap-3 w-full px-4 py-1.5 text-center font-black text-xs sm:text-sm text-amber-300 bg-amber-950/80 rounded-xl border border-amber-500/40 shadow-xs"></div>
-
-      <!-- 座位網格容器 (大字號可愛席位卡) -->
-      <div id="seatingProjectionGrid" class="grid gap-3 w-full p-4 bg-slate-900/70 rounded-2xl border-2 border-amber-500/40 shadow-2xl">
-        <!-- 由 ui.js renderSeatingProjectionGrid() 動態填入 -->
-      </div>
-
-      <!-- 教室後門與走廊標示 -->
-      <div class="w-full bg-slate-900/60 border border-slate-700/80 rounded-xl py-2 px-4 text-center text-xs text-amber-200/80 font-bold flex items-center justify-between">
-        <span>🚪 教室後門（資源回收區）</span>
-        <span>────── 教室中央走廊通道 ──────</span>
-        <span>置物櫃 🎒</span>
+      <!-- 左右兩側新增可愛小插圖：右翼插圖欄 (朝氣陽光風) -->
+      <div class="hidden xl:flex flex-col items-center justify-around w-16 py-4 space-y-6 pointer-events-none select-none flex-shrink-0">
+        <span class="text-4xl animate-cute-float" title="夢想起飛">🚀</span>
+        <span class="text-3xl animate-cute-float-slow" title="歡樂紙飛機">✈️</span>
+        <span class="text-3xl animate-cute-float" title="棉花糖雲">☁️</span>
+        <span class="text-3xl animate-cute-float-slow" title="俏皮小貓">🐱</span>
+        <span class="text-3xl animate-cute-float" title="快樂書包">🎒</span>
+        <span class="text-3xl animate-cute-float-slow" title="幸運小花">🌸</span>
       </div>
 
     </div>
@@ -4235,8 +4232,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111805"></script>
-  <script src="ui.js?v=2026111805"></script>
+  <script src="app.js?v=2026111806"></script>
+  <script src="ui.js?v=2026111806"></script>
 
 </body>
 </html>

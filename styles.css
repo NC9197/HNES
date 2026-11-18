@@ -536,11 +536,11 @@ body {
 
 .seat-desk-card {
   background: linear-gradient(145deg, #ffffff 0%, #fffef8 55%, #fef3c7 100%);
-  border: 2.5px solid #fcd34d;
-  border-radius: 1.25rem;
-  aspect-ratio: 1 / 1;
+  border: 2px solid #fcd34d;
+  border-radius: 0.95rem;
   width: 100%;
-  padding: 0.5rem 0.45rem;
+  min-height: 72px;
+  padding: 0.35rem 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -548,15 +548,14 @@ body {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   cursor: grab;
-  box-shadow: 0 4px 10px rgba(180, 83, 9, 0.08);
+  box-shadow: 0 3px 8px rgba(180, 83, 9, 0.08);
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .seat-desk-card:hover {
-  transform: translateY(-3px) scale(1.02);
+  transform: translateY(-2px) scale(1.02);
   border-color: #f59e0b;
-  box-shadow: 0 10px 22px rgba(217, 119, 6, 0.22);
+  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.18);
 }
 
 .seat-desk-card:active {
@@ -581,10 +580,10 @@ body {
 .seat-desk-empty {
   background: rgba(254, 243, 199, 0.35);
   border: 2px dashed #f59e0b;
-  border-radius: 1.25rem;
-  aspect-ratio: 1 / 1;
+  border-radius: 0.95rem;
   width: 100%;
-  padding: 0.5rem;
+  min-height: 72px;
+  padding: 0.35rem 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -605,10 +604,10 @@ body {
 .seat-empty-card {
   background: rgba(254, 243, 199, 0.45);
   border: 2px dashed #d1d5db;
-  border-radius: 1.25rem;
-  aspect-ratio: 1 / 1;
+  border-radius: 0.95rem;
   width: 100%;
-  padding: 0.5rem;
+  min-height: 72px;
+  padding: 0.35rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -722,9 +721,12 @@ body {
 /* 當頁面放大或縮小時，版面結構嚴格固定，僅文字依比例縮放，絕不破版折疊 */
 /* =================================================================== */
 
-/* 下課紅綠燈大屏模式：固定 5 欄 (5*5+2) 嚴格不隨視窗縮放改變 */
+/* 下課紅綠燈大屏模式、紅蘋果集點榜 (5*5+2)：固定 5 欄嚴格不隨視窗縮放改變 */
 .traffic-grid-5x5,
 #trafficCardsGrid.traffic-grid-5x5,
+.points-grid-5x5,
+#pointsGrid.points-grid-5x5,
+#pointsGrid,
 .points-proj-grid-5x5,
 #pointsProjectionGrid.points-proj-grid-5x5,
 .zoo-proj-grid-5x5,
@@ -801,41 +803,63 @@ header .nav-btn-wordbreak > span {
 }
 
 /* =================================================================== */
-/* 教室座位表大屏全螢幕投影樣式 (僅顯示中間座位表與講台) */
+/* 教室座位表大屏全螢幕投影樣式 (藍天白雲朝氣風格・長方形高可視排版) */
 /* =================================================================== */
 .seating-proj-desk {
-  background: rgba(30, 41, 59, 0.9);
-  backdrop-filter: blur(12px);
+  background: linear-gradient(145deg, #ffffff 0%, #fffef0 45%, #fef3c7 100%);
   border: 2px solid #f59e0b;
-  border-radius: 1.25rem;
-  aspect-ratio: 1 / 1;
+  border-radius: 1rem;
   width: 100%;
-  padding: 0.65rem 0.5rem;
+  min-height: 74px;
+  padding: 0.4rem 0.6rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 4px 12px rgba(180, 83, 9, 0.12), 0 0 8px rgba(245, 158, 11, 0.15);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-sizing: border-box;
-  overflow: hidden;
 }
 .seating-proj-desk:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.7), 0 0 25px rgba(245, 158, 11, 0.35);
+  transform: translateY(-2px) scale(1.02);
+  border-color: #d97706;
+  box-shadow: 0 8px 20px rgba(180, 83, 9, 0.22), 0 0 15px rgba(245, 158, 11, 0.35);
 }
 .seating-proj-desk-empty {
-  background: rgba(15, 23, 42, 0.55);
-  border: 2px dashed rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.65);
+  border: 2px dashed #94a3b8;
   color: #64748b;
-  border-radius: 1.25rem;
-  aspect-ratio: 1 / 1;
+  border-radius: 1rem;
   width: 100%;
-  padding: 0.5rem;
+  min-height: 74px;
+  padding: 0.4rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+}
+
+/* 可愛浮動插圖動畫 */
+@keyframes cute-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(3deg); }
+}
+@keyframes cute-float-reverse {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(7px) rotate(-3deg); }
+}
+@keyframes sun-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-cute-float {
+  animation: cute-float 3.5s ease-in-out infinite;
+}
+.animate-cute-float-slow {
+  animation: cute-float-reverse 4.5s ease-in-out infinite;
+}
+.animate-sun-spin {
+  animation: sun-spin 25s linear infinite;
 }
 
 /* 列印專用格式優化 */
@@ -864,7 +888,7 @@ header .nav-btn-wordbreak > span {
     box-shadow: none !important;
     page-break-inside: avoid;
     background: #fff !important;
-    aspect-ratio: 1 / 1 !important;
+    min-height: 70px !important;
   }
   body.print-mode-seating #seatingStudentDockContainer {
     display: none !important;

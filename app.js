@@ -933,8 +933,10 @@ class KingdomStore {
   }
 
   // --- 萌寵認養上限計算 (0~499顆 1隻，滿500顆 2隻，滿1000顆 3隻，以此類推) ---
-  getMaxAllowedPets(lifetimePoints) {
-    const pts = Math.max(0, parseInt(lifetimePoints, 10) || 0);
+  getMaxAllowedPets(lifetimePoints, currentPoints) {
+    const p1 = Math.max(0, parseInt(lifetimePoints, 10) || 0);
+    const p2 = currentPoints !== undefined ? Math.max(0, parseInt(currentPoints, 10) || 0) : p1;
+    const pts = Math.min(p1, p2);
     return 1 + Math.floor(pts / 500);
   }
 
@@ -942,17 +944,16 @@ class KingdomStore {
   syncStudentPets(student) {
     if (!student) return [];
     const pts = Math.max(0, parseInt(student.points, 10) || 0);
-    const cardsSpent = Array.isArray(student.redeemedCards)
-      ? student.redeemedCards.reduce((sum, c) => sum + (parseInt(c.cost, 10) || 0), 0)
-      : 0;
 
+    // 嚴格校準：生涯累積若未初始化、或高於目前持有蘋果，強制校準為目前蘋果數 (確保誤植修改時嚴格同步截斷)
     let lifetime = parseInt(student.lifetimePoints, 10);
-    // 生涯累積若未初始化、或因導師修改誤植蘋果而高於 (當前蘋果 + 已換卡消費)，自動校準回正確累積值！
-    if (isNaN(lifetime) || lifetime <= 0 || lifetime > (pts + cardsSpent)) {
-      lifetime = pts + cardsSpent;
-      student.lifetimePoints = lifetime;
+    if (isNaN(lifetime) || lifetime <= 0 || lifetime > pts) {
+      lifetime = pts;
+      student.lifetimePoints = pts;
     }
-    const maxAllowed = 1 + Math.floor(lifetime / 500);
+    const effectivePts = Math.min(pts, lifetime);
+    student.lifetimePoints = effectivePts;
+    const maxAllowed = 1 + Math.floor(effectivePts / 500);
 
     // 初始化 pets 陣列 (至少有一隻預設萌寵)
     if (!Array.isArray(student.pets)) {
@@ -978,9 +979,9 @@ class KingdomStore {
     // 同步向下相容欄位
     student.animalType = student.pets[0]?.type || 'dog';
     student.petType = student.animalType;
-    student.petExp = lifetime;
+    student.petExp = effectivePts;
     student.secondPetType = student.pets[1]?.type || null;
-    student.secondPetExp = student.secondPetType ? Math.max(0, lifetime - 500) : 0;
+    student.secondPetExp = student.secondPetType ? Math.max(0, effectivePts - 500) : 0;
 
     return student.pets;
   }
@@ -1032,20 +1033,18 @@ class KingdomStore {
     const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
     if (!student) return false;
     this.syncStudentPets(student);
-    let lifetime = parseInt(student.lifetimePoints, 10);
-    if (isNaN(lifetime) || lifetime <= 0) {
-      lifetime = Math.max(0, parseInt(student.points, 10) || 0);
-      student.lifetimePoints = lifetime;
-    }
-    const maxAllowed = 1 + Math.floor(lifetime / 500);
+    const pts = Math.max(0, parseInt(student.points, 10) || 0);
+    const effectivePts = Math.min(pts, Math.max(0, parseInt(student.lifetimePoints, 10) || pts));
+    student.lifetimePoints = effectivePts;
+    const maxAllowed = 1 + Math.floor(effectivePts / 500);
     const slot = parseInt(slotIndex, 10) || 0;
     const reqPts = slot * 500;
 
-    if (slot >= maxAllowed || lifetime < reqPts) {
+    if (slot >= maxAllowed || effectivePts < reqPts) {
       if (typeof alert === 'function') {
-        alert(`累積總蘋果需滿 ${reqPts} 顆才可認養第 ${slot + 1} 隻萌寵！目前累積為 ${lifetime} 顆。`);
+        alert(`累積總蘋果需滿 ${reqPts} 顆才可認養第 ${slot + 1} 隻萌寵！目前累積為 ${effectivePts} 顆。`);
       } else {
-        console.warn(`累積總蘋果需滿 ${reqPts} 顆才可認養第 ${slot + 1} 隻萌寵！目前累積為 ${lifetime} 顆。`);
+        console.warn(`累積總蘋果需滿 ${reqPts} 顆才可認養第 ${slot + 1} 隻萌寵！目前累積為 ${effectivePts} 顆。`);
       }
       return false;
     }

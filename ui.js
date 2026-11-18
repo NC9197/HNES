@@ -3899,6 +3899,7 @@ function renderPointsView() {
   if (grid) {
     grid.innerHTML = students.map(st => {
       const aType = st.animalType || st.petType || 'dog';
+      window.KingdomApp.store.syncStudentPets(st);
       const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0);
       const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
       const isSelected = selectedStudentIdsForPoints.has(st.id);
@@ -3907,10 +3908,19 @@ function renderPointsView() {
       const heldCards = st.redeemedCards || [];
       const isDrawerOpen = window.openCardDrawerStudentIds && window.openCardDrawerStudentIds.has(st.id);
 
+      // 幹部職位後方寵物圖示以目前實際認養的寵物圖示顯現
+      const pets = st.pets || [{ type: aType }];
+      const petIconsHtml = pets.map(p => {
+        const ps = window.KingdomApp.getAnimalStatus ? window.KingdomApp.getAnimalStatus(p.type, 0) : null;
+        const icon = ps ? ps.animalIcon : '🐾';
+        const name = ps ? ps.animalName : '萌寵';
+        return `<span class="text-sm cursor-help hover:scale-110 transition inline-block" title="${name}">${icon}</span>`;
+      }).join(' ');
+
       return `
         <div id="pointStudentCard-${st.id}" class="parchment-card p-3 sm:p-3.5 minister-card flex flex-col justify-between rounded-2xl border-2 transition-all hover:shadow-md ${isSelected ? 'student-multi-selected border-amber-500 bg-amber-50/90' : 'border-amber-200/90 bg-white/95'}">
           <div>
-            <!-- 頂部身分列：勾選 + 座號 + 姓名 + 稱號與動物圖示 (簡單清楚一行掌握) -->
+            <!-- 頂部身分列：勾選 + 座號 + 姓名 + 幹部職位與目前認養萌寵圖示 -->
             <div class="flex items-center justify-between pb-2 border-b border-amber-200/80">
               <div class="flex items-center space-x-1.5 min-w-0">
                 <input type="checkbox" id="pointStudentCheck-${st.id}" ${isSelected ? 'checked' : ''} onchange="toggleStudentPointSelection(${st.id})" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer flex-shrink-0" title="勾選進行多位大臣批次加點">
@@ -3923,7 +3933,9 @@ function renderPointsView() {
                 <span class="text-[10px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded truncate max-w-[80px]" title="${st.title}">
                   ${st.title}
                 </span>
-                <span class="text-sm cursor-help" title="${petStatus.animalName} (${petStatus.stageTitle})">${petStatus.animalIcon}</span>
+                <div class="flex items-center space-x-0.5">
+                  ${petIconsHtml}
+                </div>
               </div>
             </div>
 
@@ -4992,23 +5004,27 @@ function renderRosterView() {
     const passCode = seatPad + bdayPad;
     const aType = (st.animalType || st.petType || 'lion').toLowerCase();
     window.KingdomApp.store.syncStudentPets(st);
+    const currentPts = Math.max(0, parseInt(st.points, 10) || 0);
     let lifetime = parseInt(st.lifetimePoints, 10);
-    if (isNaN(lifetime) || lifetime <= 0) {
-      lifetime = Math.max(0, parseInt(st.points, 10) || 0);
-      st.lifetimePoints = lifetime;
+    if (isNaN(lifetime) || lifetime <= 0 || lifetime > currentPts) {
+      lifetime = currentPts;
+      st.lifetimePoints = currentPts;
     }
-    const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
+    const effectivePts = Math.min(currentPts, lifetime);
+    st.lifetimePoints = effectivePts;
+    const petStatus = window.KingdomApp.getAnimalStatus(aType, effectivePts);
     const svgCode = window.KingdomApp.renderAnimalSVG(aType, petStatus.stageIndex);
 
-    const maxAllowed = 1 + Math.floor(lifetime / 500);
+    const maxAllowed = 1 + Math.floor(effectivePts / 500);
     const validPets = (st.pets || [{ type: aType }]).slice(0, maxAllowed);
+    st.pets = validPets;
 
     let secondPetRosterHtml = '';
     if (validPets.length > 1) {
       secondPetRosterHtml = validPets.slice(1).map((p, idx) => {
         const slotIdx = idx + 1;
         const sType = p.type.toLowerCase();
-        const sExp = Math.max(0, lifetime - slotIdx * 500);
+        const sExp = Math.max(0, effectivePts - slotIdx * 500);
         const sStatus = window.KingdomApp.getAnimalStatus(sType, sExp);
         const sSvg = window.KingdomApp.renderAnimalSVG(sType, sStatus.stageIndex);
         return `
@@ -5026,7 +5042,7 @@ function renderRosterView() {
     }
     const nextSlot = validPets.length;
     const reqPtsForNext = nextSlot * 500;
-    if (validPets.length < maxAllowed && lifetime >= reqPtsForNext) {
+    if (validPets.length < maxAllowed && effectivePts >= reqPtsForNext) {
       secondPetRosterHtml += `
         <div class="mt-1 pt-1 border-t border-amber-200/60">
           <button type="button" onclick="openChangeAnimalModal(${st.id}, ${nextSlot})" class="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-1.5 py-0.5 rounded border border-amber-400">
@@ -5577,35 +5593,37 @@ function renderSeatingProjectionGrid() {
 
       html += `
         <div class="seating-proj-desk">
-          <div class="flex items-center justify-end w-full">
+          <div class="flex items-center justify-between w-full text-xs">
+            <span class="inline-flex items-center justify-center px-2 py-0.2 rounded-full text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950 shadow-xs font-mono whitespace-nowrap">
+              <span>${String(student.seatNo).padStart(2, '0')} 號</span>
+            </span>
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
             </div>
           </div>
-          <div class="my-auto text-center flex flex-col items-center justify-center">
-            <span class="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950 shadow-md whitespace-nowrap">
-              <span>${String(student.seatNo).padStart(2, '0')} 號</span>
-            </span>
-            <div class="font-cute font-black text-amber-100 text-xl sm:text-2xl mt-1 tracking-wider drop-shadow-md truncate max-w-[130px]">
+          <div class="my-0.5 text-center flex items-center justify-center">
+            <span class="font-cute font-black text-slate-900 text-lg sm:text-xl tracking-wider truncate max-w-[125px] filter drop-shadow-xs">
               ${student.name}
-            </div>
+            </span>
           </div>
-          <div class="flex items-center justify-between w-full pt-1 border-t border-slate-700/80 text-[10px]">
+          <div class="flex items-center justify-between w-full pt-0.5 border-t border-amber-300/60 text-[10px]">
             <div class="flex items-center space-x-1">
               ${refChip}
               ${srvChip}
-              ${!refChip && !srvChip ? `<span class="text-amber-300/70 font-bold">👑 內閣大臣</span>` : ''}
+              ${!refChip && !srvChip ? `<span class="text-amber-800 font-bold">👑 內閣大臣</span>` : ''}
             </div>
-            <span class="text-slate-400 font-mono">${student.points || 0} 🍎</span>
+            <span class="text-amber-900 font-mono font-bold">${student.points || 0} 🍎</span>
           </div>
         </div>
       `;
     } else {
       html += `
         <div class="seating-proj-desk-empty">
-          <span class="text-2xl opacity-60">🪑</span>
-          <span class="text-sm font-bold text-slate-400 mt-1">空席</span>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-lg opacity-70">🪑</span>
+            <span class="text-xs font-bold text-slate-500">空席</span>
+          </div>
         </div>
       `;
     }
@@ -5964,6 +5982,13 @@ function renderPointsProjection() {
       const isDrawerOpen = openCardDrawerInProjectionIds.has(st.id);
 
       const pets = st.pets || [{ type: aType }];
+      const petIconsHtml = pets.map(p => {
+        const ps = window.KingdomApp.getAnimalStatus ? window.KingdomApp.getAnimalStatus(p.type, 0) : null;
+        const icon = ps ? ps.animalIcon : '🐾';
+        const name = ps ? ps.animalName : '萌寵';
+        return `<span class="text-sm cursor-help hover:scale-110 transition inline-block" title="${name}">${icon}</span>`;
+      }).join(' ');
+
       let petLabel = `${petStatus.animalIcon} ${petStatus.animalName}`;
       if (pets.length > 1) {
         petLabel += ` (👑x${pets.length})`;
@@ -5972,7 +5997,7 @@ function renderPointsProjection() {
       return `
         <div class="rounded-2xl p-3 border-2 transition-all flex flex-col justify-between shadow-lg backdrop-blur-md ${isSelected ? 'bg-amber-900/90 border-amber-400 ring-2 ring-amber-300' : 'bg-slate-900/85 border-amber-500/50 hover:border-amber-400'}">
           <div>
-            <!-- 頂部身分列：勾選、座號、姓名、官職 -->
+            <!-- 頂部身分列：勾選、座號、姓名、官職與認養寵物圖示 -->
             <div class="flex items-center justify-between pb-1.5 border-b border-amber-500/40">
               <div class="flex items-center space-x-1.5 min-w-0">
                 <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleProjectionStudentSelection(${st.id})" class="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 cursor-pointer">
@@ -5981,9 +6006,14 @@ function renderPointsProjection() {
                 </span>
                 <span class="text-base sm:text-lg font-black text-white truncate tracking-wide">${st.name}</span>
               </div>
-              <span class="text-[10px] font-bold text-amber-300 bg-amber-950/90 border border-amber-500/50 px-1.5 py-0.5 rounded truncate max-w-[70px]">
-                ${st.title}
-              </span>
+              <div class="flex items-center space-x-1 flex-shrink-0">
+                <span class="text-[10px] font-bold text-amber-300 bg-amber-950/90 border border-amber-500/50 px-1.5 py-0.5 rounded truncate max-w-[70px]">
+                  ${st.title}
+                </span>
+                <div class="flex items-center space-x-0.5">
+                  ${petIconsHtml}
+                </div>
+              </div>
             </div>
 
             <!-- 中央核心：大蘋果數量 + 萌寵標籤 -->
@@ -6126,67 +6156,60 @@ function renderZooProjection() {
       const pets = st.pets || [{ type: aType }];
       if (pets.length > 1) doublePetCount++;
 
-      let multiPetPills = '';
-      if (pets.length > 1) {
-        multiPetPills = pets.slice(1).map((p, idx) => {
-          const slotIdx = idx + 1;
-          const sType = p.type.toLowerCase();
-          const sExp = Math.max(0, lifetime - slotIdx * 500);
-          const sStatus = window.KingdomApp.getAnimalStatus(sType, sExp);
-          return `
-            <div class="mt-1 flex items-center justify-between w-full bg-purple-900/60 px-2 py-0.5 rounded-lg border border-purple-400/50 text-[10px]">
-              <span class="font-black text-purple-200 truncate">👑 第${slotIdx + 1}寵：${sStatus.animalIcon} ${sStatus.animalName}</span>
-              <span class="font-mono text-purple-300 font-bold">${sExp}點</span>
+      // 一屏全覽：並列渲染該學生認養的所有寵物 (1隻、2隻或3隻)，一眼看清！
+      const petsListHtml = pets.map((p, idx) => {
+        const pType = (p.type || 'dog').toLowerCase();
+        const pExp = idx === 0 ? lifetime : Math.max(0, lifetime - idx * 500);
+        const pStatus = window.KingdomApp.getAnimalStatus(pType, pExp);
+        const pSvg = window.KingdomApp.renderAnimalSVG(pType, pStatus.stageIndex);
+        return `
+          <div onclick="feedStudentInZooProjection(${st.id})" class="flex-1 flex flex-col items-center justify-center p-1 rounded-xl bg-black/40 border border-emerald-500/30 hover:border-emerald-300 hover:bg-black/60 transition cursor-pointer transform hover:scale-105 active:scale-95" title="點擊投餵【${pStatus.animalName}】(+1 飽食)">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center filter drop-shadow-sm">
+              ${pSvg}
             </div>
-          `;
-        }).join('');
-      }
+            <div class="text-[11px] font-black text-emerald-200 mt-0.5 truncate max-w-[85px] leading-tight flex items-center space-x-0.5">
+              <span>${pStatus.animalIcon}</span>
+              <span>${pStatus.animalName}</span>
+            </div>
+            <div class="text-[9px] font-mono text-emerald-300/80 font-bold mt-0.5">
+              ${pExp}點
+            </div>
+          </div>
+        `;
+      }).join('');
 
       return `
-        <div class="rounded-2xl p-3 border-2 transition-all flex flex-col justify-between shadow-lg backdrop-blur-md ${petStatus.isGolden ? 'bg-gradient-to-b from-amber-950/85 to-slate-900/90 border-amber-400 ring-2 ring-amber-300' : 'bg-slate-900/85 border-emerald-500/50 hover:border-emerald-400'}">
+        <div class="rounded-xl p-2 sm:p-2.5 border-2 transition-all flex flex-col justify-between shadow-md backdrop-blur-md ${petStatus.isGolden ? 'bg-gradient-to-b from-amber-950/85 to-slate-900/90 border-amber-400 ring-2 ring-amber-300' : 'bg-slate-900/85 border-emerald-500/50 hover:border-emerald-400'}">
           <div>
-            <!-- 座號姓名列 -->
-            <div class="flex items-center justify-between pb-1.5 border-b border-emerald-500/30">
-              <span class="text-xs font-mono font-black text-emerald-950 bg-emerald-300 px-1.5 py-0.5 rounded shadow-2xs">
-                ${seatPad}號
-              </span>
-              <span class="text-base sm:text-lg font-black text-white truncate tracking-wide">${st.name}</span>
-              ${pets.length > 1 ? `<span class="text-[10px] font-black text-amber-300 bg-amber-950/90 border border-amber-400/60 px-1.5 py-0.5 rounded">👑x${pets.length}</span>` : '<span class="text-[10px] text-emerald-400/70 font-mono">單寵</span>'}
-            </div>
-
-            <!-- 超大動態萌寵 SVG 圖繪 (點擊直接投餵長大) -->
-            <div onclick="feedStudentInZooProjection(${st.id})" class="w-20 h-20 mx-auto my-2 p-1 cursor-pointer transform hover:scale-110 active:scale-95 transition-transform duration-200 filter drop-shadow-md flex items-center justify-center" title="在大屏上點擊為 ${st.name} 的 ${petStatus.animalName} 投餵 1 顆蘋果！">
-              ${svgCode}
-            </div>
-
-            <!-- 萌寵名稱與階段徽章 -->
-            <div class="text-center space-y-1">
-              <div class="text-sm font-black text-emerald-200">
-                ${petStatus.animalIcon} ${petStatus.animalName}
+            <!-- 座號、姓名、認養隻數列 -->
+            <div class="flex items-center justify-between pb-1 border-b border-emerald-500/30">
+              <div class="flex items-center space-x-1 min-w-0">
+                <span class="text-xs font-mono font-black text-emerald-950 bg-emerald-300 px-1 py-0.2 rounded shadow-2xs">
+                  ${seatPad}號
+                </span>
+                <span class="text-sm sm:text-base font-black text-white truncate tracking-wide">${st.name}</span>
               </div>
-              <div class="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${petStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black shadow' : 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/50'}">
-                ${petStatus.stageTitle}
+              <div class="flex items-center space-x-1 shrink-0">
+                <span class="text-[9px] font-black ${pets.length > 1 ? 'bg-purple-900 text-purple-200 border border-purple-400' : 'bg-emerald-950 text-emerald-300 border border-emerald-500'} px-1.5 py-0.2 rounded">
+                  🐾 ${pets.length}隻
+                </span>
+                <span class="text-[10px] font-mono text-rose-300 font-black">🍎${st.points || 0}</span>
               </div>
             </div>
 
-            <!-- 多寵列表展示 -->
-            ${multiPetPills}
-
-            <!-- 蘋果與成長飽食度狀態 -->
-            <div class="mt-2 flex items-center justify-center space-x-2 text-xs font-mono font-bold text-slate-200 bg-black/40 py-1 rounded-xl border border-emerald-500/30">
-              <span class="font-black text-rose-400">🍎 ${st.points || 0} 顆</span>
-              <span class="text-slate-500">|</span>
-              <span class="text-emerald-300">🐾 飽食 ${lifetime} 點</span>
+            <!-- 核心：所有認養寵物並列展示舍 (一屏全覽無需上下滾動) -->
+            <div class="my-1.5 flex items-stretch justify-center gap-1.5 w-full">
+              ${petsListHtml}
             </div>
           </div>
 
-          <!-- 底部大屏快捷投餵按鈕 -->
-          <div class="mt-2 pt-1.5 border-t border-emerald-500/30 flex items-center space-x-1">
-            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 1)" class="flex-1 py-1 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="賞賜 +1 顆紅蘋果">
-              +1🍎
+          <!-- 底部快速投餵按鈕 -->
+          <div class="pt-1 border-t border-emerald-500/30 flex items-center space-x-1">
+            <button type="button" onclick="feedStudentInZooProjection(${st.id})" class="flex-1 py-0.5 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white font-black text-[11px] shadow-xs transition active:scale-95" title="投餵飼料 1 顆蘋果">
+              🍎 投餵
             </button>
-            <button type="button" onclick="feedStudentInZooProjection(${st.id})" class="flex-1 py-1 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white font-black text-xs shadow-xs transition active:scale-95" title="投餵飼料 1 顆蘋果">
-              🍎投餵
+            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 1)" class="w-12 py-0.5 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white font-black text-[11px] shadow-xs transition active:scale-95" title="賞賜 +1 顆紅蘋果">
+              +1
             </button>
           </div>
         </div>
@@ -6834,21 +6857,21 @@ function renderSeatingChart() {
              ondrop="handleSeatDrop(event, ${i})"
              ondragend="handleSeatDragEnd(event)"
              onclick="handleSeatClick(${i})">
-          <div class="flex items-center justify-end text-xs w-full">
+          <div class="flex items-center justify-between text-xs w-full">
+            <span class="seat-badge-cute inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-300 to-yellow-200 text-amber-950 border border-amber-400 font-mono whitespace-nowrap">
+              <span>${String(student.seatNo).padStart(2, '0')} 號</span>
+            </span>
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
             </div>
           </div>
-          <div class="my-auto text-center flex flex-col items-center justify-center">
-            <span class="seat-badge-cute inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-200 text-amber-950 border border-amber-400 shadow-xs tracking-wider font-mono whitespace-nowrap">
-              <span>${String(student.seatNo).padStart(2, '0')} 號</span>
-            </span>
-            <div class="seat-student-name font-black text-amber-950 text-base sm:text-lg mt-1 tracking-wide font-cute truncate max-w-[105px] mx-auto filter drop-shadow-xs">
+          <div class="my-0.5 text-center flex items-center justify-center">
+            <span class="seat-student-name font-black text-amber-950 text-base sm:text-lg tracking-wide font-cute truncate max-w-[110px] filter drop-shadow-xs">
               ${student.name}
-            </div>
+            </span>
           </div>
-          <div class="flex items-center justify-between w-full pt-1 border-t border-amber-200/60">
+          <div class="flex items-center justify-between w-full pt-0.5 border-t border-amber-200/60 text-[10px]">
             <div class="flex items-center space-x-1">
               ${refChip}
               ${serviceChip}
@@ -6856,7 +6879,7 @@ function renderSeatingChart() {
             <button type="button" 
                     onclick="event.stopPropagation(); removeStudentFromSeat(${i})" 
                     title="移出此席位回到下方待入座名冊" 
-                    class="text-[10px] text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-1.5 py-0.5 rounded-md border border-rose-200 font-bold transition">
+                    class="text-[9px] text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-1 py-0.2 rounded border border-rose-200 font-bold transition">
               移出
             </button>
           </div>
@@ -6871,10 +6894,10 @@ function renderSeatingChart() {
              ondragleave="handleSeatDragLeave(event, ${i})"
              ondrop="handleSeatDrop(event, ${i})"
              onclick="handleSeatClick(${i})">
-          <div class="my-auto text-center flex flex-col items-center justify-center">
-            <span class="text-2xl opacity-75">🪑</span>
-            <span class="text-xs sm:text-sm font-black text-amber-900/80 font-cute mt-0.5">空席</span>
-            <span class="text-[10px] text-amber-700/60 font-bold mt-0.5">點擊或拖曳入座</span>
+          <div class="my-auto text-center flex items-center justify-center space-x-1.5">
+            <span class="text-base opacity-75">🪑</span>
+            <span class="text-xs font-black text-amber-900/80 font-cute">空席</span>
+            <span class="text-[9px] text-amber-700/60 font-bold">(點或拖)</span>
           </div>
         </div>
       `;
