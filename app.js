@@ -7,33 +7,33 @@
 // 1. 27位大臣初始名冊資料 (支援雙軌金幣制度：可用金幣 points 與生涯累積總額 lifetimePoints)
 // ============================================================================
 const DEFAULT_STUDENTS_27 = [
-  { id: 1, seatNo: 1, name: "王品捷", gender: "M", title: "內閣首輔大臣", birthday: "0315", points: 85, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 2, seatNo: 2, name: "李宇軒", gender: "M", title: "皇家騎士團長", birthday: "0520", points: 160, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 3, seatNo: 3, name: "林冠廷", gender: "M", title: "國庫財政大臣", birthday: "0812", points: 210, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 4, seatNo: 4, name: "張宸睿", gender: "M", title: "宮廷禮儀大臣", birthday: "1104", points: 65, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 5, seatNo: 5, name: "陳奕安", gender: "M", title: "皇家文書大臣", birthday: "0228", points: 130, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 6, seatNo: 6, name: "黃柏瀚", gender: "M", title: "奇蹟魔法大臣", birthday: "0709", points: 520, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 7, seatNo: 7, name: "楊子賢", gender: "M", title: "守護壁壘大將", birthday: "0923", points: 95, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 8, seatNo: 8, name: "趙偉豪", gender: "M", title: "皇家圖書大臣", birthday: "0416", points: 145, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 9, seatNo: 9, name: "劉承佑", gender: "M", title: "生態綠意大臣", birthday: "1205", points: 50, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 10, seatNo: 10, name: "蔡秉恩", gender: "M", title: "國境先鋒騎士", birthday: "0630", points: 175, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 11, seatNo: 11, name: "吳宗翰", gender: "M", title: "皇家衛隊隊長", birthday: "0118", points: 115, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 12, seatNo: 12, name: "許翔宇", gender: "M", title: "智慧科技大臣", birthday: "1010", points: 240, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 13, seatNo: 13, name: "鄭予涵", gender: "F", title: "體育競技女將軍", birthday: "0403", points: 190, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 14, seatNo: 14, name: "謝孟庭", gender: "F", title: "藝術壁畫大臣", birthday: "0825", points: 155, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 15, seatNo: 15, name: "周語晴", gender: "F", title: "皇家音樂總監", birthday: "0614", points: 535, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 16, seatNo: 16, name: "郭心妍", gender: "F", title: "晨曦敲鐘官", birthday: "0329", points: 80, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 17, seatNo: 17, name: "曾詩涵", gender: "F", title: "皇家糧餉大臣", birthday: "1119", points: 125, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 18, seatNo: 18, name: "洪若菲", gender: "F", title: "萬國外交特使", birthday: "0508", points: 205, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 19, seatNo: 19, name: "邱品萱", gender: "F", title: "秩序執法女官", birthday: "0915", points: 140, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 20, seatNo: 20, name: "孫瑀恩", gender: "F", title: "歡樂慶典大臣", birthday: "0722", points: 165, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 21, seatNo: 21, name: "莊宜璇", gender: "F", title: "皇家天文占星官", birthday: "0107", points: 280, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 22, seatNo: 22, name: "賴采婕", gender: "F", title: "星光守望騎士", birthday: "1224", points: 90, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 23, seatNo: 23, name: "鍾佩芸", gender: "F", title: "皇宮環境大臣", birthday: "0214", points: 135, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 24, seatNo: 24, name: "方雅筑", gender: "F", title: "皇家廣播宣令官", birthday: "1002", points: 70, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 25, seatNo: 25, name: "羅晴文", gender: "F", title: "智慧博學顧問", birthday: "0606", points: 225, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 26, seatNo: 26, name: "簡宏宇", gender: "M", title: "皇家工務大臣", birthday: "0918", points: 110, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
-  { id: 27, seatNo: 27, name: "蘇品睿", gender: "M", title: "皇家巡察御史", birthday: "0425", points: 140, lifetimePoints: 0, animalType: "dog", petType: "dog", petExp: 0, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] }
+  { id: 1, seatNo: 1, name: "洪永恩", gender: "M", title: "漱口水發放官", birthday: "0315", points: 85, lifetimePoints: 85, animalType: "dog", petType: "dog", petExp: 85, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 2, seatNo: 2, name: "莊淇勛", gender: "M", title: "晨間小隊長", birthday: "0520", points: 160, lifetimePoints: 160, animalType: "dog", petType: "dog", petExp: 160, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 3, seatNo: 3, name: "黃胤哲", gender: "M", title: "設備掌管官", birthday: "0812", points: 210, lifetimePoints: 210, animalType: "dog", petType: "dog", petExp: 210, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 4, seatNo: 4, name: "吳秉叡", gender: "M", title: "清運小隊長", birthday: "1104", points: 65, lifetimePoints: 65, animalType: "dog", petType: "dog", petExp: 65, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 5, seatNo: 5, name: "王添福", gender: "M", title: "午休巡查官", birthday: "0228", points: 130, lifetimePoints: 130, animalType: "dog", petType: "dog", petExp: 130, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 6, seatNo: 6, name: "王邑丞", gender: "M", title: "清潔指揮官", birthday: "0709", points: 520, lifetimePoints: 520, animalType: "dog", petType: "dog", petExp: 520, secondPetType: "cat", secondPetExp: 20, pets: [{ type: "dog" }, { type: "cat" }] },
+  { id: 7, seatNo: 7, name: "王識齊", gender: "M", title: "體能大將軍", birthday: "0923", points: 95, lifetimePoints: 95, animalType: "dog", petType: "dog", petExp: 95, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 8, seatNo: 8, name: "陳楷衡", gender: "M", title: "歸位巡查員", birthday: "0416", points: 145, lifetimePoints: 145, animalType: "dog", petType: "dog", petExp: 145, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 9, seatNo: 9, name: "王少謙", gender: "M", title: "回收清理官", birthday: "1205", points: 50, lifetimePoints: 50, animalType: "dog", petType: "dog", petExp: 50, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 10, seatNo: 10, name: "李承翰", gender: "M", title: "掌電小侍衛", birthday: "0630", points: 175, lifetimePoints: 175, animalType: "dog", petType: "dog", petExp: 175, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 11, seatNo: 11, name: "巫律杋", gender: "M", title: "香蕉御廚長", birthday: "0118", points: 115, lifetimePoints: 115, animalType: "dog", petType: "dog", petExp: 115, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 12, seatNo: 12, name: "陳彥廷", gender: "M", title: "值日勤務官", birthday: "1010", points: 240, lifetimePoints: 240, animalType: "dog", petType: "dog", petExp: 240, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 13, seatNo: 13, name: "林詰程", gender: "M", title: "日誌紀錄官", birthday: "0403", points: 190, lifetimePoints: 190, animalType: "dog", petType: "dog", petExp: 190, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 14, seatNo: 14, name: "顏珦菲", gender: "F", title: "清潔指揮官", birthday: "0825", points: 155, lifetimePoints: 155, animalType: "dog", petType: "dog", petExp: 155, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 15, seatNo: 15, name: "王瑜嫣", gender: "F", title: "作業點收官", birthday: "0614", points: 535, lifetimePoints: 535, animalType: "dog", petType: "dog", petExp: 535, secondPetType: "rabbit", secondPetExp: 35, pets: [{ type: "dog" }, { type: "rabbit" }] },
+  { id: 16, seatNo: 16, name: "李堇夢", gender: "F", title: "體能大將軍", birthday: "0329", points: 80, lifetimePoints: 80, animalType: "dog", petType: "dog", petExp: 80, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 17, seatNo: 17, name: "廖妘熙", gender: "F", title: "潔牙督導官", birthday: "1119", points: 125, lifetimePoints: 125, animalType: "dog", petType: "dog", petExp: 125, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 18, seatNo: 18, name: "方庭妤", gender: "F", title: "餐具小總長", birthday: "0508", points: 205, lifetimePoints: 205, animalType: "dog", petType: "dog", petExp: 205, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 19, seatNo: 19, name: "楊晏熏", gender: "F", title: "訂正審查官", birthday: "0915", points: 140, lifetimePoints: 140, animalType: "dog", petType: "dog", petExp: 140, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 20, seatNo: 20, name: "吳沛岑", gender: "F", title: "清潔指揮官", birthday: "0722", points: 165, lifetimePoints: 165, animalType: "dog", petType: "dog", petExp: 165, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 21, seatNo: 21, name: "林倢希", gender: "F", title: "暖心小小兵", birthday: "0107", points: 280, lifetimePoints: 280, animalType: "dog", petType: "dog", petExp: 280, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 22, seatNo: 22, name: "廖紫婷", gender: "F", title: "公告佈達官", birthday: "1224", points: 90, lifetimePoints: 90, animalType: "dog", petType: "dog", petExp: 90, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 23, seatNo: 23, name: "吳欣菲", gender: "F", title: "秩序執法官", birthday: "0214", points: 135, lifetimePoints: 135, animalType: "dog", petType: "dog", petExp: 135, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 24, seatNo: 24, name: "林詠泓", gender: "M", title: "最高指揮官", birthday: "1002", points: 70, lifetimePoints: 70, animalType: "dog", petType: "dog", petExp: 70, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 25, seatNo: 25, name: "王子芸", gender: "F", title: "小小兵宰相", birthday: "0606", points: 225, lifetimePoints: 225, animalType: "dog", petType: "dog", petExp: 225, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 26, seatNo: 26, name: "梁語倢", gender: "F", title: "香蕉點數官", birthday: "0918", points: 110, lifetimePoints: 110, animalType: "dog", petType: "dog", petExp: 110, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] },
+  { id: 27, seatNo: 27, name: "楊淳閔", gender: "M", title: "公告佈達官", birthday: "0425", points: 140, lifetimePoints: 140, animalType: "dog", petType: "dog", petExp: 140, secondPetType: null, secondPetExp: 0, pets: [{ type: "dog" }] }
 ];
 
 // 預設自訂集點項目庫 (加分 & 扣分，導師可自由新增、修改、刪除)
@@ -457,7 +457,7 @@ const STORAGE_KEY = "xining_kingdom_v3_dashboard";
 class KingdomStore {
   constructor() {
     this.data = this.load();
-    this.syncAllHomeworkReflectionCards();
+    this.syncAllHomeworkReflectionCards({ saveQuietly: true });
   }
 
   normalizeData(parsed) {
@@ -644,18 +644,81 @@ class KingdomStore {
     });
   }
 
-  save() {
+  /**
+   * 核心儲存邏輯 (支援靜默儲存與本機快照)
+   */
+  saveInternal({ updateTimestamp = true, triggerPush = true, snapshotReason = '' } = {}) {
     try {
-      this.data.lastModified = Date.now();
+      if (updateTimestamp) {
+        this.data.lastModified = Date.now();
+      }
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        if (snapshotReason) {
+          this.recordLocalSnapshot(snapshotReason);
+        }
       }
-      if (typeof window !== 'undefined' && window.KingdomApp && window.KingdomApp.cloudSync) {
+      if (triggerPush && typeof window !== 'undefined' && window.KingdomApp && window.KingdomApp.cloudSync) {
         window.KingdomApp.cloudSync.schedulePush();
       }
     } catch (e) {
       console.error("儲存至 localStorage 失敗", e);
     }
+  }
+
+  save(snapshotReason = '') {
+    this.saveInternal({ updateTimestamp: true, triggerPush: true, snapshotReason });
+  }
+
+  /**
+   * 本機滾動式時光機快照 (保留最新 20 次操作)
+   */
+  recordLocalSnapshot(reason = '操作自動備份') {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const SNAPSHOT_KEY = 'xining_502_kingdom_snapshots';
+      let snaps = [];
+      const saved = localStorage.getItem(SNAPSHOT_KEY);
+      if (saved) {
+        try { snaps = JSON.parse(saved); } catch (_) {}
+      }
+      if (!Array.isArray(snaps)) snaps = [];
+
+      snaps.unshift({
+        id: 'snap_' + Date.now(),
+        timestamp: Date.now(),
+        timeStr: new Date().toLocaleString(),
+        reason: reason,
+        studentCount: this.data.students ? this.data.students.length : 0,
+        data: JSON.parse(JSON.stringify(this.data))
+      });
+
+      if (snaps.length > 20) snaps = snaps.slice(0, 20);
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snaps));
+    } catch (e) {
+      console.warn("記錄本機快照失敗", e);
+    }
+  }
+
+  getLocalSnapshots() {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('xining_502_kingdom_snapshots');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  restoreLocalSnapshot(snapshotId) {
+    const snaps = this.getLocalSnapshots();
+    const target = snaps.find(s => s.id === snapshotId);
+    if (!target || !target.data) return { success: false, message: '找不到該快照' };
+
+    this.recordLocalSnapshot('還原前自動備份');
+    this.data = this.normalizeData(target.data);
+    this.save('還原至快照: ' + (target.timeStr || target.reason));
+    return { success: true, count: this.data.students.length };
   }
 
   reset() {
@@ -1811,11 +1874,15 @@ class KingdomStore {
     b.reflectionReason = b.reflectionReasons.map(r => r.text).join('、');
   }
 
-  syncAllHomeworkReflectionCards() {
+  syncAllHomeworkReflectionCards({ saveQuietly = false } = {}) {
     (this.data.students || []).forEach(st => {
       this.syncHomeworkReflectionCards(st.id);
     });
-    this.save();
+    if (saveQuietly) {
+      this.saveInternal({ updateTimestamp: false, triggerPush: false });
+    } else {
+      this.save('同步作業自省卡');
+    }
   }
 
   addReflectionCard(studentId, reason = "") {
@@ -2681,7 +2748,8 @@ class KingdomSound {
 // 5. 跨裝置雲端同步引擎 (Cloud & LAN Synchronizer)
 // ===================================================================
 function isLocalHostOrLAN(hostname) {
-  if (!hostname) return false;
+  if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') return true;
+  if (!hostname) return true;
   if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return true;
   // RFC 1918 私有 IP 與教育網/區網網段
   if (/^10\./.test(hostname)) return true;
@@ -2702,6 +2770,7 @@ class KingdomCloudSync {
     this.listeners = [];
     this.pushTimeout = null;
     this.pollInterval = null;
+    this.hasCompletedInitialPull = false;
 
     if (typeof window !== 'undefined') {
       this.checkUrlParams();
@@ -2710,6 +2779,10 @@ class KingdomCloudSync {
           this.pull({ silent: true });
         }
       });
+      // 開機優先拉取 (Pull-First)：載入後立即與伺服器對齊最新資料
+      setTimeout(() => {
+        this.pull({ silent: true });
+      }, 300);
       this.startPolling();
     }
   }
@@ -2784,9 +2857,13 @@ class KingdomCloudSync {
     }
   }
 
-  getLocalApiUrl() {
+  getLocalApiUrl(endpoint = '/api/sync') {
     const account = encodeURIComponent(this.config.googleAccount || 'xining502@gmail.com');
-    return `/api/sync?account=${account}`;
+    const query = endpoint.includes('?') ? `&account=${account}` : `?account=${account}`;
+    if (typeof window !== 'undefined' && window.location && (window.location.protocol === 'file:' || !window.location.host)) {
+      return `http://localhost:3000${endpoint}${query}`;
+    }
+    return `${endpoint}${query}`;
   }
 
   startPolling() {
@@ -2814,7 +2891,7 @@ class KingdomCloudSync {
 
   getStatus() {
     const isLocalHost = typeof window !== 'undefined' && 
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+      (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
 
     return {
       status: this.syncStatus,
@@ -2828,15 +2905,20 @@ class KingdomCloudSync {
     };
   }
 
-  schedulePush() {
+  schedulePush({ force = false } = {}) {
     if (!this.config.enabled) return;
+    // 嚴防未拉先推：若尚未完成首次拉取對齊，不自動排程推送舊資料
+    if (!this.hasCompletedInitialPull && !force) {
+      console.log('[CloudSync] 尚未完成首次開機拉取驗證，暫緩自動推送');
+      return;
+    }
     if (this.pushTimeout) clearTimeout(this.pushTimeout);
     this.pushTimeout = setTimeout(() => {
-      this.push({ silent: true });
+      this.push({ silent: true, force });
     }, 1500);
   }
 
-  async push({ silent = false } = {}) {
+  async push({ silent = false, force = false } = {}) {
     if (!this.config.enabled) return { success: false, message: '雲端同步未啟用' };
     this.syncStatus = 'syncing';
     this.notify();
@@ -2846,18 +2928,31 @@ class KingdomCloudSync {
     const payload = JSON.stringify(this.store.data);
     const account = this.config.googleAccount || 'xining502@gmail.com';
 
-    // 1. 若運行於本機伺服器或區網 (localhost / 192.168.x.x)，推送到 local /api/sync
+    // 1. 若運行於本機伺服器、區網或 file:// 模式，推送到 local /api/sync
     const isLocal = typeof window !== 'undefined' && 
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+      (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
     
     if (isLocal) {
       try {
-        const localRes = await fetch(this.getLocalApiUrl(), {
+        const localUrl = this.getLocalApiUrl(force ? '/api/sync?force=1' : '/api/sync');
+        const localRes = await fetch(localUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: payload
         });
-        if (localRes.ok) pushedToAny = true;
+        if (localRes.ok) {
+          pushedToAny = true;
+        } else if (localRes.status === 409) {
+          const conflictJson = await localRes.json();
+          console.warn('[CloudSync] 伺服器有更新版本，主動觸發 Pull 拉取最新資料！', conflictJson);
+          this.syncStatus = 'error';
+          this.lastError = conflictJson.message || '伺服器已有更新版本';
+          this.notify();
+          await this.pull({ silent: false });
+          return { success: false, conflict: true, message: this.lastError };
+        } else {
+          pushError = `伺服器回應狀態 ${localRes.status}`;
+        }
       } catch (err) {
         console.warn('[CloudSync] 本地區網推送失敗:', err);
       }
@@ -2896,7 +2991,7 @@ class KingdomCloudSync {
     }
   }
 
-  async pull({ silent = false } = {}) {
+  async pull({ silent = false, force = false } = {}) {
     if (!this.config.enabled) return { success: false, message: '雲端同步未啟用' };
     this.syncStatus = 'syncing';
     this.notify();
@@ -2922,9 +3017,9 @@ class KingdomCloudSync {
       }
     }
 
-    // 2. 若在本地區網環境且尚未取得遠端資料，從本地 /api/sync 讀取
+    // 2. 若在本地區網或 file:// 環境且尚未取得遠端資料，從本地 /api/sync 讀取
     const isLocal = typeof window !== 'undefined' && 
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+      (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
 
     if (!remoteData && isLocal) {
       try {
@@ -2947,24 +3042,30 @@ class KingdomCloudSync {
         const remoteTime = normalizedRemote.lastModified || 0;
         const localTime = this.store.data.lastModified || 0;
 
-        if (!silent || remoteTime > localTime) {
+        if (force || remoteTime > localTime) {
+          // 遠端資料更完整更新，安全更新前先保留本機時光機快照
+          this.store.recordLocalSnapshot(`雲端拉取前備份 (遠端: ${remoteTime ? new Date(remoteTime).toLocaleTimeString() : '無時間戳'})`);
           this.store.data = normalizedRemote;
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.store.data));
-          }
+          this.store.saveInternal({ updateTimestamp: false, triggerPush: false });
           if (typeof window !== 'undefined' && window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
             window.KingdomUI.refreshCurrentView();
           }
           isUpdated = true;
+        } else if (localTime > remoteTime) {
+          // 本機有更新但尚未推送的紀錄，主動推送到伺服器！
+          console.log('[CloudSync] 本機資料較伺服器更新，主動同步推送最新版本！');
+          this.push({ silent: true });
         }
       }
 
+      this.hasCompletedInitialPull = true;
       this.syncStatus = 'success';
       this.lastSyncTime = new Date();
       this.lastError = null;
       this.notify();
       return { success: true, timestamp: this.lastSyncTime, updated: isUpdated };
     } else {
+      this.hasCompletedInitialPull = true;
       if (this.config.googleScriptUrl || isLocal) {
         this.syncStatus = 'error';
         this.lastError = pullError || '尚無同步存檔';
@@ -2974,6 +3075,47 @@ class KingdomCloudSync {
       this.notify();
       return { success: false, error: this.lastError };
     }
+  }
+
+  // 取得伺服器歷史快照清單
+  async fetchServerSnapshots() {
+    try {
+      const url = this.getLocalApiUrl('/api/sync/snapshots');
+      const res = await fetch(url, { cache: 'no-cache' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('[CloudSync] 取得伺服器快照失敗:', e);
+    }
+    return { success: false, snapshots: [] };
+  }
+
+  // 還原伺服器歷史快照或電腦原始完整存檔
+  async restoreServerSnapshot(snapshotName = '') {
+    try {
+      const url = this.getLocalApiUrl('/api/sync/restore');
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ snapshotName })
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.data) {
+          this.store.recordLocalSnapshot('還原伺服器存檔前備份');
+          this.store.data = this.store.normalizeData(result.data);
+          this.store.saveInternal({ updateTimestamp: true, triggerPush: false });
+          if (typeof window !== 'undefined' && window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+            window.KingdomUI.refreshCurrentView();
+          }
+          return { success: true, message: result.message, studentCount: result.studentCount };
+        }
+      }
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+    return { success: false, message: '還原失敗' };
   }
 
   exportBackupJSON() {

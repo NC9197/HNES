@@ -5,407 +5,571 @@
     {
       "id": 1,
       "seatNo": 1,
-      "name": "王品捷",
+      "name": "洪永恩",
       "gender": "M",
-      "title": "內閣首輔大臣",
+      "title": "漱口水發放官",
       "birthday": "0315",
       "points": 85,
-      "lifetimePoints": 0,
+      "lifetimePoints": 85,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 85,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 2,
       "seatNo": 2,
-      "name": "李宇軒",
+      "name": "莊淇勛",
       "gender": "M",
-      "title": "皇家騎士團長",
+      "title": "晨間小隊長",
       "birthday": "0520",
       "points": 160,
-      "lifetimePoints": 0,
+      "lifetimePoints": 160,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 160,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 3,
       "seatNo": 3,
-      "name": "林冠廷",
+      "name": "黃胤哲",
       "gender": "M",
-      "title": "國庫財政大臣",
+      "title": "設備掌管官",
       "birthday": "0812",
       "points": 210,
-      "lifetimePoints": 0,
+      "lifetimePoints": 210,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 210,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 4,
       "seatNo": 4,
-      "name": "張宸睿",
+      "name": "吳秉叡",
       "gender": "M",
-      "title": "宮廷禮儀大臣",
+      "title": "清運小隊長",
       "birthday": "1104",
       "points": 65,
-      "lifetimePoints": 0,
+      "lifetimePoints": 65,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 65,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 5,
       "seatNo": 5,
-      "name": "陳奕安",
+      "name": "王添福",
       "gender": "M",
-      "title": "皇家文書大臣",
+      "title": "午休巡查官",
       "birthday": "0228",
       "points": 130,
-      "lifetimePoints": 0,
+      "lifetimePoints": 130,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 130,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 6,
       "seatNo": 6,
-      "name": "黃柏瀚",
+      "name": "王邑丞",
       "gender": "M",
-      "title": "奇蹟魔法大臣",
+      "title": "清潔指揮官",
       "birthday": "0709",
       "points": 520,
-      "lifetimePoints": 0,
+      "lifetimePoints": 520,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
-      "secondPetType": null,
-      "secondPetExp": 0
+      "petExp": 520,
+      "secondPetType": "cat",
+      "secondPetExp": 20,
+      "pets": [
+        {
+          "type": "dog"
+        },
+        {
+          "type": "cat"
+        }
+      ]
     },
     {
       "id": 7,
       "seatNo": 7,
-      "name": "楊子賢",
+      "name": "王識齊",
       "gender": "M",
-      "title": "守護壁壘大將",
+      "title": "體能大將軍",
       "birthday": "0923",
       "points": 95,
-      "lifetimePoints": 0,
+      "lifetimePoints": 95,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 95,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 8,
       "seatNo": 8,
-      "name": "趙偉豪",
+      "name": "陳楷衡",
       "gender": "M",
-      "title": "皇家圖書大臣",
+      "title": "歸位巡查員",
       "birthday": "0416",
       "points": 145,
-      "lifetimePoints": 0,
+      "lifetimePoints": 145,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 145,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 9,
       "seatNo": 9,
-      "name": "劉承佑",
+      "name": "王少謙",
       "gender": "M",
-      "title": "生態綠意大臣",
+      "title": "回收清理官",
       "birthday": "1205",
       "points": 50,
-      "lifetimePoints": 0,
+      "lifetimePoints": 50,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 50,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 10,
       "seatNo": 10,
-      "name": "蔡秉恩",
+      "name": "李承翰",
       "gender": "M",
-      "title": "國境先鋒騎士",
+      "title": "掌電小侍衛",
       "birthday": "0630",
       "points": 175,
-      "lifetimePoints": 0,
+      "lifetimePoints": 175,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 175,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 11,
       "seatNo": 11,
-      "name": "吳宗翰",
+      "name": "巫律杋",
       "gender": "M",
-      "title": "皇家衛隊隊長",
+      "title": "香蕉御廚長",
       "birthday": "0118",
       "points": 115,
-      "lifetimePoints": 0,
+      "lifetimePoints": 115,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 115,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 12,
       "seatNo": 12,
-      "name": "許翔宇",
+      "name": "陳彥廷",
       "gender": "M",
-      "title": "智慧科技大臣",
+      "title": "值日勤務官",
       "birthday": "1010",
       "points": 240,
-      "lifetimePoints": 0,
+      "lifetimePoints": 240,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 240,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 13,
       "seatNo": 13,
-      "name": "鄭予涵",
-      "gender": "F",
-      "title": "體育競技女將軍",
+      "name": "林詰程",
+      "gender": "M",
+      "title": "日誌紀錄官",
       "birthday": "0403",
       "points": 190,
-      "lifetimePoints": 0,
+      "lifetimePoints": 190,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 190,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 14,
       "seatNo": 14,
-      "name": "謝孟庭",
+      "name": "顏珦菲",
       "gender": "F",
-      "title": "藝術壁畫大臣",
+      "title": "清潔指揮官",
       "birthday": "0825",
       "points": 155,
-      "lifetimePoints": 0,
+      "lifetimePoints": 155,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 155,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 15,
       "seatNo": 15,
-      "name": "周語晴",
+      "name": "王瑜嫣",
       "gender": "F",
-      "title": "皇家音樂總監",
+      "title": "作業點收官",
       "birthday": "0614",
       "points": 535,
-      "lifetimePoints": 0,
+      "lifetimePoints": 535,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
-      "secondPetType": null,
-      "secondPetExp": 0
+      "petExp": 535,
+      "secondPetType": "rabbit",
+      "secondPetExp": 35,
+      "pets": [
+        {
+          "type": "dog"
+        },
+        {
+          "type": "rabbit"
+        }
+      ]
     },
     {
       "id": 16,
       "seatNo": 16,
-      "name": "郭心妍",
+      "name": "李堇夢",
       "gender": "F",
-      "title": "晨曦敲鐘官",
+      "title": "體能大將軍",
       "birthday": "0329",
       "points": 80,
-      "lifetimePoints": 0,
+      "lifetimePoints": 80,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 80,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 17,
       "seatNo": 17,
-      "name": "曾詩涵",
+      "name": "廖妘熙",
       "gender": "F",
-      "title": "皇家糧餉大臣",
+      "title": "潔牙督導官",
       "birthday": "1119",
       "points": 125,
-      "lifetimePoints": 0,
+      "lifetimePoints": 125,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 125,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 18,
       "seatNo": 18,
-      "name": "洪若菲",
+      "name": "方庭妤",
       "gender": "F",
-      "title": "萬國外交特使",
+      "title": "餐具小總長",
       "birthday": "0508",
       "points": 205,
-      "lifetimePoints": 0,
+      "lifetimePoints": 205,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 205,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 19,
       "seatNo": 19,
-      "name": "邱品萱",
+      "name": "楊晏熏",
       "gender": "F",
-      "title": "秩序執法女官",
+      "title": "訂正審查官",
       "birthday": "0915",
       "points": 140,
-      "lifetimePoints": 0,
+      "lifetimePoints": 140,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 140,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 20,
       "seatNo": 20,
-      "name": "孫瑀恩",
+      "name": "吳沛岑",
       "gender": "F",
-      "title": "歡樂慶典大臣",
+      "title": "清潔指揮官",
       "birthday": "0722",
       "points": 165,
-      "lifetimePoints": 0,
+      "lifetimePoints": 165,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 165,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 21,
       "seatNo": 21,
-      "name": "莊宜璇",
+      "name": "林倢希",
       "gender": "F",
-      "title": "皇家天文占星官",
+      "title": "暖心小小兵",
       "birthday": "0107",
       "points": 280,
-      "lifetimePoints": 0,
+      "lifetimePoints": 280,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 280,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 22,
       "seatNo": 22,
-      "name": "賴采婕",
+      "name": "廖紫婷",
       "gender": "F",
-      "title": "星光守望騎士",
+      "title": "公告佈達官",
       "birthday": "1224",
       "points": 90,
-      "lifetimePoints": 0,
+      "lifetimePoints": 90,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 90,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 23,
       "seatNo": 23,
-      "name": "鍾佩芸",
+      "name": "吳欣菲",
       "gender": "F",
-      "title": "皇宮環境大臣",
+      "title": "秩序執法官",
       "birthday": "0214",
       "points": 135,
-      "lifetimePoints": 0,
+      "lifetimePoints": 135,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 135,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 24,
       "seatNo": 24,
-      "name": "方雅筑",
-      "gender": "F",
-      "title": "皇家廣播宣令官",
+      "name": "林詠泓",
+      "gender": "M",
+      "title": "最高指揮官",
       "birthday": "1002",
       "points": 70,
-      "lifetimePoints": 0,
+      "lifetimePoints": 70,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 70,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 25,
       "seatNo": 25,
-      "name": "羅晴文",
+      "name": "王子芸",
       "gender": "F",
-      "title": "智慧博學顧問",
+      "title": "小小兵宰相",
       "birthday": "0606",
       "points": 225,
-      "lifetimePoints": 0,
+      "lifetimePoints": 225,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 225,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 26,
       "seatNo": 26,
-      "name": "簡宏宇",
-      "gender": "M",
-      "title": "皇家工務大臣",
+      "name": "梁語倢",
+      "gender": "F",
+      "title": "香蕉點數官",
       "birthday": "0918",
       "points": 110,
-      "lifetimePoints": 0,
+      "lifetimePoints": 110,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 110,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
     },
     {
       "id": 27,
       "seatNo": 27,
-      "name": "蘇品睿",
+      "name": "楊淳閔",
       "gender": "M",
-      "title": "皇家巡察御史",
+      "title": "公告佈達官",
       "birthday": "0425",
       "points": 140,
-      "lifetimePoints": 0,
+      "lifetimePoints": 140,
       "animalType": "dog",
       "petType": "dog",
-      "petExp": 0,
+      "petExp": 140,
       "secondPetType": null,
-      "secondPetExp": 0
+      "secondPetExp": 0,
+      "pets": [
+        {
+          "type": "dog"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "seatNo": 28,
+      "name": "林小兵",
+      "gender": "M",
+      "title": "皇家護衛",
+      "birthday": "0909",
+      "points": 800,
+      "lifetimePoints": 800,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 800,
+      "secondPetType": "cat",
+      "secondPetExp": 300,
+      "pets": [
+        {
+          "type": "dog"
+        },
+        {
+          "type": "cat"
+        }
+      ]
     }
   ],
   "pointPresets": [
@@ -1277,7 +1441,17 @@
     }
   ],
   "rewardRedemptions": [],
-  "behaviorCards": {},
+  "behaviorCards": {
+    "28": {
+      "reflectionCard": false,
+      "reflectionCount": 0,
+      "reflectionReason": "",
+      "serviceCard": false,
+      "serviceCount": 0,
+      "serviceReason": "",
+      "history": []
+    }
+  },
   "trafficOverrides": {},
   "seatingLayout": {
     "rows": 5,
@@ -1302,7 +1476,7 @@
     13,
     8,
     3,
-    null,
+    28,
     27,
     19,
     14,
@@ -1315,8 +1489,9 @@
     10,
     5
   ],
-  "lastModified": 1794896091758,
+  "lastModified": 1795080049647,
   "satietyResetV20261116": true,
   "petDefaultDogV20261116": true,
-  "seatingColsV20261117": true
+  "seatingColsV20261117": true,
+  "updatedAt": "2026-11-19T09:20:49.647Z"
 }

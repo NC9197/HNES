@@ -10,6 +10,40 @@ const os = require('os');
 
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
+const BACKUPS_DIR = path.join(ROOT_DIR, 'backups');
+
+// 確保備份資料夾存在
+if (!fs.existsSync(BACKUPS_DIR)) {
+  try { fs.mkdirSync(BACKUPS_DIR, { recursive: true }); } catch (_) {}
+}
+
+/**
+ * 自動磁碟時光機快照 (保留最新 30 份)
+ */
+function backupFileBeforeOverwrite(sourcePath, label = 'autosave') {
+  try {
+    if (fs.existsSync(sourcePath)) {
+      if (!fs.existsSync(BACKUPS_DIR)) fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const dateTag = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      const backupName = `backup_${dateTag}_${label}.json`;
+      fs.copyFileSync(sourcePath, path.join(BACKUPS_DIR, backupName));
+
+      // 滾動維持最新 30 份
+      const all = fs.readdirSync(BACKUPS_DIR).filter(f => f.startsWith('backup_') && f.endsWith('.json'));
+      if (all.length > 30) {
+        all.sort();
+        const toDelete = all.slice(0, all.length - 30);
+        toDelete.forEach(f => {
+          try { fs.unlinkSync(path.join(BACKUPS_DIR, f)); } catch (_) {}
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('[Backup] 備份檔案失敗:', err.message);
+  }
+}
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -66,7 +100,95 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 跨裝置雲端/區網同步 REST API (支援 Google 帳號與自訂金鑰)
+  // 查詢伺服器歷史快照清單
+  if (pathname === '/api/sync/snapshots') {
+    try {
+      if (!fs.existsSync(BACKUPS_DIR)) fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+      const files = fs.readdirSync(BACKUPS_DIR)
+        .filter(f => f.startsWith('backup_') && f.endsWith('.json'))
+        .sort().reverse();
+      const snapshots = files.map(filename => {
+        const fullPath = path.join(BACKUPS_DIR, filename);
+        const stat = fs.statSync(fullPath);
+        return {
+          filename,
+          size: stat.size,
+          mtime: stat.mtimeMs,
+          timeString: new Date(stat.mtimeMs).toLocaleString()
+        };
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: true, count: snapshots.length, snapshots }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: false, error: e.message }));
+    }
+    return;
+  }
+
+  // 還原指定歷史快照或電腦原始完整存檔
+  if (pathname === '/api/sync/restore' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const defaultSyncFilePath = path.join(ROOT_DIR, 'data_sync.json');
+        let restoreSource = '';
+
+        if (payload.snapshotName) {
+          const safeName = path.basename(payload.snapshotName);
+          const candidate = path.join(BACKUPS_DIR, safeName);
+          if (fs.existsSync(candidate)) {
+            restoreSource = candidate;
+          }
+        }
+
+        // 若未指定或找不到，優先尋找 11/17 完整存檔或最新備份
+        if (!restoreSource) {
+          const specificPath = path.join(ROOT_DIR, 'data_sync_xining502@gmail.com.json');
+          if (fs.existsSync(specificPath)) {
+            restoreSource = specificPath;
+          } else if (fs.existsSync(defaultSyncFilePath)) {
+            restoreSource = defaultSyncFilePath;
+          }
+        }
+
+        if (!restoreSource || !fs.existsSync(restoreSource)) {
+          res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, message: '找不到可還原的歷史備份檔' }));
+          return;
+        }
+
+        // 先備份現有檔案
+        backupFileBeforeOverwrite(defaultSyncFilePath, 'before_restore');
+
+        // 讀取還原檔並打上全新時間戳，保證所有連線裝置拉取後立刻同步
+        const restoredData = JSON.parse(fs.readFileSync(restoreSource, 'utf8'));
+        restoredData.lastModified = Date.now();
+        fs.writeFileSync(defaultSyncFilePath, JSON.stringify(restoredData, null, 2), 'utf8');
+        const specificPath = path.join(ROOT_DIR, 'data_sync_xining502@gmail.com.json');
+        if (fs.existsSync(specificPath)) {
+          fs.writeFileSync(specificPath, JSON.stringify(restoredData, null, 2), 'utf8');
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: `已成功還原存檔 (${path.basename(restoreSource)})！`,
+          lastModified: restoredData.lastModified,
+          studentCount: restoredData.students ? restoredData.students.length : 0,
+          data: restoredData
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 跨裝置雲端/區網同步 REST API (具備防舊覆蓋新、強制版本校驗、自動備份快照)
   if (pathname === '/api/sync') {
     const accountParam = reqUrl.searchParams.get('account') || reqUrl.searchParams.get('key') || '';
     const safeAccount = accountParam.replace(/[^a-zA-Z0-9_\-@.]/g, '_');
@@ -95,16 +217,61 @@ const server = http.createServer((req, res) => {
       req.on('end', () => {
         try {
           const parsed = JSON.parse(body);
-          // 同步寫入特定帳號與預設存檔
+          if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.students)) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ success: false, error: '存檔內容缺少學生名冊或格式無效' }));
+            return;
+          }
+
+          const isForce = reqUrl.searchParams.get('force') === '1' || reqUrl.searchParams.get('force') === 'true';
+          const incomingTime = parsed.lastModified || 0;
+
+          // 讀取伺服器現存檔案時間戳
+          let existingTime = 0;
+          let targetPath = (specificPath && fs.existsSync(specificPath)) ? specificPath : defaultSyncFilePath;
+          if (fs.existsSync(targetPath)) {
+            try {
+              const currentOnDisk = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
+              existingTime = currentOnDisk.lastModified || 0;
+            } catch (_) {}
+          }
+
+          // 核心防護：若傳入的時間小於伺服器現存時間，且非強制覆蓋，嚴格拒絕舊資料蓋新資料！
+          if (!isForce && incomingTime > 0 && existingTime > 0 && incomingTime < existingTime) {
+            console.warn(`[Sync Guard] 攔截過期資料推送！用戶端時間: ${new Date(incomingTime).toLocaleString()}, 伺服器時間: ${new Date(existingTime).toLocaleString()}`);
+            res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({
+              success: false,
+              conflict: true,
+              clientTime: incomingTime,
+              serverTime: existingTime,
+              message: `伺服器上有更新的資料版本 (${new Date(existingTime).toLocaleString()})，拒絕以較舊的裝置資料 (${new Date(incomingTime).toLocaleString()}) 覆蓋！請先從伺服器拉取最新資料。`
+            }));
+            return;
+          }
+
+          // 寫入前自動保留快照留底
+          backupFileBeforeOverwrite(defaultSyncFilePath, `push_${incomingTime || Date.now()}`);
+
+          // 確保寫入之 lastModified 時間戳永遠保持最新遞增
+          parsed.lastModified = Math.max(incomingTime, existingTime, Date.now());
+
+          // 同步寫入預設存檔與指定帳號檔
           fs.writeFileSync(defaultSyncFilePath, JSON.stringify(parsed, null, 2), 'utf8');
           if (specificPath) {
             fs.writeFileSync(specificPath, JSON.stringify(parsed, null, 2), 'utf8');
           }
+
+          console.log(`[Sync Success] 資料成功同步！大臣人數: ${parsed.students.length}, 時間戳: ${new Date(parsed.lastModified).toLocaleString()}`);
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ success: true, lastModified: Date.now() }));
+          res.end(JSON.stringify({
+            success: true,
+            lastModified: parsed.lastModified,
+            studentCount: parsed.students.length
+          }));
         } catch (e) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ success: false, error: '無效的 JSON 格式' }));
+          res.end(JSON.stringify({ success: false, error: '無效的 JSON 格式: ' + e.message }));
         }
       });
       return;

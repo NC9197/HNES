@@ -5168,7 +5168,7 @@ function renderRosterView() {
 
         <!-- 7. 🐾 認養萌寵 (顯示最新認養寵物，支援下拉選擇與抽屜收藏) -->
         <td class="py-3 px-3 text-center whitespace-nowrap">
-          <div class="inline-flex flex-col items-center justify-center max-w-[210px]">
+          <div class="inline-flex flex-col items-center justify-center w-full min-w-[250px] max-w-[320px]">
             <!-- 當前預覽萌寵：大頭像 + 名稱 + 階級 + 更換按鈕 -->
             <div class="flex items-center justify-center space-x-2">
               <div class="w-10 h-10 flex-shrink-0 bg-white rounded-xl p-0.5 border-2 border-amber-300 shadow-xs cursor-pointer hover:border-amber-500 hover:scale-105 transition" onclick="openChangeAnimalModal(${st.id}, ${activeIdx})" title="點擊更換此萌寵種類">
@@ -5189,11 +5189,13 @@ function renderRosterView() {
 
             <!-- 超過一隻寵物時：提供下拉選單選擇顯示，以及抽屜收藏按鈕 -->
             ${validPets.length > 1 ? `
-              <div class="mt-1.5 flex flex-col items-center space-y-1 w-full">
+              <div class="mt-2 flex flex-col items-center space-y-1.5 w-full">
                 <!-- 下拉選單：供學生自由選擇想顯示的寵物 -->
-                <div class="flex items-center space-x-1">
-                  <span class="text-[10px] text-purple-900 font-bold">顯示：</span>
-                  <select onchange="changeRosterActivePet(${st.id}, this.value)" class="text-[11px] font-black bg-purple-50 text-purple-950 border border-purple-300 rounded-md px-1.5 py-0.5 shadow-2xs cursor-pointer">
+                <div class="flex items-center justify-center space-x-1.5 w-full">
+                  <span class="text-xs text-purple-950 font-black shrink-0">顯示：</span>
+                  <select onchange="changeRosterActivePet(${st.id}, this.value)" 
+                    class="text-xs font-black bg-purple-50 text-purple-950 border-2 border-purple-300 rounded-xl px-2.5 py-1 shadow-2xs cursor-pointer w-auto max-w-[210px] truncate"
+                    title="切換當前想在大臣名冊顯示的寵物">
                     ${validPets.map((p, pIdx) => {
                       const sType = p.type.toLowerCase();
                       const sExp = pIdx === 0 ? effectivePts : Math.max(0, effectivePts - pIdx * 500);
@@ -5204,49 +5206,70 @@ function renderRosterView() {
                   </select>
                 </div>
 
-                <!-- 抽屜收藏按鈕 -->
-                <button type="button" onclick="toggleRosterPetDrawer(${st.id})" class="text-[10px] font-bold text-purple-800 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded-md border border-purple-300 transition cursor-pointer">
-                  <span>${isDrawerOpen ? '▲ 收藏其餘寵物' : `📂 收藏抽屜 (${validPets.length}隻萌寵) ▼`}</span>
+                <!-- 抽屜收藏按鈕 (加大方框尺寸與邊界內距，確保所有文字完整容納不溢出) -->
+                <button type="button" onclick="toggleRosterPetDrawer(${st.id})" 
+                  class="text-xs font-black text-purple-950 bg-gradient-to-r from-purple-100 via-indigo-50 to-purple-100 hover:from-purple-200 hover:to-indigo-100 px-3.5 py-1.5 rounded-xl border-2 border-purple-400 transition shadow-2xs cursor-pointer whitespace-nowrap flex items-center justify-center space-x-1.5 w-auto min-w-[200px] active:scale-95">
+                  <span class="text-sm">📂</span>
+                  <span class="tracking-wide">${isDrawerOpen ? '收合其餘萌寵 ▲' : `收藏抽屜 (${validPets.length}隻萌寵) ▼`}</span>
                 </button>
               </div>
 
-              <!-- 抽屜內容：展開後列出全部認養寵物與狀態 -->
+              <!-- 抽屜內容：展開後列出全部認養寵物與狀態 (適當加大方框尺寸與各列邊距，確保塞入全部文字) -->
               ${isDrawerOpen ? `
-                <div class="mt-2 p-2 bg-purple-50 rounded-xl border border-purple-300 w-full space-y-1.5 text-left animate-fadeIn">
-                  <span class="text-[10px] font-black text-purple-900 block border-b border-purple-200 pb-1">🐾 已認養寵物收藏庫 (${validPets.length}隻)：</span>
-                  ${validPets.map((p, pIdx) => {
-                    const sType = p.type.toLowerCase();
-                    const sExp = pIdx === 0 ? effectivePts : Math.max(0, effectivePts - pIdx * 500);
-                    const sStatus = window.KingdomApp.getAnimalStatus(sType, sExp);
-                    const sSvg = window.KingdomApp.renderAnimalSVG(sType, sStatus.stageIndex);
-                    const isLatest = pIdx === validPets.length - 1;
-                    return `
-                      <div class="flex items-center justify-between p-1 bg-white rounded-lg border ${pIdx === activeIdx ? 'border-purple-500 ring-1 ring-purple-400 bg-purple-50/50' : 'border-purple-200'}">
-                        <div class="flex items-center space-x-1.5">
-                          <div class="w-6 h-6 flex-shrink-0 bg-white rounded p-0.5 border border-purple-300">
-                            ${sSvg}
+                <div class="mt-2.5 p-3 bg-gradient-to-br from-purple-50 via-white to-purple-50 rounded-2xl border-2 border-purple-400 w-full min-w-[250px] max-w-[300px] space-y-2 text-left shadow-md animate-fadeIn">
+                  <div class="flex items-center justify-between border-b border-purple-200 pb-1.5">
+                    <span class="text-xs font-black text-purple-950 flex items-center space-x-1">
+                      <span>🐾</span>
+                      <span>已認養寵物收藏庫 (${validPets.length}隻)</span>
+                    </span>
+                    <span class="text-[10px] text-purple-700 font-bold bg-purple-100 px-1.5 py-0.5 rounded">先認養後隨選</span>
+                  </div>
+                  <div class="space-y-2">
+                    ${validPets.map((p, pIdx) => {
+                      const sType = p.type.toLowerCase();
+                      const sExp = pIdx === 0 ? effectivePts : Math.max(0, effectivePts - pIdx * 500);
+                      const sStatus = window.KingdomApp.getAnimalStatus(sType, sExp);
+                      const sSvg = window.KingdomApp.renderAnimalSVG(sType, sStatus.stageIndex);
+                      const isLatest = pIdx === validPets.length - 1;
+                      const isCurrent = pIdx === activeIdx;
+                      return `
+                        <div class="flex items-center justify-between p-2 bg-white rounded-xl border-2 ${isCurrent ? 'border-purple-500 ring-2 ring-purple-300 bg-purple-50/70 shadow-2xs' : 'border-purple-200 hover:border-purple-300'} transition gap-2">
+                          <div class="flex items-center space-x-2 min-w-0">
+                            <div class="w-8 h-8 flex-shrink-0 bg-purple-50 rounded-lg p-0.5 border border-purple-300 shadow-2xs">
+                              ${sSvg}
+                            </div>
+                            <div class="min-w-0">
+                              <div class="flex items-center space-x-1 flex-wrap">
+                                <span class="text-xs font-black text-purple-950 whitespace-nowrap">${isLatest ? '🌟 ' : ''}${sStatus.animalName}</span>
+                                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ${sStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black' : 'bg-purple-100 text-purple-900'} whitespace-nowrap">${sStatus.stageTitle}</span>
+                              </div>
+                              <div class="text-[10px] text-slate-500 font-mono mt-0.5">成長經驗: ${sExp} 🍎</div>
+                            </div>
                           </div>
-                          <div>
-                            <span class="text-[11px] font-bold text-purple-950">${isLatest ? '🌟 ' : ''}${sStatus.animalName}</span>
-                            <span class="text-[9px] font-bold px-1 rounded bg-purple-100 text-purple-900 ml-1">${sStatus.stageTitle}</span>
+                          <div class="flex items-center space-x-1 shrink-0">
+                            <button type="button" onclick="changeRosterActivePet(${st.id}, ${pIdx})" 
+                              class="text-xs px-2.5 py-1 rounded-lg ${isCurrent ? 'bg-purple-700 text-white font-black shadow-2xs' : 'bg-purple-100 hover:bg-purple-200 text-purple-950 font-bold border border-purple-300'} transition cursor-pointer">
+                              ${isCurrent ? '✓ 顯示中' : '切換'}
+                            </button>
+                            <button type="button" onclick="openChangeAnimalModal(${st.id}, ${pIdx})" 
+                              class="text-xs text-purple-700 hover:text-purple-950 hover:bg-purple-100 px-2 py-1 rounded-lg border border-purple-200 font-bold transition cursor-pointer" title="更換此隻萌寵品種">
+                              換
+                            </button>
                           </div>
                         </div>
-                        <div class="flex items-center space-x-1">
-                          <button type="button" onclick="changeRosterActivePet(${st.id}, ${pIdx})" class="text-[10px] px-1 py-0.5 rounded bg-purple-200 hover:bg-purple-300 text-purple-900 font-bold">${pIdx === activeIdx ? '顯示中' : '切換'}</button>
-                          <button type="button" onclick="openChangeAnimalModal(${st.id}, ${pIdx})" class="text-[10px] text-purple-700 hover:underline font-bold">[換]</button>
-                        </div>
-                      </div>
-                    `;
-                  }).join('')}
+                      `;
+                    }).join('')}
+                  </div>
                 </div>
               ` : ''}
             ` : ''}
 
             <!-- 若達門檻但尚未認養新寵物 -->
             ${validPets.length < maxAllowed && effectivePts >= reqPtsForNext ? `
-              <div class="mt-1">
-                <button type="button" onclick="openChangeAnimalModal(${st.id}, ${validPets.length})" class="text-[10px] font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-2 py-0.5 rounded-lg border border-amber-400 shadow-2xs">
-                  🐣 認養第${validPets.length + 1}萌寵！
+              <div class="mt-1.5">
+                <button type="button" onclick="openChangeAnimalModal(${st.id}, ${validPets.length})" 
+                  class="text-xs font-black text-amber-950 bg-gradient-to-r from-amber-300 to-yellow-300 hover:from-amber-400 hover:to-yellow-400 px-3 py-1.5 rounded-xl border-2 border-amber-500 shadow-2xs transition active:scale-95 whitespace-nowrap">
+                  🐣 認養第${validPets.length + 1}隻萌寵！
                 </button>
               </div>
             ` : ''}
@@ -5314,11 +5337,11 @@ function switchBatchTab(tab) {
   if (tab === 'names') {
     hintEl.innerHTML = "請直接複製 27 位學生姓名貼在下方（<strong>一行一個姓名</strong>），依序對應 1 號至 27 號：";
     textarea.value = students.map(s => s.name).join('\n');
-    textarea.placeholder = "王品捷\n李宇軒\n林冠廷\n... (共27行)";
+    textarea.placeholder = "洪永恩\n莊淇勛\n黃胤哲\n... (共27行)";
   } else if (tab === 'titles') {
-    hintEl.innerHTML = "請直接複製 27 位大臣官職或幹部名稱貼在下方（<strong>一行一個職稱</strong>，如：首輔大臣、副班長、風紀股長）：";
+    hintEl.innerHTML = "請直接複製 27 位大臣官職或幹部名稱貼在下方（<strong>一行一個職稱</strong>，如：最高指揮官、晨間小隊長、風紀股長）：";
     textarea.value = students.map(s => s.title).join('\n');
-    textarea.placeholder = "內閣首輔大臣\n皇家騎士團長\n國庫財政大臣\n... (共27行)";
+    textarea.placeholder = "漱口水發放官\n晨間小隊長\n設備掌管官\n... (共27行)";
   } else if (tab === 'birthdays') {
     hintEl.innerHTML = "請直接複製 27 位學生國曆生日 4 碼貼在下方（<strong>一行一個生日</strong>，如：0101、0520、1104），家長登入時將與座號自動組合成 6 碼（例如 1 號生日 0101 密碼即為 010101）：";
     textarea.value = students.map(s => s.birthday).join('\n');
@@ -8196,6 +8219,169 @@ async function importBackupJSON(event) {
   }
 }
 
+function openTimeMachineModal() {
+  if (!checkTeacherAuth("使用時光機存檔救援")) return;
+  const modal = document.getElementById("timeMachineModal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  renderTimeMachineSnapshots();
+}
+
+function closeTimeMachineModal() {
+  const modal = document.getElementById("timeMachineModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+async function renderTimeMachineSnapshots() {
+  const container = document.getElementById("timeMachineSnapshotsList");
+  if (!container) return;
+
+  const store = window.KingdomApp && window.KingdomApp.store;
+  const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+  if (!store || !sync) return;
+
+  const localSnaps = store.getLocalSnapshots();
+
+  let serverSnaps = [];
+  try {
+    const sRes = await sync.fetchServerSnapshots();
+    if (sRes && sRes.snapshots) serverSnaps = sRes.snapshots;
+  } catch (_) {}
+
+  let html = '';
+
+  if (localSnaps.length === 0 && serverSnaps.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-6 text-slate-500 text-xs">
+        目前尚無歷史快照紀錄。每次進行重要操作或同步時，系統將自動為您拍照留存。
+      </div>
+    `;
+    return;
+  }
+
+  if (localSnaps.length > 0) {
+    html += `<div class="text-xs font-black text-amber-950 mb-1.5 flex items-center space-x-1">
+      <span>📱 本機瀏覽器時光機快照 (共 ${localSnaps.length} 份)</span>
+    </div>`;
+    html += `<div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">`;
+    localSnaps.forEach(snap => {
+      html += `
+        <div class="p-2.5 rounded-xl border border-amber-300 bg-amber-50/70 hover:bg-amber-100 transition flex items-center justify-between text-xs">
+          <div>
+            <div class="font-bold text-amber-950">${escapeHtml(snap.reason || '自動備份')}</div>
+            <div class="text-[10px] text-slate-500 font-mono mt-0.5">時間：${snap.timeStr || new Date(snap.timestamp).toLocaleString()} ‧ 大臣人數：${snap.studentCount || 27}人</div>
+          </div>
+          <button onclick="restoreFromLocalSnapshot('${snap.id}')" class="px-3 py-1 rounded-lg bg-amber-950 text-amber-300 hover:bg-amber-900 font-bold text-xs shadow-sm flex items-center space-x-1 shrink-0">
+            <span>↩️</span>
+            <span>還原此版</span>
+          </button>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  if (serverSnaps.length > 0) {
+    html += `<div class="text-xs font-black text-amber-950 mt-3 mb-1.5 flex items-center space-x-1">
+      <span>🖥️ 本機伺服器磁碟備份 (共 ${serverSnaps.length} 份)</span>
+    </div>`;
+    html += `<div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">`;
+    serverSnaps.forEach(snap => {
+      html += `
+        <div class="p-2.5 rounded-xl border border-sky-300 bg-sky-50/70 hover:bg-sky-100 transition flex items-center justify-between text-xs">
+          <div>
+            <div class="font-bold text-sky-950">${escapeHtml(snap.filename)}</div>
+            <div class="text-[10px] text-slate-500 font-mono mt-0.5">時間：${snap.timeString} ‧ 大小：${Math.round(snap.size / 1024)} KB</div>
+          </div>
+          <button onclick="restoreFromServerSnapshot('${snap.filename}')" class="px-3 py-1 rounded-lg bg-sky-900 text-sky-200 hover:bg-sky-800 font-bold text-xs shadow-sm flex items-center space-x-1 shrink-0">
+            <span>↩️</span>
+            <span>還原此版</span>
+          </button>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+async function restoreMasterPcData() {
+  const ok = confirm("確定要還原至五年二班真實大臣完整存檔（洪永恩、莊淇勛...等27位大臣）嗎？\n\n系統將自動備份當前狀態，並將完整資料打上最新時間戳，保證手機與電腦立即同步恢復！");
+  if (!ok) return;
+  const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+  if (!sync) return;
+  showToast("正在還原電腦主存檔...", "⏳");
+  const res = await sync.restoreServerSnapshot();
+  if (res.success) {
+    showToast(`🎉 成功還原電腦主存檔 (共 ${res.studentCount || 27} 位大臣)！`, "👑");
+    closeTimeMachineModal();
+    closeCloudSyncModal();
+    if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+      window.KingdomUI.refreshCurrentView();
+    }
+  } else {
+    alert("還原失敗：" + (res.error || res.message));
+  }
+}
+
+function restoreFromLocalSnapshot(snapshotId) {
+  const ok = confirm("確定要還原至此時光機歷史版本嗎？\n\n系統會將現有狀態自動留存備份後再執行還原。");
+  if (!ok) return;
+  const res = window.KingdomApp.store.restoreLocalSnapshot(snapshotId);
+  if (res.success) {
+    showToast(`🎉 成功還原至該時光機版本！`, "👑");
+    closeTimeMachineModal();
+    closeCloudSyncModal();
+    if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+      window.KingdomUI.refreshCurrentView();
+    }
+  } else {
+    alert("還原失敗：" + res.message);
+  }
+}
+
+async function restoreFromServerSnapshot(filename) {
+  const ok = confirm(`確定要從伺服器磁碟備份「${filename}」還原嗎？\n\n系統會自動備份當前存檔，並將該版本作為最新版本同步給所有裝置。`);
+  if (!ok) return;
+  showToast("正在從伺服器磁碟備份還原...", "⏳");
+  const res = await window.KingdomApp.cloudSync.restoreServerSnapshot(filename);
+  if (res.success) {
+    showToast(`🎉 成功還原伺服器存檔 (共 ${res.studentCount || 27} 位大臣)！`, "👑");
+    closeTimeMachineModal();
+    closeCloudSyncModal();
+    if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+      window.KingdomUI.refreshCurrentView();
+    }
+  } else {
+    alert("還原失敗：" + (res.error || res.message));
+  }
+}
+
+async function forcePushCurrentToLan() {
+  const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+  if (!sync) return;
+  showToast("正在將本頁面存檔強制推送至本機伺服器...", "⏳");
+  const res = await sync.push({ silent: false, force: true });
+  if (res.success) {
+    showToast("🎉 已成功將本頁存檔同步至本機伺服器！其他裝置皆可讀取此最新存檔！", "👑");
+  } else {
+    alert("推送至伺服器失敗：" + (res.error || res.message));
+  }
+}
+
+async function forcePullFromLan() {
+  const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+  if (!sync) return;
+  showToast("正在強制從伺服器拉取最新存檔...", "⏳");
+  const res = await sync.pull({ silent: false, force: true });
+  if (res.success) {
+    showToast("🎉 已成功從伺服器拉取最新存檔！", "👑");
+  } else {
+    alert("從伺服器拉取失敗：" + (res.error || '連線逾時'));
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.KingdomUI = {
     switchMainView,
@@ -8206,7 +8392,15 @@ if (typeof window !== 'undefined') {
     showToast,
     openTimerModal,
     openSilenceModal,
-    openCloudSyncModal
+    openCloudSyncModal,
+    openTimeMachineModal,
+    closeTimeMachineModal,
+    renderTimeMachineSnapshots,
+    restoreMasterPcData,
+    restoreFromLocalSnapshot,
+    restoreFromServerSnapshot,
+    forcePushCurrentToLan,
+    forcePullFromLan
   };
 }
 

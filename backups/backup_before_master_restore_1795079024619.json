@@ -1,0 +1,1322 @@
+{
+  "queenPassword": "queen",
+  "lateThreshold": "07:40",
+  "students": [
+    {
+      "id": 1,
+      "seatNo": 1,
+      "name": "王品捷",
+      "gender": "M",
+      "title": "內閣首輔大臣",
+      "birthday": "0315",
+      "points": 85,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 2,
+      "seatNo": 2,
+      "name": "李宇軒",
+      "gender": "M",
+      "title": "皇家騎士團長",
+      "birthday": "0520",
+      "points": 160,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 3,
+      "seatNo": 3,
+      "name": "林冠廷",
+      "gender": "M",
+      "title": "國庫財政大臣",
+      "birthday": "0812",
+      "points": 210,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 4,
+      "seatNo": 4,
+      "name": "張宸睿",
+      "gender": "M",
+      "title": "宮廷禮儀大臣",
+      "birthday": "1104",
+      "points": 65,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 5,
+      "seatNo": 5,
+      "name": "陳奕安",
+      "gender": "M",
+      "title": "皇家文書大臣",
+      "birthday": "0228",
+      "points": 130,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 6,
+      "seatNo": 6,
+      "name": "黃柏瀚",
+      "gender": "M",
+      "title": "奇蹟魔法大臣",
+      "birthday": "0709",
+      "points": 520,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 7,
+      "seatNo": 7,
+      "name": "楊子賢",
+      "gender": "M",
+      "title": "守護壁壘大將",
+      "birthday": "0923",
+      "points": 95,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 8,
+      "seatNo": 8,
+      "name": "趙偉豪",
+      "gender": "M",
+      "title": "皇家圖書大臣",
+      "birthday": "0416",
+      "points": 145,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 9,
+      "seatNo": 9,
+      "name": "劉承佑",
+      "gender": "M",
+      "title": "生態綠意大臣",
+      "birthday": "1205",
+      "points": 50,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 10,
+      "seatNo": 10,
+      "name": "蔡秉恩",
+      "gender": "M",
+      "title": "國境先鋒騎士",
+      "birthday": "0630",
+      "points": 175,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 11,
+      "seatNo": 11,
+      "name": "吳宗翰",
+      "gender": "M",
+      "title": "皇家衛隊隊長",
+      "birthday": "0118",
+      "points": 115,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 12,
+      "seatNo": 12,
+      "name": "許翔宇",
+      "gender": "M",
+      "title": "智慧科技大臣",
+      "birthday": "1010",
+      "points": 240,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 13,
+      "seatNo": 13,
+      "name": "鄭予涵",
+      "gender": "F",
+      "title": "體育競技女將軍",
+      "birthday": "0403",
+      "points": 190,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 14,
+      "seatNo": 14,
+      "name": "謝孟庭",
+      "gender": "F",
+      "title": "藝術壁畫大臣",
+      "birthday": "0825",
+      "points": 155,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 15,
+      "seatNo": 15,
+      "name": "周語晴",
+      "gender": "F",
+      "title": "皇家音樂總監",
+      "birthday": "0614",
+      "points": 535,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 16,
+      "seatNo": 16,
+      "name": "郭心妍",
+      "gender": "F",
+      "title": "晨曦敲鐘官",
+      "birthday": "0329",
+      "points": 80,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 17,
+      "seatNo": 17,
+      "name": "曾詩涵",
+      "gender": "F",
+      "title": "皇家糧餉大臣",
+      "birthday": "1119",
+      "points": 125,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 18,
+      "seatNo": 18,
+      "name": "洪若菲",
+      "gender": "F",
+      "title": "萬國外交特使",
+      "birthday": "0508",
+      "points": 205,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 19,
+      "seatNo": 19,
+      "name": "邱品萱",
+      "gender": "F",
+      "title": "秩序執法女官",
+      "birthday": "0915",
+      "points": 140,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 20,
+      "seatNo": 20,
+      "name": "孫瑀恩",
+      "gender": "F",
+      "title": "歡樂慶典大臣",
+      "birthday": "0722",
+      "points": 165,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 21,
+      "seatNo": 21,
+      "name": "莊宜璇",
+      "gender": "F",
+      "title": "皇家天文占星官",
+      "birthday": "0107",
+      "points": 280,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 22,
+      "seatNo": 22,
+      "name": "賴采婕",
+      "gender": "F",
+      "title": "星光守望騎士",
+      "birthday": "1224",
+      "points": 90,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 23,
+      "seatNo": 23,
+      "name": "鍾佩芸",
+      "gender": "F",
+      "title": "皇宮環境大臣",
+      "birthday": "0214",
+      "points": 135,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 24,
+      "seatNo": 24,
+      "name": "方雅筑",
+      "gender": "F",
+      "title": "皇家廣播宣令官",
+      "birthday": "1002",
+      "points": 70,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 25,
+      "seatNo": 25,
+      "name": "羅晴文",
+      "gender": "F",
+      "title": "智慧博學顧問",
+      "birthday": "0606",
+      "points": 225,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 26,
+      "seatNo": 26,
+      "name": "簡宏宇",
+      "gender": "M",
+      "title": "皇家工務大臣",
+      "birthday": "0918",
+      "points": 110,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    },
+    {
+      "id": 27,
+      "seatNo": 27,
+      "name": "蘇品睿",
+      "gender": "M",
+      "title": "皇家巡察御史",
+      "birthday": "0425",
+      "points": 140,
+      "lifetimePoints": 0,
+      "animalType": "dog",
+      "petType": "dog",
+      "petExp": 0,
+      "secondPetType": null,
+      "secondPetExp": 0
+    }
+  ],
+  "pointPresets": [
+    {
+      "id": "p1",
+      "type": "plus",
+      "label": "課堂積極發表",
+      "points": 2,
+      "icon": "💡"
+    },
+    {
+      "id": "p2",
+      "type": "plus",
+      "label": "遵守班級常規",
+      "points": 2,
+      "icon": "🛡️"
+    },
+    {
+      "id": "p3",
+      "type": "plus",
+      "label": "皇宮整潔認真",
+      "points": 3,
+      "icon": "🧹"
+    },
+    {
+      "id": "p4",
+      "type": "plus",
+      "label": "友愛互助同儕",
+      "points": 3,
+      "icon": "🤝"
+    },
+    {
+      "id": "p5",
+      "type": "plus",
+      "label": "奏章字跡優良",
+      "points": 3,
+      "icon": "📜"
+    },
+    {
+      "id": "p6",
+      "type": "plus",
+      "label": "特殊卓越貢獻",
+      "points": 5,
+      "icon": "👑"
+    },
+    {
+      "id": "m1",
+      "type": "minus",
+      "label": "上課分心聊天",
+      "points": -1,
+      "icon": "🤐"
+    },
+    {
+      "id": "m2",
+      "type": "minus",
+      "label": "忘記帶學用品",
+      "points": -1,
+      "icon": "🎒"
+    },
+    {
+      "id": "m3",
+      "type": "minus",
+      "label": "走廊危險奔跑",
+      "points": -2,
+      "icon": "🏃"
+    },
+    {
+      "id": "m4",
+      "type": "minus",
+      "label": "作業未按時交",
+      "points": -2,
+      "icon": "⚠️"
+    }
+  ],
+  "homeworkPresets": [
+    {
+      "id": "hw_pre_1",
+      "subject": "國語",
+      "name": "國習",
+      "fullName": "國語習作完成"
+    },
+    {
+      "id": "hw_pre_2",
+      "subject": "國語",
+      "name": "造詞",
+      "fullName": "生字造詞甲乙本"
+    },
+    {
+      "id": "hw_pre_3",
+      "subject": "國語",
+      "name": "圈詞",
+      "fullName": "國語圈詞隨堂本"
+    },
+    {
+      "id": "hw_pre_4",
+      "subject": "數學",
+      "name": "數習",
+      "fullName": "數學習作進度"
+    },
+    {
+      "id": "hw_pre_5",
+      "subject": "數學",
+      "name": "數練",
+      "fullName": "數學隨堂練習本"
+    },
+    {
+      "id": "hw_pre_6",
+      "subject": "自然",
+      "name": "自習",
+      "fullName": "自然習作觀察記錄"
+    },
+    {
+      "id": "hw_pre_7",
+      "subject": "社會",
+      "name": "社習",
+      "fullName": "社會習作重點作業"
+    },
+    {
+      "id": "hw_pre_8",
+      "subject": "綜合",
+      "name": "聯絡簿",
+      "fullName": "家長簽名聯絡簿"
+    }
+  ],
+  "behaviorReasons": [
+    {
+      "id": "br_ref_1",
+      "type": "reflection",
+      "label": "上課分心聊私事",
+      "text": "上課分心聊私事"
+    },
+    {
+      "id": "br_ref_2",
+      "type": "reflection",
+      "label": "未帶課堂學用品",
+      "text": "未帶課堂學用品"
+    },
+    {
+      "id": "br_ref_3",
+      "type": "reflection",
+      "label": "未經許可擅離位",
+      "text": "未經許可擅離位"
+    },
+    {
+      "id": "br_ref_4",
+      "type": "reflection",
+      "label": "走廊危險奔跑追逐",
+      "text": "走廊危險奔跑追逐"
+    },
+    {
+      "id": "br_ref_5",
+      "type": "reflection",
+      "label": "對師長同儕禮貌欠佳",
+      "text": "對師長同儕禮貌欠佳"
+    },
+    {
+      "id": "br_srv_1",
+      "type": "service",
+      "label": "超過07:40未打卡",
+      "text": "超過07:40未打卡（留班補打掃）"
+    },
+    {
+      "id": "br_srv_2",
+      "type": "service",
+      "label": "個人座位周遭整潔不佳",
+      "text": "個人座位周遭整潔不佳"
+    },
+    {
+      "id": "br_srv_3",
+      "type": "service",
+      "label": "打掃責任區未落實",
+      "text": "打掃責任區未落實"
+    },
+    {
+      "id": "br_srv_4",
+      "type": "service",
+      "label": "忘記抽屜與置物櫃清空",
+      "text": "忘記抽屜與置物櫃清空"
+    },
+    {
+      "id": "br_srv_5",
+      "type": "service",
+      "label": "公物使用後未歸位",
+      "text": "公物使用後未歸位"
+    }
+  ],
+  "contactBook": {
+    "date": "2026-11-16",
+    "homeworkItems": [
+      "1. 國語習作第八課 P.58 ~ P.62",
+      "2. 數學習作第 72 頁至第 74 頁",
+      "3. 訂正國語隨堂生字語詞卷",
+      "4. 明日晨讀書籍準備完畢"
+    ],
+    "reminders": [
+      "早自修：國語隨堂造詞練習與生字成語複習",
+      "重要提醒：明天有體育課，請穿著西寧王國運動服與運動鞋"
+    ],
+    "queenMotto": "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
+  },
+  "contactBookHistory": {
+    "2026-11-16": {
+      "date": "2026-11-16",
+      "homeworkItems": [
+        "1. 國語習作第八課 P.58 ~ P.62",
+        "2. 數學習作第 72 頁至第 74 頁",
+        "3. 訂正國語隨堂生字語詞卷",
+        "4. 明日晨讀書籍準備完畢"
+      ],
+      "reminders": [
+        "明天有體育課，請穿著西寧王國運動服",
+        "帶水壺、跳繩與個人潔牙用具"
+      ],
+      "queenMotto": "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！",
+      "updatedAt": 1794803534000
+    },
+    "2026-11-13": {
+      "date": "2026-11-13",
+      "homeworkItems": [
+        "1. 國語習作第 九 課閱讀理解題",
+        "2. 數學習作 P.66 ~ P.68",
+        "3. 預習自然第三單元"
+      ],
+      "reminders": [
+        "下週一全校升旗朝會，請準時 07:40 前抵達",
+        "請帶美術水彩用具與調色盤"
+      ],
+      "queenMotto": "持之以恆是成功的鑰匙，週末溫故而知新！",
+      "updatedAt": 1794717134000
+    },
+    "2026-11-12": {
+      "date": "2026-11-12",
+      "homeworkItems": [
+        "1. 國語隨堂造句本完成",
+        "2. 數學甲本單元練習二",
+        "3. 課外閱讀 20 分鐘"
+      ],
+      "reminders": [
+        "明天有體育課，穿著西寧王國運動服，帶水壺與跳繩"
+      ],
+      "queenMotto": "每一天的努力都是積累智慧的寶藏。",
+      "updatedAt": 1794630734000
+    }
+  },
+  "attendance": {
+    "2026-11-16": {
+      "1": {
+        "status": "late",
+        "checkInTime": "13:44",
+        "note": "晨檢遲到 (13:44)"
+      },
+      "2": {
+        "status": "late",
+        "checkInTime": "14:16",
+        "note": "晨檢遲到 (14:16)"
+      },
+      "3": {
+        "status": "present",
+        "checkInTime": "07:33",
+        "note": ""
+      },
+      "4": {
+        "status": "present",
+        "checkInTime": "07:35",
+        "note": ""
+      },
+      "5": {
+        "status": "present",
+        "checkInTime": "07:38",
+        "note": ""
+      },
+      "6": {
+        "status": "present",
+        "checkInTime": "07:25",
+        "note": ""
+      },
+      "7": {
+        "status": "present",
+        "checkInTime": "07:39",
+        "note": ""
+      },
+      "8": {
+        "status": "late",
+        "checkInTime": "07:46",
+        "note": "晨讀遲到"
+      },
+      "9": {
+        "status": "present",
+        "checkInTime": "07:36",
+        "note": ""
+      },
+      "10": {
+        "status": "present",
+        "checkInTime": "07:30",
+        "note": ""
+      },
+      "11": {
+        "status": "present",
+        "checkInTime": "07:34",
+        "note": ""
+      },
+      "12": {
+        "status": "present",
+        "checkInTime": "07:22",
+        "note": ""
+      },
+      "13": {
+        "status": "present",
+        "checkInTime": "07:37",
+        "note": ""
+      },
+      "14": {
+        "status": "leave",
+        "checkInTime": null,
+        "leaveType": "sick",
+        "note": "病假（家長已通報）"
+      },
+      "15": {
+        "status": "present",
+        "checkInTime": "07:26",
+        "note": ""
+      },
+      "16": {
+        "status": "present",
+        "checkInTime": "07:32",
+        "note": ""
+      },
+      "17": {
+        "status": "present",
+        "checkInTime": "07:35",
+        "note": ""
+      },
+      "18": {
+        "status": "present",
+        "checkInTime": "07:29",
+        "note": ""
+      },
+      "19": {
+        "status": "present",
+        "checkInTime": "07:33",
+        "note": ""
+      },
+      "20": {
+        "status": "present",
+        "checkInTime": "07:36",
+        "note": ""
+      },
+      "21": {
+        "status": "present",
+        "checkInTime": "07:24",
+        "note": ""
+      },
+      "22": {
+        "status": "late",
+        "checkInTime": "07:48",
+        "note": "校車延誤"
+      },
+      "23": {
+        "status": "present",
+        "checkInTime": "07:35",
+        "note": ""
+      },
+      "24": {
+        "status": "present",
+        "checkInTime": "07:38",
+        "note": ""
+      },
+      "25": {
+        "status": "present",
+        "checkInTime": "07:27",
+        "note": ""
+      },
+      "26": {
+        "status": "present",
+        "checkInTime": "07:34",
+        "note": ""
+      },
+      "27": {
+        "status": "present",
+        "checkInTime": "07:30",
+        "note": ""
+      }
+    },
+    "2026-11-13": {
+      "1": {
+        "status": "present",
+        "checkInTime": "07:21",
+        "note": ""
+      },
+      "2": {
+        "status": "present",
+        "checkInTime": "07:22",
+        "note": ""
+      },
+      "3": {
+        "status": "present",
+        "checkInTime": "07:23",
+        "note": ""
+      },
+      "4": {
+        "status": "present",
+        "checkInTime": "07:24",
+        "note": ""
+      },
+      "5": {
+        "status": "present",
+        "checkInTime": "07:25",
+        "note": ""
+      },
+      "6": {
+        "status": "present",
+        "checkInTime": "07:26",
+        "note": ""
+      },
+      "7": {
+        "status": "present",
+        "checkInTime": "07:27",
+        "note": ""
+      },
+      "8": {
+        "status": "present",
+        "checkInTime": "07:28",
+        "note": ""
+      },
+      "9": {
+        "status": "present",
+        "checkInTime": "07:29",
+        "note": ""
+      },
+      "10": {
+        "status": "present",
+        "checkInTime": "07:30",
+        "note": ""
+      },
+      "11": {
+        "status": "present",
+        "checkInTime": "07:31",
+        "note": ""
+      },
+      "12": {
+        "status": "present",
+        "checkInTime": "07:32",
+        "note": ""
+      },
+      "13": {
+        "status": "late",
+        "checkInTime": "07:46",
+        "note": "校車誤點"
+      },
+      "14": {
+        "status": "present",
+        "checkInTime": "07:34",
+        "note": ""
+      },
+      "15": {
+        "status": "present",
+        "checkInTime": "07:35",
+        "note": ""
+      },
+      "16": {
+        "status": "present",
+        "checkInTime": "07:36",
+        "note": ""
+      },
+      "17": {
+        "status": "present",
+        "checkInTime": "07:37",
+        "note": ""
+      },
+      "18": {
+        "status": "present",
+        "checkInTime": "07:20",
+        "note": ""
+      },
+      "19": {
+        "status": "present",
+        "checkInTime": "07:21",
+        "note": ""
+      },
+      "20": {
+        "status": "leave",
+        "checkInTime": null,
+        "leaveType": "sick",
+        "leaveScope": "all_day",
+        "note": "流感就醫"
+      },
+      "21": {
+        "status": "present",
+        "checkInTime": "07:23",
+        "note": ""
+      },
+      "22": {
+        "status": "present",
+        "checkInTime": "07:24",
+        "note": ""
+      },
+      "23": {
+        "status": "present",
+        "checkInTime": "07:25",
+        "note": ""
+      },
+      "24": {
+        "status": "present",
+        "checkInTime": "07:26",
+        "note": ""
+      },
+      "25": {
+        "status": "present",
+        "checkInTime": "07:27",
+        "note": ""
+      },
+      "26": {
+        "status": "present",
+        "checkInTime": "07:28",
+        "note": ""
+      },
+      "27": {
+        "status": "present",
+        "checkInTime": "07:29",
+        "note": ""
+      }
+    },
+    "2026-11-12": {
+      "1": {
+        "status": "present",
+        "checkInTime": "07:21",
+        "note": ""
+      },
+      "2": {
+        "status": "present",
+        "checkInTime": "07:22",
+        "note": ""
+      },
+      "3": {
+        "status": "present",
+        "checkInTime": "07:23",
+        "note": ""
+      },
+      "4": {
+        "status": "present",
+        "checkInTime": "07:24",
+        "note": ""
+      },
+      "5": {
+        "status": "present",
+        "checkInTime": "07:25",
+        "note": ""
+      },
+      "6": {
+        "status": "present",
+        "checkInTime": "07:26",
+        "note": ""
+      },
+      "7": {
+        "status": "present",
+        "checkInTime": "07:27",
+        "note": ""
+      },
+      "8": {
+        "status": "present",
+        "checkInTime": "07:28",
+        "note": ""
+      },
+      "9": {
+        "status": "present",
+        "checkInTime": "07:29",
+        "note": ""
+      },
+      "10": {
+        "status": "present",
+        "checkInTime": "07:30",
+        "note": ""
+      },
+      "11": {
+        "status": "present",
+        "checkInTime": "07:31",
+        "note": ""
+      },
+      "12": {
+        "status": "present",
+        "checkInTime": "07:32",
+        "note": ""
+      },
+      "13": {
+        "status": "present",
+        "checkInTime": "07:33",
+        "note": ""
+      },
+      "14": {
+        "status": "present",
+        "checkInTime": "07:34",
+        "note": ""
+      },
+      "15": {
+        "status": "present",
+        "checkInTime": "07:35",
+        "note": ""
+      },
+      "16": {
+        "status": "present",
+        "checkInTime": "07:36",
+        "note": ""
+      },
+      "17": {
+        "status": "present",
+        "checkInTime": "07:37",
+        "note": ""
+      },
+      "18": {
+        "status": "present",
+        "checkInTime": "07:20",
+        "note": ""
+      },
+      "19": {
+        "status": "present",
+        "checkInTime": "07:21",
+        "note": ""
+      },
+      "20": {
+        "status": "present",
+        "checkInTime": "07:22",
+        "note": ""
+      },
+      "21": {
+        "status": "present",
+        "checkInTime": "07:23",
+        "note": ""
+      },
+      "22": {
+        "status": "present",
+        "checkInTime": "07:24",
+        "note": ""
+      },
+      "23": {
+        "status": "present",
+        "checkInTime": "07:25",
+        "note": ""
+      },
+      "24": {
+        "status": "present",
+        "checkInTime": "07:26",
+        "note": ""
+      },
+      "25": {
+        "status": "present",
+        "checkInTime": "07:27",
+        "note": ""
+      },
+      "26": {
+        "status": "present",
+        "checkInTime": "07:28",
+        "note": ""
+      },
+      "27": {
+        "status": "present",
+        "checkInTime": "07:29",
+        "note": ""
+      }
+    }
+  },
+  "homework": [
+    {
+      "id": 1,
+      "title": "國語習作第 八 課完成",
+      "presetName": "國習",
+      "type": "國語",
+      "date": "2026-11-16",
+      "records": {
+        "1": "submitted",
+        "2": "submitted",
+        "3": "submitted",
+        "4": "submitted",
+        "5": "submitted",
+        "6": "submitted",
+        "7": "submitted",
+        "8": "late",
+        "9": "submitted",
+        "10": "submitted",
+        "11": "submitted",
+        "12": "submitted",
+        "13": "submitted",
+        "14": "pending",
+        "15": "submitted",
+        "16": "revision",
+        "17": "submitted",
+        "18": "submitted",
+        "19": "submitted",
+        "20": "submitted",
+        "21": "submitted",
+        "22": "missing",
+        "23": "submitted",
+        "24": "submitted",
+        "25": "submitted",
+        "26": "submitted",
+        "27": "submitted"
+      }
+    },
+    {
+      "id": 2,
+      "title": "數學習作 P.62 ~ P.65",
+      "presetName": "數習",
+      "type": "數學",
+      "date": "2026-11-16",
+      "records": {
+        "1": "submitted",
+        "2": "submitted",
+        "3": "submitted",
+        "4": "submitted",
+        "5": "submitted",
+        "6": "submitted",
+        "7": "submitted",
+        "8": "submitted",
+        "9": "submitted",
+        "10": "submitted",
+        "11": "submitted",
+        "12": "submitted",
+        "13": "submitted",
+        "14": "pending",
+        "15": "submitted",
+        "16": "submitted",
+        "17": "submitted",
+        "18": "submitted",
+        "19": "revision",
+        "20": "submitted",
+        "21": "submitted",
+        "22": "missing",
+        "23": "submitted",
+        "24": "submitted",
+        "25": "submitted",
+        "26": "submitted",
+        "27": "submitted"
+      }
+    },
+    {
+      "id": 3,
+      "title": "生字造詞隨堂筆記",
+      "presetName": "造詞",
+      "type": "國語",
+      "date": "2026-11-16",
+      "records": {
+        "1": "submitted",
+        "2": "submitted",
+        "3": "submitted",
+        "4": "submitted",
+        "5": "submitted",
+        "6": "submitted",
+        "7": "submitted",
+        "8": "submitted",
+        "9": "submitted",
+        "10": "submitted",
+        "11": "submitted",
+        "12": "submitted",
+        "13": "submitted",
+        "14": "pending",
+        "15": "submitted",
+        "16": "submitted",
+        "17": "submitted",
+        "18": "submitted",
+        "19": "submitted",
+        "20": "submitted",
+        "21": "submitted",
+        "22": "submitted",
+        "23": "submitted",
+        "24": "submitted",
+        "25": "submitted",
+        "26": "submitted",
+        "27": "submitted"
+      }
+    }
+  ],
+  "pointLogs": [
+    {
+      "id": 101,
+      "studentId": 15,
+      "points": 5,
+      "reason": "奏章字跡工整端正",
+      "date": "2026-11-16",
+      "time": "08:15"
+    },
+    {
+      "id": 102,
+      "studentId": 6,
+      "points": 5,
+      "reason": "課堂主動發表演練",
+      "date": "2026-11-16",
+      "time": "09:05"
+    },
+    {
+      "id": 103,
+      "studentId": 21,
+      "points": 5,
+      "reason": "熱心指導同儕算術",
+      "date": "2026-11-16",
+      "time": "10:20"
+    },
+    {
+      "id": 104,
+      "studentId": 3,
+      "points": 5,
+      "reason": "主動協助整理班級圖書",
+      "date": "2026-11-16",
+      "time": "11:10"
+    }
+  ],
+  "announcements": [
+    {
+      "id": 1,
+      "title": "五年二班班親會將於本週五晚間隆重召開",
+      "content": "歡迎全體皇親國戚（各位家長）蒞臨王國議政廳，共同研商小兵成長大計！",
+      "date": "2026-11-12",
+      "important": true
+    },
+    {
+      "id": 2,
+      "title": "下週即將迎來王國期中學力大評量",
+      "content": "請全體小兵大臣調養精神、溫故知新，發揮平素所學爭取至高榮譽！",
+      "date": "2026-11-10",
+      "important": false
+    }
+  ],
+  "rewardCards": [
+    {
+      "id": "rc_1",
+      "title": "榮譽免死金牌 (免罰卡)",
+      "cost": 30,
+      "icon": "🛡️",
+      "desc": "可抵銷一次未帶學用品或遲到愛班服務登記",
+      "category": "special"
+    },
+    {
+      "id": "rc_2",
+      "title": "一日皇家座位特權卡",
+      "cost": 45,
+      "icon": "💺",
+      "desc": "可自主挑選一日心儀王位（需經導師核可）",
+      "category": "privilege"
+    },
+    {
+      "id": "rc_3",
+      "title": "御膳房優先盛飯令",
+      "cost": 20,
+      "icon": "🍱",
+      "desc": "享有當日午餐第一順位盛飯與加菜特權",
+      "category": "item"
+    },
+    {
+      "id": "rc_4",
+      "title": "御花園特別免差役令",
+      "cost": 25,
+      "icon": "🧹",
+      "desc": "可免除一日外掃或教室值日生職務",
+      "category": "privilege"
+    },
+    {
+      "id": "rc_5",
+      "title": "宮廷圖書館自由閱覽證",
+      "cost": 15,
+      "icon": "📚",
+      "desc": "午休或早自習可至班級圖書角借閱傳奇秘笈",
+      "category": "study"
+    },
+    {
+      "id": "rc_6",
+      "title": "國王特赦奏章豁免卷",
+      "cost": 50,
+      "icon": "📜",
+      "desc": "可減免一項指定短篇日常作業（不含段考與作文）",
+      "category": "special"
+    }
+  ],
+  "rewardRedemptions": [],
+  "behaviorCards": {},
+  "trafficOverrides": {},
+  "seatingLayout": {
+    "rows": 5,
+    "cols": 6
+  },
+  "seatingChart": [
+    22,
+    21,
+    16,
+    11,
+    6,
+    1,
+    24,
+    23,
+    17,
+    12,
+    7,
+    2,
+    26,
+    25,
+    18,
+    13,
+    8,
+    3,
+    null,
+    27,
+    19,
+    14,
+    9,
+    4,
+    null,
+    null,
+    20,
+    15,
+    10,
+    5
+  ],
+  "lastModified": 1795044078278,
+  "satietyResetV20261116": true,
+  "petDefaultDogV20261116": true,
+  "seatingColsV20261117": true
+}

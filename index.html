@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=2026111812">
+  <link rel="stylesheet" href="styles.css?v=2026111901">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -178,6 +178,10 @@
               <span>🔒 鎖定導師權限 (登出)</span>
             </button>
             <div class="border-t border-amber-200 my-1"></div>
+            <button onclick="openTimeMachineModal()" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-amber-950 flex items-center space-x-2 font-black">
+              <i data-lucide="history" class="w-4 h-4 text-amber-600"></i>
+              <span>🕰️ 時光機 ‧ 歷史存檔救援</span>
+            </button>
             <button onclick="openCloudSyncModal()" class="w-full text-left px-4 py-2 hover:bg-amber-100 text-amber-950 flex items-center space-x-2">
               <i data-lucide="cloud" class="w-4 h-4 text-amber-600"></i>
               <span>☁️ 跨裝置雲端同步設定</span>
@@ -1422,9 +1426,9 @@
             </div>
           </div>
 
-          <!-- 大臣名冊表格 (字體放大、全欄置中、獨立累計蘋果欄、萌寵抽屜下拉) -->
+          <!-- 大臣名冊表格 (字體放大、全欄置中、獨立累計蘋果欄、萌寵抽屜加大方框適配) -->
           <div class="mt-4 overflow-x-auto">
-            <table class="w-full text-center text-sm min-w-[960px]">
+            <table class="w-full text-center text-sm min-w-[1100px]">
               <thead class="bg-gradient-to-r from-amber-200 via-amber-300 to-yellow-200 text-amber-950 font-black border-b-2 border-amber-400">
                 <tr>
                   <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">座號</th>
@@ -1433,7 +1437,7 @@
                   <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">生日 / 家長密碼</th>
                   <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">🌱 累計獲得蘋果</th>
                   <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">🍎 目前可用</th>
-                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">🐾 認養萌寵</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base min-w-[260px]">🐾 認養萌寵</th>
                   <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">⚙️ 投餵與操作</th>
                 </tr>
               </thead>
@@ -1565,11 +1569,11 @@
                     座號 03
                   </span>
                   <span id="parentStudentTitle" class="bg-amber-200 text-amber-950 font-bold text-xs px-2.5 py-0.5 rounded-full border border-amber-300">
-                    國庫財政大臣
+                    漱口水發放官
                   </span>
                 </div>
                 <h2 id="parentStudentName" class="text-2xl font-black text-amber-950 mt-1">
-                  林冠廷 大臣
+                  洪永恩 大臣
                 </h2>
                 <p class="text-xs text-amber-800">
                   西寧國小五年二班 ‧ 西寧小小兵王國
@@ -1912,9 +1916,9 @@
             <div>
               <div class="flex items-center space-x-1.5">
                 <span id="editPointsStudentSeat" class="text-xs font-mono font-black text-amber-950 bg-amber-200 px-1.5 py-0.5 rounded">01號</span>
-                <span id="editPointsStudentName" class="text-base font-black text-slate-900">王品捷</span>
+                <span id="editPointsStudentName" class="text-base font-black text-slate-900">洪永恩</span>
               </div>
-              <span id="editPointsStudentTitle" class="text-[11px] font-bold text-amber-800">內閣首輔大臣</span>
+              <span id="editPointsStudentTitle" class="text-[11px] font-bold text-amber-800">漱口水發放官</span>
             </div>
           </div>
           <div class="text-right">
@@ -2119,7 +2123,7 @@
       <div class="bg-amber-100 p-3 rounded-xl border border-amber-300">
         <span class="text-xs text-amber-800 font-bold block">告假大臣：</span>
         <h4 id="leaveModalStudentName" class="text-base font-black text-amber-950">
-          04號 張宸睿 ‧ 宮廷禮儀大臣
+          01號 洪永恩 ‧ 漱口水發放官
         </h4>
       </div>
 
@@ -3687,6 +3691,34 @@
         </div>
       </div>
 
+      <!-- 時光機歷史存檔與救援按鈕 -->
+      <div class="bg-amber-50 border-2 border-amber-300 p-3 rounded-2xl space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-black text-amber-950 flex items-center space-x-1.5">
+            <span>🕰️</span>
+            <span>歷史存檔救援與時光機 (防止舊裝置覆蓋)</span>
+          </div>
+          <button onclick="openTimeMachineModal()" class="px-2.5 py-1 rounded-lg bg-amber-900 hover:bg-amber-950 text-amber-200 text-xs font-black shadow-sm flex items-center space-x-1">
+            <span>展開時光機</span>
+            <span>👉</span>
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <button onclick="restoreMasterPcData()" class="px-2.5 py-1.5 rounded-xl bg-amber-950 text-amber-300 hover:bg-amber-900 font-bold flex items-center space-x-1 shadow-sm">
+            <span>💻</span>
+            <span>一鍵還原電腦主存檔 (27位完整大臣)</span>
+          </button>
+          <button onclick="forcePushCurrentToLan()" class="px-2.5 py-1.5 rounded-xl bg-emerald-800 text-white hover:bg-emerald-700 font-bold flex items-center space-x-1 shadow-sm" title="若此頁面為最新資料，可強制推送覆蓋伺服器">
+            <span>⬆️</span>
+            <span>強制以本頁資料覆蓋伺服器</span>
+          </button>
+          <button onclick="forcePullFromLan()" class="px-2.5 py-1.5 rounded-xl bg-sky-800 text-white hover:bg-sky-700 font-bold flex items-center space-x-1 shadow-sm" title="放棄本機舊紀錄，強制從伺服器拉取最新紀錄">
+            <span>⬇️</span>
+            <span>強制從伺服器拉取最新存檔</span>
+          </button>
+        </div>
+      </div>
+
       <!-- 手動備份與還原 -->
       <div class="border-t border-amber-200 pt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div class="flex items-center space-x-2">
@@ -3702,6 +3734,79 @@
           關閉
         </button>
       </div>
+
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: 時光機 ‧ 歷史存檔救援中心 (Time Machine Modal) -->
+  <!-- =============================================================== -->
+  <div id="timeMachineModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-lg w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3">
+        <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
+          <span>🕰️</span>
+          <span>時光倒流 ‧ 歷史存檔救援中心</span>
+        </h3>
+        <button onclick="closeTimeMachineModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="bg-amber-100/70 border border-amber-300 p-3 rounded-xl text-xs text-amber-950 space-y-1">
+        <div class="font-bold">🛡️ 智慧雙向版本守護已啟動：</div>
+        <p class="text-[11px] text-amber-900 leading-relaxed">
+          系統已全面修復「舊裝置開機搶推覆蓋新資料」的問題。每次進行加扣點、點名、修改座位或雲端拉取前，系統皆會自動建立快照留底。若不同裝置發生衝突，伺服器一律拒絕過期舊版本覆蓋。
+        </p>
+      </div>
+
+      <!-- 電腦端主歷史存檔快速復原 -->
+      <div class="border-2 border-amber-400 bg-white p-3.5 rounded-2xl space-y-2 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs font-black text-amber-950">💻 五年二班真實大臣完整主存檔（洪永恩、莊淇勛...等27位大臣）</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">內含 27 位大臣名冊、累積點數、座位排版、課堂作息與全部歷史資料</div>
+          </div>
+          <button onclick="restoreMasterPcData()" class="px-3.5 py-1.5 rounded-xl bg-amber-950 text-amber-300 hover:bg-amber-900 font-black text-xs shadow shrink-0 flex items-center space-x-1">
+            <span>↩️</span>
+            <span>立即還原</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 滾動快照清單 -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-black text-amber-950 flex items-center space-x-1">
+            <span>📷</span>
+            <span>歷史時光機快照清單</span>
+          </h4>
+          <button onclick="renderTimeMachineSnapshots()" class="text-[11px] font-bold text-amber-800 hover:text-amber-950 flex items-center space-x-0.5">
+            <span>🔄</span>
+            <span>重新整理</span>
+          </button>
+        </div>
+        <div id="timeMachineSnapshotsList" class="space-y-1.5 min-h-[100px]">
+          <!-- 動態渲染快照 -->
+        </div>
+      </div>
+
+      <!-- 跨環境手動推送/拉取 -->
+      <div class="border-t border-amber-200 pt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center space-x-2">
+          <button onclick="forcePushCurrentToLan()" class="px-3 py-1.5 rounded-lg border border-emerald-500 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold shadow-sm">
+            ⬆️ 強制推送到伺服器
+          </button>
+          <button onclick="forcePullFromLan()" class="px-3 py-1.5 rounded-lg border border-sky-500 bg-sky-50 hover:bg-sky-100 text-sky-900 font-bold shadow-sm">
+            ⬇️ 強制從伺服器拉取
+          </button>
+        </div>
+        <button onclick="closeTimeMachineModal()" class="px-4 py-1.5 rounded-lg bg-amber-950 text-amber-300 font-bold">
+          關閉
+        </button>
+      </div>
+    </div>
+  </div>
 
     </div>
   </div>
@@ -3824,7 +3929,7 @@
       <div class="bg-amber-100/90 border border-amber-300 p-3 rounded-xl flex items-center justify-between">
         <div>
           <span class="text-xs text-amber-800 font-bold block">正在為以下大臣挑選：</span>
-          <span id="changeAnimalTargetStudent" class="text-base font-black text-amber-950">王品捷 大臣</span>
+          <span id="changeAnimalTargetStudent" class="text-base font-black text-amber-950">洪永恩 大臣</span>
         </div>
         <div class="text-right">
           <span class="text-xs text-amber-800 font-bold block">累積飽食成長度</span>
@@ -3871,7 +3976,7 @@
           </div>
           <div>
             <div class="flex items-center space-x-1.5">
-              <span id="feedModalStudentName" class="text-base font-black text-amber-950">王品捷</span>
+              <span id="feedModalStudentName" class="text-base font-black text-amber-950">洪永恩</span>
               <span id="feedModalSeatNo" class="text-xs font-bold text-amber-800 bg-amber-200 px-1.5 py-0.5 rounded">01號</span>
             </div>
             <div id="feedModalAnimalName" class="text-xs font-black text-emerald-800 mt-0.5">🦁 威嚴戰獅</div>
@@ -4065,7 +4170,7 @@
         </div>
         <div class="text-right">
           <span class="text-slate-600 block">現坐大臣：</span>
-          <span id="assignSeatCurrentStudent" class="text-amber-950 font-black">王品捷 (01號)</span>
+          <span id="assignSeatCurrentStudent" class="text-amber-950 font-black">洪永恩 (01號)</span>
         </div>
       </div>
 
@@ -4245,8 +4350,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=2026111812"></script>
-  <script src="ui.js?v=2026111812"></script>
+  <script src="app.js?v=2026111902"></script>
+  <script src="ui.js?v=2026111902"></script>
 
   <!-- 保障座位表大屏投影與點名簿抽屜 100% 正常響應之備援守護腳本 -->
   <script>
