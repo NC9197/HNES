@@ -537,6 +537,29 @@ class KingdomStore {
       parsed.students.sort((a, b) => a.seatNo - b.seatNo);
     }
 
+    // 五年二班真實名冊強制校準 (v20261119：全班 27 位大臣全面升級為「洪永恩、莊淇勛」真實名冊，並精確保留原有累積點數與紀錄)
+    if (!parsed.realRosterV20261119 || (parsed.students && parsed.students.some(s => s.name === "王品捷" || s.name === "李宇軒" || s.name === "林冠廷"))) {
+      if (Array.isArray(parsed.students)) {
+        DEFAULT_STUDENTS_27.forEach((defSt, idx) => {
+          const st = parsed.students.find(s => s.seatNo === defSt.seatNo || s.id === defSt.id) || parsed.students[idx];
+          if (st) {
+            st.name = defSt.name;
+            st.title = defSt.title;
+            st.gender = defSt.gender;
+            st.birthday = defSt.birthday;
+          }
+        });
+        // 移除多餘的第 28 位測試大臣
+        parsed.students = parsed.students.filter(s => s.seatNo <= 27 && s.id <= 27);
+        // 確保座位表也是 27 位 (移除測試用 28 號)
+        if (parsed.seatingChart) {
+          parsed.seatingChart = parsed.seatingChart.map(x => (x === 28 ? null : x));
+        }
+      }
+      parsed.realRosterV20261119 = true;
+      parsed.lastModified = Math.max(parsed.lastModified || 0, Date.now());
+    }
+
     // 寵物飽食度歸零校驗 (v20261116：全班 27 位大臣萌寵飽食度與成長經驗歸零)
     if (!parsed.satietyResetV20261116) {
       if (Array.isArray(parsed.students)) {
