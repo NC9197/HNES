@@ -547,29 +547,6 @@
           "type": "dog"
         }
       ]
-    },
-    {
-      "id": 28,
-      "seatNo": 28,
-      "name": "林小兵",
-      "gender": "M",
-      "title": "皇家護衛",
-      "birthday": "0909",
-      "points": 800,
-      "lifetimePoints": 800,
-      "animalType": "dog",
-      "petType": "dog",
-      "petExp": 800,
-      "secondPetType": "cat",
-      "secondPetExp": 300,
-      "pets": [
-        {
-          "type": "dog"
-        },
-        {
-          "type": "cat"
-        }
-      ]
     }
   ],
   "pointPresets": [
@@ -1441,17 +1418,7 @@
     }
   ],
   "rewardRedemptions": [],
-  "behaviorCards": {
-    "28": {
-      "reflectionCard": false,
-      "reflectionCount": 0,
-      "reflectionReason": "",
-      "serviceCard": false,
-      "serviceCount": 0,
-      "serviceReason": "",
-      "history": []
-    }
-  },
+  "behaviorCards": {},
   "trafficOverrides": {},
   "seatingLayout": {
     "rows": 5,
@@ -1476,7 +1443,7 @@
     13,
     8,
     3,
-    28,
+    null,
     27,
     19,
     14,
@@ -1489,9 +1456,9 @@
     10,
     5
   ],
-  "lastModified": 1795080049647,
+  "lastModified": 1795085428098,
   "satietyResetV20261116": true,
   "petDefaultDogV20261116": true,
   "seatingColsV20261117": true,
-  "updatedAt": "2026-11-19T09:20:49.647Z"
+  "updatedAt": "2026-11-19T10:50:28.098Z"
 }

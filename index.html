@@ -2671,12 +2671,12 @@
 
   <!-- =============================================================== -->
   <!-- MODAL: 🍎 紅蘋果集點榜 ‧ 大屏全螢幕投影看板 (Points Leaderboard Big Screen Projection) -->
-  <!-- 5*5+2 大屏超大字體、支援卡牌抽屜與大屏直接點擊加點/使用卡牌 -->
+  <!-- 藍天白雲朝氣明亮背景・左右可愛小插圖・5*5+2 一屏全覽超大字體 -->
   <!-- =============================================================== -->
-  <div id="pointsProjectionModal" class="hidden fixed inset-0 z-[99999] flex flex-col p-3 sm:p-5 text-slate-800 overflow-y-auto" style="position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background: radial-gradient(circle at 50% 15%, #fef3c7 0%, #fde68a 35%, #fbbf24 75%, #f59e0b 100%) !important;">
+  <div id="pointsProjectionModal" class="hidden fixed inset-0 z-[99999] flex flex-col p-3 sm:p-5 text-slate-800 overflow-y-auto" style="position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 20%, #e0f2fe 40%, #fef08a 65%, #fde047 85%, #f59e0b 100%) !important;">
     
     <!-- 頂部導航列：大標題、班級蘋果統計、批次加點、全螢幕與關閉鍵 (鮮豔陽光朝氣風格) -->
-    <div class="flex items-center justify-between pb-3 border-b-2 border-amber-400/80 flex-shrink-0 w-full max-w-[1600px] mx-auto gap-3 bg-white/85 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-md">
+    <div class="flex items-center justify-between pb-3 border-b-2 border-amber-400/80 flex-shrink-0 w-full max-w-[1720px] mx-auto gap-3 bg-white/85 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-md">
       <div class="flex items-center space-x-3 shrink-0">
         <span class="text-3xl sm:text-4xl animate-bounce">🍎</span>
         <div>
@@ -2731,28 +2731,55 @@
     </div>
 
     <!-- 大屏提示橫幅 (鮮豔陽光朝氣明亮風格) -->
-    <div class="w-full max-w-[1600px] mx-auto my-2 text-xs bg-white/85 border-2 border-amber-400 px-4 py-2 rounded-2xl text-amber-950 font-bold flex flex-wrap items-center justify-between gap-2 shadow-sm">
+    <div class="w-full max-w-[1720px] mx-auto my-2 text-xs bg-white/85 border-2 border-amber-400 px-4 py-2 rounded-2xl text-amber-950 font-bold flex flex-wrap items-center justify-between gap-2 shadow-sm">
       <span>💡 <strong>大屏互動模式提示：</strong>每一橫排固定 5 位座號大臣（5*5+2 大屏模式），點擊卡片上的「+1🍎 / +2🍎 / +5🍎」可在大屏前直接獎勵；持有的特權卡以抽屜方式呈現，點擊「✨使用」即可兌現特權！</span>
       <span id="pointsProjSelectedBadge" class="text-amber-950 font-black bg-amber-200 border border-amber-300 px-2 py-0.5 rounded-lg shadow-2xs">已選取 0 位大臣</span>
     </div>
 
-    <!-- 核心 5*5+2 大屏卡片網格 -->
-    <div class="flex-1 w-full max-w-[1600px] mx-auto my-2">
-      <div id="pointsProjectionGrid" class="points-proj-grid-5x5">
-        <!-- 動態由 renderPointsProjection() 填入 27 位大臣大屏卡片 -->
+    <!-- 核心展示區：左右可愛小插圖 + 5*5+2 大屏卡片網格 -->
+    <div class="flex-1 flex items-start justify-center max-w-[1720px] w-full mx-auto my-1 gap-3">
+      
+      <!-- 左翼小插圖欄 (陽光朝氣可愛插圖) -->
+      <div class="hidden xl:flex flex-col items-center justify-around w-16 py-4 space-y-6 pointer-events-none select-none flex-shrink-0">
+        <span class="text-4xl animate-sun-spin" title="小太陽">☀️</span>
+        <span class="text-3xl animate-cute-float" title="美味紅蘋果">🍎</span>
+        <span class="text-3xl animate-cute-float-slow" title="彩虹">🌈</span>
+        <span class="text-3xl animate-cute-float" title="悠哉白雲">☁️</span>
+        <span class="text-3xl animate-cute-float-slow" title="歡樂氣球">🎈</span>
+        <span class="text-3xl animate-cute-float" title="向日葵">🌻</span>
+        <span class="text-3xl animate-cute-float-slow" title="榮耀金星">⭐</span>
       </div>
+
+      <!-- 中央核心 5*5+2 大屏卡片網格 -->
+      <div class="flex-1 flex flex-col items-center justify-start w-full min-w-0">
+        <div id="pointsProjectionGrid" class="points-proj-grid-5x5 w-full">
+          <!-- 動態由 renderPointsProjection() 填入 27 位大臣大屏卡片 -->
+        </div>
+      </div>
+
+      <!-- 右翼小插圖欄 (陽光朝氣可愛插圖) -->
+      <div class="hidden xl:flex flex-col items-center justify-around w-16 py-4 space-y-6 pointer-events-none select-none flex-shrink-0">
+        <span class="text-4xl animate-cute-float" title="國王皇冠">👑</span>
+        <span class="text-3xl animate-cute-float-slow" title="豐收紅蘋果">🍎</span>
+        <span class="text-3xl animate-cute-float" title="棉花糖雲">☁️</span>
+        <span class="text-3xl animate-cute-float-slow" title="閃亮火花">✨</span>
+        <span class="text-3xl animate-cute-float" title="榮譽禮物">🎁</span>
+        <span class="text-3xl animate-cute-float-slow" title="幸運四葉草">🍀</span>
+        <span class="text-3xl animate-cute-float" title="朝氣櫻花">🌸</span>
+      </div>
+
     </div>
 
   </div>
 
   <!-- =============================================================== -->
   <!-- MODAL: 🐾 班級萌寵動物園 ‧ 大屏全螢幕投影看板 (Zoo Sanctuary Big Screen Projection) -->
-  <!-- 5*5+2 大屏超大圖、全班認養萌寵生動大圖與全園餵食開趴互動 -->
+  <!-- 藍天白雲朝氣明亮背景・左右可愛小插圖・5*5+2 認養萌寵生動大舍 -->
   <!-- =============================================================== -->
-  <div id="zooProjectionModal" class="hidden fixed inset-0 z-[75] projection-overlay flex flex-col p-3 sm:p-5 text-white overflow-y-auto">
+  <div id="zooProjectionModal" class="hidden fixed inset-0 z-[99999] flex flex-col p-3 sm:p-5 text-slate-800 overflow-y-auto" style="position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 20%, #bae6fd 40%, #dcfce7 65%, #86efac 85%, #22c55e 100%) !important;">
     
-    <!-- 頂部導航列：大標題、動物園統計、全園大餵食、開趴跳舞、全螢幕與關閉鍵 -->
-    <div class="flex items-center justify-between pb-3 border-b border-emerald-400/40 flex-shrink-0 w-full max-w-[1600px] mx-auto gap-3">
+    <!-- 頂部導航列：大標題、動物園統計、全園大餵食、開趴跳舞、全螢幕與關閉鍵 (鮮豔明亮草地風格) -->
+    <div class="flex items-center justify-between pb-3 border-b-2 border-emerald-400/80 flex-shrink-0 w-full max-w-[1720px] mx-auto gap-3 bg-white/85 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-md">
       <div class="flex items-center space-x-3 shrink-0">
         <span class="text-3xl sm:text-4xl animate-bounce">🏞️</span>
         <div>
@@ -2760,22 +2787,22 @@
             <span class="bg-emerald-400 text-emerald-950 text-xs px-2.5 py-0.5 rounded-full font-black shadow">
               西寧小小兵王國 ‧ 班級萌寵動物園大屏投影
             </span>
-            <span class="text-xs text-emerald-300/80 font-bold hidden md:inline">27 位大臣認養萌寵 ‧ 生動生活大屏展示舍</span>
+            <span class="text-xs text-emerald-900 font-bold hidden md:inline">27 位大臣認養萌寵 ‧ 生動生活大屏展示舍</span>
           </div>
-          <h2 class="text-lg sm:text-2xl font-black text-emerald-200 mt-0.5 tracking-wide">
-            五年二班 班級萌寵動物園 ‧ 大屏互動展示
+          <h2 class="text-lg sm:text-2xl font-black text-emerald-950 mt-0.5 tracking-wide">
+            五年二班 班級萌寵動物園 ‧ 大屏互動展示 ☀️
           </h2>
         </div>
       </div>
 
       <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
         <!-- 動物園統計徽章 -->
-        <span id="zooProjStatsPill" class="text-xs font-black bg-emerald-950/80 text-emerald-200 px-3 py-1.5 rounded-xl border border-emerald-400 shadow-md hidden sm:flex items-center space-x-1">
+        <span id="zooProjStatsPill" class="text-xs font-black bg-emerald-100 text-emerald-950 px-3 py-1.5 rounded-xl border border-emerald-400 shadow-2xs hidden sm:flex items-center space-x-1">
           <span>🐾 27 隻動物棲息中</span>
         </span>
 
         <!-- 全園大餵食 -->
-        <button type="button" onclick="feedAllZooAnimalsOne()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="一鍵為全園動物投餵 1 顆蘋果飼料！">
+        <button type="button" onclick="feedAllZooAnimalsOne()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="一鍵為全園動物投餵 1 顆蘋果飼料！">
           <span>🍎 全園大餵食 (+1)</span>
         </button>
 
@@ -2785,28 +2812,55 @@
         </button>
 
         <!-- 切換全螢幕 -->
-        <button type="button" onclick="toggleZooProjectionFullscreen()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-200 border border-emerald-400/50 font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="切換大屏投影全螢幕 (F11)">
+        <button type="button" onclick="toggleZooProjectionFullscreen()" class="px-3.5 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-950 border border-emerald-400 font-black text-xs sm:text-sm shadow flex items-center space-x-1" title="切換大屏投影全螢幕 (F11)">
           <span>⛶ 全螢幕</span>
         </button>
 
         <!-- 關閉投影按鈕 -->
-        <button type="button" onclick="closeZooProjectionModal()" class="w-10 h-10 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white font-black text-lg flex items-center justify-center shadow transition hover:scale-105 active:scale-95 cursor-pointer relative z-30 pointer-events-auto" title="結束投影 (Esc)">
+        <button type="button" onclick="closeZooProjectionModal()" class="w-10 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-lg flex items-center justify-center shadow transition hover:scale-105 active:scale-95 cursor-pointer relative z-30 pointer-events-auto" title="結束投影 (Esc)">
           ✕
         </button>
       </div>
     </div>
 
     <!-- 動物園成長五大階段橫幅 -->
-    <div class="w-full max-w-[1600px] mx-auto my-2 text-xs bg-emerald-950/60 border border-emerald-500/40 px-4 py-2 rounded-xl text-emerald-200 flex flex-wrap items-center justify-between gap-2">
+    <div class="w-full max-w-[1720px] mx-auto my-2 text-xs bg-white/85 border-2 border-emerald-400 px-4 py-2 rounded-2xl text-emerald-950 font-bold flex flex-wrap items-center justify-between gap-2 shadow-sm">
       <span>🍎 <strong>大屏投餵成長五大階段：</strong>🍼 0~29點 喝奶小幼崽 ➔ 🌿 30~59點 活潑小萌童 ➔ 🏃 60~99點 健壯少年期 ➔ 🦁 100~149點 威風大成體 ➔ 👑 150點以上 人氣巨星！</span>
-      <span class="text-amber-300 font-bold">點擊動物頭像可直接投餵飼料伴萌寵長大</span>
+      <span class="text-amber-800 font-black">點擊動物頭像可直接投餵飼料伴萌寵長大</span>
     </div>
 
-    <!-- 核心 5*5+2 大屏動物園卡片網格 -->
-    <div class="flex-1 w-full max-w-[1600px] mx-auto my-2">
-      <div id="zooProjectionGrid" class="zoo-proj-grid-5x5">
-        <!-- 動態由 renderZooProjection() 填入 27 位大臣萌寵大屏卡片 -->
+    <!-- 核心展示區：左右可愛小插圖 + 5*5+2 大屏動物園卡片網格 -->
+    <div class="flex-1 flex items-start justify-center max-w-[1720px] w-full mx-auto my-1 gap-3">
+      
+      <!-- 左翼小插圖欄 (大自然陽光可愛插圖) -->
+      <div class="hidden xl:flex flex-col items-center justify-around w-16 py-4 space-y-6 pointer-events-none select-none flex-shrink-0">
+        <span class="text-4xl animate-sun-spin" title="溫暖太陽">☀️</span>
+        <span class="text-3xl animate-cute-float" title="威嚴小獅">🦁</span>
+        <span class="text-3xl animate-cute-float-slow" title="彩虹">🌈</span>
+        <span class="text-3xl animate-cute-float" title="悠哉白雲">☁️</span>
+        <span class="text-3xl animate-cute-float-slow" title="聰明小狗">🐶</span>
+        <span class="text-3xl animate-cute-float" title="向日葵">🌻</span>
+        <span class="text-3xl animate-cute-float-slow" title="活力小熊貓">🐼</span>
       </div>
+
+      <!-- 中央核心 5*5+2 大屏動物園卡片網格 -->
+      <div class="flex-1 flex flex-col items-center justify-start w-full min-w-0">
+        <div id="zooProjectionGrid" class="zoo-proj-grid-5x5 w-full">
+          <!-- 動態由 renderZooProjection() 填入 27 位大臣萌寵大屏卡片 -->
+        </div>
+      </div>
+
+      <!-- 右翼小插圖欄 (大自然陽光可愛插圖) -->
+      <div class="hidden xl:flex flex-col items-center justify-around w-16 py-4 space-y-6 pointer-events-none select-none flex-shrink-0">
+        <span class="text-4xl animate-cute-float" title="花間蝴蝶">🦋</span>
+        <span class="text-3xl animate-cute-float-slow" title="可愛白兔">🐰</span>
+        <span class="text-3xl animate-cute-float" title="棉花糖雲">☁️</span>
+        <span class="text-3xl animate-cute-float-slow" title="俏皮小貓">🐱</span>
+        <span class="text-3xl animate-cute-float" title="歡樂小猴">🐵</span>
+        <span class="text-3xl animate-cute-float-slow" title="萌萌企鵝">🐧</span>
+        <span class="text-3xl animate-cute-float" title="粉嫩櫻花">🌸</span>
+      </div>
+
     </div>
 
   </div>

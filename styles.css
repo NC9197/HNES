@@ -834,7 +834,7 @@ header .nav-btn-wordbreak > span {
 }
 
 /* =================================================================== */
-/* 🍎 紅蘋果集點榜大屏全螢幕投影 (鮮豔陽光金色・朝氣蓬勃風格) */
+/* 🍎 紅蘋果集點榜大屏全螢幕投影 (藍天白雲・鮮豔陽光朝氣蓬勃風格) */
 /* =================================================================== */
 #pointsProjectionModal {
   position: fixed !important;
@@ -846,7 +846,7 @@ header .nav-btn-wordbreak > span {
   width: 100vw !important;
   height: 100vh !important;
   z-index: 99999 !important;
-  background: radial-gradient(circle at 50% 15%, #fef3c7 0%, #fde68a 35%, #fbbf24 75%, #f59e0b 100%) !important;
+  background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 20%, #e0f2fe 40%, #fef08a 65%, #fde047 85%, #f59e0b 100%) !important;
 }
 #pointsProjectionModal.hidden {
   display: none !important;
@@ -855,6 +855,34 @@ header .nav-btn-wordbreak > span {
   pointer-events: none !important;
 }
 #pointsProjectionModal:not(.hidden) {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* =================================================================== */
+/* 🐾 班級萌寵動物園大屏全螢幕投影 (藍天白雲・陽光草原朝氣大自然風格) */
+/* =================================================================== */
+#zooProjectionModal {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 20%, #bae6fd 40%, #dcfce7 65%, #86efac 85%, #22c55e 100%) !important;
+}
+#zooProjectionModal.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+#zooProjectionModal:not(.hidden) {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;

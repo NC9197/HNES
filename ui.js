@@ -6406,15 +6406,15 @@ function renderZooProjection() {
         const pStatus = window.KingdomApp.getAnimalStatus(pType, pExp);
         const pSvg = window.KingdomApp.renderAnimalSVG(pType, pStatus.stageIndex);
         return `
-          <div onclick="feedStudentInZooProjection(${st.id})" class="flex-1 flex flex-col items-center justify-center p-1 rounded-xl bg-black/40 border border-emerald-500/30 hover:border-emerald-300 hover:bg-black/60 transition cursor-pointer transform hover:scale-105 active:scale-95" title="點擊投餵【${pStatus.animalName}】(+1 飽食)">
+          <div onclick="feedStudentInZooProjection(${st.id})" class="flex-1 flex flex-col items-center justify-center p-1 rounded-xl bg-white/80 border border-emerald-300 hover:border-emerald-500 hover:bg-white shadow-2xs transition cursor-pointer transform hover:scale-105 active:scale-95" title="點擊投餵【${pStatus.animalName}】(+1 飽食)">
             <div class="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center filter drop-shadow-sm">
               ${pSvg}
             </div>
-            <div class="text-[11px] font-black text-emerald-200 mt-0.5 truncate max-w-[85px] leading-tight flex items-center space-x-0.5">
+            <div class="text-[11px] font-black text-emerald-950 mt-0.5 truncate max-w-[85px] leading-tight flex items-center space-x-0.5">
               <span>${pStatus.animalIcon}</span>
               <span>${pStatus.animalName}</span>
             </div>
-            <div class="text-[9px] font-mono text-emerald-300/80 font-bold mt-0.5">
+            <div class="text-[9px] font-mono text-emerald-800 font-black mt-0.5">
               ${pExp}點
             </div>
           </div>
@@ -6422,21 +6422,21 @@ function renderZooProjection() {
       }).join('');
 
       return `
-        <div class="rounded-xl p-2 sm:p-2.5 border-2 transition-all flex flex-col justify-between shadow-md backdrop-blur-md ${petStatus.isGolden ? 'bg-gradient-to-b from-amber-950/85 to-slate-900/90 border-amber-400 ring-2 ring-amber-300' : 'bg-slate-900/85 border-emerald-500/50 hover:border-emerald-400'}">
+        <div class="rounded-2xl p-2 sm:p-2.5 border-2 transition-all flex flex-col justify-between shadow-md hover:shadow-xl backdrop-blur-md ${petStatus.isGolden ? 'bg-gradient-to-b from-amber-50/95 to-yellow-100/95 border-amber-400 ring-2 ring-amber-300 shadow-amber-300/40' : 'bg-white/95 border-emerald-400 hover:border-emerald-500 shadow-emerald-200/40'}">
           <div>
-            <!-- 座號、姓名、認養隻數列 -->
-            <div class="flex items-center justify-between pb-1 border-b border-emerald-500/30">
+            <!-- 座號、姓名、認養隻數列 (明亮陽光風格) -->
+            <div class="flex items-center justify-between pb-1 border-b border-emerald-200">
               <div class="flex items-center space-x-1 min-w-0">
-                <span class="text-xs font-mono font-black text-emerald-950 bg-emerald-300 px-1 py-0.2 rounded shadow-2xs">
+                <span class="text-xs font-mono font-black text-emerald-950 bg-emerald-200 border border-emerald-300 px-1 py-0.2 rounded shadow-2xs">
                   ${seatPad}號
                 </span>
-                <span class="text-sm sm:text-base font-black text-white truncate tracking-wide">${st.name}</span>
+                <span class="text-sm sm:text-base font-cute font-black text-slate-900 truncate tracking-wide">${st.name}</span>
               </div>
               <div class="flex items-center space-x-1 shrink-0">
-                <span class="text-[9px] font-black ${pets.length > 1 ? 'bg-purple-900 text-purple-200 border border-purple-400' : 'bg-emerald-950 text-emerald-300 border border-emerald-500'} px-1.5 py-0.2 rounded">
+                <span class="text-[9px] font-black ${pets.length > 1 ? 'bg-purple-100 text-purple-900 border border-purple-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'} px-1.5 py-0.2 rounded">
                   🐾 ${pets.length}隻
                 </span>
-                <span class="text-[10px] font-mono text-rose-300 font-black">🍎${st.points || 0}</span>
+                <span class="text-[11px] font-mono text-rose-600 font-black">🍎${st.points || 0}</span>
               </div>
             </div>
 
@@ -6447,11 +6447,11 @@ function renderZooProjection() {
           </div>
 
           <!-- 底部快速投餵按鈕 -->
-          <div class="pt-1 border-t border-emerald-500/30 flex items-center space-x-1">
-            <button type="button" onclick="feedStudentInZooProjection(${st.id})" class="flex-1 py-0.5 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white font-black text-[11px] shadow-xs transition active:scale-95" title="投餵飼料 1 顆蘋果">
+          <div class="pt-1 border-t border-emerald-200 flex items-center space-x-1">
+            <button type="button" onclick="feedStudentInZooProjection(${st.id})" class="flex-1 py-0.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] shadow-xs transition active:scale-95" title="投餵飼料 1 顆蘋果">
               🍎 投餵
             </button>
-            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 1)" class="w-12 py-0.5 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white font-black text-[11px] shadow-xs transition active:scale-95" title="賞賜 +1 顆紅蘋果">
+            <button type="button" onclick="awardSingleStudentInProjection(${st.id}, 1)" class="w-12 py-0.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-[11px] shadow-xs transition active:scale-95" title="賞賜 +1 顆紅蘋果">
               +1
             </button>
           </div>
@@ -6463,11 +6463,11 @@ function renderZooProjection() {
   if (statsPill) {
     statsPill.innerHTML = `
       <span>🐾 全園 <strong>${students.length + doublePetCount}</strong> 隻動物棲息</span>
-      <span class="text-emerald-400">·</span>
+      <span class="text-emerald-700">·</span>
       <span>🍎 總飽食 <strong>${totalFood}</strong> 點</span>
-      <span class="text-emerald-400">·</span>
+      <span class="text-emerald-700">·</span>
       <span>👑 巨星 <strong>${goldenCount}</strong> 隻</span>
-      ${doublePetCount > 0 ? `<span class="text-emerald-400">·</span><span>✨ 雙寵 <strong>${doublePetCount}</strong> 位</span>` : ''}
+      ${doublePetCount > 0 ? `<span class="text-emerald-700">·</span><span>✨ 雙寵 <strong>${doublePetCount}</strong> 位</span>` : ''}
     `;
   }
 }
