@@ -3883,9 +3883,12 @@
   </div>
 
   <!-- Toast 訊息提示 -->
-  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 max-w-sm bg-amber-950 border-2 border-amber-400 text-amber-200 p-4 rounded-2xl shadow-2xl flex items-center space-x-3">
-    <div id="toastIcon" class="text-2xl flex-shrink-0">👑</div>
-    <div id="toastMessage" class="text-xs sm:text-sm font-bold text-white">王國指令已更新！</div>
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 max-w-sm bg-amber-950 border-2 border-amber-400 text-amber-200 p-3 sm:p-4 rounded-2xl shadow-2xl flex items-center justify-between space-x-3">
+    <div class="flex items-center space-x-2.5 min-w-0">
+      <div id="toastIcon" class="text-2xl flex-shrink-0">👑</div>
+      <div id="toastMessage" class="text-xs sm:text-sm font-bold text-white break-words">王國指令已更新！</div>
+    </div>
+    <button onclick="dismissToastNow()" class="text-amber-400 hover:text-white p-1 rounded-lg text-sm font-bold flex-shrink-0 cursor-pointer" title="關閉">✕</button>
   </div>
 
   <!-- =============================================================== -->
@@ -4421,8 +4424,28 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261120_v10"></script>
-  <script src="ui.js?v=20261120_v10"></script>
+  <script src="app.js?v=20261120_v11"></script>
+  <script src="ui.js?v=20261120_v11"></script>
+
+  <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
+  <script>
+    (function() {
+      var _origShowToast = window.showToast;
+      window.showToast = function(msg, icon) {
+        if (!msg) return;
+        var s = String(msg);
+        if (s.includes('同步') || s.includes('接收') || s.includes('雲端') || s.includes('裝置') || s.includes('指令已更新') || s.includes('修改')) {
+          return;
+        }
+        if (typeof _origShowToast === 'function') {
+          _origShowToast(msg, icon);
+        }
+      };
+      if (window.KingdomUI) {
+        window.KingdomUI.showToast = window.showToast;
+      }
+    })();
+  </script>
 
   <!-- 保障座位表大屏投影與點名簿抽屜 100% 正常響應之備援守護腳本 -->
   <script>

@@ -6977,6 +6977,14 @@ function confirmResetData() {
 
 let toastTimer = null;
 function showToast(message, icon = "👑") {
+  if (!message) return;
+  const msg = String(message);
+
+  // 導師指示：全面永久靜音封鎖任何「同步、雲端接收、裝置連動、指令更新」之右下角通知！
+  if (msg.includes("同步") || msg.includes("接收") || msg.includes("雲端") || msg.includes("裝置") || msg.includes("指令已更新") || msg.includes("修改")) {
+    return;
+  }
+
   const toast = document.getElementById("toastNotification");
   const msgEl = document.getElementById("toastMessage");
   const iconEl = document.getElementById("toastIcon");
@@ -6986,14 +6994,22 @@ function showToast(message, icon = "👑") {
   msgEl.textContent = message;
   if (iconEl) iconEl.textContent = icon;
 
-  toast.classList.remove("translate-y-20", "opacity-0");
+  toast.classList.remove("translate-y-20", "opacity-0", "hidden");
   toast.classList.add("translate-y-0", "opacity-100");
 
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
+    dismissToastNow();
+  }, 3500);
+}
+
+function dismissToastNow() {
+  const toast = document.getElementById("toastNotification");
+  if (toast) {
     toast.classList.remove("translate-y-0", "opacity-100");
     toast.classList.add("translate-y-20", "opacity-0");
-  }, 3500);
+  }
+  if (toastTimer) clearTimeout(toastTimer);
 }
 
 // 供雲端同步背景更新時即時重繪當前視圖
@@ -9583,6 +9599,7 @@ function pardonAllServiceCards() {
 
 // 暴露全域函數至 window，保障 HTML inline onclick 100% 正常調用
 if (typeof window !== 'undefined') {
+  window.dismissToastNow = dismissToastNow;
   window.openAlarmDirectModal = openAlarmDirectModal;
   window.toggleAlarmEnabled = toggleAlarmEnabled;
   window.switchTimerTab = switchTimerTab;
