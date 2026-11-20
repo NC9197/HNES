@@ -47,7 +47,7 @@ async function main() {
   // 1. 同步推送至本地運行中伺服器
   console.log("📡 [1/2] 正在推送至本機伺服器 (http://localhost:3000/api/sync)...");
   try {
-    await postJson('http://localhost:3000/api/sync', dataObj);
+    await postJson('http://localhost:3000/api/sync?force=1', dataObj);
     console.log("   ✅ 本機與區網伺服器同步成功！\n");
   } catch (e) {
     console.log("   ⚠️ 本機伺服器未開啟 (若需區網手機連線，請雙擊「啟動西寧小小兵王國.bat」)。\n");

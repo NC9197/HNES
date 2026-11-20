@@ -45,6 +45,115 @@ function backupFileBeforeOverwrite(sourcePath, label = 'autosave') {
   }
 }
 
+// Active SSE clients for instant realtime broadcast
+const sseClients = new Set();
+
+function broadcastSseUpdate(data) {
+  const payload = `data: ${JSON.stringify({ type: 'sync_update', lastModified: data.lastModified || Date.now(), timestamp: Date.now() })}\n\n`;
+  for (const client of sseClients) {
+    try {
+      client.write(payload);
+    } catch (_) {
+      sseClients.delete(client);
+    }
+  }
+}
+
+function mergeDatasets(base, incoming) {
+  if (!base) return incoming;
+  if (!incoming) return base;
+
+  // 1. 密碼終身保護鎖
+  const finalPassword = (base.queenPassword && base.queenPassword !== 'queen')
+    ? base.queenPassword
+    : (incoming.queenPassword || 'queen');
+
+  // 2. 學生名冊與點數智能融合 (只增不減，永遠保留最高累積成果)
+  const mergedStudents = (base.students || []).map(bSt => {
+    const iSt = (incoming.students || []).find(s => s.seatNo === bSt.seatNo || s.id === bSt.id);
+    if (!iSt) return bSt;
+    const bestPoints = Math.max(bSt.points || 0, iSt.points || 0);
+    const bestLifetime = Math.max(bSt.lifetimePoints || 0, iSt.lifetimePoints || 0);
+    return {
+      ...bSt,
+      ...iSt,
+      name: iSt.name || bSt.name,
+      points: bestPoints,
+      lifetimePoints: bestLifetime,
+      petExp: bestLifetime,
+      animalType: iSt.animalType || bSt.animalType || 'dog',
+      petType: iSt.petType || bSt.petType || 'dog',
+      secondPetType: iSt.secondPetType || bSt.secondPetType,
+      secondPetExp: Math.max(bSt.secondPetExp || 0, iSt.secondPetExp || 0)
+    };
+  });
+
+  // 3. 簽到表按日按座號雙向融合 (不遺漏任何一台裝置打卡)
+  const mergedAttendance = { ...(base.attendance || {}) };
+  if (incoming.attendance && typeof incoming.attendance === 'object') {
+    Object.keys(incoming.attendance).forEach(dateKey => {
+      if (!mergedAttendance[dateKey]) {
+        mergedAttendance[dateKey] = { ...incoming.attendance[dateKey] };
+      } else {
+        const bDay = mergedAttendance[dateKey];
+        const iDay = incoming.attendance[dateKey];
+        const combinedDay = { ...bDay };
+        Object.keys(iDay).forEach(stKey => {
+          if (!combinedDay[stKey] || combinedDay[stKey].status === 'pending') {
+            combinedDay[stKey] = iDay[stKey];
+          } else if (iDay[stKey] && iDay[stKey].status !== 'pending') {
+            combinedDay[stKey] = iDay[stKey];
+          }
+        });
+        mergedAttendance[dateKey] = combinedDay;
+      }
+    });
+  }
+
+  // 4. 作業按 ID 雙向融合 (多裝置新增與批閱互不覆蓋)
+  const hwMap = new Map();
+  (base.homework || []).forEach(hw => { if (hw && hw.id) hwMap.set(hw.id, { ...hw }); });
+  (incoming.homework || []).forEach(iHw => {
+    if (!iHw || !iHw.id) return;
+    if (!hwMap.has(iHw.id)) {
+      hwMap.set(iHw.id, { ...iHw });
+    } else {
+      const bHw = hwMap.get(iHw.id);
+      hwMap.set(iHw.id, { ...bHw, ...iHw, records: { ...(bHw.records || {}), ...(iHw.records || {}) } });
+    }
+  });
+  const mergedHomework = Array.from(hwMap.values());
+
+  // 5. 聯絡簿智慧融合 (取更新時間較新或內容完整者)
+  let mergedContactBook = incoming.contactBook;
+  if (base.contactBook && incoming.contactBook) {
+    const bTime = base.contactBook.updatedAt || 0;
+    const iTime = incoming.contactBook.updatedAt || 0;
+    if (bTime > iTime) mergedContactBook = base.contactBook;
+  } else if (base.contactBook) {
+    mergedContactBook = base.contactBook;
+  }
+
+  // 6. 歷程日誌融合 (依 ID 去重)
+  const logMap = new Map();
+  (base.pointLogs || []).forEach(l => { if (l && l.id) logMap.set(l.id, l); });
+  (incoming.pointLogs || []).forEach(l => { if (l && l.id) logMap.set(l.id, l); });
+  const mergedPointLogs = Array.from(logMap.values()).sort((a,b) => (b.id || 0) - (a.id || 0)).slice(0, 50);
+
+  return {
+    ...base,
+    ...incoming,
+    queenPassword: finalPassword,
+    students: mergedStudents,
+    attendance: mergedAttendance,
+    homework: mergedHomework,
+    contactBook: mergedContactBook,
+    contactBookHistory: { ...(base.contactBookHistory || {}), ...(incoming.contactBookHistory || {}) },
+    pointLogs: mergedPointLogs,
+    lastModified: Date.now()
+  };
+}
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -86,6 +195,23 @@ const server = http.createServer((req, res) => {
 
   const reqUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   let pathname = decodeURIComponent(reqUrl.pathname);
+
+    // 即時廣播伺服器推播 API (Server-Sent Events) - 實現 0.05 秒跨裝置極速同步
+  if (pathname === '/api/sync/events') {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.write(`data: ${JSON.stringify({ type: 'connected', time: Date.now() })}\n\n`);
+    sseClients.add(res);
+
+    req.on('close', () => {
+      sseClients.delete(res);
+    });
+    return;
+  }
 
   // 取得本機區網 IP 與連線資訊 API
   if (pathname === '/api/network-info' || pathname === '/api/info') {
@@ -201,6 +327,18 @@ const server = http.createServer((req, res) => {
         // 讀取還原檔並打上全新時間戳，保證所有連線裝置拉取後立刻同步
         const restoredData = JSON.parse(fs.readFileSync(restoreSource, 'utf8'));
         restoredData.lastModified = Date.now();
+
+        // 密碼保護鎖：若伺服器已有自訂密碼，而還原檔為預設值或為空，保留伺服器自訂密碼
+        if (fs.existsSync(defaultSyncFilePath)) {
+          try {
+            const currentOnDisk = JSON.parse(fs.readFileSync(defaultSyncFilePath, 'utf8'));
+            if (currentOnDisk.queenPassword && currentOnDisk.queenPassword !== 'queen') {
+              if (!restoredData.queenPassword || restoredData.queenPassword === 'queen') {
+                restoredData.queenPassword = currentOnDisk.queenPassword;
+              }
+            }
+          } catch (_) {}
+        }
         fs.writeFileSync(defaultSyncFilePath, JSON.stringify(restoredData, null, 2), 'utf8');
         const specificPath = path.join(ROOT_DIR, 'data_sync_xining502@gmail.com.json');
         if (fs.existsSync(specificPath)) {
@@ -258,75 +396,41 @@ const server = http.createServer((req, res) => {
             return;
           }
 
-          const isForce = reqUrl.searchParams.get('force') === '1' || reqUrl.searchParams.get('force') === 'true';
-          const incomingTime = parsed.lastModified || 0;
-
-          // 讀取伺服器現存檔案時間戳
-          let existingTime = 0;
           let targetPath = (specificPath && fs.existsSync(specificPath)) ? specificPath : defaultSyncFilePath;
+          let finalData = parsed;
+
+          // 核心升級：若伺服器已有現存資料，執行「智能雙向融合 (Smart Merge)」，絕不拒絕 409，絕不丟失任何裝置的編輯！
           if (fs.existsSync(targetPath)) {
             try {
               const currentOnDisk = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
-              existingTime = currentOnDisk.lastModified || 0;
-            } catch (_) {}
-          }
-
-          // 核心防護：若傳入的時間小於伺服器現存時間，且非強制覆蓋，嚴格拒絕舊資料蓋新資料！
-          if (!isForce && incomingTime > 0 && existingTime > 0 && incomingTime < existingTime) {
-            console.warn(`[Sync Guard] 攔截過期資料推送！用戶端時間: ${new Date(incomingTime).toLocaleString()}, 伺服器時間: ${new Date(existingTime).toLocaleString()}`);
-            res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({
-              success: false,
-              conflict: true,
-              clientTime: incomingTime,
-              serverTime: existingTime,
-              message: `伺服器上有更新的資料版本 (${new Date(existingTime).toLocaleString()})，拒絕以較舊的裝置資料 (${new Date(incomingTime).toLocaleString()}) 覆蓋！請先從伺服器拉取最新資料。`
-            }));
-            return;
-          }
-
-          // 防呆名冊校準：嚴防任何裝置將舊測試名冊（王品捷、李宇軒）推送到伺服器覆蓋五年二班真實名冊（洪永恩、莊淇勛）
-          const hasStaleDemoNames = parsed.students && parsed.students.some(s => s.name === "王品捷" || s.name === "李宇軒" || s.name === "林冠廷");
-          if (hasStaleDemoNames) {
-            console.warn('[Sync Guard] 攔截含有舊示範人名的過期推送，強制校準為真實名冊！');
-            const masterFile = path.join(ROOT_DIR, 'data_sync.json');
-            if (fs.existsSync(masterFile)) {
-              try {
-                const master = JSON.parse(fs.readFileSync(masterFile, 'utf8'));
-                if (master.students && Array.isArray(master.students)) {
-                  master.students.forEach((mst, idx) => {
-                    const target = parsed.students.find(s => s.seatNo === mst.seatNo || s.id === mst.id) || parsed.students[idx];
-                    if (target) {
-                      target.name = mst.name;
-                      target.title = mst.title;
-                      target.gender = mst.gender;
-                      target.birthday = mst.birthday;
-                    }
-                  });
-                  parsed.students = parsed.students.filter(s => s.seatNo <= 27 && s.id <= 27);
-                }
-              } catch (_) {}
+              finalData = mergeDatasets(currentOnDisk, parsed);
+            } catch (_) {
+              finalData = parsed;
             }
           }
 
           // 寫入前自動保留快照留底
-          backupFileBeforeOverwrite(defaultSyncFilePath, `push_${incomingTime || Date.now()}`);
+          backupFileBeforeOverwrite(defaultSyncFilePath, `push_${Date.now()}`);
 
-          // 確保寫入之 lastModified 時間戳永遠保持最新遞增
-          parsed.lastModified = Math.max(incomingTime, existingTime, Date.now());
+          // 確保寫入之 lastModified 時間戳永遠為最新目前時間
+          finalData.lastModified = Date.now();
 
           // 同步寫入預設存檔與指定帳號檔
-          fs.writeFileSync(defaultSyncFilePath, JSON.stringify(parsed, null, 2), 'utf8');
+          fs.writeFileSync(defaultSyncFilePath, JSON.stringify(finalData, null, 2), 'utf8');
           if (specificPath) {
-            fs.writeFileSync(specificPath, JSON.stringify(parsed, null, 2), 'utf8');
+            fs.writeFileSync(specificPath, JSON.stringify(finalData, null, 2), 'utf8');
           }
 
-          console.log(`[Sync Success] 資料成功同步！大臣人數: ${parsed.students.length}, 時間戳: ${new Date(parsed.lastModified).toLocaleString()}`);
+          // 即時廣播給所有連線中的裝置 (電腦、手機、平板秒級同步刷新！)
+          broadcastSseUpdate(finalData);
+
+          console.log(`[Sync Success] 智能融合資料成功同步！大臣人數: ${finalData.students.length}, 時間戳: ${new Date(finalData.lastModified).toLocaleTimeString()}`);
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({
             success: true,
-            lastModified: parsed.lastModified,
-            studentCount: parsed.students.length
+            lastModified: finalData.lastModified,
+            studentCount: finalData.students.length,
+            data: finalData
           }));
         } catch (e) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });

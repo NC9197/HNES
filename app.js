@@ -101,66 +101,17 @@ const DEFAULT_SEATING_CHART = [
   null, null, 20, 15, 10,  5
 ];
 
-// 預設今日聯絡簿資料 (全新初始純淨版，作業由導師每日自行填寫發布，系統不自動生成假作業)
+
+// 預設今日聯絡簿資料 (全手動純淨版，作業由導師每日自行填寫發布，系統絕不自動生成任何假作業)
 const DEFAULT_CONTACT_BOOK = {
-  date: "2026-11-16",
-  homeworkItems: [
-    "1. 國語習作第八課 P.58 ~ P.62",
-    "2. 數學習作第 72 頁至第 74 頁",
-    "3. 訂正國語隨堂生字語詞卷",
-    "4. 明日晨讀書籍準備完畢"
-  ],
-  reminders: [
-    "早自修：國語隨堂造詞練習與生字成語複習",
-    "重要提醒：明天有體育課，請穿著西寧王國運動服與運動鞋"
-  ],
+  date: getTodayDateString(),
+  homeworkItems: [],
+  reminders: [],
   queenMotto: "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
 };
 
-const DEFAULT_CONTACT_BOOK_HISTORY = {
-  "2026-11-16": {
-    date: "2026-11-16",
-    homeworkItems: [
-      "1. 國語習作第八課 P.58 ~ P.62",
-      "2. 數學習作第 72 頁至第 74 頁",
-      "3. 訂正國語隨堂生字語詞卷",
-      "4. 明日晨讀書籍準備完畢"
-    ],
-    reminders: [
-      "明天有體育課，請穿著西寧王國運動服",
-      "帶水壺、跳繩與個人潔牙用具"
-    ],
-    queenMotto: "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！",
-    updatedAt: 1794803534000
-  },
-  "2026-11-13": {
-    date: "2026-11-13",
-    homeworkItems: [
-      "1. 國語習作第 九 課閱讀理解題",
-      "2. 數學習作 P.66 ~ P.68",
-      "3. 預習自然第三單元"
-    ],
-    reminders: [
-      "下週一全校升旗朝會，請準時 07:40 前抵達",
-      "請帶美術水彩用具與調色盤"
-    ],
-    queenMotto: "持之以恆是成功的鑰匙，週末溫故而知新！",
-    updatedAt: 1794717134000
-  },
-  "2026-11-12": {
-    date: "2026-11-12",
-    homeworkItems: [
-      "1. 國語隨堂造句本完成",
-      "2. 數學甲本單元練習二",
-      "3. 課外閱讀 20 分鐘"
-    ],
-    reminders: [
-      "明天有體育課，穿著西寧王國運動服，帶水壺與跳繩"
-    ],
-    queenMotto: "每一天的努力都是積累智慧的寶藏。",
-    updatedAt: 1794630734000
-  }
-};
+// 歷日聯絡簿歷史紀錄 (全手動純淨版，完全由導師手動發布與保存)
+const DEFAULT_CONTACT_BOOK_HISTORY = {};
 
 // ============================================================================
 // 2. 可愛守護動物九大神獸庫 (5階金化進化門檻：0, 30, 60, 100, 150)
@@ -314,123 +265,14 @@ function getTodayDateString() {
   return `${y}-${m}-${d}`;
 }
 
-// 歷日示範出席歷史紀錄 (示範資料僅保留過去日期，絕不預設今日假打卡，嚴格依賴學生自主打卡或導師手動操作)
-const DEFAULT_ATTENDANCE = {
-  "2026-11-13": {
-    1: { status: 'present', checkInTime: '07:21', note: '' },
-    2: { status: 'present', checkInTime: '07:22', note: '' },
-    3: { status: 'present', checkInTime: '07:23', note: '' },
-    4: { status: 'present', checkInTime: '07:24', note: '' },
-    5: { status: 'present', checkInTime: '07:25', note: '' },
-    6: { status: 'present', checkInTime: '07:26', note: '' },
-    7: { status: 'present', checkInTime: '07:27', note: '' },
-    8: { status: 'present', checkInTime: '07:28', note: '' },
-    9: { status: 'present', checkInTime: '07:29', note: '' },
-    10: { status: 'present', checkInTime: '07:30', note: '' },
-    11: { status: 'present', checkInTime: '07:31', note: '' },
-    12: { status: 'present', checkInTime: '07:32', note: '' },
-    13: { status: 'late', checkInTime: '07:46', note: '校車誤點' },
-    14: { status: 'present', checkInTime: '07:34', note: '' },
-    15: { status: 'present', checkInTime: '07:35', note: '' },
-    16: { status: 'present', checkInTime: '07:36', note: '' },
-    17: { status: 'present', checkInTime: '07:37', note: '' },
-    18: { status: 'present', checkInTime: '07:20', note: '' },
-    19: { status: 'present', checkInTime: '07:21', note: '' },
-    20: { status: 'leave', checkInTime: null, leaveType: 'sick', leaveScope: 'all_day', note: '流感就醫' },
-    21: { status: 'present', checkInTime: '07:23', note: '' },
-    22: { status: 'present', checkInTime: '07:24', note: '' },
-    23: { status: 'present', checkInTime: '07:25', note: '' },
-    24: { status: 'present', checkInTime: '07:26', note: '' },
-    25: { status: 'present', checkInTime: '07:27', note: '' },
-    26: { status: 'present', checkInTime: '07:28', note: '' },
-    27: { status: 'present', checkInTime: '07:29', note: '' }
-  },
-  "2026-11-12": {
-    1: { status: 'present', checkInTime: '07:21', note: '' },
-    2: { status: 'present', checkInTime: '07:22', note: '' },
-    3: { status: 'present', checkInTime: '07:23', note: '' },
-    4: { status: 'present', checkInTime: '07:24', note: '' },
-    5: { status: 'present', checkInTime: '07:25', note: '' },
-    6: { status: 'present', checkInTime: '07:26', note: '' },
-    7: { status: 'present', checkInTime: '07:27', note: '' },
-    8: { status: 'present', checkInTime: '07:28', note: '' },
-    9: { status: 'present', checkInTime: '07:29', note: '' },
-    10: { status: 'present', checkInTime: '07:30', note: '' },
-    11: { status: 'present', checkInTime: '07:31', note: '' },
-    12: { status: 'present', checkInTime: '07:32', note: '' },
-    13: { status: 'present', checkInTime: '07:33', note: '' },
-    14: { status: 'present', checkInTime: '07:34', note: '' },
-    15: { status: 'present', checkInTime: '07:35', note: '' },
-    16: { status: 'present', checkInTime: '07:36', note: '' },
-    17: { status: 'present', checkInTime: '07:37', note: '' },
-    18: { status: 'present', checkInTime: '07:20', note: '' },
-    19: { status: 'present', checkInTime: '07:21', note: '' },
-    20: { status: 'present', checkInTime: '07:22', note: '' },
-    21: { status: 'present', checkInTime: '07:23', note: '' },
-    22: { status: 'present', checkInTime: '07:24', note: '' },
-    23: { status: 'present', checkInTime: '07:25', note: '' },
-    24: { status: 'present', checkInTime: '07:26', note: '' },
-    25: { status: 'present', checkInTime: '07:27', note: '' },
-    26: { status: 'present', checkInTime: '07:28', note: '' },
-    27: { status: 'present', checkInTime: '07:29', note: '' }
-  }
-};
+// 歷日出席歷史紀錄 (全手動純淨版，完全依賴學生自主打卡或導師手動操作)
+const DEFAULT_ATTENDANCE = {};
 
-// 預設作業項目 (今日範例)
-const DEFAULT_HOMEWORK = [
-  {
-    id: 1,
-    title: "國語習作第 八 課完成",
-    presetName: "國習",
-    type: "國語",
-    date: getTodayDateString(),
-    records: {
-      1: 'submitted', 2: 'submitted', 3: 'submitted', 4: 'submitted', 5: 'submitted',
-      6: 'submitted', 7: 'submitted', 8: 'late', 9: 'submitted', 10: 'submitted',
-      11: 'submitted', 12: 'submitted', 13: 'submitted', 14: 'pending', 15: 'submitted',
-      16: 'revision', 17: 'submitted', 18: 'submitted', 19: 'submitted', 20: 'submitted',
-      21: 'submitted', 22: 'missing', 23: 'submitted', 24: 'submitted', 25: 'submitted',
-      26: 'submitted', 27: 'submitted'
-    }
-  },
-  {
-    id: 2,
-    title: "數學習作 P.62 ~ P.65",
-    presetName: "數習",
-    type: "數學",
-    date: getTodayDateString(),
-    records: {
-      1: 'submitted', 2: 'submitted', 3: 'submitted', 4: 'submitted', 5: 'submitted',
-      6: 'submitted', 7: 'submitted', 8: 'submitted', 9: 'submitted', 10: 'submitted',
-      11: 'submitted', 12: 'submitted', 13: 'submitted', 14: 'pending', 15: 'submitted',
-      16: 'submitted', 17: 'submitted', 18: 'submitted', 19: 'revision', 20: 'submitted',
-      21: 'submitted', 22: 'missing', 23: 'submitted', 24: 'submitted', 25: 'submitted',
-      26: 'submitted', 27: 'submitted'
-    }
-  },
-  {
-    id: 3,
-    title: "生字造詞隨堂筆記",
-    presetName: "造詞",
-    type: "國語",
-    date: getTodayDateString(),
-    records: {
-      1: 'submitted', 2: 'submitted', 3: 'submitted', 4: 'submitted', 5: 'submitted',
-      6: 'submitted', 7: 'submitted', 8: 'submitted', 9: 'submitted', 10: 'submitted',
-      11: 'submitted', 12: 'submitted', 13: 'submitted', 14: 'pending', 15: 'submitted',
-      16: 'submitted', 17: 'submitted', 18: 'submitted', 19: 'submitted', 20: 'submitted',
-      21: 'submitted', 22: 'submitted', 23: 'submitted', 24: 'submitted', 25: 'submitted',
-      26: 'submitted', 27: 'submitted'
-    }
-  }
-];
+// 預設作業項目 (全手動純淨版，由導師手動派發，系統絕不預設假作業)
+const DEFAULT_HOMEWORK = [];
 
-const DEFAULT_POINT_LOGS = [
-  { id: 101, studentId: 15, points: 5, reason: "奏章字跡工整端正", date: getTodayDateString(), time: "08:15" },
-  { id: 102, studentId: 6, points: 5, reason: "課堂主動發表演練", date: getTodayDateString(), time: "09:05" },
-  { id: 103, studentId: 21, points: 5, reason: "熱心指導同儕算術", date: getTodayDateString(), time: "10:20" },
-  { id: 104, studentId: 3, points: 5, reason: "主動協助整理班級圖書", date: getTodayDateString(), time: "11:10" }
-];
+// 歷次集點與扣分紀錄 (全手動純淨版，完全依賴課堂即時加減分操作)
+const DEFAULT_POINT_LOGS = [];
 
 const DEFAULT_REWARD_CARDS = [
   { id: 'rc_1', title: '榮譽免死金牌 (免罰卡)', cost: 30, icon: '🛡️', desc: '可抵銷一次未帶學用品或遲到愛班服務登記', category: 'special' },
@@ -454,17 +296,31 @@ const STORAGE_KEY = "xining_kingdom_v3_dashboard";
 // ============================================================================
 // 3. KingdomStore (狀態管理核心)
 // ============================================================================
-const MASTER_ROSTER_BACKUP_20261119 = {"queenPassword":"queen","lateThreshold":"07:40","students":[{"id":1,"seatNo":1,"name":"洪永恩","gender":"M","title":"漱口水發放官","birthday":"0315","points":85,"lifetimePoints":85,"animalType":"dog","petType":"dog","petExp":85,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":2,"seatNo":2,"name":"莊淇勛","gender":"M","title":"晨間小隊長","birthday":"0520","points":160,"lifetimePoints":160,"animalType":"dog","petType":"dog","petExp":160,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":3,"seatNo":3,"name":"黃胤哲","gender":"M","title":"設備掌管官","birthday":"0812","points":210,"lifetimePoints":210,"animalType":"dog","petType":"dog","petExp":210,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":4,"seatNo":4,"name":"吳秉叡","gender":"M","title":"清運小隊長","birthday":"1104","points":65,"lifetimePoints":65,"animalType":"dog","petType":"dog","petExp":65,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":5,"seatNo":5,"name":"王添福","gender":"M","title":"午休巡查官","birthday":"0228","points":130,"lifetimePoints":130,"animalType":"dog","petType":"dog","petExp":130,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":6,"seatNo":6,"name":"王邑丞","gender":"M","title":"清潔指揮官","birthday":"0709","points":520,"lifetimePoints":520,"animalType":"dog","petType":"dog","petExp":520,"secondPetType":"cat","secondPetExp":20,"pets":[{"type":"dog"},{"type":"cat"}]},{"id":7,"seatNo":7,"name":"王識齊","gender":"M","title":"體能大將軍","birthday":"0923","points":95,"lifetimePoints":95,"animalType":"dog","petType":"dog","petExp":95,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":8,"seatNo":8,"name":"陳楷衡","gender":"M","title":"歸位巡查員","birthday":"0416","points":145,"lifetimePoints":145,"animalType":"dog","petType":"dog","petExp":145,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":9,"seatNo":9,"name":"王少謙","gender":"M","title":"回收清理官","birthday":"1205","points":50,"lifetimePoints":50,"animalType":"dog","petType":"dog","petExp":50,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":10,"seatNo":10,"name":"李承翰","gender":"M","title":"掌電小侍衛","birthday":"0630","points":175,"lifetimePoints":175,"animalType":"dog","petType":"dog","petExp":175,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":11,"seatNo":11,"name":"巫律杋","gender":"M","title":"香蕉御廚長","birthday":"0118","points":115,"lifetimePoints":115,"animalType":"dog","petType":"dog","petExp":115,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":12,"seatNo":12,"name":"陳彥廷","gender":"M","title":"值日勤務官","birthday":"1010","points":240,"lifetimePoints":240,"animalType":"dog","petType":"dog","petExp":240,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":13,"seatNo":13,"name":"林詰程","gender":"M","title":"日誌紀錄官","birthday":"0403","points":190,"lifetimePoints":190,"animalType":"dog","petType":"dog","petExp":190,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":14,"seatNo":14,"name":"顏珦菲","gender":"F","title":"清潔指揮官","birthday":"0825","points":155,"lifetimePoints":155,"animalType":"dog","petType":"dog","petExp":155,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":15,"seatNo":15,"name":"王瑜嫣","gender":"F","title":"作業點收官","birthday":"0614","points":535,"lifetimePoints":535,"animalType":"dog","petType":"dog","petExp":535,"secondPetType":"rabbit","secondPetExp":35,"pets":[{"type":"dog"},{"type":"rabbit"}]},{"id":16,"seatNo":16,"name":"李堇夢","gender":"F","title":"體能大將軍","birthday":"0329","points":80,"lifetimePoints":80,"animalType":"dog","petType":"dog","petExp":80,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":17,"seatNo":17,"name":"廖妘熙","gender":"F","title":"潔牙督導官","birthday":"1119","points":125,"lifetimePoints":125,"animalType":"dog","petType":"dog","petExp":125,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":18,"seatNo":18,"name":"方庭妤","gender":"F","title":"餐具小總長","birthday":"0508","points":205,"lifetimePoints":205,"animalType":"dog","petType":"dog","petExp":205,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":19,"seatNo":19,"name":"楊晏熏","gender":"F","title":"訂正審查官","birthday":"0915","points":140,"lifetimePoints":140,"animalType":"dog","petType":"dog","petExp":140,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":20,"seatNo":20,"name":"吳沛岑","gender":"F","title":"清潔指揮官","birthday":"0722","points":165,"lifetimePoints":165,"animalType":"dog","petType":"dog","petExp":165,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":21,"seatNo":21,"name":"林倢希","gender":"F","title":"暖心小小兵","birthday":"0107","points":280,"lifetimePoints":280,"animalType":"dog","petType":"dog","petExp":280,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":22,"seatNo":22,"name":"廖紫婷","gender":"F","title":"公告佈達官","birthday":"1224","points":90,"lifetimePoints":90,"animalType":"dog","petType":"dog","petExp":90,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":23,"seatNo":23,"name":"吳欣菲","gender":"F","title":"秩序執法官","birthday":"0214","points":135,"lifetimePoints":135,"animalType":"dog","petType":"dog","petExp":135,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":24,"seatNo":24,"name":"林詠泓","gender":"M","title":"最高指揮官","birthday":"1002","points":70,"lifetimePoints":70,"animalType":"dog","petType":"dog","petExp":70,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":25,"seatNo":25,"name":"王子芸","gender":"F","title":"小小兵宰相","birthday":"0606","points":225,"lifetimePoints":225,"animalType":"dog","petType":"dog","petExp":225,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":26,"seatNo":26,"name":"梁語倢","gender":"F","title":"香蕉點數官","birthday":"0918","points":110,"lifetimePoints":110,"animalType":"dog","petType":"dog","petExp":110,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":27,"seatNo":27,"name":"楊淳閔","gender":"M","title":"公告佈達官","birthday":"0425","points":140,"lifetimePoints":140,"animalType":"dog","petType":"dog","petExp":140,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]}],"pointPresets":[{"id":"p1","type":"plus","label":"課堂積極發表","points":2,"icon":"💡"},{"id":"p2","type":"plus","label":"遵守班級常規","points":2,"icon":"🛡️"},{"id":"p3","type":"plus","label":"皇宮整潔認真","points":3,"icon":"🧹"},{"id":"p4","type":"plus","label":"友愛互助同儕","points":3,"icon":"🤝"},{"id":"p5","type":"plus","label":"奏章字跡優良","points":3,"icon":"📜"},{"id":"p6","type":"plus","label":"特殊卓越貢獻","points":5,"icon":"👑"},{"id":"m1","type":"minus","label":"上課分心聊天","points":-1,"icon":"🤐"},{"id":"m2","type":"minus","label":"忘記帶學用品","points":-1,"icon":"🎒"},{"id":"m3","type":"minus","label":"走廊危險奔跑","points":-2,"icon":"🏃"},{"id":"m4","type":"minus","label":"作業未按時交","points":-2,"icon":"⚠️"}],"homeworkPresets":[{"id":"hw_pre_1","subject":"國語","name":"國習","fullName":"國語習作完成"},{"id":"hw_pre_2","subject":"國語","name":"造詞","fullName":"生字造詞甲乙本"},{"id":"hw_pre_3","subject":"國語","name":"圈詞","fullName":"國語圈詞隨堂本"},{"id":"hw_pre_4","subject":"數學","name":"數習","fullName":"數學習作進度"},{"id":"hw_pre_5","subject":"數學","name":"數練","fullName":"數學隨堂練習本"},{"id":"hw_pre_6","subject":"自然","name":"自習","fullName":"自然習作觀察記錄"},{"id":"hw_pre_7","subject":"社會","name":"社習","fullName":"社會習作重點作業"},{"id":"hw_pre_8","subject":"綜合","name":"聯絡簿","fullName":"家長簽名聯絡簿"}],"behaviorReasons":[{"id":"br_ref_1","type":"reflection","label":"上課分心聊私事","text":"上課分心聊私事"},{"id":"br_ref_2","type":"reflection","label":"未帶課堂學用品","text":"未帶課堂學用品"},{"id":"br_ref_3","type":"reflection","label":"未經許可擅離位","text":"未經許可擅離位"},{"id":"br_ref_4","type":"reflection","label":"走廊危險奔跑追逐","text":"走廊危險奔跑追逐"},{"id":"br_ref_5","type":"reflection","label":"對師長同儕禮貌欠佳","text":"對師長同儕禮貌欠佳"},{"id":"br_srv_1","type":"service","label":"超過07:40未打卡","text":"超過07:40未打卡（留班補打掃）"},{"id":"br_srv_2","type":"service","label":"個人座位周遭整潔不佳","text":"個人座位周遭整潔不佳"},{"id":"br_srv_3","type":"service","label":"打掃責任區未落實","text":"打掃責任區未落實"},{"id":"br_srv_4","type":"service","label":"忘記抽屜與置物櫃清空","text":"忘記抽屜與置物櫃清空"},{"id":"br_srv_5","type":"service","label":"公物使用後未歸位","text":"公物使用後未歸位"}],"contactBook":{"date":"2026-11-16","homeworkItems":["1. 國語習作第八課 P.58 ~ P.62","2. 數學習作第 72 頁至第 74 頁","3. 訂正國語隨堂生字語詞卷","4. 明日晨讀書籍準備完畢"],"reminders":["早自修：國語隨堂造詞練習與生字成語複習","重要提醒：明天有體育課，請穿著西寧王國運動服與運動鞋"],"queenMotto":"👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"},"contactBookHistory":{"2026-11-16":{"date":"2026-11-16","homeworkItems":["1. 國語習作第八課 P.58 ~ P.62","2. 數學習作第 72 頁至第 74 頁","3. 訂正國語隨堂生字語詞卷","4. 明日晨讀書籍準備完畢"],"reminders":["明天有體育課，請穿著西寧王國運動服","帶水壺、跳繩與個人潔牙用具"],"queenMotto":"👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！","updatedAt":1794803534000},"2026-11-13":{"date":"2026-11-13","homeworkItems":["1. 國語習作第 九 課閱讀理解題","2. 數學習作 P.66 ~ P.68","3. 預習自然第三單元"],"reminders":["下週一全校升旗朝會，請準時 07:40 前抵達","請帶美術水彩用具與調色盤"],"queenMotto":"持之以恆是成功的鑰匙，週末溫故而知新！","updatedAt":1794717134000},"2026-11-12":{"date":"2026-11-12","homeworkItems":["1. 國語隨堂造句本完成","2. 數學甲本單元練習二","3. 課外閱讀 20 分鐘"],"reminders":["明天有體育課，穿著西寧王國運動服，帶水壺與跳繩"],"queenMotto":"每一天的努力都是積累智慧的寶藏。","updatedAt":1794630734000}},"attendance":{"2026-11-16":{"1":{"status":"late","checkInTime":"13:44","note":"晨檢遲到 (13:44)"},"2":{"status":"late","checkInTime":"14:16","note":"晨檢遲到 (14:16)"},"3":{"status":"present","checkInTime":"07:33","note":""},"4":{"status":"present","checkInTime":"07:35","note":""},"5":{"status":"present","checkInTime":"07:38","note":""},"6":{"status":"present","checkInTime":"07:25","note":""},"7":{"status":"present","checkInTime":"07:39","note":""},"8":{"status":"late","checkInTime":"07:46","note":"晨讀遲到"},"9":{"status":"present","checkInTime":"07:36","note":""},"10":{"status":"present","checkInTime":"07:30","note":""},"11":{"status":"present","checkInTime":"07:34","note":""},"12":{"status":"present","checkInTime":"07:22","note":""},"13":{"status":"present","checkInTime":"07:37","note":""},"14":{"status":"leave","checkInTime":null,"leaveType":"sick","note":"病假（家長已通報）"},"15":{"status":"present","checkInTime":"07:26","note":""},"16":{"status":"present","checkInTime":"07:32","note":""},"17":{"status":"present","checkInTime":"07:35","note":""},"18":{"status":"present","checkInTime":"07:29","note":""},"19":{"status":"present","checkInTime":"07:33","note":""},"20":{"status":"present","checkInTime":"07:36","note":""},"21":{"status":"present","checkInTime":"07:24","note":""},"22":{"status":"late","checkInTime":"07:48","note":"校車延誤"},"23":{"status":"present","checkInTime":"07:35","note":""},"24":{"status":"present","checkInTime":"07:38","note":""},"25":{"status":"present","checkInTime":"07:27","note":""},"26":{"status":"present","checkInTime":"07:34","note":""},"27":{"status":"present","checkInTime":"07:30","note":""}},"2026-11-13":{"1":{"status":"present","checkInTime":"07:21","note":""},"2":{"status":"present","checkInTime":"07:22","note":""},"3":{"status":"present","checkInTime":"07:23","note":""},"4":{"status":"present","checkInTime":"07:24","note":""},"5":{"status":"present","checkInTime":"07:25","note":""},"6":{"status":"present","checkInTime":"07:26","note":""},"7":{"status":"present","checkInTime":"07:27","note":""},"8":{"status":"present","checkInTime":"07:28","note":""},"9":{"status":"present","checkInTime":"07:29","note":""},"10":{"status":"present","checkInTime":"07:30","note":""},"11":{"status":"present","checkInTime":"07:31","note":""},"12":{"status":"present","checkInTime":"07:32","note":""},"13":{"status":"late","checkInTime":"07:46","note":"校車誤點"},"14":{"status":"present","checkInTime":"07:34","note":""},"15":{"status":"present","checkInTime":"07:35","note":""},"16":{"status":"present","checkInTime":"07:36","note":""},"17":{"status":"present","checkInTime":"07:37","note":""},"18":{"status":"present","checkInTime":"07:20","note":""},"19":{"status":"present","checkInTime":"07:21","note":""},"20":{"status":"leave","checkInTime":null,"leaveType":"sick","leaveScope":"all_day","note":"流感就醫"},"21":{"status":"present","checkInTime":"07:23","note":""},"22":{"status":"present","checkInTime":"07:24","note":""},"23":{"status":"present","checkInTime":"07:25","note":""},"24":{"status":"present","checkInTime":"07:26","note":""},"25":{"status":"present","checkInTime":"07:27","note":""},"26":{"status":"present","checkInTime":"07:28","note":""},"27":{"status":"present","checkInTime":"07:29","note":""}},"2026-11-12":{"1":{"status":"present","checkInTime":"07:21","note":""},"2":{"status":"present","checkInTime":"07:22","note":""},"3":{"status":"present","checkInTime":"07:23","note":""},"4":{"status":"present","checkInTime":"07:24","note":""},"5":{"status":"present","checkInTime":"07:25","note":""},"6":{"status":"present","checkInTime":"07:26","note":""},"7":{"status":"present","checkInTime":"07:27","note":""},"8":{"status":"present","checkInTime":"07:28","note":""},"9":{"status":"present","checkInTime":"07:29","note":""},"10":{"status":"present","checkInTime":"07:30","note":""},"11":{"status":"present","checkInTime":"07:31","note":""},"12":{"status":"present","checkInTime":"07:32","note":""},"13":{"status":"present","checkInTime":"07:33","note":""},"14":{"status":"present","checkInTime":"07:34","note":""},"15":{"status":"present","checkInTime":"07:35","note":""},"16":{"status":"present","checkInTime":"07:36","note":""},"17":{"status":"present","checkInTime":"07:37","note":""},"18":{"status":"present","checkInTime":"07:20","note":""},"19":{"status":"present","checkInTime":"07:21","note":""},"20":{"status":"present","checkInTime":"07:22","note":""},"21":{"status":"present","checkInTime":"07:23","note":""},"22":{"status":"present","checkInTime":"07:24","note":""},"23":{"status":"present","checkInTime":"07:25","note":""},"24":{"status":"present","checkInTime":"07:26","note":""},"25":{"status":"present","checkInTime":"07:27","note":""},"26":{"status":"present","checkInTime":"07:28","note":""},"27":{"status":"present","checkInTime":"07:29","note":""}}},"homework":[{"id":1,"title":"國語習作第 八 課完成","presetName":"國習","type":"國語","date":"2026-11-16","records":{"1":"submitted","2":"submitted","3":"submitted","4":"submitted","5":"submitted","6":"submitted","7":"submitted","8":"late","9":"submitted","10":"submitted","11":"submitted","12":"submitted","13":"submitted","14":"pending","15":"submitted","16":"revision","17":"submitted","18":"submitted","19":"submitted","20":"submitted","21":"submitted","22":"missing","23":"submitted","24":"submitted","25":"submitted","26":"submitted","27":"submitted"}},{"id":2,"title":"數學習作 P.62 ~ P.65","presetName":"數習","type":"數學","date":"2026-11-16","records":{"1":"submitted","2":"submitted","3":"submitted","4":"submitted","5":"submitted","6":"submitted","7":"submitted","8":"submitted","9":"submitted","10":"submitted","11":"submitted","12":"submitted","13":"submitted","14":"pending","15":"submitted","16":"submitted","17":"submitted","18":"submitted","19":"revision","20":"submitted","21":"submitted","22":"missing","23":"submitted","24":"submitted","25":"submitted","26":"submitted","27":"submitted"}},{"id":3,"title":"生字造詞隨堂筆記","presetName":"造詞","type":"國語","date":"2026-11-16","records":{"1":"submitted","2":"submitted","3":"submitted","4":"submitted","5":"submitted","6":"submitted","7":"submitted","8":"submitted","9":"submitted","10":"submitted","11":"submitted","12":"submitted","13":"submitted","14":"pending","15":"submitted","16":"submitted","17":"submitted","18":"submitted","19":"submitted","20":"submitted","21":"submitted","22":"submitted","23":"submitted","24":"submitted","25":"submitted","26":"submitted","27":"submitted"}}],"pointLogs":[{"id":101,"studentId":15,"points":5,"reason":"奏章字跡工整端正","date":"2026-11-16","time":"08:15"},{"id":102,"studentId":6,"points":5,"reason":"課堂主動發表演練","date":"2026-11-16","time":"09:05"},{"id":103,"studentId":21,"points":5,"reason":"熱心指導同儕算術","date":"2026-11-16","time":"10:20"},{"id":104,"studentId":3,"points":5,"reason":"主動協助整理班級圖書","date":"2026-11-16","time":"11:10"}],"announcements":[{"id":1,"title":"五年二班班親會將於本週五晚間隆重召開","content":"歡迎全體皇親國戚（各位家長）蒞臨王國議政廳，共同研商小兵成長大計！","date":"2026-11-12","important":true},{"id":2,"title":"下週即將迎來王國期中學力大評量","content":"請全體小兵大臣調養精神、溫故知新，發揮平素所學爭取至高榮譽！","date":"2026-11-10","important":false}],"rewardCards":[{"id":"rc_1","title":"榮譽免死金牌 (免罰卡)","cost":30,"icon":"🛡️","desc":"可抵銷一次未帶學用品或遲到愛班服務登記","category":"special"},{"id":"rc_2","title":"一日皇家座位特權卡","cost":45,"icon":"💺","desc":"可自主挑選一日心儀王位（需經導師核可）","category":"privilege"},{"id":"rc_3","title":"御膳房優先盛飯令","cost":20,"icon":"🍱","desc":"享有當日午餐第一順位盛飯與加菜特權","category":"item"},{"id":"rc_4","title":"御花園特別免差役令","cost":25,"icon":"🧹","desc":"可免除一日外掃或教室值日生職務","category":"privilege"},{"id":"rc_5","title":"宮廷圖書館自由閱覽證","cost":15,"icon":"📚","desc":"午休或早自習可至班級圖書角借閱傳奇秘笈","category":"study"},{"id":"rc_6","title":"國王特赦奏章豁免卷","cost":50,"icon":"📜","desc":"可減免一項指定短篇日常作業（不含段考與作文）","category":"special"}],"rewardRedemptions":[],"behaviorCards":{},"trafficOverrides":{},"seatingLayout":{"rows":5,"cols":6},"seatingChart":[22,21,16,11,6,1,24,23,17,12,7,2,26,25,18,13,8,3,null,27,19,14,9,4,null,null,20,15,10,5],"lastModified":1795096022078,"satietyResetV20261116":true,"petDefaultDogV20261116":true,"seatingColsV20261117":true,"updatedAt":"2026-11-19T13:47:02.078Z","realRosterV20261119":true};
+const MASTER_ROSTER_BACKUP_20261119 = {"queenPassword":"queen","lateThreshold":"07:40","students":[{"id":1,"seatNo":1,"name":"洪永恩","gender":"M","title":"漱口水發放官","birthday":"0315","points":85,"lifetimePoints":85,"animalType":"dog","petType":"dog","petExp":85,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":2,"seatNo":2,"name":"莊淇勛","gender":"M","title":"晨間小隊長","birthday":"0520","points":160,"lifetimePoints":160,"animalType":"dog","petType":"dog","petExp":160,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":3,"seatNo":3,"name":"黃胤哲","gender":"M","title":"設備掌管官","birthday":"0812","points":210,"lifetimePoints":210,"animalType":"dog","petType":"dog","petExp":210,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":4,"seatNo":4,"name":"吳秉叡","gender":"M","title":"清運小隊長","birthday":"1104","points":65,"lifetimePoints":65,"animalType":"dog","petType":"dog","petExp":65,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":5,"seatNo":5,"name":"王添福","gender":"M","title":"午休巡查官","birthday":"0228","points":130,"lifetimePoints":130,"animalType":"dog","petType":"dog","petExp":130,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":6,"seatNo":6,"name":"王邑丞","gender":"M","title":"清潔指揮官","birthday":"0709","points":520,"lifetimePoints":520,"animalType":"dog","petType":"dog","petExp":520,"secondPetType":"cat","secondPetExp":20,"pets":[{"type":"dog"},{"type":"cat"}]},{"id":7,"seatNo":7,"name":"王識齊","gender":"M","title":"體能大將軍","birthday":"0923","points":95,"lifetimePoints":95,"animalType":"dog","petType":"dog","petExp":95,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":8,"seatNo":8,"name":"陳楷衡","gender":"M","title":"歸位巡查員","birthday":"0416","points":145,"lifetimePoints":145,"animalType":"dog","petType":"dog","petExp":145,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":9,"seatNo":9,"name":"王少謙","gender":"M","title":"回收清理官","birthday":"1205","points":50,"lifetimePoints":50,"animalType":"dog","petType":"dog","petExp":50,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":10,"seatNo":10,"name":"李承翰","gender":"M","title":"掌電小侍衛","birthday":"0630","points":175,"lifetimePoints":175,"animalType":"dog","petType":"dog","petExp":175,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":11,"seatNo":11,"name":"巫律杋","gender":"M","title":"香蕉御廚長","birthday":"0118","points":115,"lifetimePoints":115,"animalType":"dog","petType":"dog","petExp":115,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":12,"seatNo":12,"name":"陳彥廷","gender":"M","title":"值日勤務官","birthday":"1010","points":240,"lifetimePoints":240,"animalType":"dog","petType":"dog","petExp":240,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":13,"seatNo":13,"name":"林詰程","gender":"M","title":"日誌紀錄官","birthday":"0403","points":190,"lifetimePoints":190,"animalType":"dog","petType":"dog","petExp":190,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":14,"seatNo":14,"name":"顏珦菲","gender":"F","title":"清潔指揮官","birthday":"0825","points":155,"lifetimePoints":155,"animalType":"dog","petType":"dog","petExp":155,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":15,"seatNo":15,"name":"王瑜嫣","gender":"F","title":"作業點收官","birthday":"0614","points":535,"lifetimePoints":535,"animalType":"dog","petType":"dog","petExp":535,"secondPetType":"rabbit","secondPetExp":35,"pets":[{"type":"dog"},{"type":"rabbit"}]},{"id":16,"seatNo":16,"name":"李堇夢","gender":"F","title":"體能大將軍","birthday":"0329","points":80,"lifetimePoints":80,"animalType":"dog","petType":"dog","petExp":80,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":17,"seatNo":17,"name":"廖妘熙","gender":"F","title":"潔牙督導官","birthday":"1119","points":125,"lifetimePoints":125,"animalType":"dog","petType":"dog","petExp":125,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":18,"seatNo":18,"name":"方庭妤","gender":"F","title":"餐具小總長","birthday":"0508","points":205,"lifetimePoints":205,"animalType":"dog","petType":"dog","petExp":205,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":19,"seatNo":19,"name":"楊晏熏","gender":"F","title":"訂正審查官","birthday":"0915","points":140,"lifetimePoints":140,"animalType":"dog","petType":"dog","petExp":140,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":20,"seatNo":20,"name":"吳沛岑","gender":"F","title":"清潔指揮官","birthday":"0722","points":165,"lifetimePoints":165,"animalType":"dog","petType":"dog","petExp":165,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":21,"seatNo":21,"name":"林倢希","gender":"F","title":"暖心小小兵","birthday":"0107","points":280,"lifetimePoints":280,"animalType":"dog","petType":"dog","petExp":280,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":22,"seatNo":22,"name":"廖紫婷","gender":"F","title":"公告佈達官","birthday":"1224","points":90,"lifetimePoints":90,"animalType":"dog","petType":"dog","petExp":90,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":23,"seatNo":23,"name":"吳欣菲","gender":"F","title":"秩序執法官","birthday":"0214","points":135,"lifetimePoints":135,"animalType":"dog","petType":"dog","petExp":135,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":24,"seatNo":24,"name":"林詠泓","gender":"M","title":"最高指揮官","birthday":"1002","points":70,"lifetimePoints":70,"animalType":"dog","petType":"dog","petExp":70,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":25,"seatNo":25,"name":"王子芸","gender":"F","title":"小小兵宰相","birthday":"0606","points":225,"lifetimePoints":225,"animalType":"dog","petType":"dog","petExp":225,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":26,"seatNo":26,"name":"梁語倢","gender":"F","title":"香蕉點數官","birthday":"0918","points":110,"lifetimePoints":110,"animalType":"dog","petType":"dog","petExp":110,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":27,"seatNo":27,"name":"楊淳閔","gender":"M","title":"公告佈達官","birthday":"0425","points":140,"lifetimePoints":140,"animalType":"dog","petType":"dog","petExp":140,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]}],"pointPresets":[{"id":"p1","type":"plus","label":"課堂積極發表","points":2,"icon":"💡"},{"id":"p2","type":"plus","label":"遵守班級常規","points":2,"icon":"🛡️"},{"id":"p3","type":"plus","label":"皇宮整潔認真","points":3,"icon":"🧹"},{"id":"p4","type":"plus","label":"友愛互助同儕","points":3,"icon":"🤝"},{"id":"p5","type":"plus","label":"奏章字跡優良","points":3,"icon":"📜"},{"id":"p6","type":"plus","label":"特殊卓越貢獻","points":5,"icon":"👑"},{"id":"m1","type":"minus","label":"上課分心聊天","points":-1,"icon":"🤐"},{"id":"m2","type":"minus","label":"忘記帶學用品","points":-1,"icon":"🎒"},{"id":"m3","type":"minus","label":"走廊危險奔跑","points":-2,"icon":"🏃"},{"id":"m4","type":"minus","label":"作業未按時交","points":-2,"icon":"⚠️"}],"homeworkPresets":[{"id":"hw_pre_1","subject":"國語","name":"國習","fullName":"國語習作完成"},{"id":"hw_pre_2","subject":"國語","name":"造詞","fullName":"生字造詞甲乙本"},{"id":"hw_pre_3","subject":"國語","name":"圈詞","fullName":"國語圈詞隨堂本"},{"id":"hw_pre_4","subject":"數學","name":"數習","fullName":"數學習作進度"},{"id":"hw_pre_5","subject":"數學","name":"數練","fullName":"數學隨堂練習本"},{"id":"hw_pre_6","subject":"自然","name":"自習","fullName":"自然習作觀察記錄"},{"id":"hw_pre_7","subject":"社會","name":"社習","fullName":"社會習作重點作業"},{"id":"hw_pre_8","subject":"綜合","name":"聯絡簿","fullName":"家長簽名聯絡簿"}],"behaviorReasons":[{"id":"br_ref_1","type":"reflection","label":"上課分心聊私事","text":"上課分心聊私事"},{"id":"br_ref_2","type":"reflection","label":"未帶課堂學用品","text":"未帶課堂學用品"},{"id":"br_ref_3","type":"reflection","label":"未經許可擅離位","text":"未經許可擅離位"},{"id":"br_ref_4","type":"reflection","label":"走廊危險奔跑追逐","text":"走廊危險奔跑追逐"},{"id":"br_ref_5","type":"reflection","label":"對師長同儕禮貌欠佳","text":"對師長同儕禮貌欠佳"},{"id":"br_srv_1","type":"service","label":"超過07:40未打卡","text":"超過07:40未打卡（留班補打掃）"},{"id":"br_srv_2","type":"service","label":"個人座位周遭整潔不佳","text":"個人座位周遭整潔不佳"},{"id":"br_srv_3","type":"service","label":"打掃責任區未落實","text":"打掃責任區未落實"},{"id":"br_srv_4","type":"service","label":"忘記抽屜與置物櫃清空","text":"忘記抽屜與置物櫃清空"},{"id":"br_srv_5","type":"service","label":"公物使用後未歸位","text":"公物使用後未歸位"}],"contactBook":{"date":"2026-11-20","homeworkItems":[],"reminders":[],"queenMotto":"👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"},"contactBookHistory":{},"attendance":{},"homework":[],"pointLogs":[],"announcements":[{"id":1,"title":"五年二班班親會將於本週五晚間隆重召開","content":"歡迎全體皇親國戚（各位家長）蒞臨王國議政廳，共同研商小兵成長大計！","date":"2026-11-12","important":true},{"id":2,"title":"下週即將迎來王國期中學力大評量","content":"請全體小兵大臣調養精神、溫故知新，發揮平素所學爭取至高榮譽！","date":"2026-11-10","important":false}],"rewardCards":[{"id":"rc_1","title":"榮譽免死金牌 (免罰卡)","cost":30,"icon":"🛡️","desc":"可抵銷一次未帶學用品或遲到愛班服務登記","category":"special"},{"id":"rc_2","title":"一日皇家座位特權卡","cost":45,"icon":"💺","desc":"可自主挑選一日心儀王位（需經導師核可）","category":"privilege"},{"id":"rc_3","title":"御膳房優先盛飯令","cost":20,"icon":"🍱","desc":"享有當日午餐第一順位盛飯與加菜特權","category":"item"},{"id":"rc_4","title":"御花園特別免差役令","cost":25,"icon":"🧹","desc":"可免除一日外掃或教室值日生職務","category":"privilege"},{"id":"rc_5","title":"宮廷圖書館自由閱覽證","cost":15,"icon":"📚","desc":"午休或早自習可至班級圖書角借閱傳奇秘笈","category":"study"},{"id":"rc_6","title":"國王特赦奏章豁免卷","cost":50,"icon":"📜","desc":"可減免一項指定短篇日常作業（不含段考與作文）","category":"special"}],"rewardRedemptions":[],"behaviorCards":{},"trafficOverrides":{},"seatingLayout":{"rows":5,"cols":6},"seatingChart":[22,21,16,11,6,1,24,23,17,12,7,2,26,25,18,13,8,3,null,27,19,14,9,4,null,null,20,15,10,5],"lastModified":1795175485119,"satietyResetV20261116":true,"petDefaultDogV20261116":true,"seatingColsV20261117":true,"updatedAt":"2026-11-19T13:47:02.078Z","realRosterV20261119":true,"pointActionHistory":[]};
 
 class KingdomStore {
   applyMasterRosterBackup() {
     try {
       this.recordLocalSnapshot("載入五年二班電腦主存檔前快照");
     } catch (_) {}
+    // 密碼保護鎖：先保存導師現有的自訂密碼
+    const currentPass = (this.data && this.data.queenPassword) || 
+      (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || 
+      "queen";
+    
     const masterCopy = JSON.parse(JSON.stringify(MASTER_ROSTER_BACKUP_20261119));
     masterCopy.lastModified = Math.max(Date.now(), 1795096022078);
     masterCopy.realRosterV20261119 = true;
+    if (currentPass && currentPass !== 'queen') {
+      masterCopy.queenPassword = currentPass;
+    }
     this.data = this.normalizeData(masterCopy);
+    if (currentPass && currentPass !== 'queen') {
+      this.data.queenPassword = currentPass;
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem('xining_custom_queen_password', currentPass); } catch (_) {}
+      }
+    }
     this.saveInternal({ updateTimestamp: true, triggerPush: false });
     return this.data;
   }
@@ -474,9 +330,138 @@ class KingdomStore {
     this.syncAllHomeworkReflectionCards({ saveQuietly: true });
   }
 
+  /**
+   * 智能遠端數據雙向融合 (Smart Non-Destructive Merge)
+   * 保證跨裝置（平板、手機、電腦）互不覆蓋，作業、點數與簽到完整保留！
+   */
+  mergeRemoteData(remoteData) {
+    if (!remoteData || typeof remoteData !== 'object') return this.data;
+    const local = this.data;
+    const remote = this.normalizeData(remoteData);
+    if (!remote) return local;
+
+    // 1. 密碼保護鎖：永遠尊重自訂密碼
+    const localPass = (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || local.queenPassword;
+    const finalPassword = (localPass && localPass !== 'queen') ? localPass : (remote.queenPassword || 'queen');
+
+    // 2. 學生名冊與點數融合 (取最高點數與經驗值，絕不倒退)
+    const mergedStudents = (local.students || []).map(localSt => {
+      const remoteSt = (remote.students || []).find(s => s.seatNo === localSt.seatNo || s.id === localSt.id);
+      if (!remoteSt) return localSt;
+      const bestPoints = Math.max(localSt.points || 0, remoteSt.points || 0);
+      const bestLifetime = Math.max(localSt.lifetimePoints || 0, remoteSt.lifetimePoints || 0);
+      return {
+        ...localSt,
+        ...remoteSt,
+        name: remoteSt.name || localSt.name,
+        points: bestPoints,
+        lifetimePoints: bestLifetime,
+        petExp: bestLifetime,
+        animalType: remoteSt.animalType || localSt.animalType || 'dog',
+        petType: remoteSt.petType || localSt.petType || 'dog',
+        secondPetType: remoteSt.secondPetType || localSt.secondPetType,
+        secondPetExp: Math.max(localSt.secondPetExp || 0, remoteSt.secondPetExp || 0),
+        pets: (remoteSt.pets && remoteSt.pets.length > 0) ? remoteSt.pets : localSt.pets
+      };
+    });
+
+    // 3. 簽到表按日融合 (多裝置打卡自動合併，不遺漏任何學生)
+    const mergedAttendance = { ...(local.attendance || {}) };
+    if (remote.attendance && typeof remote.attendance === 'object') {
+      Object.keys(remote.attendance).forEach(dateKey => {
+        if (!mergedAttendance[dateKey]) {
+          mergedAttendance[dateKey] = { ...remote.attendance[dateKey] };
+        } else {
+          const localDay = mergedAttendance[dateKey];
+          const remoteDay = remote.attendance[dateKey];
+          const combinedDay = { ...localDay };
+          Object.keys(remoteDay).forEach(stKey => {
+            if (!combinedDay[stKey] || combinedDay[stKey].status === 'pending') {
+              combinedDay[stKey] = remoteDay[stKey];
+            } else if (remoteDay[stKey] && remoteDay[stKey].status !== 'pending') {
+              combinedDay[stKey] = remoteDay[stKey];
+            }
+          });
+          mergedAttendance[dateKey] = combinedDay;
+        }
+      });
+    }
+
+    // 4. 作業按 ID 融合
+    const hwMap = new Map();
+    (local.homework || []).forEach(hw => { if (hw && hw.id) hwMap.set(hw.id, JSON.parse(JSON.stringify(hw))); });
+    (remote.homework || []).forEach(rHw => {
+      if (!rHw || !rHw.id) return;
+      if (!hwMap.has(rHw.id)) {
+        hwMap.set(rHw.id, JSON.parse(JSON.stringify(rHw)));
+      } else {
+        const lHw = hwMap.get(rHw.id);
+        const combinedRecords = { ...(lHw.records || {}), ...(rHw.records || {}) };
+        hwMap.set(rHw.id, { ...lHw, ...rHw, records: combinedRecords });
+      }
+    });
+    const mergedHomework = Array.from(hwMap.values());
+
+    // 5. 聯絡簿融合
+    let mergedContactBook = remote.contactBook;
+    if (local.contactBook && remote.contactBook) {
+      const localTime = local.contactBook.updatedAt || 0;
+      const remoteTime = remote.contactBook.updatedAt || 0;
+      if (localTime > remoteTime) {
+        mergedContactBook = local.contactBook;
+      }
+    } else if (local.contactBook) {
+      mergedContactBook = local.contactBook;
+    }
+
+    // 6. 聯絡簿歷史紀錄
+    const mergedCbHistory = { ...(remote.contactBookHistory || {}), ...(local.contactBookHistory || {}) };
+
+    // 7. 歷程日誌融合
+    const logMap = new Map();
+    (local.pointLogs || []).forEach(l => { if (l && l.id) logMap.set(l.id, l); });
+    (remote.pointLogs || []).forEach(l => { if (l && l.id) logMap.set(l.id, l); });
+    const mergedPointLogs = Array.from(logMap.values()).sort((a,b) => (b.id || 0) - (a.id || 0)).slice(0, 50);
+
+    const remoteTime = remote.lastModified || 0;
+    const localTime = local.lastModified || 0;
+    const mergedSeatingLayout = (remoteTime >= localTime) ? (remote.seatingLayout || local.seatingLayout) : (local.seatingLayout || remote.seatingLayout);
+    const mergedSeatingChart = (remoteTime >= localTime) ? (remote.seatingChart || local.seatingChart) : (local.seatingChart || remote.seatingChart);
+
+    const mergedData = {
+      ...remote,
+      ...local,
+      queenPassword: finalPassword,
+      students: mergedStudents,
+      attendance: mergedAttendance,
+      homework: mergedHomework,
+      contactBook: mergedContactBook,
+      contactBookHistory: mergedCbHistory,
+      pointLogs: mergedPointLogs,
+      seatingLayout: mergedSeatingLayout,
+      seatingChart: mergedSeatingChart,
+      lastModified: Math.max(localTime, remoteTime, Date.now())
+    };
+
+    return this.normalizeData(mergedData);
+  }
+
   normalizeData(parsed) {
     if (!parsed || typeof parsed !== 'object') return null;
+
+    // --- 導師密碼終身保護鎖 (嚴防被預設值 "queen" 覆蓋) ---
+    const localCustomPass = (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || (this.data && this.data.queenPassword);
+    if (localCustomPass && localCustomPass !== 'queen') {
+      if (!parsed.queenPassword || parsed.queenPassword === 'queen') {
+        parsed.queenPassword = localCustomPass;
+      }
+    }
     if (!parsed.queenPassword) parsed.queenPassword = "queen";
+    // 若傳入之資料含有導師自訂密碼（且非預設值），同時同步儲存至獨立雙保險金鑰
+    if (parsed.queenPassword && parsed.queenPassword !== 'queen' && typeof localStorage !== 'undefined') {
+      try { localStorage.setItem('xining_custom_queen_password', parsed.queenPassword); } catch (_) {}
+    }
+
     if (!parsed.lateThreshold) parsed.lateThreshold = "07:40";
     if (!parsed.pointPresets) parsed.pointPresets = JSON.parse(JSON.stringify(DEFAULT_POINT_PRESETS));
     if (!parsed.homeworkPresets) parsed.homeworkPresets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
@@ -484,44 +469,94 @@ class KingdomStore {
     if (!parsed.alarmPresets || !Array.isArray(parsed.alarmPresets) || parsed.alarmPresets.length === 0) {
       parsed.alarmPresets = JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS));
     }
-    if (!parsed.contactBook) parsed.contactBook = JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK));
-    if (!parsed.contactBookHistory || typeof parsed.contactBookHistory !== 'object') {
-      parsed.contactBookHistory = JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK_HISTORY));
+
+    // --- 聯絡簿純淨全手動模式 (絕不自動生成假作業) ---
+    const todayStr = getTodayDateString();
+    if (!parsed.contactBook || typeof parsed.contactBook !== 'object') {
+      parsed.contactBook = {
+        date: todayStr,
+        homeworkItems: [],
+        reminders: [],
+        queenMotto: "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
+      };
     } else {
-      Object.keys(DEFAULT_CONTACT_BOOK_HISTORY).forEach(d => {
-        if (!parsed.contactBookHistory[d]) {
-          parsed.contactBookHistory[d] = JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK_HISTORY[d]));
+      if (!Array.isArray(parsed.contactBook.homeworkItems)) parsed.contactBook.homeworkItems = [];
+      if (!Array.isArray(parsed.contactBook.reminders)) parsed.contactBook.reminders = [];
+      if (!parsed.contactBook.date) parsed.contactBook.date = todayStr;
+      if (parsed.contactBook.queenMotto === undefined) {
+        parsed.contactBook.queenMotto = "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！";
+      }
+      // 自動清理舊版預設假作業
+      if (parsed.contactBook.homeworkItems.length > 0 && parsed.contactBook.homeworkItems[0] === "1. 國語習作第八課 P.58 ~ P.62") {
+        parsed.contactBook.homeworkItems = [];
+        parsed.contactBook.reminders = [];
+      }
+    }
+
+    if (!parsed.contactBookHistory || typeof parsed.contactBookHistory !== 'object') {
+      parsed.contactBookHistory = {};
+    } else {
+      // 清理舊版自動注入的示範假聯絡簿歷史
+      ["2026-11-16", "2026-11-13", "2026-11-12"].forEach(fakeDate => {
+        const item = parsed.contactBookHistory[fakeDate];
+        if (item && Array.isArray(item.homeworkItems) && item.homeworkItems.length > 0) {
+          if (item.homeworkItems[0] && (item.homeworkItems[0].includes("國語習作第八課") || item.homeworkItems[0].includes("國語習作第 九 課") || item.homeworkItems[0].includes("國語隨堂造句本"))) {
+            delete parsed.contactBookHistory[fakeDate];
+          }
         }
       });
     }
+
+    // --- 簽到打卡純淨全手動模式 (絕不自動預設打卡，一律由學生自主按座號打卡或導師手動操作) ---
     if (!parsed.attendance || typeof parsed.attendance !== 'object') {
       parsed.attendance = {};
+    } else {
+      // 清理舊版本遺留的示範打卡紀錄
+      ["2026-11-16", "2026-11-13", "2026-11-12"].forEach(fakeDate => {
+        const dayRec = parsed.attendance[fakeDate];
+        if (dayRec && typeof dayRec === 'object') {
+          if ((dayRec[1] && dayRec[1].checkInTime === '07:21') || (dayRec[1] && dayRec[1].checkInTime === '13:44' && dayRec[2] && dayRec[2].checkInTime === '14:16')) {
+            delete parsed.attendance[fakeDate];
+          }
+        }
+      });
     }
-    // 過去示範歷史資料按需補齊，但嚴禁為今日自動產生任何假打卡
-    Object.keys(DEFAULT_ATTENDANCE).forEach(d => {
-      if (!parsed.attendance[d] || Object.keys(parsed.attendance[d]).length === 0) {
-        parsed.attendance[d] = JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE[d]));
-      }
-    });
-    // 確保今日打卡記錄為全新狀態（絕不自動更新，一律由學生自主按座號打卡或導師手動操作）
-    const todayStr = getTodayDateString();
     if (!parsed.attendance[todayStr]) {
       parsed.attendance[todayStr] = {};
-    } else {
-      // 防呆清理：若今日紀錄包含舊版預設假資料（如 1號為 07:28 且 6號為 07:25），自動重設清空
-      const todayRec = parsed.attendance[todayStr];
-      if (todayRec && todayRec[1] && todayRec[1].checkInTime === '07:28' && todayRec[6] && todayRec[6].checkInTime === '07:25') {
-        parsed.attendance[todayStr] = {};
-      }
     }
-    if (!parsed.homework) parsed.homework = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK));
-    if (!parsed.pointLogs) parsed.pointLogs = JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS));
+
+    // --- 作業批閱純淨全手動模式 (完全由導師自行派發作業與登記，絕不自動生成假作業) ---
+    if (!parsed.homework || !Array.isArray(parsed.homework)) {
+      parsed.homework = [];
+    } else {
+      // 清理舊版示範假作業
+      parsed.homework = parsed.homework.filter(hw => {
+        if (!hw || !hw.title) return false;
+        if (hw.title === "國語習作第 八 課完成" || hw.title === "數學習作 P.62 ~ P.65" || hw.title === "生字造詞隨堂筆記") {
+          return false;
+        }
+        return true;
+      });
+    }
+
+    // --- 集點歷程純淨全手動模式 ---
+    if (!parsed.pointLogs || !Array.isArray(parsed.pointLogs)) {
+      parsed.pointLogs = [];
+    } else {
+      parsed.pointLogs = parsed.pointLogs.filter(log => {
+        if (!log) return false;
+        if (log.id >= 101 && log.id <= 104 && (log.reason === "奏章字跡工整端正" || log.reason === "課堂主動發表演練" || log.reason === "熱心指導同儕算術" || log.reason === "主動協助整理班級圖書")) {
+          return false;
+        }
+        return true;
+      });
+    }
     if (!parsed.pointActionHistory || !Array.isArray(parsed.pointActionHistory)) parsed.pointActionHistory = [];
     if (!parsed.announcements) parsed.announcements = JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS));
     if (!parsed.rewardCards) parsed.rewardCards = JSON.parse(JSON.stringify(DEFAULT_REWARD_CARDS));
     if (!parsed.rewardRedemptions) parsed.rewardRedemptions = [];
-    if (!parsed.behaviorCards || (parsed.behaviorCards[8] && parsed.behaviorCards[8].serviceReason === "遲到")) {
-      parsed.behaviorCards = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_CARDS));
+    if (!parsed.behaviorCards || (parsed.behaviorCards[8] && parsed.behaviorCards[8].serviceReason === "遲到" && !parsed.behaviorCards[8].serviceCount)) {
+      parsed.behaviorCards = {};
     }
     if (!parsed.trafficOverrides) parsed.trafficOverrides = {};
     if (!parsed.seatingLayout || !parsed.seatingLayout.rows || !parsed.seatingLayout.cols) {
@@ -649,6 +684,14 @@ class KingdomStore {
           serviceReason: '',
           history: []
         };
+      } else {
+        const b = parsed.behaviorCards[st.id];
+        if (b.reflectionReasons && Array.isArray(b.reflectionReasons)) {
+          b.reflectionReasons = b.reflectionReasons.filter(r => !(r.isAutoHw && (String(r.hwId) === '1' || String(r.hwId) === '2' || String(r.hwId) === '3')));
+          b.reflectionCount = b.reflectionReasons.length;
+          b.reflectionCard = b.reflectionCount > 0;
+          b.reflectionReason = b.reflectionReasons.map(r => r.text).join('、');
+        }
       }
     });
 
@@ -667,13 +710,14 @@ class KingdomStore {
       console.warn("讀取本機資料失敗，載入預設值", e);
     }
 
+    const localSavedPass = (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || "queen";
     return this.normalizeData({
-      queenPassword: "queen",
+      queenPassword: localSavedPass,
       lateThreshold: "07:40",
       students: JSON.parse(JSON.stringify(DEFAULT_STUDENTS_27)),
-      attendance: JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE)),
-      homework: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK)),
-      pointLogs: JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS)),
+      attendance: {},
+      homework: [],
+      pointLogs: [],
       pointActionHistory: [],
       announcements: JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS)),
       lastModified: 0,
@@ -759,11 +803,12 @@ class KingdomStore {
   }
 
   reset() {
+    const localSavedPass = (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || (this.data && this.data.queenPassword) || "queen";
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(STORAGE_KEY);
     }
     this.data = {
-      queenPassword: "queen",
+      queenPassword: localSavedPass,
       lateThreshold: "07:40",
       students: JSON.parse(JSON.stringify(DEFAULT_STUDENTS_27)),
       pointPresets: JSON.parse(JSON.stringify(DEFAULT_POINT_PRESETS)),
@@ -771,15 +816,15 @@ class KingdomStore {
       behaviorReasons: JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS)),
       alarmPresets: JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS)),
       contactBook: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)),
-      contactBookHistory: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK_HISTORY)),
-      attendance: JSON.parse(JSON.stringify(DEFAULT_ATTENDANCE)),
-      homework: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK)),
-      pointLogs: JSON.parse(JSON.stringify(DEFAULT_POINT_LOGS)),
+      contactBookHistory: {},
+      attendance: {},
+      homework: [],
+      pointLogs: [],
       pointActionHistory: [],
       announcements: JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS)),
       rewardCards: JSON.parse(JSON.stringify(DEFAULT_REWARD_CARDS)),
       rewardRedemptions: [],
-      behaviorCards: JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_CARDS)),
+      behaviorCards: {},
       trafficOverrides: {},
       seatingLayout: { rows: 5, cols: 6 },
       seatingChart: [...DEFAULT_SEATING_CHART],
@@ -2812,29 +2857,40 @@ class KingdomCloudSync {
     if (typeof window !== 'undefined') {
       this.checkUrlParams();
 
-      // 1. 視窗焦點與分頁切換
+      // 1. 視窗焦點與分頁切換 (聚焦立即拉取最新)
       window.addEventListener('focus', () => {
         if (this.config.autoPull && this.config.enabled) {
           this.pull({ silent: true });
         }
       });
 
-      // 2. 手機/平板喚醒與瀏覽器切換 (visibilitychange - 手機最重要的事件)
+      // 2. 手機/平板休眠防護與喚醒對齊 (visibilitychange)
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && this.config.autoPull && this.config.enabled) {
-          this.pull({ silent: true });
-        }
-      });
-
-      // 3. 網路斷線重連 (online)
-      window.addEventListener('online', () => {
-        if (this.config.enabled) {
-          this.pull({ silent: true });
-          if (this.pushTimeout) {
-            this.push({ silent: true });
+        if (document.visibilityState === 'hidden') {
+          // 關鍵修復：螢幕關閉或切換 APP 瞬間，立即衝刺推送本地所有變動，嚴防休眠漏推！
+          this.flushPush();
+        } else if (document.visibilityState === 'visible') {
+          // 喚醒瞬間立即拉取遠端最新變動
+          if (this.config.autoPull && this.config.enabled) {
+            this.pull({ silent: true });
           }
         }
       });
+
+      // 3. 瀏覽器離頁與切換防護 (pagehide & beforeunload)
+      window.addEventListener('pagehide', () => this.flushPush());
+      window.addEventListener('beforeunload', () => this.flushPush());
+
+      // 4. 網路斷線重連 (online)
+      window.addEventListener('online', () => {
+        if (this.config.enabled) {
+          this.pull({ silent: true });
+          this.flushPush();
+        }
+      });
+
+      // 5. 連接本機伺服器 SSE 即時推播 (0.05 秒極速聯動)
+      this.connectSse();
 
       // 4. 同一裝置跨分頁即時聯動 (storage event)
       window.addEventListener('storage', (e) => {
@@ -2973,7 +3029,7 @@ class KingdomCloudSync {
   startPolling() {
     if (this.pollInterval) clearInterval(this.pollInterval);
     if (!this.config.enabled || !this.config.autoPull) return;
-    const intervalMs = Math.max(8, this.config.intervalSec || 12) * 1000;
+    const intervalMs = 3000; // 極速背景巡查 3 秒間隔
     this.pollInterval = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       this.pull({ silent: true });
@@ -3010,17 +3066,48 @@ class KingdomCloudSync {
     };
   }
 
+  connectSse() {
+    if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+    const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname);
+    if (!isLocal) return;
+
+    try {
+      const sseUrl = this.getLocalApiUrl('/api/sync/events');
+      const es = new EventSource(sseUrl);
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data && data.type === 'sync_update') {
+            const remoteTime = data.lastModified || 0;
+            const localTime = this.store.data.lastModified || 0;
+            // 只要伺服器時間大於本地，立即秒級拉取刷新！
+            if (remoteTime > localTime) {
+              this.pull({ silent: true });
+            }
+          }
+        } catch (_) {}
+      };
+      es.onerror = () => {
+        // EventSource 內建自動斷線重連機制
+      };
+    } catch (_) {}
+  }
+
+  flushPush() {
+    if (this.pushTimeout) {
+      clearTimeout(this.pushTimeout);
+      this.pushTimeout = null;
+    }
+    this.push({ silent: true, force: true });
+  }
+
   schedulePush({ force = false } = {}) {
     if (!this.config.enabled) return;
-    // 嚴防未拉先推：若尚未完成首次拉取對齊，不自動排程推送舊資料
-    if (!this.hasCompletedInitialPull && !force) {
-      console.log('[CloudSync] 尚未完成首次開機拉取驗證，暫緩自動推送');
-      return;
-    }
     if (this.pushTimeout) clearTimeout(this.pushTimeout);
+    // 防抖大幅縮短至 150ms，實現幾乎零延遲的極速推送！
     this.pushTimeout = setTimeout(() => {
       this.push({ silent: true, force });
-    }, 800);
+    }, 150);
   }
 
   async push({ silent = false, force = false } = {}) {
@@ -3047,6 +3134,17 @@ class KingdomCloudSync {
         });
         if (localRes.ok) {
           pushedToAny = true;
+          try {
+            const resJson = await localRes.json();
+            if (resJson && resJson.lastModified) {
+              this.store.data.lastModified = resJson.lastModified;
+              if (resJson.data) {
+                // 接收伺服器智能融合後的最全能版本
+                this.store.data = this.store.normalizeData(resJson.data);
+              }
+              this.store.saveInternal({ updateTimestamp: false, triggerPush: false });
+            }
+          } catch (_) {}
         } else if (localRes.status === 409) {
           const conflictJson = await localRes.json();
           console.warn('[CloudSync] 伺服器有更新版本，主動觸發 Pull 拉取最新資料！', conflictJson);
@@ -3176,6 +3274,19 @@ class KingdomCloudSync {
       let isUpdated = false;
       const normalizedRemote = this.store.normalizeData(remoteData);
       if (normalizedRemote) {
+        // --- 密碼防護鎖：遠端若是預設密碼且本地已有自訂密碼，嚴格保留本地密碼 ---
+        const localPass = (this.store.data && this.store.data.queenPassword) || 
+          (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password'));
+        if (localPass && localPass !== 'queen') {
+          if (!normalizedRemote.queenPassword || normalizedRemote.queenPassword === 'queen') {
+            normalizedRemote.queenPassword = localPass;
+          }
+        } else if (normalizedRemote.queenPassword && normalizedRemote.queenPassword !== 'queen') {
+          if (typeof localStorage !== 'undefined') {
+            try { localStorage.setItem('xining_custom_queen_password', normalizedRemote.queenPassword); } catch (_) {}
+          }
+        }
+
         const remoteTime = normalizedRemote.lastModified || 0;
         const localTime = this.store.data.lastModified || 0;
 
@@ -3192,7 +3303,8 @@ class KingdomCloudSync {
 
         if (force || remoteTime > localTime || (!localIsReal && remoteIsReal)) {
           this.store.recordLocalSnapshot(`雲端拉取前備份 (遠端: ${remoteTime ? new Date(remoteTime).toLocaleTimeString() : '無時間戳'})`);
-          this.store.data = normalizedRemote;
+          // 核心修復：使用「智能融合」取代盲目整包覆蓋，保證本機新編輯絕不被遠端舊資料沖掉！
+          this.store.data = this.store.mergeRemoteData(normalizedRemote);
           this.store.saveInternal({ updateTimestamp: false, triggerPush: false });
           if (typeof window !== 'undefined' && window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
             window.KingdomUI.refreshCurrentView();
@@ -3201,9 +3313,6 @@ class KingdomCloudSync {
             showToast("☁️ 已自動接收來自其他裝置的最新修改！", "🔄");
           }
           isUpdated = true;
-          if (this.config.googleScriptUrl) {
-            this.push({ silent: true, force: true });
-          }
         } else if (localTime > remoteTime) {
           console.log('[CloudSync] 本機資料較伺服器更新，主動同步推送最新版本！');
           this.push({ silent: true });
