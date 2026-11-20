@@ -344,26 +344,58 @@ class KingdomStore {
     const localPass = (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || local.queenPassword;
     const finalPassword = (localPass && localPass !== 'queen') ? localPass : (remote.queenPassword || 'queen');
 
-    // 2. 學生名冊與點數融合 (取最高點數與經驗值，絕不倒退)
-    const mergedStudents = (local.students || []).map(localSt => {
-      const remoteSt = (remote.students || []).find(s => s.seatNo === localSt.seatNo || s.id === localSt.id);
-      if (!remoteSt) return localSt;
-      const bestPoints = Math.max(localSt.points || 0, remoteSt.points || 0);
-      const bestLifetime = Math.max(localSt.lifetimePoints || 0, remoteSt.lifetimePoints || 0);
-      return {
-        ...localSt,
-        ...remoteSt,
-        name: remoteSt.name || localSt.name,
-        points: bestPoints,
-        lifetimePoints: bestLifetime,
-        petExp: bestLifetime,
-        animalType: remoteSt.animalType || localSt.animalType || 'dog',
-        petType: remoteSt.petType || localSt.petType || 'dog',
-        secondPetType: remoteSt.secondPetType || localSt.secondPetType,
-        secondPetExp: Math.max(localSt.secondPetExp || 0, remoteSt.secondPetExp || 0),
-        pets: (remoteSt.pets && remoteSt.pets.length > 0) ? remoteSt.pets : localSt.pets
-      };
+    const rTime = Number(remote.lastModified) || 0;
+    const lTime = Number(local.lastModified) || 0;
+
+    // 2. 學生名冊與點數智能雙向融合 (全方位支援手機/平板/電腦雙向同步、新增大臣如28號、點數自由調度與生涯總額歸零)
+    const allStudentsMap = new Map();
+
+    // 先填入本地現有名冊
+    (local.students || []).forEach(localSt => {
+      if (localSt && (localSt.id !== undefined || localSt.seatNo !== undefined)) {
+        allStudentsMap.set(localSt.seatNo || localSt.id, { ...localSt });
+      }
     });
+
+    // 融合遠端最新資料 (若遠端有新大臣直接追加，若已有則以遠端最新數值與點數覆寫融合)
+    (remote.students || []).forEach(remoteSt => {
+      if (!remoteSt || (remoteSt.id === undefined && remoteSt.seatNo === undefined)) return;
+      const key = remoteSt.seatNo || remoteSt.id;
+      const localSt = allStudentsMap.get(key);
+
+      if (!localSt) {
+        // 本地沒有的全新大臣（例如手機新增的第28號大臣）：直接完整加入！
+        allStudentsMap.set(key, JSON.parse(JSON.stringify(remoteSt)));
+      } else {
+        // 雙方皆有的大臣：優先採納 remote 的點數、生涯累積總額與萌寵設定
+        const finalPoints = (remoteSt.points !== undefined && remoteSt.points !== null) ? Number(remoteSt.points) : (Number(localSt.points) || 0);
+        const finalLifetime = (remoteSt.lifetimePoints !== undefined && remoteSt.lifetimePoints !== null) ? Number(remoteSt.lifetimePoints) : (Number(localSt.lifetimePoints) || 0);
+        const finalPets = (remoteSt.pets && remoteSt.pets.length > 0) ? remoteSt.pets : (localSt.pets || [{ type: remoteSt.animalType || localSt.animalType || 'dog' }]);
+        const finalSecondPet = remoteSt.secondPetType !== undefined ? remoteSt.secondPetType : localSt.secondPetType;
+        const finalSecondExp = (remoteSt.secondPetExp !== undefined && remoteSt.secondPetExp !== null) ? Number(remoteSt.secondPetExp) : (Number(localSt.secondPetExp) || 0);
+
+        allStudentsMap.set(key, {
+          ...localSt,
+          ...remoteSt,
+          id: remoteSt.id || localSt.id,
+          seatNo: remoteSt.seatNo || localSt.seatNo,
+          name: remoteSt.name || localSt.name,
+          title: remoteSt.title || localSt.title,
+          birthday: remoteSt.birthday || localSt.birthday,
+          gender: remoteSt.gender || localSt.gender,
+          points: finalPoints,
+          lifetimePoints: finalLifetime,
+          petExp: finalLifetime,
+          animalType: remoteSt.animalType || localSt.animalType || 'dog',
+          petType: remoteSt.petType || localSt.petType || 'dog',
+          secondPetType: finalSecondPet,
+          secondPetExp: finalSecondExp,
+          pets: finalPets
+        });
+      }
+    });
+
+    const mergedStudents = Array.from(allStudentsMap.values()).sort((a, b) => (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0));
 
     // 3. 簽到表按日融合 (多裝置打卡自動合併，不遺漏任何學生)
     const mergedAttendance = { ...(local.attendance || {}) };
@@ -598,12 +630,7 @@ class KingdomStore {
             st.birthday = defSt.birthday;
           }
         });
-        // 移除多餘的第 28 位測試大臣
-        parsed.students = parsed.students.filter(s => s.seatNo <= 27 && s.id <= 27);
-        // 確保座位表也是 27 位 (移除測試用 28 號)
-        if (parsed.seatingChart) {
-          parsed.seatingChart = parsed.seatingChart.map(x => (x === 28 ? null : x));
-        }
+        parsed.students.sort((a, b) => a.seatNo - b.seatNo);
       }
       parsed.realRosterV20261119 = true;
       parsed.lastModified = Math.max(parsed.lastModified || 0, Date.now());
@@ -648,9 +675,9 @@ class KingdomStore {
     }
 
     parsed.students.forEach((st, idx) => {
-      // 確保可用金幣與生涯累積總額 (若 lifetimePoints 為 0 但 points > 0，校準為 points)
-      if (st.points === undefined || st.points === null || isNaN(st.points)) st.points = 50;
-      if (st.lifetimePoints === undefined || st.lifetimePoints === null || isNaN(st.lifetimePoints) || (st.lifetimePoints === 0 && st.points > 0)) {
+      // 確保可用金幣與生涯累積總額 (支援導師手動歸零)
+      if (st.points === undefined || st.points === null || isNaN(st.points)) st.points = 0;
+      if (st.lifetimePoints === undefined || st.lifetimePoints === null || isNaN(st.lifetimePoints)) {
         st.lifetimePoints = Math.max(0, parseInt(st.points, 10) || 0);
       }
       st.petExp = st.lifetimePoints;
@@ -1085,20 +1112,16 @@ class KingdomStore {
     return 1 + Math.floor(pts / 500);
   }
 
-  // --- 同步與防呆校驗學生萌寵 (若蘋果因誤植修改未達標，自動移除超額認養的寵物) ---
+  // --- 同步與防呆校驗學生萌寵 (支援生涯累積總額歸零與自由調度) ---
   syncStudentPets(student) {
     if (!student) return [];
-    const pts = Math.max(0, parseInt(student.points, 10) || 0);
-
-    // 嚴格校準：生涯累積若未初始化、或高於目前持有蘋果，強制校準為目前蘋果數 (確保誤植修改時嚴格同步截斷)
     let lifetime = parseInt(student.lifetimePoints, 10);
-    if (isNaN(lifetime) || lifetime <= 0 || lifetime > pts) {
-      lifetime = pts;
-      student.lifetimePoints = pts;
+    if (isNaN(lifetime) || lifetime < 0) {
+      lifetime = 0;
+      student.lifetimePoints = 0;
     }
-    const effectivePts = Math.min(pts, lifetime);
-    student.lifetimePoints = effectivePts;
-    const maxAllowed = 1 + Math.floor(effectivePts / 500);
+    student.petExp = lifetime;
+    const maxAllowed = 1 + Math.floor(lifetime / 500);
 
     // 初始化 pets 陣列 (至少有一隻預設萌寵)
     if (!Array.isArray(student.pets)) {
@@ -1115,8 +1138,8 @@ class KingdomStore {
       student.pets.push({ type: ANIMAL_DEFINITIONS[p1] ? p1 : 'dog' });
     }
 
-    // 核心防呆裁切：若因誤植修改導致累積蘋果不足，自動移除超出上限之認養寵物
-    // 例如累積未達 1000 顆，第三隻認養寵物自動移除！未達 500 顆，第二隻與第三隻自動移除！
+    // 核心防呆裁切：若因生涯總額歸零或扣除未達門檻，自動移除超出上限之第二隻或第三隻認養寵物
+    // 每 500 點可額外認養一隻 (0~499點 1隻、500~999點 2隻、1000點以上 3隻)
     if (student.pets.length > maxAllowed) {
       student.pets = student.pets.slice(0, maxAllowed);
     }
@@ -1124,9 +1147,8 @@ class KingdomStore {
     // 同步向下相容欄位
     student.animalType = student.pets[0]?.type || 'dog';
     student.petType = student.animalType;
-    student.petExp = effectivePts;
     student.secondPetType = student.pets[1]?.type || null;
-    student.secondPetExp = student.secondPetType ? Math.max(0, effectivePts - 500) : 0;
+    student.secondPetExp = student.secondPetType ? Math.max(0, lifetime - 500) : 0;
 
     return student.pets;
   }
@@ -1134,7 +1156,6 @@ class KingdomStore {
   syncAllStudentsPets() {
     if (!this.data.students || !Array.isArray(this.data.students)) return;
     this.data.students.forEach(st => this.syncStudentPets(st));
-    this.save();
   }
 
   // --- 卡牌抽屜同步 (管理每位大臣持有的已兌換特權卡) ---
@@ -1520,41 +1541,70 @@ class KingdomStore {
         }
       } else if (mode === 'set_lifetime') {
         st.lifetimePoints = Math.max(0, parseInt(targetLifetime, 10) || 0);
+        st.petExp = st.lifetimePoints;
       } else if (mode === 'reset_points') {
         st.points = 0;
       } else if (mode === 'reset_lifetime') {
         st.lifetimePoints = 0;
+        st.petExp = 0;
+        st.secondPetType = null;
+        st.secondPetExp = 0;
+        if (Array.isArray(st.pets)) st.pets = st.pets.slice(0, 1);
       } else if (mode === 'reset_both') {
         st.points = 0;
         st.lifetimePoints = 0;
+        st.petExp = 0;
+        st.secondPetType = null;
+        st.secondPetExp = 0;
+        if (Array.isArray(st.pets)) st.pets = st.pets.slice(0, 1);
       }
       this.syncStudentPets(st);
       updated.push(st);
     });
 
     if (updated.length > 0) {
+      let logPts = 0;
+      if (mode === 'adjust') logPts = deltaPoints || 0;
+      else if (mode === 'set_points') logPts = targetPoints || 0;
+
       this.data.pointLogs.unshift({
         id: Date.now(),
         studentId: updated.length === 1 ? updated[0].id : 'batch_adjust',
-        points: mode === 'adjust' ? (deltaPoints || 0) : 0,
-        reason: `${reason} 【模式：${mode}，${updated.length} 位大臣】`,
+        points: logPts,
+        reason: `${reason} 【${mode === 'set_points' ? `指定設定為 ${targetPoints} 顆` : (mode === 'adjust' ? `增減 ${deltaPoints} 顆` : mode)}，${updated.length} 位大臣】`,
         date: getTodayDateString(),
         time: new Date().toTimeString().slice(0, 5)
       });
-      this.save();
+      this.save('批次調度大臣點數');
     }
     return updated;
   }
 
-  batchResetPoints(targetPoints = 0, clearLogs = false) {
+  batchResetPoints(targetPoints = 0, clearLogs = false, resetLifetime = true) {
     const pts = Math.max(0, parseInt(targetPoints, 10) || 0);
     this.data.students.forEach(s => {
       s.points = pts;
+      if (resetLifetime) {
+        s.lifetimePoints = pts;
+        s.petExp = pts;
+        s.secondPetType = null;
+        s.secondPetExp = 0;
+        if (Array.isArray(s.pets)) s.pets = s.pets.slice(0, 1);
+      }
+      this.syncStudentPets(s);
     });
     if (clearLogs) {
       this.data.pointLogs = [];
     }
-    this.save();
+    this.data.pointLogs.unshift({
+      id: Date.now(),
+      studentId: 'batch_adjust',
+      points: pts,
+      reason: `導師批次重置全班大臣點數為 ${pts} 顆${resetLifetime ? '（生涯總額同步歸零重設）' : ''}`,
+      date: getTodayDateString(),
+      time: new Date().toTimeString().slice(0, 5)
+    });
+    this.save('批次重置全班點數');
   }
 
   resetSingleStudentPoints(studentId, targetPoints = 0) {
@@ -3078,12 +3128,8 @@ class KingdomCloudSync {
         try {
           const data = JSON.parse(e.data);
           if (data && data.type === 'sync_update') {
-            const remoteTime = data.lastModified || 0;
-            const localTime = this.store.data.lastModified || 0;
-            // 只要伺服器時間大於本地，立即秒級拉取刷新！
-            if (remoteTime > localTime) {
-              this.pull({ silent: true });
-            }
+            // 只要收到伺服器推播廣播，立即秒級拉取刷新！
+            this.pull({ silent: true });
           }
         } catch (_) {}
       };
@@ -3097,8 +3143,8 @@ class KingdomCloudSync {
     if (this.pushTimeout) {
       clearTimeout(this.pushTimeout);
       this.pushTimeout = null;
+      this.push({ silent: true, force: true });
     }
-    this.push({ silent: true, force: true });
   }
 
   schedulePush({ force = false } = {}) {
@@ -3112,6 +3158,12 @@ class KingdomCloudSync {
 
   async push({ silent = false, force = false } = {}) {
     if (!this.config.enabled) return { success: false, message: '雲端同步未啟用' };
+
+    // 關鍵防舊覆蓋新保護：若裝置剛開機/喚醒且尚未完成首次 Pull，且非使用者直接觸發的操作，優先拉取遠端最新！
+    if (!this.hasCompletedInitialPull && !force) {
+      await this.pull({ silent: true });
+    }
+
     this.syncStatus = 'syncing';
     this.notify();
 
@@ -3337,30 +3389,46 @@ class KingdomCloudSync {
     }
   }
 
-  // 檢查遠端存檔是否含有本地尚未擁有的最新資訊 (點數更高、打卡更新、作業新交等)
+  // 檢查遠端存檔是否含有本地尚未擁有的最新資訊 (新增大臣、點數變動、打卡更新、作業新交等)
   hasRemoteUpdates(local, remote) {
     if (!remote || !remote.students || !Array.isArray(remote.students)) return false;
     if (!local || !local.students || !Array.isArray(local.students)) return true;
 
-    // 1. 時間戳明確較新
-    if ((remote.lastModified || 0) > (local.lastModified || 0)) return true;
+    const rTime = Number(remote.lastModified) || 0;
+    const lTime = Number(local.lastModified) || 0;
 
-    // 2. 學生名冊與點數比對 (遠端是否有更高點數或更多認養寵物)
-    const localMap = new Map();
-    local.students.forEach(s => { if (s && (s.id || s.seatNo)) localMap.set(s.seatNo || s.id, s); });
+    // 1. 若遠端時間戳明確較新，一律視為有更新
+    if (rTime > lTime) return true;
 
+    // 2. 名冊人數比對：若遠端大臣人數不同（例如手機剛冊封新大臣），100% 判定有更新！
+    if (remote.students.length !== local.students.length) return true;
+
+    // 檢查遠端是否有本地缺少的大臣
+    const hasNewStudent = remote.students.some(rSt => !local.students.some(lSt => lSt.seatNo === rSt.seatNo || lSt.id === rSt.id));
+    if (hasNewStudent) return true;
+
+    // 3. 加扣點歷程與點數比對 (遠端是否有更新的記功紀錄或不同的點數)
+    const rLogs = remote.pointLogs || [];
+    const lLogs = local.pointLogs || [];
+    const rLatestLogId = (rLogs[0] && rLogs[0].id) || 0;
+    const lLatestLogId = (lLogs[0] && lLogs[0].id) || 0;
+    if (rLatestLogId > lLatestLogId) return true;
+
+    // 4. 比對個別大臣點數與生涯累積總額是否不同（支援手機加扣點、重設、歸零秒級同步到電腦與平板）
     for (let i = 0; i < remote.students.length; i++) {
       const rSt = remote.students[i];
-      if (!rSt) continue;
-      const lSt = localMap.get(rSt.seatNo || rSt.id);
-      if (!lSt) return true;
-      if (Number(rSt.points || 0) > Number(lSt.points || 0)) return true;
-      if (Number(rSt.lifetimePoints || 0) > Number(lSt.lifetimePoints || 0)) return true;
-      if (Number(rSt.secondPetExp || 0) > Number(lSt.secondPetExp || 0)) return true;
-      if (rSt.secondPetType && !lSt.secondPetType) return true;
+      const lSt = local.students.find(s => s.seatNo === rSt.seatNo || s.id === rSt.id);
+      if (lSt) {
+        if (Number(rSt.points) !== Number(lSt.points) || Number(rSt.lifetimePoints) !== Number(lSt.lifetimePoints)) {
+          return true;
+        }
+        if (rSt.name !== lSt.name || rSt.title !== lSt.title || rSt.birthday !== lSt.birthday) {
+          return true;
+        }
+      }
     }
 
-    // 3. 簽到表比對 (遠端是否有已簽到但本地為 pending/未到的紀錄)
+    // 5. 簽到表比對 (遠端是否有已簽到但本地為 pending/未到的紀錄)
     const rAtt = remote.attendance || {};
     const lAtt = local.attendance || {};
     for (const d in rAtt) {
@@ -3376,7 +3444,7 @@ class KingdomCloudSync {
       }
     }
 
-    // 4. 作業比對 (遠端是否有新作業或新繳交紀錄)
+    // 6. 作業比對 (遠端是否有新作業或新繳交紀錄)
     const rHw = remote.homework || [];
     const lHw = local.homework || [];
     if (rHw.length > lHw.length) return true;
@@ -3396,7 +3464,7 @@ class KingdomCloudSync {
       }
     }
 
-    // 5. 聯絡簿比對
+    // 7. 聯絡簿比對
     if (remote.contactBook && local.contactBook) {
       if (Number(remote.contactBook.updatedAt || 0) > Number(local.contactBook.updatedAt || 0)) {
         return true;
@@ -3404,12 +3472,6 @@ class KingdomCloudSync {
     } else if (remote.contactBook && !local.contactBook) {
       return true;
     }
-
-    // 6. 加扣點歷程
-    const rLogs = remote.pointLogs || [];
-    const lLogs = local.pointLogs || [];
-    if (rLogs.length > 0 && lLogs.length === 0) return true;
-    if (rLogs.length > 0 && lLogs.length > 0 && (rLogs[0].id || 0) > (lLogs[0].id || 0)) return true;
 
     return false;
   }

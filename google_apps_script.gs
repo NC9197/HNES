@@ -117,7 +117,7 @@ function mergeDatasets(base, incoming) {
     ? base.queenPassword
     : (incoming.queenPassword || 'queen');
 
-  // 2. 學生名冊與點數智能融合 (只增不減，永遠保留最高累積成果)
+  // 2. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與點數自由調度)
   var mergedStudents = (base.students || []).map(function(bSt) {
     var iSt = null;
     var incList = incoming.students || [];
@@ -129,8 +129,13 @@ function mergeDatasets(base, incoming) {
     }
     if (!iSt) return bSt;
 
-    var bestPoints = Math.max(Number(bSt.points) || 0, Number(iSt.points) || 0);
-    var bestLifetime = Math.max(Number(bSt.lifetimePoints) || 0, Number(iSt.lifetimePoints) || 0);
+    // 優先採納最新推送裝置的設定值 (支援加點、扣點、重設、歸零)
+    var finalPoints = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
+    var finalLifetime = (iSt.lifetimePoints !== undefined && iSt.lifetimePoints !== null) ? Number(iSt.lifetimePoints) : (Number(bSt.lifetimePoints) || 0);
+    var finalPets = (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets;
+    var finalSecondPet = iSt.secondPetType !== undefined ? iSt.secondPetType : (bSt.secondPetType || null);
+    var finalSecondExp = (iSt.secondPetExp !== undefined && iSt.secondPetExp !== null) ? Number(iSt.secondPetExp) : (Number(bSt.secondPetExp) || 0);
+
     return {
       id: bSt.id,
       seatNo: bSt.seatNo,
@@ -138,16 +143,34 @@ function mergeDatasets(base, incoming) {
       gender: iSt.gender || bSt.gender,
       title: iSt.title || bSt.title,
       birthday: iSt.birthday || bSt.birthday,
-      points: bestPoints,
-      lifetimePoints: bestLifetime,
-      petExp: bestLifetime,
+      points: finalPoints,
+      lifetimePoints: finalLifetime,
+      petExp: finalLifetime,
       animalType: iSt.animalType || bSt.animalType || 'dog',
       petType: iSt.petType || bSt.petType || 'dog',
-      secondPetType: iSt.secondPetType || bSt.secondPetType || null,
-      secondPetExp: Math.max(Number(bSt.secondPetExp) || 0, Number(iSt.secondPetExp) || 0),
-      pets: (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets
+      secondPetType: finalSecondPet,
+      secondPetExp: finalSecondExp,
+      pets: finalPets
     };
   });
+
+  // 核心修復：若手機/平板新增了大臣 (例如第28位或新座號)，自動完整併入名冊，絕不遺漏！
+  var incomingList = incoming.students || [];
+  for (var k = 0; k < incomingList.length; k++) {
+    var cand = incomingList[k];
+    if (!cand) continue;
+    var exists = false;
+    for (var m = 0; m < mergedStudents.length; m++) {
+      if (mergedStudents[m].seatNo === cand.seatNo || mergedStudents[m].id === cand.id) {
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      mergedStudents.push(cand);
+    }
+  }
+  mergedStudents.sort(function(a, b) { return (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0); });
 
   // 3. 簽到表按日按座號雙向合併 (多裝置打卡自動合併，不漏任何學生)
   var mergedAttendance = {};

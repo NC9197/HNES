@@ -3769,9 +3769,9 @@ function renderZooHabitatShared(containerId = "pointsZooGrid", statsPillId = "zo
     const aType = (st.animalType || st.petType || 'lion').toLowerCase();
     window.KingdomApp.store.syncStudentPets(st);
     let lifetime = parseInt(st.lifetimePoints, 10);
-    if (isNaN(lifetime) || lifetime <= 0) {
-      lifetime = Math.max(0, parseInt(st.points, 10) || 0);
-      st.lifetimePoints = lifetime;
+    if (isNaN(lifetime) || lifetime < 0) {
+      lifetime = 0;
+      st.lifetimePoints = 0;
     }
     totalFood += lifetime;
     const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
@@ -4746,19 +4746,26 @@ function closeBatchResetPointsModal() {
 function submitBatchResetPoints(e) {
   e.preventDefault();
   const target = parseInt(document.getElementById("resetTargetPointsInput").value, 10);
-  const clearLogs = document.getElementById("resetClearLogsCheckbox").checked;
+  const clearLogs = document.getElementById("resetClearLogsCheckbox")?.checked ?? false;
+  const resetLifetime = document.getElementById("resetLifetimePointsCheckbox")?.checked ?? (target === 0);
 
   if (isNaN(target) || target < 0) {
     alert("請輸入有效的點數值！");
     return;
   }
 
-  if (!confirm(`確定要將全班 27 位大臣的點數全部重置為 ${target} 點嗎？此操作不可逆！`)) return;
+  const studentCount = window.KingdomApp.store.data.students.length;
+  const promptMsg = resetLifetime
+    ? `⚠️ 確定要將全班 ${studentCount} 位大臣的可用蘋果重置為 ${target} 點，並將「生涯累積總額」同步重設嗎？`
+    : `確定要將全班 ${studentCount} 位大臣的點數全部重置為 ${target} 點嗎？`;
 
-  window.KingdomApp.store.batchResetPoints(target, clearLogs);
+  if (!confirm(promptMsg)) return;
+
+  window.KingdomApp.store.batchResetPoints(target, clearLogs, resetLifetime);
   window.KingdomApp.sound.playCoin();
-  showToast(`🔄 已成功將全班 27 位大臣蘋果重置為 ${target} 顆！`);
+  showToast(`🔄 已成功將全班 ${studentCount} 位大臣蘋果重置為 ${target} 顆！`);
   closeBatchResetPointsModal();
+  refreshCurrentView();
   renderPointsView();
   renderRosterView();
 }
@@ -5103,14 +5110,12 @@ function renderRosterView() {
     window.KingdomApp.store.syncStudentPets(st);
     const currentPts = Math.max(0, parseInt(st.points, 10) || 0);
     let lifetime = parseInt(st.lifetimePoints, 10);
-    if (isNaN(lifetime) || lifetime <= 0 || lifetime > currentPts) {
-      lifetime = currentPts;
-      st.lifetimePoints = currentPts;
+    if (isNaN(lifetime) || lifetime < 0) {
+      lifetime = 0;
+      st.lifetimePoints = 0;
     }
-    const effectivePts = Math.min(currentPts, lifetime);
-    st.lifetimePoints = effectivePts;
-
-    const maxAllowed = 1 + Math.floor(effectivePts / 500);
+    const effectivePts = lifetime;
+    const maxAllowed = 1 + Math.floor(lifetime / 500);
     const validPets = (st.pets || [{ type: defaultPet }]).slice(0, maxAllowed);
     st.pets = validPets;
 
@@ -6396,9 +6401,9 @@ function renderZooProjection() {
       const aType = (st.animalType || st.petType || 'lion').toLowerCase();
       window.KingdomApp.store.syncStudentPets(st);
       let lifetime = parseInt(st.lifetimePoints, 10);
-      if (isNaN(lifetime) || lifetime <= 0) {
-        lifetime = Math.max(0, parseInt(st.points, 10) || 0);
-        st.lifetimePoints = lifetime;
+      if (isNaN(lifetime) || lifetime < 0) {
+        lifetime = 0;
+        st.lifetimePoints = 0;
       }
       totalFood += lifetime;
       const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
@@ -8229,7 +8234,7 @@ function mergeDatasets(base, incoming) {
     ? base.queenPassword
     : (incoming.queenPassword || 'queen');
 
-  // 2. 學生名冊與點數智能融合 (只增不減，永遠保留最高累積成果)
+  // 2. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與點數自由調度)
   var mergedStudents = (base.students || []).map(function(bSt) {
     var iSt = null;
     var incList = incoming.students || [];
@@ -8241,8 +8246,13 @@ function mergeDatasets(base, incoming) {
     }
     if (!iSt) return bSt;
 
-    var bestPoints = Math.max(Number(bSt.points) || 0, Number(iSt.points) || 0);
-    var bestLifetime = Math.max(Number(bSt.lifetimePoints) || 0, Number(iSt.lifetimePoints) || 0);
+    // 優先採納最新推送裝置的設定值 (支援加點、扣點、重設、歸零)
+    var finalPoints = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
+    var finalLifetime = (iSt.lifetimePoints !== undefined && iSt.lifetimePoints !== null) ? Number(iSt.lifetimePoints) : (Number(bSt.lifetimePoints) || 0);
+    var finalPets = (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets;
+    var finalSecondPet = iSt.secondPetType !== undefined ? iSt.secondPetType : (bSt.secondPetType || null);
+    var finalSecondExp = (iSt.secondPetExp !== undefined && iSt.secondPetExp !== null) ? Number(iSt.secondPetExp) : (Number(bSt.secondPetExp) || 0);
+
     return {
       id: bSt.id,
       seatNo: bSt.seatNo,
@@ -8250,16 +8260,34 @@ function mergeDatasets(base, incoming) {
       gender: iSt.gender || bSt.gender,
       title: iSt.title || bSt.title,
       birthday: iSt.birthday || bSt.birthday,
-      points: bestPoints,
-      lifetimePoints: bestLifetime,
-      petExp: bestLifetime,
+      points: finalPoints,
+      lifetimePoints: finalLifetime,
+      petExp: finalLifetime,
       animalType: iSt.animalType || bSt.animalType || 'dog',
       petType: iSt.petType || bSt.petType || 'dog',
-      secondPetType: iSt.secondPetType || bSt.secondPetType || null,
-      secondPetExp: Math.max(Number(bSt.secondPetExp) || 0, Number(iSt.secondPetExp) || 0),
-      pets: (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets
+      secondPetType: finalSecondPet,
+      secondPetExp: finalSecondExp,
+      pets: finalPets
     };
   });
+
+  // 核心修復：若手機/平板新增了大臣 (例如第28位或新座號)，自動完整併入名冊，絕不遺漏！
+  var incomingList = incoming.students || [];
+  for (var k = 0; k < incomingList.length; k++) {
+    var cand = incomingList[k];
+    if (!cand) continue;
+    var exists = false;
+    for (var m = 0; m < mergedStudents.length; m++) {
+      if (mergedStudents[m].seatNo === cand.seatNo || mergedStudents[m].id === cand.id) {
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      mergedStudents.push(cand);
+    }
+  }
+  mergedStudents.sort(function(a, b) { return (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0); });
 
   // 3. 簽到表按日按座號雙向合併 (多裝置打卡自動合併，不漏任何學生)
   var mergedAttendance = {};
@@ -9027,9 +9055,9 @@ function openChangeAnimalModal(studentId, slot = 0) {
 
   window.KingdomApp.store.syncStudentPets(student);
   let lifetime = parseInt(student.lifetimePoints, 10);
-  if (isNaN(lifetime) || lifetime <= 0) {
-    lifetime = Math.max(0, parseInt(student.points, 10) || 0);
-    student.lifetimePoints = lifetime;
+  if (isNaN(lifetime) || lifetime < 0) {
+    lifetime = 0;
+    student.lifetimePoints = 0;
   }
   const maxAllowed = 1 + Math.floor(lifetime / 500);
   const requiredPoints = slotIndex * 500;
@@ -9214,7 +9242,7 @@ let activeAdjustStudentIds = new Set();
 let currentAdjustMode = 'adjust';
 
 function openBatchAdjustPointsModal() {
-  if (!checkTeacherAuth("批次更改蘋果數量")) return;
+  if (!checkTeacherAuth("批次修改可用蘋果")) return;
   const modal = document.getElementById("batchAdjustPointsModal");
   if (!modal) return;
 
@@ -9222,7 +9250,14 @@ function openBatchAdjustPointsModal() {
   activeAdjustStudentIds = new Set(students.map(s => s.id));
 
   renderAdjustStudentsGrid();
-  handleAdjustModeChange('adjust');
+
+  const radios = document.querySelectorAll('input[name="adjustModeRadio"]');
+  let selectedMode = 'adjust';
+  radios.forEach(r => { if (r.checked) selectedMode = r.value; });
+  handleAdjustModeChange(selectedMode);
+
+  const selectAllBtn = document.getElementById("adjustSelectAllBtn");
+  if (selectAllBtn) selectAllBtn.textContent = `全選 ${students.length} 人`;
 
   modal.classList.remove("hidden");
 }
@@ -9292,22 +9327,42 @@ function handleAdjustModeChange(mode) {
 
   if (!inputGroup || !valueLabel || !pointsInput) return;
 
+  // 動態更新單選卡邊框高亮
+  const radioLabels = document.querySelectorAll('input[name="adjustModeRadio"]');
+  radioLabels.forEach(r => {
+    const parentLabel = r.closest('label');
+    if (parentLabel) {
+      if (r.value === mode) {
+        parentLabel.classList.add('border-2', 'border-amber-500', 'bg-amber-100/90', 'font-black');
+        parentLabel.classList.remove('border-amber-300', 'bg-white', 'border-rose-300', 'bg-rose-50');
+      } else {
+        parentLabel.classList.remove('border-2', 'border-amber-500', 'bg-amber-100/90', 'font-black');
+        if (r.value === 'reset_both') {
+          parentLabel.classList.add('border', 'border-rose-300', 'bg-rose-50');
+        } else {
+          parentLabel.classList.add('border', 'border-amber-300', 'bg-white');
+        }
+      }
+    }
+  });
+
   if (mode === 'adjust') {
     inputGroup.classList.remove("hidden");
-    valueLabel.textContent = "增減點數 (正數加點、負數扣點)：";
-    pointsInput.value = "5";
+    valueLabel.textContent = "➕ 增減點數 (正數加蘋果、負數扣蘋果)：";
+    if (!pointsInput.value || pointsInput.value === "50" || pointsInput.value === "100") pointsInput.value = "5";
     if (syncLabel) syncLabel.classList.remove("hidden");
   } else if (mode === 'set_points') {
     inputGroup.classList.remove("hidden");
-    valueLabel.textContent = "直接設定可用蘋果數值 (顆)：";
-    pointsInput.value = "50";
-    if (syncLabel) syncLabel.classList.add("hidden");
+    valueLabel.textContent = "🎯 直接指定可用蘋果數量 (每位所選大臣直接設為此顆數)：";
+    if (!pointsInput.value || pointsInput.value === "5") pointsInput.value = "100";
+    if (syncLabel) syncLabel.classList.remove("hidden");
   } else if (mode === 'set_lifetime') {
     inputGroup.classList.remove("hidden");
-    valueLabel.textContent = "直接設定生涯累積總額 (lifetimePoints，動物金化相關)：";
-    pointsInput.value = "100";
+    valueLabel.textContent = "🌟 直接指定生涯累積總額 (萌寵金化與升階經驗值)：";
+    if (!pointsInput.value || pointsInput.value === "5") pointsInput.value = "100";
     if (syncLabel) syncLabel.classList.add("hidden");
   } else {
+    // 歸零模式
     inputGroup.classList.add("hidden");
     if (syncLabel) syncLabel.classList.add("hidden");
   }
@@ -9321,12 +9376,18 @@ function submitBatchAdjustPoints(e) {
   }
 
   const ids = Array.from(activeAdjustStudentIds);
-  const pointsVal = parseInt(document.getElementById("adjustPointsInput")?.value, 10) || 0;
+  const pointsInput = document.getElementById("adjustPointsInput");
+  const pointsVal = parseInt(pointsInput?.value, 10) || 0;
   const syncLifetime = document.getElementById("adjustSyncLifetimeCheck")?.checked ?? true;
   const reason = document.getElementById("adjustReasonInput")?.value.trim() || "導師批次蘋果調度";
 
   if (currentAdjustMode.startsWith('reset_')) {
-    const confirmReset = confirm(`確定要執行【${currentAdjustMode}】嗎？此操作將重置已選 ${ids.length} 位大臣的點數！`);
+    let modeText = "重置點數";
+    if (currentAdjustMode === 'reset_points') modeText = "可用蘋果歸零 (0顆)";
+    else if (currentAdjustMode === 'reset_lifetime') modeText = "生涯累積總額歸零 (0點，萌寵進化進度重置)";
+    else if (currentAdjustMode === 'reset_both') modeText = "可用蘋果與生涯總額【全部徹底歸零】";
+
+    const confirmReset = confirm(`確定要對已選取的 ${ids.length} 位大臣執行【${modeText}】嗎？此操作將覆蓋現有累積值！`);
     if (!confirmReset) return;
   }
 
@@ -9343,6 +9404,8 @@ function submitBatchAdjustPoints(e) {
   showToast(`🍎 批次蘋果調度成功！已更新 ${ids.length} 位大臣資料。`, "👑");
   closeBatchAdjustPointsModal();
   refreshCurrentView();
+  renderPointsView();
+  renderRosterView();
 }
 
 // ===================================================================

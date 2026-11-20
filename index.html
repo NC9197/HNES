@@ -2006,7 +2006,7 @@
 
       <form onsubmit="submitBatchResetPoints(event)" class="space-y-3.5 text-xs">
         <div>
-          <label class="block font-black text-amber-950 mb-1">將全班 27 位大臣蘋果重置為：</label>
+          <label class="block font-black text-amber-950 mb-1">將全班大臣可用蘋果重置為：</label>
           <div class="grid grid-cols-3 gap-2">
             <button type="button" onclick="document.getElementById('resetTargetPointsInput').value=0" class="py-2 rounded-lg border-2 border-amber-300 bg-white hover:bg-amber-100 font-bold text-amber-950">
               歸零 (0 點)
@@ -2023,7 +2023,11 @@
           </div>
         </div>
 
-        <div>
+        <div class="space-y-1.5">
+          <label class="flex items-center space-x-2 font-bold text-amber-900 cursor-pointer">
+            <input type="checkbox" id="resetLifetimePointsCheckbox" checked class="rounded text-amber-600 focus:ring-amber-500">
+            <span>同時將「生涯累積總額」同步重設 (動物進化進度重置)</span>
+          </label>
           <label class="flex items-center space-x-2 font-bold text-amber-900 cursor-pointer">
             <input type="checkbox" id="resetClearLogsCheckbox" class="rounded text-amber-600 focus:ring-amber-500">
             <span>同時清空先前的歷史獎懲日誌</span>
@@ -4153,7 +4157,7 @@
           <div class="flex items-center justify-between">
             <label class="font-black text-amber-950">選擇調度大臣對象：</label>
             <div class="space-x-1">
-              <button type="button" onclick="selectAllAdjustStudents(true)" class="px-2 py-0.5 rounded bg-amber-200 hover:bg-amber-300 text-amber-950">全選 27 人</button>
+              <button type="button" id="adjustSelectAllBtn" onclick="selectAllAdjustStudents(true)" class="px-2 py-0.5 rounded bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold">全選全班</button>
               <button type="button" onclick="selectAllAdjustStudents(false)" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800">清空</button>
               <button type="button" onclick="invertAdjustStudents()" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800">反選</button>
             </div>

@@ -68,25 +68,42 @@ function mergeDatasets(base, incoming) {
     ? base.queenPassword
     : (incoming.queenPassword || 'queen');
 
-  // 2. 學生名冊與點數智能融合 (只增不減，永遠保留最高累積成果)
+  // 2. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與點數自由調度)
   const mergedStudents = (base.students || []).map(bSt => {
     const iSt = (incoming.students || []).find(s => s.seatNo === bSt.seatNo || s.id === bSt.id);
     if (!iSt) return bSt;
-    const bestPoints = Math.max(bSt.points || 0, iSt.points || 0);
-    const bestLifetime = Math.max(bSt.lifetimePoints || 0, iSt.lifetimePoints || 0);
+
+    // 優先採納最新推送裝置的設定值 (支援加點、扣點、重設、歸零)
+    const finalPoints = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
+    const finalLifetime = (iSt.lifetimePoints !== undefined && iSt.lifetimePoints !== null) ? Number(iSt.lifetimePoints) : (Number(bSt.lifetimePoints) || 0);
+    const finalPets = (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets;
+    const finalSecondPet = iSt.secondPetType !== undefined ? iSt.secondPetType : bSt.secondPetType;
+    const finalSecondExp = (iSt.secondPetExp !== undefined && iSt.secondPetExp !== null) ? Number(iSt.secondPetExp) : (Number(bSt.secondPetExp) || 0);
+
     return {
       ...bSt,
       ...iSt,
       name: iSt.name || bSt.name,
-      points: bestPoints,
-      lifetimePoints: bestLifetime,
-      petExp: bestLifetime,
+      points: finalPoints,
+      lifetimePoints: finalLifetime,
+      petExp: finalLifetime,
       animalType: iSt.animalType || bSt.animalType || 'dog',
       petType: iSt.petType || bSt.petType || 'dog',
-      secondPetType: iSt.secondPetType || bSt.secondPetType,
-      secondPetExp: Math.max(bSt.secondPetExp || 0, iSt.secondPetExp || 0)
+      secondPetType: finalSecondPet,
+      secondPetExp: finalSecondExp,
+      pets: finalPets
     };
   });
+
+  // 核心修復：若手機/平板新增了大臣 (例如第28位或新座號)，自動完整併入名冊，絕不遺漏！
+  (incoming.students || []).forEach(iSt => {
+    if (!iSt) return;
+    const exists = mergedStudents.some(s => s.seatNo === iSt.seatNo || s.id === iSt.id);
+    if (!exists) {
+      mergedStudents.push({ ...iSt });
+    }
+  });
+  mergedStudents.sort((a, b) => (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0));
 
   // 3. 簽到表按日按座號雙向融合 (不遺漏任何一台裝置打卡)
   const mergedAttendance = { ...(base.attendance || {}) };
@@ -150,7 +167,8 @@ function mergeDatasets(base, incoming) {
     contactBook: mergedContactBook,
     contactBookHistory: { ...(base.contactBookHistory || {}), ...(incoming.contactBookHistory || {}) },
     pointLogs: mergedPointLogs,
-    lastModified: Date.now()
+    lastModified: Date.now(),
+    realRosterV20261119: true
   };
 }
 
