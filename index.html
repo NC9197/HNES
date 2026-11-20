@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261119_v5">
+  <link rel="stylesheet" href="styles.css?v=20261120_v7">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -3658,6 +3658,23 @@
         </button>
       </div>
 
+      <!-- 手機端直連同步快捷卡片 (解決手機舊快取與跨裝置問題) -->
+      <div class="bg-gradient-to-r from-amber-500 to-yellow-400 p-3.5 rounded-2xl shadow-md border-2 border-amber-600 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="text-amber-950 text-left">
+          <div class="font-black text-xs sm:text-sm flex items-center space-x-1.5">
+            <span>📱</span>
+            <span>【手機同步專用】載入電腦最新 27 位大臣</span>
+          </div>
+          <p class="text-[11px] font-bold text-amber-900 mt-0.5">
+            若手機顯示舊名冊，點擊此按鈕立即強制同步為五年二班「洪永恩、莊淇勛...等27位大臣」真實名冊與點數！
+          </p>
+        </div>
+        <button onclick="restoreMasterPcData()" class="w-full sm:w-auto px-4 py-2.5 bg-amber-950 hover:bg-amber-900 text-amber-300 rounded-xl font-black text-xs shadow-lg flex-shrink-0 flex items-center justify-center space-x-1.5 transition transform active:scale-95">
+          <span>⚡</span>
+          <span>一鍵載入電腦最新名冊</span>
+        </button>
+      </div>
+
       <!-- Google 官方雲端同步設定 (核心指南) -->
       <div class="space-y-3 bg-white border-2 border-amber-300 p-4 rounded-2xl text-xs shadow-sm">
         <div class="flex items-center justify-between border-b border-amber-100 pb-2">
@@ -4404,8 +4421,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261119_v5"></script>
-  <script src="ui.js?v=20261119_v5"></script>
+  <script src="app.js?v=20261120_v7"></script>
+  <script src="ui.js?v=20261120_v7"></script>
 
   <!-- 保障座位表大屏投影與點名簿抽屜 100% 正常響應之備援守護腳本 -->
   <script>

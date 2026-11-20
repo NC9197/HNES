@@ -100,6 +100,41 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // 取得或儲存全域雲端設定 API (供本機伺服器、網頁與手機共享 Google Apps Script 網址)
+  if (pathname === '/api/sync/config') {
+    const configPath = path.join(ROOT_DIR, 'cloud_config.json');
+    if (req.method === 'GET') {
+      let cfg = { googleScriptUrl: '', googleAccount: 'xining502@gmail.com' };
+      if (fs.existsSync(configPath)) {
+        try { cfg = JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch (_) {}
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: true, ...cfg }));
+      return;
+    }
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body || '{}');
+          let currentCfg = {};
+          if (fs.existsSync(configPath)) {
+            try { currentCfg = JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch (_) {}
+          }
+          const updated = { ...currentCfg, ...parsed };
+          fs.writeFileSync(configPath, JSON.stringify(updated, null, 2), 'utf8');
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true, message: '雲端同步設定已儲存', config: updated }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, error: e.message }));
+        }
+      });
+      return;
+    }
+  }
+
   // 查詢伺服器歷史快照清單
   if (pathname === '/api/sync/snapshots') {
     try {
@@ -248,6 +283,30 @@ const server = http.createServer((req, res) => {
               message: `伺服器上有更新的資料版本 (${new Date(existingTime).toLocaleString()})，拒絕以較舊的裝置資料 (${new Date(incomingTime).toLocaleString()}) 覆蓋！請先從伺服器拉取最新資料。`
             }));
             return;
+          }
+
+          // 防呆名冊校準：嚴防任何裝置將舊測試名冊（王品捷、李宇軒）推送到伺服器覆蓋五年二班真實名冊（洪永恩、莊淇勛）
+          const hasStaleDemoNames = parsed.students && parsed.students.some(s => s.name === "王品捷" || s.name === "李宇軒" || s.name === "林冠廷");
+          if (hasStaleDemoNames) {
+            console.warn('[Sync Guard] 攔截含有舊示範人名的過期推送，強制校準為真實名冊！');
+            const masterFile = path.join(ROOT_DIR, 'data_sync.json');
+            if (fs.existsSync(masterFile)) {
+              try {
+                const master = JSON.parse(fs.readFileSync(masterFile, 'utf8'));
+                if (master.students && Array.isArray(master.students)) {
+                  master.students.forEach((mst, idx) => {
+                    const target = parsed.students.find(s => s.seatNo === mst.seatNo || s.id === mst.id) || parsed.students[idx];
+                    if (target) {
+                      target.name = mst.name;
+                      target.title = mst.title;
+                      target.gender = mst.gender;
+                      target.birthday = mst.birthday;
+                    }
+                  });
+                  parsed.students = parsed.students.filter(s => s.seatNo <= 27 && s.id <= 27);
+                }
+              } catch (_) {}
+            }
           }
 
           // 寫入前自動保留快照留底

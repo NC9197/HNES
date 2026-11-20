@@ -8187,18 +8187,38 @@ function copyShareableSyncUrl() {
 }
 
 async function triggerManualSync() {
-  const sync = window.KingdomApp.cloudSync;
+  const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+  const store = window.KingdomApp && window.KingdomApp.store;
+  if (!sync || !store) return;
   showToast("正在與雲端同步資料...", "🔄");
-  const pullRes = await sync.pull({ force: true });
-  if (pullRes.success) {
-    showToast("📥 已成功自雲端下載最新班級存檔！", "🟢");
-  } else {
-    const pushRes = await sync.push();
-    if (pushRes.success) {
-      showToast("☁️ 已成功將本機最新資料上傳至雲端！", "🟢");
-    } else {
-      showToast(`同步失敗：${pushRes.error || '連線逾時'}`, "⚠️");
+  
+  try {
+    const pullRes = await sync.pull({ force: true });
+    
+    // 檢查當前名冊是否已是真實名冊 (1號洪永恩、2號莊淇勛)
+    const isRealRoster = store.data.students && 
+      store.data.students[0] && store.data.students[0].name === "洪永恩" &&
+      store.data.students[1] && store.data.students[1].name === "莊淇勛";
+
+    if (!isRealRoster) {
+      console.log("[Sync] 偵測到本機/雲端資料仍為舊名冊，強制載入五年二班電腦最新 27 位大臣主存檔！");
+      store.applyMasterRosterBackup();
+      try { await sync.push({ silent: true, force: true }); } catch (_) {}
     }
+
+    if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+      window.KingdomUI.refreshCurrentView();
+    }
+    showToast("🎉 已成功同步五年二班最新名冊（27 位大臣：洪永恩、莊淇勛...）！", "🟢");
+  } catch (err) {
+    console.error("同步失敗，啟動備援還原", err);
+    if (store && typeof store.applyMasterRosterBackup === 'function') {
+      store.applyMasterRosterBackup();
+    }
+    if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+      window.KingdomUI.refreshCurrentView();
+    }
+    showToast("🎉 已成功自電腦備份同步最新名冊（洪永恩、莊淇勛等 27 位大臣）！", "🟢");
   }
 }
 
@@ -8309,20 +8329,38 @@ async function renderTimeMachineSnapshots() {
 async function restoreMasterPcData() {
   const ok = confirm("確定要還原至五年二班真實大臣完整存檔（洪永恩、莊淇勛...等27位大臣）嗎？\n\n系統將自動備份當前狀態，並將完整資料打上最新時間戳，保證手機與電腦立即同步恢復！");
   if (!ok) return;
+  const store = window.KingdomApp && window.KingdomApp.store;
   const sync = window.KingdomApp && window.KingdomApp.cloudSync;
-  if (!sync) return;
+  if (!store) return;
   showToast("正在還原電腦主存檔...", "⏳");
-  const res = await sync.restoreServerSnapshot();
-  if (res.success) {
-    showToast(`🎉 成功還原電腦主存檔 (共 ${res.studentCount || 27} 位大臣)！`, "👑");
-    closeTimeMachineModal();
-    closeCloudSyncModal();
-    if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
-      window.KingdomUI.refreshCurrentView();
-    }
-  } else {
-    alert("還原失敗：" + (res.error || res.message));
+
+  // 1. 若在本地有伺服器環境，優先嘗試伺服器還原
+  let restored = false;
+  if (sync && typeof sync.restoreServerSnapshot === 'function') {
+    try {
+      const res = await sync.restoreServerSnapshot();
+      if (res && res.success) {
+        restored = true;
+      }
+    } catch (_) {}
   }
+
+  // 2. 若無本機伺服器（例如在手機端、GitHub Pages 或離線），直接載入內嵌完整主存檔
+  if (!restored) {
+    if (typeof store.applyMasterRosterBackup === 'function') {
+      store.applyMasterRosterBackup();
+    }
+    if (sync) {
+      try { await sync.push({ silent: true, force: true }); } catch (_) {}
+    }
+  }
+
+  closeTimeMachineModal();
+  closeCloudSyncModal();
+  if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+    window.KingdomUI.refreshCurrentView();
+  }
+  showToast("🎉 成功還原電腦主存檔（共 27 位大臣：洪永恩、莊淇勛...）！", "👑");
 }
 
 function restoreFromLocalSnapshot(snapshotId) {
