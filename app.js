@@ -440,7 +440,7 @@ class KingdomStore {
       pointLogs: mergedPointLogs,
       seatingLayout: mergedSeatingLayout,
       seatingChart: mergedSeatingChart,
-      lastModified: Math.max(localTime, remoteTime, Date.now())
+      lastModified: Math.max(localTime, remoteTime) || Date.now()
     };
 
     return this.normalizeData(mergedData);
@@ -3301,22 +3301,21 @@ class KingdomCloudSync {
           return { success: true, timestamp: new Date(), updated: false };
         }
 
-        if (force || remoteTime > localTime || (!localIsReal && remoteIsReal)) {
+        // 智慧比對：若遠端時間戳較新、或遠端有新增點數/打卡紀錄，立即進行雙向融合
+        const hasUpdates = this.hasRemoteUpdates(this.store.data, normalizedRemote);
+
+        if (force || remoteTime > localTime || hasUpdates || (!localIsReal && remoteIsReal)) {
           this.store.recordLocalSnapshot(`雲端拉取前備份 (遠端: ${remoteTime ? new Date(remoteTime).toLocaleTimeString() : '無時間戳'})`);
-          // 核心修復：使用「智能融合」取代盲目整包覆蓋，保證本機新編輯絕不被遠端舊資料沖掉！
+          // 核心修復：使用「智能融合」取代盲目整包覆蓋，保證本機與手機新編輯完整融合！
           this.store.data = this.store.mergeRemoteData(normalizedRemote);
           this.store.saveInternal({ updateTimestamp: false, triggerPush: false });
           if (typeof window !== 'undefined' && window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
             window.KingdomUI.refreshCurrentView();
           }
-          if (silent && typeof showToast === 'function' && (remoteTime > localTime)) {
-            showToast("☁️ 已自動接收來自其他裝置的最新修改！", "🔄");
-          }
+          // 徹底移除背景自動同步時彈出的右下角 Toast，保持大螢幕與操作介面極致純淨，不再干擾導師
           isUpdated = true;
-        } else if (localTime > remoteTime) {
-          console.log('[CloudSync] 本機資料較伺服器更新，主動同步推送最新版本！');
-          this.push({ silent: true });
         }
+        // 注意：拉取操作 (pull) 絕不反向自動觸發 push，徹底杜絕多裝置間的互推循環 (Ping-Pong Loop)
       }
 
       this.hasCompletedInitialPull = true;
@@ -3336,6 +3335,83 @@ class KingdomCloudSync {
       this.notify();
       return { success: false, error: this.lastError };
     }
+  }
+
+  // 檢查遠端存檔是否含有本地尚未擁有的最新資訊 (點數更高、打卡更新、作業新交等)
+  hasRemoteUpdates(local, remote) {
+    if (!remote || !remote.students || !Array.isArray(remote.students)) return false;
+    if (!local || !local.students || !Array.isArray(local.students)) return true;
+
+    // 1. 時間戳明確較新
+    if ((remote.lastModified || 0) > (local.lastModified || 0)) return true;
+
+    // 2. 學生名冊與點數比對 (遠端是否有更高點數或更多認養寵物)
+    const localMap = new Map();
+    local.students.forEach(s => { if (s && (s.id || s.seatNo)) localMap.set(s.seatNo || s.id, s); });
+
+    for (let i = 0; i < remote.students.length; i++) {
+      const rSt = remote.students[i];
+      if (!rSt) continue;
+      const lSt = localMap.get(rSt.seatNo || rSt.id);
+      if (!lSt) return true;
+      if (Number(rSt.points || 0) > Number(lSt.points || 0)) return true;
+      if (Number(rSt.lifetimePoints || 0) > Number(lSt.lifetimePoints || 0)) return true;
+      if (Number(rSt.secondPetExp || 0) > Number(lSt.secondPetExp || 0)) return true;
+      if (rSt.secondPetType && !lSt.secondPetType) return true;
+    }
+
+    // 3. 簽到表比對 (遠端是否有已簽到但本地為 pending/未到的紀錄)
+    const rAtt = remote.attendance || {};
+    const lAtt = local.attendance || {};
+    for (const d in rAtt) {
+      if (!lAtt[d]) return true;
+      for (const seat in rAtt[d]) {
+        const rRec = rAtt[d][seat];
+        const lRec = lAtt[d][seat];
+        if (rRec && rRec.status !== 'pending') {
+          if (!lRec || lRec.status === 'pending' || lRec.time !== rRec.time) {
+            return true;
+          }
+        }
+      }
+    }
+
+    // 4. 作業比對 (遠端是否有新作業或新繳交紀錄)
+    const rHw = remote.homework || [];
+    const lHw = local.homework || [];
+    if (rHw.length > lHw.length) return true;
+    const lHwMap = new Map();
+    lHw.forEach(h => { if (h && h.id) lHwMap.set(h.id, h); });
+    for (let i = 0; i < rHw.length; i++) {
+      const rh = rHw[i];
+      if (!rh || !rh.id) continue;
+      const lh = lHwMap.get(rh.id);
+      if (!lh) return true;
+      const rRecs = rh.records || {};
+      const lRecs = lh.records || {};
+      for (const s in rRecs) {
+        if (rRecs[s] && rRecs[s].status !== 'pending' && (!lRecs[s] || lRecs[s].status === 'pending')) {
+          return true;
+        }
+      }
+    }
+
+    // 5. 聯絡簿比對
+    if (remote.contactBook && local.contactBook) {
+      if (Number(remote.contactBook.updatedAt || 0) > Number(local.contactBook.updatedAt || 0)) {
+        return true;
+      }
+    } else if (remote.contactBook && !local.contactBook) {
+      return true;
+    }
+
+    // 6. 加扣點歷程
+    const rLogs = remote.pointLogs || [];
+    const lLogs = local.pointLogs || [];
+    if (rLogs.length > 0 && lLogs.length === 0) return true;
+    if (rLogs.length > 0 && lLogs.length > 0 && (rLogs[0].id || 0) > (lLogs[0].id || 0)) return true;
+
+    return false;
   }
 
   // 取得伺服器歷史快照清單
