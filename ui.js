@@ -567,17 +567,17 @@ function renderMorningBoard() {
       }
     };
 
-    const leftColHtml = [1, 2, 3, 4].map(num => renderCardItem(num, items[num - 1] || '')).join('');
-    const rightColHtml = [5, 6, 7, 8].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+    const leftColHtml = [1, 2, 3].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+    const rightColHtml = [4, 5, 6].map(num => renderCardItem(num, items[num - 1] || '')).join('');
 
     let extraRowsHtml = '';
-    if (items.length > 8) {
-      const extraItems = items.slice(8);
+    if (items.length > 6) {
+      const extraItems = items.slice(6);
       extraRowsHtml = `
         <div class="col-span-1 md:col-span-2 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
-          <span class="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md">追加項目：</span>
+          <span class="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            ${extraItems.map((item, idx) => renderCardItem(9 + idx, item)).join('')}
+            ${extraItems.map((item, idx) => renderCardItem(7 + idx, item)).join('')}
           </div>
         </div>
       `;
@@ -585,22 +585,22 @@ function renderMorningBoard() {
 
     hwList.innerHTML = `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
-        <!-- 左欄 (第 1 ~ 4 行) -->
+        <!-- 左欄 (第 1 ~ 3 行) -->
         <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
           <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-            <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 4 項)</span></span>
-            <span class="text-[11px] text-amber-800 font-mono">1 - 4</span>
+            <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 3 項)</span></span>
+            <span class="text-[11px] text-amber-800 font-mono">1 - 3</span>
           </div>
           <div class="space-y-2.5">
             ${leftColHtml}
           </div>
         </div>
 
-        <!-- 右欄 (第 5 ~ 8 行) -->
+        <!-- 右欄 (第 4 ~ 6 行) -->
         <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
           <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-            <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 5 ~ 8 項)</span></span>
-            <span class="text-[11px] text-amber-800 font-mono">5 - 8</span>
+            <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 4 ~ 6 項)</span></span>
+            <span class="text-[11px] text-amber-800 font-mono">4 - 6</span>
           </div>
           <div class="space-y-2.5">
             ${rightColHtml}
@@ -897,6 +897,9 @@ function saveContactBookData(e) {
   showToast(`📜 ${targetDate} 聯絡簿奏章已成功修訂發布！`, "👑");
   closeEditContactModal();
   renderMorningBoard();
+  if (typeof renderContactProjectionView === 'function') {
+    renderContactProjectionView();
+  }
 }
 
 function getSelectedAttendanceDate() {
@@ -4046,18 +4049,17 @@ function renderPointsView() {
 
               <!-- 卡牌抽屜內容面板 -->
               ${isDrawerOpen ? `
-                <div class="p-2 rounded-xl bg-amber-50/95 border-2 border-amber-300 shadow-inner space-y-1.5">
+                <div class="p-2 rounded-xl bg-amber-50/95 border-2 border-amber-300 shadow-inner space-y-2">
                   <div class="flex items-center justify-between pb-1 border-b border-amber-200 text-[10px] font-black text-amber-950">
                     <span>🎒 存放卡牌 (${heldCards.length}張)</span>
                     <span class="text-[9px] text-amber-800 font-normal">先存後用 ‧ 隨時取用</span>
                   </div>
                   ${heldCards.length === 0 ? `
-                    <div class="py-2.5 text-center text-[10px] text-slate-500 font-bold bg-white/70 rounded-lg border border-dashed border-amber-200">
-                      📭 抽屜目前無存放卡牌<br>
-                      <span class="text-[9px] text-amber-800">（點擊下方「🎁 換卡」兌換）</span>
+                    <div class="py-2 text-center text-[10px] text-slate-500 font-bold bg-white/70 rounded-lg border border-dashed border-amber-200">
+                      📭 抽屜目前無存放卡牌
                     </div>
                   ` : `
-                    <div class="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+                    <div class="space-y-1.5 max-h-40 overflow-y-auto pr-0.5">
                       ${heldCards.map(c => `
                         <div class="p-1.5 rounded-lg bg-white border border-amber-300 shadow-2xs flex items-center justify-between gap-1 hover:border-amber-500 transition">
                           <div class="min-w-0 flex-1">
@@ -4067,16 +4069,63 @@ function renderPointsView() {
                             </div>
                             ${c.desc ? `<div class="text-[9px] text-slate-500 truncate mt-0.5" title="${c.desc}">${c.desc}</div>` : ''}
                           </div>
-                          <button type="button" onclick="confirmUseStudentCard(${st.id}, '${c.id}', '${(c.title || '').replace(/'/g, "\\'")}')"
-                            class="px-2 py-0.5 rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-95 text-white font-black text-[10px] shadow-2xs shrink-0 flex items-center space-x-0.5 transition"
-                            title="立即使用此張卡牌並自抽屜移除">
-                            <span>✨</span>
-                            <span>使用</span>
-                          </button>
+                          <div class="flex items-center space-x-1 shrink-0">
+                            <button type="button" onclick="confirmUseStudentCard(${st.id}, '${c.id}', '${(c.title || '').replace(/'/g, "\\'")}')"
+                              class="px-2 py-0.5 rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-95 text-white font-black text-[10px] shadow-2xs flex items-center space-x-0.5 transition"
+                              title="立即使用此張卡牌並自抽屜移除">
+                              <span>✨</span>
+                              <span>使用</span>
+                            </button>
+                            <button type="button" onclick="confirmRevokeStudentCard(${st.id}, '${c.id}', '${(c.title || '').replace(/'/g, "\\'")}', ${c.cost || 0})"
+                              class="px-1.5 py-0.5 rounded-md bg-rose-100 hover:bg-rose-200 text-rose-700 border border-rose-300 active:scale-95 font-black text-[10px] shadow-2xs flex items-center space-x-0.5 transition"
+                              title="撤銷兌換此卡牌並退還 ${c.cost || 0} 顆可用蘋果">
+                              <span>↩️</span>
+                              <span>撤銷</span>
+                            </button>
+                          </div>
                         </div>
                       `).join('')}
                     </div>
                   `}
+
+                  <!-- 🎁 抽屜內卡牌下拉快速兌換 (直接選擇該大臣要兌換的卡牌) -->
+                  <div class="pt-2 border-t border-amber-300/80 space-y-1.5">
+                    <div class="flex items-center justify-between text-[10px] font-black text-amber-950">
+                      <span class="flex items-center space-x-1">
+                        <span>🎁</span>
+                        <span>兌換特權卡牌</span>
+                      </span>
+                      <span class="text-[9px] text-rose-700 font-mono font-bold">
+                        持有 ${st.points || 0} 顆 🍎
+                      </span>
+                    </div>
+                    ${(() => {
+                      const allRewardCards = window.KingdomApp.store.data.rewardCards || [];
+                      if (allRewardCards.length === 0) {
+                        return `<div class="text-[9px] text-slate-400 py-1 text-center">尚無可兌換卡牌</div>`;
+                      }
+                      return `
+                        <div class="space-y-1">
+                          <select id="drawerRedeemSelect-${st.id}" onchange="updateDrawerRedeemButton(${st.id}, this.value)" class="w-full text-[11px] font-bold py-1 px-1.5 bg-white border border-amber-400 rounded-lg text-amber-950 shadow-2xs focus:ring-1 focus:ring-amber-500">
+                            ${allRewardCards.map(c => {
+                              const isAffordable = (st.points || 0) >= c.cost;
+                              return `
+                                <option value="${c.id}" data-cost="${c.cost}">
+                                  ${c.icon || '🎁'} ${c.title} (${c.cost} 顆 🍎) ${isAffordable ? '✅ 可換' : `❌ 缺${c.cost - (st.points || 0)}`}
+                                </option>
+                              `;
+                            }).join('')}
+                          </select>
+                          <button type="button" id="drawerRedeemBtn-${st.id}" onclick="executeDrawerQuickRedeem(${st.id})"
+                            class="w-full py-1 rounded-lg btn-royal-gold font-black text-[11px] shadow-2xs flex items-center justify-center space-x-1 transition active:scale-95"
+                            title="從此處下拉選單直接兌換卡牌存入抽屜">
+                            <span>🤝</span>
+                            <span>直接兌換存入抽屜</span>
+                          </button>
+                        </div>
+                      `;
+                    })()}
+                  </div>
                 </div>
               ` : ''}
             </div>
@@ -4333,21 +4382,31 @@ function renderRewardRedemptions() {
     return;
   }
 
-  list.innerHTML = redemptions.slice(0, 15).map(r => `
-    <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-amber-200">
+  list.innerHTML = redemptions.slice(0, 30).map(r => {
+    const isRevoked = r.status === 'revoked';
+    const isUsed = r.status === 'used' || r.used;
+    return `
+    <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-amber-200 ${isRevoked ? 'opacity-60 bg-slate-50' : ''}">
       <div class="flex items-center space-x-2">
         <span class="font-black text-amber-950">[${String(r.seatNo).padStart(2, '0')}號 ${r.studentName}]</span>
         <span class="text-slate-800 font-bold">兌換【${r.cardTitle}】</span>
         <span class="font-mono text-amber-700 font-black">(-${r.cost}點)</span>
+        ${isRevoked ? '<span class="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-black border border-rose-200">↩️已撤銷退還</span>' : ''}
       </div>
-      <div class="flex items-center space-x-2">
+      <div class="flex items-center space-x-1.5">
         <span class="text-[10px] text-slate-400">${r.date} ${r.time}</span>
-        <button onclick="toggleRedemptionStatus('${r.id}')" class="px-2 py-0.5 rounded text-[11px] font-black ${r.used ? 'bg-slate-200 text-slate-600' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}">
-          ${r.used ? '已核銷' : '未核銷 (點擊核銷)'}
-        </button>
+        ${!isRevoked ? `
+          <button onclick="toggleRedemptionStatus('${r.id}')" class="px-2 py-0.5 rounded text-[11px] font-black ${isUsed ? 'bg-slate-200 text-slate-600' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}">
+            ${isUsed ? '已核銷' : '未核銷 (點擊核銷)'}
+          </button>
+          <button onclick="confirmRevokeRedemptionRecord('${r.id}', '${r.studentId}', '${(r.cardTitle || '').replace(/'/g, "\\'")}', ${r.cost || 0})" class="px-2 py-0.5 rounded text-[11px] font-black bg-rose-100 hover:bg-rose-200 text-rose-700 border border-rose-300 transition" title="撤銷此兌換並退回 ${r.cost || 0} 顆蘋果">
+            ↩️ 撤銷
+          </button>
+        ` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function toggleRedemptionHistory() {
@@ -4431,8 +4490,18 @@ function deleteRewardCard(cardId) {
 
 function openRedeemCardModal(cardId) {
   activeRedeemCardId = cardId;
-  const card = (window.KingdomApp.store.data.rewardCards || []).find(c => c.id === cardId);
+  const cards = window.KingdomApp.store.data.rewardCards || [];
+  const card = cards.find(c => c.id === cardId) || cards[0];
   if (!card) return;
+
+  const cardSelect = document.getElementById("redeemCardSelect");
+  if (cardSelect) {
+    cardSelect.innerHTML = cards.map(c => `
+      <option value="${c.id}" ${c.id === card.id ? 'selected' : ''}>
+        ${c.icon || '🎁'} ${c.title} (所需蘋果：${c.cost} 顆)
+      </option>
+    `).join('');
+  }
 
   document.getElementById("redeemCardTargetId").value = card.id;
   document.getElementById("redeemModalCardIcon").textContent = card.icon || '🎁';
@@ -4454,18 +4523,81 @@ function openRedeemCardModal(cardId) {
   initLucideIcons();
 }
 
+function changeRedeemCardInModal(newCardId) {
+  const card = (window.KingdomApp.store.data.rewardCards || []).find(c => c.id === newCardId);
+  if (!card) return;
+  activeRedeemCardId = newCardId;
+  document.getElementById("redeemCardTargetId").value = card.id;
+  document.getElementById("redeemModalCardIcon").textContent = card.icon || '🎁';
+  document.getElementById("redeemModalCardTitle").textContent = card.title;
+  document.getElementById("redeemModalCardCostBadge").textContent = `所需蘋果：${card.cost} 顆`;
+  updateRedeemPreview();
+}
+
+function updateDrawerRedeemButton(studentId, cardId) {
+  const student = (window.KingdomApp.store.data.students || []).find(s => s.id === studentId);
+  const card = (window.KingdomApp.store.data.rewardCards || []).find(c => c.id === cardId);
+  const btn = document.getElementById(`drawerRedeemBtn-${studentId}`);
+  if (!student || !card || !btn) return;
+  const isEnough = (student.points || 0) >= card.cost;
+  if (isEnough) {
+    btn.className = "w-full py-1 rounded-lg btn-royal-gold font-black text-[11px] shadow-2xs flex items-center justify-center space-x-1 transition active:scale-95 cursor-pointer";
+    btn.innerHTML = `<span>🤝 兌換【${card.title}】(-${card.cost} 顆 🍎)</span>`;
+    btn.disabled = false;
+  } else {
+    btn.className = "w-full py-1 rounded-lg bg-slate-200 text-slate-500 font-bold text-[11px] shadow-2xs flex items-center justify-center space-x-1 cursor-not-allowed";
+    btn.innerHTML = `<span>⚠️ 蘋果不足 (尚缺 ${card.cost - (student.points || 0)} 顆)</span>`;
+    btn.disabled = true;
+  }
+}
+
+function executeDrawerQuickRedeem(studentId) {
+  const select = document.getElementById(`drawerRedeemSelect-${studentId}`);
+  if (!select || !select.value) {
+    alert("請先選擇欲兌換的特權卡牌！");
+    return;
+  }
+  const cardId = select.value;
+  const res = window.KingdomApp.store.redeemCard(studentId, cardId);
+  if (!res.success) {
+    alert(res.message);
+    return;
+  }
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+    try { window.KingdomApp.sound.playFanfare(); } catch (e) {}
+  }
+  if (window.KingdomApp.triggerConfetti) {
+    try { window.KingdomApp.triggerConfetti(); } catch (e) {}
+  }
+  if (!window.openCardDrawerStudentIds) window.openCardDrawerStudentIds = new Set();
+  window.openCardDrawerStudentIds.add(studentId);
+  showToast(`🎉 恭喜【${res.studentName}】成功兌換【${res.cardTitle}】！已存入卡牌抽屜！`, "👑");
+  renderRewardCards();
+  renderPointsView();
+  renderRosterView();
+}
+
 function openRedeemCardForStudent(studentId) {
   const cards = window.KingdomApp.store.data.rewardCards || [];
   if (cards.length === 0) {
     alert("目前尚未建立任何獎勵卡，請先新增卡牌！");
     return;
   }
-  openRedeemCardModal(cards[0].id);
-  const select = document.getElementById("redeemStudentSelect");
-  if (select) {
-    select.value = studentId;
-    updateRedeemPreview();
-  }
+  // 優先在個人集點榜卡牌抽屜內展開下拉選單直接兌換
+  if (!window.openCardDrawerStudentIds) window.openCardDrawerStudentIds = new Set();
+  window.openCardDrawerStudentIds.add(studentId);
+  renderPointsView();
+  setTimeout(() => {
+    const cardEl = document.getElementById(`pointStudentCard-${studentId}`);
+    if (cardEl && cardEl.scrollIntoView) {
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    const select = document.getElementById(`drawerRedeemSelect-${studentId}`);
+    if (select) {
+      select.focus();
+      updateDrawerRedeemButton(studentId, select.value);
+    }
+  }, 100);
 }
 
 function updateRedeemPreview() {
@@ -4578,8 +4710,69 @@ function confirmUseStudentCard(studentId, instanceId, cardTitle) {
     }
     showToast(`✨ 【${result.studentName}】成功使用了【${result.cardTitle}】！已自卡牌抽屜扣除。`, "🎉");
     renderPointsView();
+    renderPointsProjection();
   } else {
     alert((result && result.message) || "使用卡牌失敗");
+  }
+}
+
+// 導師手動撤銷特權卡兌換 (抽屜內卡牌撤銷退換)
+function confirmRevokeStudentCard(studentId, instanceId, cardTitle, cardCost = 0) {
+  const student = (window.KingdomApp.store.data.students || []).find(s => s.id === studentId || s.seatNo === studentId);
+  const stName = student ? student.name : '大臣';
+  const cost = parseInt(cardCost, 10) || 0;
+  if (!confirm(`確定要撤銷【${stName}】兌換的特權卡【${cardTitle}】嗎？\n\n撤銷後將：\n1. 自卡牌抽屜徹底移除此卡牌\n2. 歸還 ${cost} 顆可用蘋果給該大臣`)) {
+    return;
+  }
+  const result = window.KingdomApp.store.revokeCardRedemption({
+    studentId,
+    instanceId,
+    cardTitle,
+    refundPoints: true
+  });
+  if (result && result.success) {
+    if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+      window.KingdomApp.sound.playCoin();
+    }
+    showToast(`↩️ ${result.message}`, "🍎");
+    renderPointsView();
+    renderRewardRedemptions();
+    renderRosterView();
+    renderPointsProjection();
+  } else {
+    alert((result && result.message) || "撤銷失敗！");
+  }
+}
+
+function revokeCardInPointsProjection(studentId, instanceId, cardTitle, cardCost = 0) {
+  confirmRevokeStudentCard(studentId, instanceId, cardTitle, cardCost);
+}
+
+// 導師在獎勵兌換紀錄中點擊撤銷
+function confirmRevokeRedemptionRecord(redemptionId, studentId, cardTitle, cost = 0) {
+  const student = (window.KingdomApp.store.data.students || []).find(s => s.id == studentId || s.seatNo == studentId);
+  const stName = student ? student.name : '該大臣';
+  const pts = parseInt(cost, 10) || 0;
+  if (!confirm(`確定要撤銷這筆兌換紀錄嗎？\n\n對象：【${stName}】\n卡牌：【${cardTitle}】\n\n確認後將自大臣卡牌抽屜移除此卡，並退還 ${pts} 顆可用蘋果！`)) {
+    return;
+  }
+  const result = window.KingdomApp.store.revokeCardRedemption({
+    studentId,
+    instanceId: redemptionId,
+    cardTitle,
+    refundPoints: true
+  });
+  if (result && result.success) {
+    if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+      window.KingdomApp.sound.playCoin();
+    }
+    showToast(`↩️ ${result.message}`, "🍎");
+    renderRewardRedemptions();
+    renderPointsView();
+    renderPointsProjection();
+    renderRosterView();
+  } else {
+    alert((result && result.message) || "撤銷失敗！");
   }
 }
 
@@ -5873,6 +6066,7 @@ function openContactProjectionModal() {
   const modal = document.getElementById("contactProjectionModal");
   if (!modal) return;
 
+  initContactProjDates();
   modal.classList.remove("hidden");
   renderContactProjectionView();
 
@@ -5918,9 +6112,270 @@ function toggleContactProjectionFullscreen() {
   }
 }
 
+// ===================================================================
+// 大屏聯絡簿多天對照與每天六行大字排版狀態與控制器
+// ===================================================================
+let contactProjDaysMode = '2days'; // '2days' | '3days' | '1day'
+let contactProjDateCol1 = null; // 第 1 欄日期 (預設今日)
+let contactProjDateCol2 = null; // 第 2 欄日期 (預設明日)
+let contactProjDateCol3 = null; // 第 3 欄日期 (預設後天)
+
+function escapeContactHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getDeltaDateString(baseDateStr, deltaDays) {
+  let d;
+  if (baseDateStr && typeof baseDateStr === 'string' && baseDateStr.includes('-')) {
+    const parts = baseDateStr.split('-');
+    d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  } else {
+    d = new Date();
+  }
+  d.setDate(d.getDate() + deltaDays);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getWeekdayText(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    const weekdays = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+    return weekdays[d.getDay()] || '';
+  }
+  return '';
+}
+
+function getRelativeDayBadge(dateStr) {
+  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  if (dateStr === today) {
+    return `<span class="bg-amber-500 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-lg shadow-2xs border border-amber-600/50">👑 今日</span>`;
+  }
+  const tomorrow = getDeltaDateString(today, 1);
+  if (dateStr === tomorrow) {
+    return `<span class="bg-sky-500 text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-2xs border border-sky-600/50">🚀 明日</span>`;
+  }
+  const yesterday = getDeltaDateString(today, -1);
+  if (dateStr === yesterday) {
+    return `<span class="bg-stone-500 text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-2xs border border-stone-600/50">📜 昨日</span>`;
+  }
+  const afterTomorrow = getDeltaDateString(today, 2);
+  if (dateStr === afterTomorrow) {
+    return `<span class="bg-emerald-600 text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-2xs border border-emerald-700/50">✨ 後天</span>`;
+  }
+  return `<span class="bg-amber-200 text-amber-900 font-bold text-xs px-2 py-0.5 rounded-lg">${getWeekdayText(dateStr)}</span>`;
+}
+
+function initContactProjDates() {
+  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  if (!contactProjDateCol1) {
+    contactProjDateCol1 = currentContactDate || today;
+  }
+  if (!contactProjDateCol2) {
+    contactProjDateCol2 = getDeltaDateString(contactProjDateCol1, 1);
+  }
+  if (!contactProjDateCol3) {
+    contactProjDateCol3 = getDeltaDateString(contactProjDateCol1, 2);
+  }
+}
+
+function setContactProjDaysMode(mode) {
+  contactProjDaysMode = mode || '2days';
+  initContactProjDates();
+  renderContactProjectionView();
+}
+
+function setContactProjPreset(preset) {
+  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  if (preset === 'today_tomorrow') {
+    contactProjDaysMode = '2days';
+    contactProjDateCol1 = today;
+    contactProjDateCol2 = getDeltaDateString(today, 1);
+    contactProjDateCol3 = getDeltaDateString(today, 2);
+  } else if (preset === 'yesterday_today') {
+    contactProjDaysMode = '2days';
+    contactProjDateCol1 = getDeltaDateString(today, -1);
+    contactProjDateCol2 = today;
+    contactProjDateCol3 = getDeltaDateString(today, 1);
+  } else if (preset === 'three_days') {
+    contactProjDaysMode = '3days';
+    contactProjDateCol1 = today;
+    contactProjDateCol2 = getDeltaDateString(today, 1);
+    contactProjDateCol3 = getDeltaDateString(today, 2);
+  } else if (preset === 'single_day') {
+    contactProjDaysMode = '1day';
+    contactProjDateCol1 = currentContactDate || today;
+  }
+  renderContactProjectionView();
+}
+
+function changeContactProjColDate(colIndex, dateVal) {
+  if (!dateVal) return;
+  initContactProjDates();
+  if (colIndex === 1) contactProjDateCol1 = dateVal;
+  else if (colIndex === 2) contactProjDateCol2 = dateVal;
+  else if (colIndex === 3) contactProjDateCol3 = dateVal;
+  renderContactProjectionView();
+}
+
+function adjustContactProjColDate(colIndex, delta) {
+  initContactProjDates();
+  let baseDate = contactProjDateCol1;
+  if (colIndex === 2) baseDate = contactProjDateCol2;
+  else if (colIndex === 3) baseDate = contactProjDateCol3;
+
+  const newDate = getDeltaDateString(baseDate, delta);
+  if (colIndex === 1) contactProjDateCol1 = newDate;
+  else if (colIndex === 2) contactProjDateCol2 = newDate;
+  else if (colIndex === 3) contactProjDateCol3 = newDate;
+  renderContactProjectionView();
+}
+
+function renderDayColumn(colIndex, dateStr, totalCols) {
+  const colName = colIndex === 1 ? '第一欄' : (colIndex === 2 ? '第二欄' : '第三欄');
+  const book = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook) 
+    ? window.KingdomApp.store.getContactBook(dateStr) 
+    : { homeworkItems: [], reminders: [], queenMotto: '' };
+  const items = (book && book.homeworkItems) ? book.homeworkItems : [];
+  const reminders = (book && book.reminders) ? book.reminders : [];
+  const weekday = getWeekdayText(dateStr);
+  const relBadge = getRelativeDayBadge(dateStr);
+
+  const isThreeCols = totalCols === 3;
+  const isSingleCol = totalCols === 1;
+
+  // 字體配置 (依據欄數適應大屏，字體超大加粗)
+  const cardPad = isThreeCols ? 'p-2 sm:p-2.5' : 'p-2.5 sm:p-3.5';
+  const minHeight = isThreeCols ? 'min-h-[3.8rem]' : (isSingleCol ? 'min-h-[4.5rem]' : 'min-h-[4.2rem]');
+  const numBadgeSize = isThreeCols ? 'w-9 h-9 sm:w-10 sm:h-10 text-lg sm:text-xl' : (isSingleCol ? 'w-11 h-11 sm:w-13 sm:h-13 text-2xl sm:text-3xl' : 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl');
+  const textClass = isThreeCols ? 'text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-snug break-words flex-1' : (isSingleCol ? 'text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-wide leading-snug break-words flex-1' : 'text-lg sm:text-xl lg:text-2xl font-black text-slate-900 tracking-wide leading-snug break-words flex-1');
+  const dateTextSize = isThreeCols ? 'text-xl sm:text-2xl lg:text-2xl font-black text-amber-950 tracking-wide' : 'text-2xl sm:text-3xl lg:text-4xl font-black text-amber-950 tracking-wide';
+
+  const renderCardItem = (slotIdx, text) => {
+    const isFilled = Boolean(text && String(text).trim());
+    if (isFilled) {
+      return `
+        <div class="flex items-center space-x-3 ${cardPad} rounded-2xl bg-white border-2 border-amber-300 shadow-md transition hover:border-amber-500 ${minHeight}">
+          <span class="${numBadgeSize} rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center font-black shrink-0 shadow-xs border border-amber-500/50">
+            ${slotIdx}
+          </span>
+          <span class="${textClass}">
+            ${escapeContactHtml(text)}
+          </span>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="flex items-center space-x-3 ${cardPad} rounded-2xl bg-amber-50/60 border-2 border-dashed border-amber-300/70 ${minHeight}">
+          <span class="${numBadgeSize} rounded-2xl bg-amber-200/50 text-amber-800/40 flex items-center justify-center font-black shrink-0">
+            ${slotIdx}
+          </span>
+          <span class="text-base sm:text-lg font-bold text-amber-900/35 italic">
+            （留白）
+          </span>
+        </div>
+      `;
+    }
+  };
+
+  // 每天固定渲染六行 (1 ~ 6)
+  const rowsHtml = [1, 2, 3, 4, 5, 6].map(slotIdx => renderCardItem(slotIdx, items[slotIdx - 1] || '')).join('');
+
+  // 若超過 6 行追加顯示
+  let extraRowsHtml = '';
+  if (items.length > 6) {
+    const extraItems = items.slice(6);
+    extraRowsHtml = `
+      <div class="pt-2 border-t-2 border-dashed border-amber-300/80 space-y-2">
+        <span class="text-xs font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
+        <div class="space-y-2">
+          ${extraItems.map((item, idx) => renderCardItem(7 + idx, item)).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // 該日個別提醒備忘
+  let dayReminderNoticeHtml = '';
+  if (reminders.length > 0) {
+    dayReminderNoticeHtml = `
+      <div class="mt-2.5 p-2.5 rounded-2xl bg-amber-100/90 border border-amber-300 text-xs sm:text-sm font-bold text-amber-950 space-y-1 shadow-2xs">
+        <div class="font-black text-amber-900 flex items-center space-x-1">
+          <span>🔔 此日提醒：</span>
+        </div>
+        <ul class="list-disc list-inside space-y-0.5">
+          ${reminders.map(r => `<li>${escapeContactHtml(r)}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="space-y-3 bg-gradient-to-b from-amber-100/50 via-white/80 to-amber-50/50 p-3 sm:p-4 rounded-3xl border-2 border-amber-400 shadow-md flex flex-col justify-between">
+      <div>
+        <!-- 欄位控制與相對日徽章 -->
+        <div class="flex items-center justify-between pb-1.5 px-0.5 border-b border-amber-300/70 text-xs font-black text-amber-950 gap-1.5 flex-wrap">
+          <div class="flex items-center space-x-1.5 shrink-0">
+            <span class="text-xs sm:text-sm font-black text-amber-950 bg-amber-300/80 px-2.5 py-0.5 rounded-lg border border-amber-400/80 shadow-2xs">
+              📌 ${colName}
+            </span>
+            ${relBadge}
+          </div>
+          <!-- 導師手動挑選日期與前後天微調 + 快速編輯 -->
+          <div class="flex items-center space-x-1 shrink-0">
+            <button type="button" onclick="adjustContactProjColDate(${colIndex}, -1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="前一天">◀</button>
+            <input type="date" value="${dateStr}" onchange="changeContactProjColDate(${colIndex}, this.value)" class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs sm:text-sm bg-white border-2 border-amber-400 rounded-xl text-amber-950 font-black cursor-pointer shadow-2xs max-w-[125px] sm:max-w-[145px]" title="手動指定此欄日期">
+            <button type="button" onclick="adjustContactProjColDate(${colIndex}, 1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="後一天">▶</button>
+            <button type="button" onclick="openEditContactModalForDate('${dateStr}')" class="px-2 sm:px-2.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-0.5 transition hover:scale-105 active:scale-95" title="編輯【${dateStr}】聯絡簿">
+              <span>✏️</span>
+              <span class="hidden sm:inline">編輯</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ★ 聯絡簿日期顯示在上方第一欄、第二欄位置，字體加粗放大 ★ -->
+        <div class="pt-2 pb-2 border-b-2 border-amber-400/80 flex items-center justify-between gap-2">
+          <div class="flex items-center space-x-2 flex-wrap">
+            <span class="${dateTextSize}">
+              📅 ${dateStr}
+            </span>
+            <span class="text-sm sm:text-base font-black px-2.5 py-0.5 rounded-xl bg-amber-300 text-amber-950 border border-amber-500/60 shadow-2xs">
+              ${weekday}
+            </span>
+          </div>
+          <span class="text-[11px] sm:text-xs font-black text-amber-900 bg-amber-200/90 px-2 py-0.5 rounded-lg border border-amber-300/80 shrink-0">
+            作業固定 6 行
+          </span>
+        </div>
+
+        <!-- 6 行標準大字作業抄寫項目 -->
+        <div class="space-y-2 sm:space-y-2.5 pt-2.5">
+          ${rowsHtml}
+          ${extraRowsHtml}
+        </div>
+      </div>
+
+      <!-- 此日備忘提醒 -->
+      ${dayReminderNoticeHtml}
+    </div>
+  `;
+}
+
 function renderContactProjectionView() {
   const modal = document.getElementById("contactProjectionModal");
   if (!modal || modal.classList.contains("hidden")) return;
+
+  initContactProjDates();
 
   const todayStr = window.KingdomApp.getTodayDateString();
   const students = window.KingdomApp.store.data.students || [];
@@ -5972,108 +6427,118 @@ function renderContactProjectionView() {
     projCountBadge.textContent = `${checkedCount} / ${students.length} 人`;
   }
 
-  // 2. 渲染右側聯絡簿超大字看板
-  const dateStr = currentContactDate || todayStr;
-  const contactBook = window.KingdomApp.store.getContactBook(dateStr);
+  // 2. 更新頂部模式按鈕與標籤狀態
+  const btn2Days = document.getElementById("btnProjMode2Days");
+  const btn3Days = document.getElementById("btnProjMode3Days");
+  const btn1Day = document.getElementById("btnProjMode1Day");
+  const activeBtnClass = "px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-amber-500 text-amber-950 border-2 border-amber-600 scale-105";
+  const inactiveBtnClass = "px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300";
+
+  if (btn2Days) btn2Days.className = (contactProjDaysMode === '2days') ? activeBtnClass : inactiveBtnClass;
+  if (btn3Days) btn3Days.className = (contactProjDaysMode === '3days') ? activeBtnClass : inactiveBtnClass;
+  if (btn1Day) btn1Day.className = (contactProjDaysMode === '1day') ? activeBtnClass : inactiveBtnClass;
+
+  const modeBadge = document.getElementById("contactProjModeBadge");
+  if (modeBadge) {
+    if (contactProjDaysMode === '3days') {
+      modeBadge.textContent = "三天並排 ‧ 每天六行大字格式";
+    } else if (contactProjDaysMode === '1day') {
+      modeBadge.textContent = "單天大字 ‧ 每天六行大字格式";
+    } else {
+      modeBadge.textContent = "雙天對照 ‧ 每天六行大字格式";
+    }
+  }
 
   const projDateDisplay = document.getElementById("contactProjDateDisplay");
   if (projDateDisplay) {
-    projDateDisplay.textContent = dateStr;
+    if (contactProjDaysMode === '3days') {
+      projDateDisplay.textContent = `${contactProjDateCol1} ＆ ${contactProjDateCol2} ＆ ${contactProjDateCol3}`;
+    } else if (contactProjDaysMode === '1day') {
+      projDateDisplay.textContent = `${contactProjDateCol1} (${getWeekdayText(contactProjDateCol1)})`;
+    } else {
+      projDateDisplay.textContent = `${contactProjDateCol1} (${getWeekdayText(contactProjDateCol1)}) ＆ ${contactProjDateCol2} (${getWeekdayText(contactProjDateCol2)})`;
+    }
   }
 
+  // 3. 渲染多天對照聯絡簿作業看板
   const projHwList = document.getElementById("contactProjHomeworkList");
   if (projHwList) {
-    const items = (contactBook && contactBook.homeworkItems) ? contactBook.homeworkItems : [];
-
-    const renderCardItem = (slotIdx, text) => {
-      const isFilled = Boolean(text && text.trim());
-      if (isFilled) {
-        return `
-          <div class="flex items-center space-x-3.5 p-3 rounded-2xl bg-white border-2 border-amber-300 shadow-md transition hover:border-amber-500 min-h-[4.5rem]">
-            <span class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-sm border border-amber-500/50">
-              ${slotIdx}
-            </span>
-            <span class="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
-              ${text}
-            </span>
-          </div>
-        `;
-      } else {
-        return `
-          <div class="flex items-center space-x-3.5 p-2.5 rounded-2xl bg-amber-50/60 border-2 border-dashed border-amber-300/70 min-h-[4.5rem]">
-            <span class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-200/50 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
-              ${slotIdx}
-            </span>
-            <span class="text-lg sm:text-xl font-bold text-amber-900/30 italic">
-              （留白）
-            </span>
-          </div>
-        `;
-      }
-    };
-
-    const leftColHtml = [1, 2, 3, 4].map(num => renderCardItem(num, items[num - 1] || '')).join('');
-    const rightColHtml = [5, 6, 7, 8].map(num => renderCardItem(num, items[num - 1] || '')).join('');
-
-    let extraRowsHtml = '';
-    if (items.length > 8) {
-      const extraItems = items.slice(8);
-      extraRowsHtml = `
-        <div class="col-span-1 md:col-span-2 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
-          <span class="text-xs font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-md">追加項目：</span>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            ${extraItems.map((item, idx) => renderCardItem(9 + idx, item)).join('')}
-          </div>
+    if (contactProjDaysMode === '3days') {
+      projHwList.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 items-stretch">
+          ${renderDayColumn(1, contactProjDateCol1, 3)}
+          ${renderDayColumn(2, contactProjDateCol2, 3)}
+          ${renderDayColumn(3, contactProjDateCol3, 3)}
+        </div>
+      `;
+    } else if (contactProjDaysMode === '1day') {
+      projHwList.innerHTML = `
+        <div class="max-w-4xl mx-auto space-y-4">
+          ${renderDayColumn(1, contactProjDateCol1, 1)}
+        </div>
+      `;
+    } else {
+      // 預設雙天對照 (第一欄與第二欄)
+      projHwList.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 items-stretch">
+          ${renderDayColumn(1, contactProjDateCol1, 2)}
+          ${renderDayColumn(2, contactProjDateCol2, 2)}
         </div>
       `;
     }
-
-    projHwList.innerHTML = `
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
-        <!-- 左欄 (第 1 ~ 4 行) -->
-        <div class="space-y-2.5 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300 shadow-2xs">
-          <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-            <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 4 項)</span></span>
-            <span class="text-[11px] text-amber-800 font-mono">1 - 4</span>
-          </div>
-          <div class="space-y-2.5">
-            ${leftColHtml}
-          </div>
-        </div>
-
-        <!-- 右欄 (第 5 ~ 8 行) -->
-        <div class="space-y-2.5 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300 shadow-2xs">
-          <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-            <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 5 ~ 8 項)</span></span>
-            <span class="text-[11px] text-amber-800 font-mono">5 - 8</span>
-          </div>
-          <div class="space-y-2.5">
-            ${rightColHtml}
-          </div>
-        </div>
-
-        ${extraRowsHtml}
-      </div>
-    `;
   }
 
+  // 4. 匯總顯示所選日期的早自修與重要提醒
   const projReminderList = document.getElementById("contactProjReminderList");
   if (projReminderList) {
-    const reminders = (contactBook && contactBook.reminders) ? contactBook.reminders : [];
-    if (reminders.length === 0) {
+    const activeCols = [];
+    if (contactProjDaysMode === '3days') {
+      activeCols.push({ colName: '第一欄', date: contactProjDateCol1 });
+      activeCols.push({ colName: '第二欄', date: contactProjDateCol2 });
+      activeCols.push({ colName: '第三欄', date: contactProjDateCol3 });
+    } else if (contactProjDaysMode === '1day') {
+      activeCols.push({ colName: '今日', date: contactProjDateCol1 });
+    } else {
+      activeCols.push({ colName: '第一欄', date: contactProjDateCol1 });
+      activeCols.push({ colName: '第二欄', date: contactProjDateCol2 });
+    }
+
+    const allReminders = [];
+    activeCols.forEach(({ colName, date }) => {
+      const book = window.KingdomApp.store.getContactBook(date);
+      if (book && Array.isArray(book.reminders) && book.reminders.length > 0) {
+        book.reminders.forEach(rem => {
+          allReminders.push({
+            date: date,
+            colName: colName,
+            weekday: getWeekdayText(date),
+            text: rem
+          });
+        });
+      }
+    });
+
+    if (allReminders.length === 0) {
       projReminderList.innerHTML = `
-        <li class="text-amber-900/60 text-base sm:text-xl font-bold list-none">（今日無特殊早自修或重要提醒）</li>
+        <li class="text-amber-900/60 text-base sm:text-xl font-bold list-none">（目前所選日期無特殊早自修或重要提醒）</li>
       `;
     } else {
-      projReminderList.innerHTML = reminders.map(item => `
-        <li class="leading-relaxed py-0.5">${item}</li>
+      projReminderList.innerHTML = allReminders.map(item => `
+        <li class="leading-relaxed py-0.5">
+          <span class="font-black text-amber-950 bg-amber-200/80 px-2 py-0.5 rounded-lg border border-amber-300 text-sm sm:text-base mr-1">
+            ${item.date} (${item.weekday}) ‧ ${item.colName}
+          </span>
+          <span>${escapeContactHtml(item.text)}</span>
+        </li>
       `).join('');
     }
   }
 
+  // 5. 皇后每日聖諭 (取第 1 欄或系統預設聖諭)
   const projMottoEl = document.getElementById("contactProjQueenMotto");
   if (projMottoEl) {
-    const motto = (contactBook && contactBook.motto) ? contactBook.motto : "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！";
+    const primaryBook = window.KingdomApp.store.getContactBook(contactProjDateCol1);
+    const motto = (primaryBook && primaryBook.queenMotto) ? primaryBook.queenMotto : "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！";
     projMottoEl.textContent = motto;
   }
 }
@@ -6311,9 +6776,14 @@ function renderPointsProjection() {
                         <span>${c.icon || '🎁'}</span>
                         <span class="font-black text-purple-950 truncate">${c.title}</span>
                       </div>
-                      <button type="button" onclick="useCardInPointsProjection(${st.id}, '${c.id}')" class="px-2 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-[10px] shadow-xs flex items-center space-x-0.5 shrink-0 transform active:scale-95 transition cursor-pointer">
-                        <span>✨使用</span>
-                      </button>
+                      <div class="flex items-center space-x-1 shrink-0">
+                        <button type="button" onclick="useCardInPointsProjection(${st.id}, '${c.id}')" class="px-2 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-[10px] shadow-xs flex items-center space-x-0.5 transform active:scale-95 transition cursor-pointer">
+                          <span>✨使用</span>
+                        </button>
+                        <button type="button" onclick="revokeCardInPointsProjection(${st.id}, '${c.id}', '${(c.title || '').replace(/'/g, "\\'")}', ${c.cost || 0})" class="px-1.5 py-0.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-700 border border-rose-300 font-bold text-[10px] shadow-2xs transform active:scale-95 transition cursor-pointer" title="撤銷此卡牌兌換並退還 ${c.cost || 0} 顆蘋果">
+                          <span>↩️撤銷</span>
+                        </button>
+                      </div>
                     </div>
                   `).join('')}
                 </div>
@@ -6508,20 +6978,25 @@ function broadcastInstantAnnouncement(e) {
   if (badgeEl) badgeEl.textContent = "⚡ 現場臨時公文速報";
   if (timeEl) timeEl.textContent = new Date().toTimeString().slice(0, 5) + " 剛剛發布";
 
-  // 同步存入告示欄
-  const newAnnounce = {
-    id: Date.now(),
-    title,
-    content,
-    pinned: true,
-    date: window.KingdomApp.getTodayDateString()
-  };
-  window.KingdomApp.store.data.announcements.unshift(newAnnounce);
-  window.KingdomApp.store.save();
-  renderAnnouncementsView();
+  // 僅當導師明確勾選「同步收錄至皇室公佈欄」時才存入公佈欄 (避免臨時廣播速報直接污染常態公佈欄)
+  const saveCheckbox = document.getElementById("broadcastSaveToAnnouncements");
+  if (saveCheckbox && saveCheckbox.checked) {
+    const newAnnounce = {
+      id: Date.now(),
+      title,
+      content,
+      pinned: true,
+      date: window.KingdomApp.getTodayDateString()
+    };
+    window.KingdomApp.store.data.announcements.unshift(newAnnounce);
+    window.KingdomApp.store.save();
+    renderAnnouncementsView();
+    showToast("🚀 大屏資訊已投影，並已同步收錄至皇室公佈欄！", "📢");
+  } else {
+    showToast("🚀 大屏資訊已成功現場投影！（未收錄至公佈欄）", "📢");
+  }
 
   playBroadcastChime();
-  showToast("🚀 大屏重要資訊已成功投影發布！", "📢");
 }
 
 function applyBroadcastPreset(presetKey) {
@@ -6552,7 +7027,8 @@ function applyBroadcastPreset(presetKey) {
   if (titleInput) titleInput.value = p.title;
   if (contentInput) contentInput.value = p.content;
 
-  broadcastInstantAnnouncement();
+  // 僅填入內容供導師確認檢閱，絕不直接自動發布/更新至公佈欄與大屏
+  showToast("📋 已載入快捷範本內容，請確認修訂後點擊【立即投影】發布！", "ℹ️");
 }
 
 function playBroadcastChime() {
@@ -6563,9 +7039,18 @@ function playBroadcastChime() {
 
 function submitNewAnnouncement(e) {
   e.preventDefault();
-  const title = document.getElementById("announceTitle").value.trim();
-  const content = document.getElementById("announceContent").value.trim();
-  const pinned = document.getElementById("announcePinned").checked;
+  const title = (document.getElementById("announceTitle")?.value || "").trim();
+  const content = (document.getElementById("announceContent")?.value || "").trim();
+  const pinned = document.getElementById("announcePinned") ? document.getElementById("announcePinned").checked : false;
+
+  if (!title || !content) {
+    showToast("請輸入公告標題與內容！", "⚠️");
+    return;
+  }
+
+  if (!confirm(`確定要正式頒布皇室公告【${title}】嗎？`)) {
+    return;
+  }
 
   const newAnnounce = {
     id: Date.now(),
@@ -6577,12 +7062,16 @@ function submitNewAnnouncement(e) {
 
   window.KingdomApp.store.data.announcements.unshift(newAnnounce);
   window.KingdomApp.store.save();
-  window.KingdomApp.sound.playCoin();
-  showToast("📢 皇后告示已正式頒布！");
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+    window.KingdomApp.sound.playCoin();
+  }
+  showToast("📢 皇室公告已正式頒布！");
 
   document.getElementById("announceTitle").value = "";
   document.getElementById("announceContent").value = "";
-  document.getElementById("announcePinned").checked = false;
+  if (document.getElementById("announcePinned")) {
+    document.getElementById("announcePinned").checked = false;
+  }
 
   renderAnnouncementsView();
 }
@@ -9239,7 +9728,7 @@ function executeFeedCustomStudent() {
 // 批次更改蘋果數量與萌寵成長總額 (Batch Adjust Points & Reset)
 // ===================================================================
 let activeAdjustStudentIds = new Set();
-let currentAdjustMode = 'adjust';
+let currentAdjustMode = 'set_both';
 
 function openBatchAdjustPointsModal() {
   if (!checkTeacherAuth("批次修改可用蘋果")) return;
@@ -9252,7 +9741,7 @@ function openBatchAdjustPointsModal() {
   renderAdjustStudentsGrid();
 
   const radios = document.querySelectorAll('input[name="adjustModeRadio"]');
-  let selectedMode = 'adjust';
+  let selectedMode = 'set_both';
   radios.forEach(r => { if (r.checked) selectedMode = r.value; });
   handleAdjustModeChange(selectedMode);
 
@@ -9324,6 +9813,7 @@ function handleAdjustModeChange(mode) {
   const valueLabel = document.getElementById("adjustValueLabel");
   const pointsInput = document.getElementById("adjustPointsInput");
   const syncLabel = document.getElementById("adjustSyncLifetimeCheckLabel");
+  const checkText = document.getElementById("adjustSyncLifetimeCheckText");
 
   if (!inputGroup || !valueLabel || !pointsInput) return;
 
@@ -9346,19 +9836,26 @@ function handleAdjustModeChange(mode) {
     }
   });
 
-  if (mode === 'adjust') {
+  if (mode === 'set_both') {
+    inputGroup.classList.remove("hidden");
+    valueLabel.textContent = "🎯 直接設定可用蘋果與總累計獲得為此數值 (每位所選大臣設為此數)：";
+    if (!pointsInput.value || pointsInput.value === "5") pointsInput.value = "100";
+    if (syncLabel) syncLabel.classList.remove("hidden");
+    if (checkText) checkText.textContent = "✅ 同步將「總累計獲得蘋果 (萌寵經驗值)」設定為此數值 (推薦)";
+  } else if (mode === 'adjust') {
     inputGroup.classList.remove("hidden");
     valueLabel.textContent = "➕ 增減點數 (正數加蘋果、負數扣蘋果)：";
     if (!pointsInput.value || pointsInput.value === "50" || pointsInput.value === "100") pointsInput.value = "5";
     if (syncLabel) syncLabel.classList.remove("hidden");
+    if (checkText) checkText.textContent = "✅ 增減點數時同步增減「總累計獲得蘋果」(守護萌寵進化經驗值)";
   } else if (mode === 'set_points') {
     inputGroup.classList.remove("hidden");
-    valueLabel.textContent = "🎯 直接指定可用蘋果數量 (每位所選大臣直接設為此顆數)：";
+    valueLabel.textContent = "🍎 僅指定【可用蘋果存量】(總累計獲得保持不變)：";
     if (!pointsInput.value || pointsInput.value === "5") pointsInput.value = "100";
-    if (syncLabel) syncLabel.classList.remove("hidden");
+    if (syncLabel) syncLabel.classList.add("hidden");
   } else if (mode === 'set_lifetime') {
     inputGroup.classList.remove("hidden");
-    valueLabel.textContent = "🌟 直接指定生涯累積總額 (萌寵金化與升階經驗值)：";
+    valueLabel.textContent = "🌟 僅指定【總累計獲得蘋果】(萌寵進化經驗變更，存量不變)：";
     if (!pointsInput.value || pointsInput.value === "5") pointsInput.value = "100";
     if (syncLabel) syncLabel.classList.add("hidden");
   } else {
@@ -9404,6 +9901,243 @@ function submitBatchAdjustPoints(e) {
   showToast(`🍎 批次蘋果調度成功！已更新 ${ids.length} 位大臣資料。`, "👑");
   closeBatchAdjustPointsModal();
   refreshCurrentView();
+  renderPointsView();
+  renderRosterView();
+}
+
+// ===================================================================
+// 大臣批次兌換特權卡牌控制器 (Batch Redeem Reward Cards Controller)
+// ===================================================================
+let activeBatchRedeemStudentIds = new Set();
+let activeBatchRedeemCardId = null;
+
+function openBatchRedeemCardsModal(defaultCardId = null) {
+  if (!checkTeacherAuth("批次兌換特權卡牌")) return;
+  const modal = document.getElementById("batchRedeemCardsModal");
+  if (!modal) return;
+
+  const cards = window.KingdomApp.store.data.rewardCards || [];
+  if (cards.length === 0) {
+    alert("目前尚未建立任何獎勵卡牌，請先新增特權卡！");
+    return;
+  }
+
+  const students = window.KingdomApp.store.data.students || [];
+
+  // 若集點榜目前有已勾選之大臣，優先帶入已勾選對象；否則預設全選全班
+  if (typeof selectedStudentIdsForPoints !== 'undefined' && selectedStudentIdsForPoints.size > 0) {
+    activeBatchRedeemStudentIds = new Set(selectedStudentIdsForPoints);
+  } else {
+    activeBatchRedeemStudentIds = new Set(students.map(s => s.id));
+  }
+
+  // 填充卡牌選單
+  const cardSelect = document.getElementById("batchRedeemCardSelect");
+  if (cardSelect) {
+    cardSelect.innerHTML = cards.map(c => `
+      <option value="${c.id}" ${defaultCardId && c.id === defaultCardId ? 'selected' : ''}>
+        ${c.icon || '🎁'} ${c.title} (所需蘋果：${c.cost} 顆)
+      </option>
+    `).join('');
+    activeBatchRedeemCardId = cardSelect.value;
+  }
+
+  renderBatchRedeemStudentsGrid();
+  updateBatchRedeemPreview();
+
+  modal.classList.remove("hidden");
+  initLucideIcons();
+}
+
+function closeBatchRedeemCardsModal() {
+  const modal = document.getElementById("batchRedeemCardsModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function renderBatchRedeemStudentsGrid() {
+  const grid = document.getElementById("batchRedeemStudentsGrid");
+  if (!grid) return;
+  const students = window.KingdomApp.store.data.students || [];
+  const cards = window.KingdomApp.store.data.rewardCards || [];
+  const cardSelect = document.getElementById("batchRedeemCardSelect");
+  const curCard = cards.find(c => c.id === (cardSelect ? cardSelect.value : activeBatchRedeemCardId)) || cards[0];
+  const cost = curCard ? (parseInt(curCard.cost, 10) || 0) : 0;
+
+  grid.innerHTML = students.map(st => {
+    const isChecked = activeBatchRedeemStudentIds.has(st.id);
+    const pts = st.points || 0;
+    const isEnough = pts >= cost;
+    return `
+      <label class="flex items-center justify-between p-1.5 rounded-lg border cursor-pointer transition text-xs ${isChecked ? (isEnough ? 'bg-amber-100 border-amber-400 font-black' : 'bg-rose-50 border-rose-300 font-bold') : 'bg-white border-slate-200 text-slate-500 opacity-70'}">
+        <div class="flex items-center space-x-1.5 min-w-0">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleBatchRedeemStudent(${st.id}, this.checked)" class="rounded text-amber-600 focus:ring-amber-500 flex-shrink-0">
+          <span class="font-mono text-amber-950 font-bold flex-shrink-0">${String(st.seatNo).padStart(2, '0')}.</span>
+          <span class="truncate">${st.name}</span>
+        </div>
+        <span class="text-[10px] font-mono font-black ml-1 flex-shrink-0 ${isEnough ? 'text-emerald-700 bg-emerald-100 px-1 py-0.2 rounded' : 'text-rose-700 bg-rose-100 px-1 py-0.2 rounded'}">
+          ${pts}🍎 ${isEnough ? '✅' : '❌'}
+        </span>
+      </label>
+    `;
+  }).join('');
+}
+
+function toggleBatchRedeemStudent(studentId, isChecked) {
+  if (isChecked) activeBatchRedeemStudentIds.add(studentId);
+  else activeBatchRedeemStudentIds.delete(studentId);
+  renderBatchRedeemStudentsGrid();
+  updateBatchRedeemPreview();
+}
+
+function selectAllBatchRedeemStudents(select) {
+  const students = window.KingdomApp.store.data.students || [];
+  if (select) {
+    activeBatchRedeemStudentIds = new Set(students.map(s => s.id));
+  } else {
+    activeBatchRedeemStudentIds.clear();
+  }
+  renderBatchRedeemStudentsGrid();
+  updateBatchRedeemPreview();
+}
+
+function invertBatchRedeemStudents() {
+  const students = window.KingdomApp.store.data.students || [];
+  students.forEach(st => {
+    if (activeBatchRedeemStudentIds.has(st.id)) activeBatchRedeemStudentIds.delete(st.id);
+    else activeBatchRedeemStudentIds.add(st.id);
+  });
+  renderBatchRedeemStudentsGrid();
+  updateBatchRedeemPreview();
+}
+
+function updateBatchRedeemPreview() {
+  const cards = window.KingdomApp.store.data.rewardCards || [];
+  const cardSelect = document.getElementById("batchRedeemCardSelect");
+  if (!cardSelect) return;
+  const cardId = cardSelect.value;
+  const card = cards.find(c => c.id === cardId);
+  if (!card) return;
+
+  // 更新卡牌預覽詳情卡
+  const iconEl = document.getElementById("batchRedeemCardIcon");
+  const titleEl = document.getElementById("batchRedeemCardTitle");
+  const descEl = document.getElementById("batchRedeemCardDesc");
+  const costEl = document.getElementById("batchRedeemCardCostBadge");
+  if (iconEl) iconEl.textContent = card.icon || '🎁';
+  if (titleEl) titleEl.textContent = card.title;
+  if (descEl) descEl.textContent = card.desc || '無特殊說明';
+  if (costEl) costEl.textContent = `每人需 ${card.cost} 顆 🍎`;
+
+  // 統計所選大臣足額/不足人數
+  const students = window.KingdomApp.store.data.students || [];
+  const cost = parseInt(card.cost, 10) || 0;
+  let eligibleCount = 0;
+  let insufficientCount = 0;
+  const selectedList = [];
+
+  activeBatchRedeemStudentIds.forEach(id => {
+    const st = students.find(s => s.id === id);
+    if (st) {
+      selectedList.push(st);
+      if ((st.points || 0) >= cost) eligibleCount++;
+      else insufficientCount++;
+    }
+  });
+
+  const summaryBadge = document.getElementById("batchRedeemSummaryBadge");
+  const eligibleBadge = document.getElementById("batchRedeemEligibleBadge");
+  if (summaryBadge) summaryBadge.textContent = `已選取 ${selectedList.length} / ${students.length} 位大臣`;
+  if (eligibleBadge) {
+    eligibleBadge.innerHTML = `<span class="text-emerald-700 font-black">足額：${eligibleCount} 位</span> | <span class="${insufficientCount > 0 ? 'text-rose-700 font-black' : 'text-slate-400'}">不足：${insufficientCount} 位</span>`;
+  }
+
+  const skipInsufficient = document.getElementById("batchRedeemSkipInsufficientCheck")?.checked ?? true;
+  const willRedeemCount = skipInsufficient ? eligibleCount : selectedList.length;
+  const totalCost = willRedeemCount * cost;
+
+  const calcBox = document.getElementById("batchRedeemCalculationBox");
+  const btn = document.getElementById("btnConfirmBatchRedeem");
+
+  if (calcBox) {
+    if (selectedList.length === 0) {
+      calcBox.className = "p-3 rounded-xl border-2 border-slate-300 bg-slate-50 text-slate-500 font-bold text-center";
+      calcBox.innerHTML = `<span>⚠️ 請至少勾選一位大臣！</span>`;
+      if (btn) {
+        btn.disabled = true;
+        btn.className = "px-6 py-2 rounded-xl font-black bg-slate-300 text-slate-500 cursor-not-allowed";
+      }
+    } else if (willRedeemCount === 0) {
+      calcBox.className = "p-3 rounded-xl border-2 border-rose-300 bg-rose-50 text-rose-950 font-bold";
+      calcBox.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span>已選大臣可用蘋果皆未達 ${cost} 顆！</span>
+          <span class="text-rose-700">無法兌換 ❌</span>
+        </div>
+        <div class="text-[11px] text-slate-600 font-normal mt-0.5">
+          若仍欲頒發特權，可取消勾選上方「自動略過不足者」進行特准頒發。
+        </div>
+      `;
+      if (btn) {
+        btn.disabled = true;
+        btn.className = "px-6 py-2 rounded-xl font-black bg-slate-300 text-slate-500 cursor-not-allowed";
+      }
+    } else {
+      calcBox.className = "p-3 rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-950 font-bold space-y-1";
+      calcBox.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span>預計為 <strong>${willRedeemCount} 位大臣</strong> 兌換【${card.title}】</span>
+          <span class="font-mono text-emerald-700 font-black">總計扣除 ${totalCost} 顆 🍎</span>
+        </div>
+        <div class="pt-1 border-t border-emerald-200 text-xs font-normal flex items-center justify-between text-emerald-900">
+          <span>卡牌將直接發放至每位大臣的「卡牌抽屜」中</span>
+          ${insufficientCount > 0 && skipInsufficient ? `<span class="text-rose-700 font-bold">（已略過 ${insufficientCount} 位蘋果不足大臣）</span>` : '<span class="text-emerald-700 font-bold">全員足額 ✅</span>'}
+        </div>
+      `;
+      if (btn) {
+        btn.disabled = false;
+        btn.className = "btn-royal-gold px-6 py-2 rounded-xl font-black shadow-md flex items-center space-x-1.5 cursor-pointer";
+      }
+    }
+  }
+}
+
+function submitBatchRedeemCards(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const cardSelect = document.getElementById("batchRedeemCardSelect");
+  if (!cardSelect) return;
+  const cardId = cardSelect.value;
+  const skipInsufficient = document.getElementById("batchRedeemSkipInsufficientCheck")?.checked ?? true;
+
+  if (activeBatchRedeemStudentIds.size === 0) {
+    alert("請至少選擇一位大臣！");
+    return;
+  }
+
+  const ids = Array.from(activeBatchRedeemStudentIds);
+  const result = window.KingdomApp.store.batchRedeemCard(ids, cardId, {
+    skipInsufficient,
+    overdraftAllowed: !skipInsufficient
+  });
+
+  if (!result.success) {
+    alert(result.message || "兌換失敗，請確認大臣可用蘋果！");
+    return;
+  }
+
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+    try { window.KingdomApp.sound.playFanfare(); } catch (err) {}
+  }
+  if (window.KingdomApp.triggerConfetti) {
+    try { window.KingdomApp.triggerConfetti(); } catch (err) {}
+  }
+
+  // 將成功兌換的大臣抽屜展開，方便導師立即檢視
+  if (!window.openCardDrawerStudentIds) window.openCardDrawerStudentIds = new Set();
+  result.successful.forEach(s => window.openCardDrawerStudentIds.add(s.id));
+
+  showToast(result.message, "👑");
+  closeBatchRedeemCardsModal();
+  renderRewardCards();
   renderPointsView();
   renderRosterView();
 }
@@ -9779,6 +10513,19 @@ if (typeof window !== 'undefined') {
   window.closeCustomMultiPointsModal = closeCustomMultiPointsModal;
   window.openRedeemCardForStudent = openRedeemCardForStudent;
 
+  // 皇家特權卡牌抽屜快速兌換與批次兌換
+  window.updateDrawerRedeemButton = updateDrawerRedeemButton;
+  window.executeDrawerQuickRedeem = executeDrawerQuickRedeem;
+  window.changeRedeemCardInModal = changeRedeemCardInModal;
+  window.openBatchRedeemCardsModal = openBatchRedeemCardsModal;
+  window.closeBatchRedeemCardsModal = closeBatchRedeemCardsModal;
+  window.renderBatchRedeemStudentsGrid = renderBatchRedeemStudentsGrid;
+  window.toggleBatchRedeemStudent = toggleBatchRedeemStudent;
+  window.selectAllBatchRedeemStudents = selectAllBatchRedeemStudents;
+  window.invertBatchRedeemStudents = invertBatchRedeemStudents;
+  window.updateBatchRedeemPreview = updateBatchRedeemPreview;
+  window.submitBatchRedeemCards = submitBatchRedeemCards;
+
   // 全班加點與大臣獎懲錯誤操作復原機制
   window.showUndoNotificationBanner = showUndoNotificationBanner;
   window.dismissUndoBanner = dismissUndoBanner;
@@ -9837,6 +10584,35 @@ if (typeof window !== 'undefined') {
   window.closeContactProjectionModal = closeContactProjectionModal;
   window.toggleContactProjectionFullscreen = toggleContactProjectionFullscreen;
   window.renderContactProjectionView = renderContactProjectionView;
+  window.setContactProjDaysMode = setContactProjDaysMode;
+  window.setContactProjPreset = setContactProjPreset;
+  window.changeContactProjColDate = changeContactProjColDate;
+  window.adjustContactProjColDate = adjustContactProjColDate;
+  window.openEditContactModalForDate = openEditContactModalForDate;
+  try {
+    Object.defineProperty(window, 'contactProjDaysMode', {
+      get() { return contactProjDaysMode; },
+      set(v) { contactProjDaysMode = v; },
+      configurable: true
+    });
+    Object.defineProperty(window, 'contactProjDateCol1', {
+      get() { return contactProjDateCol1; },
+      set(v) { contactProjDateCol1 = v; },
+      configurable: true
+    });
+    Object.defineProperty(window, 'contactProjDateCol2', {
+      get() { return contactProjDateCol2; },
+      set(v) { contactProjDateCol2 = v; },
+      configurable: true
+    });
+    Object.defineProperty(window, 'contactProjDateCol3', {
+      get() { return contactProjDateCol3; },
+      set(v) { contactProjDateCol3 = v; },
+      configurable: true
+    });
+  } catch (e) {
+    window.contactProjDaysMode = contactProjDaysMode;
+  }
 
   // 課堂作息鬧鐘快捷管理
   window.renderAlarmPresets = renderAlarmPresets;
@@ -9859,6 +10635,9 @@ if (typeof window !== 'undefined') {
   window.awardSingleStudentInProjection = awardSingleStudentInProjection;
   window.toggleCardDrawerInProjection = toggleCardDrawerInProjection;
   window.useCardInPointsProjection = useCardInPointsProjection;
+  window.revokeCardInPointsProjection = revokeCardInPointsProjection;
+  window.confirmRevokeStudentCard = confirmRevokeStudentCard;
+  window.confirmRevokeRedemptionRecord = confirmRevokeRedemptionRecord;
   window.renderPointsProjection = renderPointsProjection;
 
   // 🐾 班級萌寵動物園大屏全螢幕投影

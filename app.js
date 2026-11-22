@@ -286,10 +286,8 @@ const DEFAULT_REWARD_CARDS = [
 // 行為卡累計資料 (座位自省卡：作業未交自動新增/導師手動控制；愛班服務卡：打卡遲到自動設定為「遲到」/導師手動控制，全班預設全數歸零)
 const DEFAULT_BEHAVIOR_CARDS = {};
 
-const DEFAULT_ANNOUNCEMENTS = [
-  { id: 1, title: "五年二班班親會將於本週五晚間隆重召開", content: "歡迎全體皇親國戚（各位家長）蒞臨王國議政廳，共同研商小兵成長大計！", date: "2026-11-12", important: true },
-  { id: 2, title: "下週即將迎來王國期中學力大評量", content: "請全體小兵大臣調養精神、溫故知新，發揮平素所學爭取至高榮譽！", date: "2026-11-10", important: false }
-];
+// 皇室公佈欄公告 (由導師全手動發布，系統不自行強加假公告)
+const DEFAULT_ANNOUNCEMENTS = [];
 
 const STORAGE_KEY = "xining_kingdom_v3_dashboard";
 
@@ -460,6 +458,21 @@ class KingdomStore {
     const mergedSeatingLayout = (remoteTime >= localTime) ? (remote.seatingLayout || local.seatingLayout) : (local.seatingLayout || remote.seatingLayout);
     const mergedSeatingChart = (remoteTime >= localTime) ? (remote.seatingChart || local.seatingChart) : (local.seatingChart || remote.seatingChart);
 
+    // 8. 皇室公佈欄公告融合 (保留導師真實發布之公告，不被隨意覆蓋)
+    let mergedAnnouncements = local.announcements || remote.announcements || [];
+    if (Array.isArray(local.announcements) && Array.isArray(remote.announcements)) {
+      const annMap = new Map();
+      remote.announcements.forEach(a => { if (a && a.id) annMap.set(a.id, a); });
+      local.announcements.forEach(a => { if (a && a.id) annMap.set(a.id, a); });
+      mergedAnnouncements = Array.from(annMap.values());
+    }
+
+    // 9. 獎勵卡兌換紀錄融合
+    const redMap = new Map();
+    (remote.rewardRedemptions || []).forEach(r => { if (r && r.id) redMap.set(r.id, r); });
+    (local.rewardRedemptions || []).forEach(r => { if (r && r.id) redMap.set(r.id, r); });
+    const mergedRedemptions = Array.from(redMap.values());
+
     const mergedData = {
       ...remote,
       ...local,
@@ -470,6 +483,8 @@ class KingdomStore {
       contactBook: mergedContactBook,
       contactBookHistory: mergedCbHistory,
       pointLogs: mergedPointLogs,
+      announcements: mergedAnnouncements,
+      rewardRedemptions: mergedRedemptions,
       seatingLayout: mergedSeatingLayout,
       seatingChart: mergedSeatingChart,
       lastModified: Math.max(localTime, remoteTime) || Date.now()
@@ -990,19 +1005,23 @@ class KingdomStore {
     if (this.data.contactBookHistory && this.data.contactBookHistory[targetDate]) {
       return this.data.contactBookHistory[targetDate];
     }
-    // 若該日尚未另外建立歷史，預設使用目前最新導師儲存的聯絡簿
-    if (this.data.contactBook) {
+    // 若該日是當前主要聯絡簿設定的日期，回傳該聯絡簿
+    if (this.data.contactBook && this.data.contactBook.date === targetDate) {
+      return this.data.contactBook;
+    }
+    // 若查詢今日且尚未存入歷史，使用目前最新導師儲存之聯絡簿
+    if (targetDate === getTodayDateString() && this.data.contactBook) {
       return {
         ...this.data.contactBook,
         date: targetDate
       };
     }
-    // 若全新無任何資料，返回純淨範本 (不強加假作業)
+    // 若該特定日期尚未建立，返回純淨空白範本 (不跨日套用，方便多天聯絡簿獨立顯示)
     return {
       date: targetDate,
       homeworkItems: [],
       reminders: [],
-      queenMotto: "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
+      queenMotto: (this.data.contactBook && this.data.contactBook.queenMotto) || "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
     };
   }
 
@@ -1166,8 +1185,15 @@ class KingdomStore {
     }
     const data = dataObj || this.data;
     if (data && Array.isArray(data.rewardRedemptions)) {
+      // 1. 如果兌換紀錄已被核銷 (used) 或已被撤銷 (revoked)，確保不留在抽屜中
+      const inactiveIds = new Set(data.rewardRedemptions.filter(r => r.status === 'used' || r.status === 'revoked').map(r => r.id));
+      if (inactiveIds.size > 0) {
+        student.redeemedCards = student.redeemedCards.filter(c => !inactiveIds.has(c.id));
+      }
+
+      // 2. 將未核銷 (pending) 且未撤銷之卡牌注入抽屜
       data.rewardRedemptions.forEach(r => {
-        if ((r.studentId === student.id || r.seatNo === student.seatNo) && r.status !== 'used') {
+        if ((r.studentId === student.id || r.seatNo === student.seatNo) && r.status !== 'used' && r.status !== 'revoked') {
           const exists = student.redeemedCards.some(c => c.id === r.id);
           if (!exists) {
             const cardDef = (data.rewardCards || []).find(cd => cd.id === r.cardId);
@@ -1483,7 +1509,19 @@ class KingdomStore {
         this.syncStudentPets(st);
         count++;
       });
-    } else if (log.studentId !== 'batch_adjust' && log.studentId !== 'multi') {
+    } else if (log.studentId === 'batch_adjust' || log.studentId === 'multi') {
+      if (Array.isArray(log.batchRecords) && log.batchRecords.length > 0) {
+        const perCost = log.cardCost || Math.round(Math.abs(delta) / log.batchRecords.length);
+        log.batchRecords.forEach(br => {
+          const st = this.data.students.find(s => s.id == br.studentId || s.seatNo == br.studentId);
+          if (st) {
+            st.points = (st.points || 0) + perCost;
+            this.syncStudentPets(st);
+            count++;
+          }
+        });
+      }
+    } else {
       const st = this.data.students.find(s => s.id == log.studentId || s.seatNo == log.studentId);
       if (st) {
         st.points = Math.max(0, (st.points || 0) - delta);
@@ -1500,11 +1538,39 @@ class KingdomStore {
       log.reason = `[↩️已撤銷] ${log.reason}`;
     }
 
+    // 檢查是否為特權卡兌換紀錄，若為是，同步從卡牌抽屜與兌換紀錄移除/標記撤銷
+    // 註：此處 refundPoints 設為 false，因為上方的 delta 數值沖銷已經將花費的蘋果退還回大臣帳戶
+    const isCardRedeem = log.isRedeemCard || (log.reason && log.reason.includes('兌換特權卡'));
+    if (isCardRedeem) {
+      if (log.studentId === 'batch_adjust' && Array.isArray(log.batchRecords)) {
+        log.batchRecords.forEach(br => {
+          this.revokeCardRedemption({
+            studentId: br.studentId,
+            instanceId: br.instanceId,
+            cardId: br.cardId,
+            refundPoints: false
+          });
+        });
+      } else {
+        let fallbackTitle = '';
+        const m = log.reason && log.reason.match(/【(.*?)】/);
+        if (m) fallbackTitle = m[1];
+
+        this.revokeCardRedemption({
+          studentId: log.studentId,
+          instanceId: log.cardInstanceId,
+          cardId: log.cardId,
+          cardTitle: fallbackTitle,
+          refundPoints: false
+        });
+      }
+    }
+
     this.data.pointLogs.unshift({
       id: Date.now(),
       studentId: log.studentId,
       points: -delta,
-      reason: `↩️ 導師已手動撤銷此筆記功：【${log.reason.replace('[↩️已撤銷] ', '')}】`,
+      reason: `↩️ 導師已手動撤銷此筆記功：【${log.reason.replace('[↩️已撤銷] ', '')}】${isCardRedeem ? '（同步自抽屜註銷卡牌）' : ''}`,
       date: getTodayDateString(),
       time: new Date().toTimeString().slice(0, 5),
       isUndoLog: true
@@ -1513,12 +1579,12 @@ class KingdomStore {
     this.save();
     return {
       success: true,
-      message: `已成功撤銷該筆紀錄！受影響的大臣蘋果已沖銷還原。`
+      message: `已成功撤銷該筆紀錄！受影響的大臣蘋果已沖銷還原${isCardRedeem ? '，卡牌亦已自抽屜安全註銷' : ''}。`
     };
   }
 
   // --- 批次更改金幣與重置功能 ---
-  batchAdjustPoints(studentIds, { mode = 'adjust', deltaPoints = 0, targetPoints = 0, targetLifetime = 0, syncLifetime = true, reason = "導師批次調整" } = {}) {
+  batchAdjustPoints(studentIds, { mode = 'set_both', deltaPoints = 0, targetPoints = 0, targetLifetime = 0, syncLifetime = true, reason = "導師批次調整" } = {}) {
     if (!Array.isArray(studentIds) || studentIds.length === 0) return [];
     const updated = [];
 
@@ -1527,21 +1593,29 @@ class KingdomStore {
       if (!st) return;
       if (st.lifetimePoints === undefined) st.lifetimePoints = st.points || 0;
 
-      if (mode === 'adjust') {
-        const pts = parseInt(deltaPoints, 10) || 0;
-        st.points = Math.max(0, (st.points || 0) + pts);
-        if (pts > 0 && syncLifetime) {
-          st.lifetimePoints = (st.lifetimePoints || 0) + pts;
-        }
+      if (mode === 'set_both') {
+        const target = Math.max(0, parseInt(targetPoints, 10) || 0);
+        st.points = target;
+        st.lifetimePoints = target;
+        st.petExp = target;
       } else if (mode === 'set_points') {
         const target = Math.max(0, parseInt(targetPoints, 10) || 0);
         st.points = target;
         if (syncLifetime) {
           st.lifetimePoints = target;
+          st.petExp = target;
+        }
+      } else if (mode === 'adjust') {
+        const pts = parseInt(deltaPoints, 10) || 0;
+        st.points = Math.max(0, (st.points || 0) + pts);
+        if (syncLifetime) {
+          st.lifetimePoints = Math.max(0, (st.lifetimePoints || 0) + pts);
+          st.petExp = st.lifetimePoints;
         }
       } else if (mode === 'set_lifetime') {
-        st.lifetimePoints = Math.max(0, parseInt(targetLifetime, 10) || 0);
-        st.petExp = st.lifetimePoints;
+        const target = Math.max(0, parseInt(targetLifetime, 10) || 0);
+        st.lifetimePoints = target;
+        st.petExp = target;
       } else if (mode === 'reset_points') {
         st.points = 0;
       } else if (mode === 'reset_lifetime') {
@@ -1565,13 +1639,22 @@ class KingdomStore {
     if (updated.length > 0) {
       let logPts = 0;
       if (mode === 'adjust') logPts = deltaPoints || 0;
-      else if (mode === 'set_points') logPts = targetPoints || 0;
+      else if (mode === 'set_points' || mode === 'set_both') logPts = targetPoints || 0;
+
+      let modeDesc = mode;
+      if (mode === 'set_both') modeDesc = `同步設定可用與總累計為 ${targetPoints} 顆`;
+      else if (mode === 'set_points') modeDesc = `指定可用蘋果為 ${targetPoints} 顆${syncLifetime ? '(同步總累計)' : ''}`;
+      else if (mode === 'adjust') modeDesc = `增減 ${deltaPoints} 顆${syncLifetime ? '(同步增減總累計)' : ''}`;
+      else if (mode === 'set_lifetime') modeDesc = `指定總累計為 ${targetLifetime} 點`;
+      else if (mode === 'reset_points') modeDesc = `可用蘋果歸零`;
+      else if (mode === 'reset_lifetime') modeDesc = `總累計總額歸零`;
+      else if (mode === 'reset_both') modeDesc = `兩者全部徹底歸零`;
 
       this.data.pointLogs.unshift({
         id: Date.now(),
         studentId: updated.length === 1 ? updated[0].id : 'batch_adjust',
         points: logPts,
-        reason: `${reason} 【${mode === 'set_points' ? `指定設定為 ${targetPoints} 顆` : (mode === 'adjust' ? `增減 ${deltaPoints} 顆` : mode)}，${updated.length} 位大臣】`,
+        reason: `${reason} 【${modeDesc}，${updated.length} 位大臣】`,
         date: getTodayDateString(),
         time: new Date().toTimeString().slice(0, 5)
       });
@@ -1876,7 +1959,12 @@ class KingdomStore {
       points: -card.cost,
       reason: `兌換特權卡【${card.title}】（已存入卡牌抽屜）`,
       date: getTodayDateString(),
-      time: new Date().toTimeString().slice(0, 5)
+      time: new Date().toTimeString().slice(0, 5),
+      isRedeemCard: true,
+      cardInstanceId: instanceId,
+      cardId: card.id,
+      cardTitle: card.title,
+      cardCost: card.cost
     });
 
     this.save();
@@ -1886,6 +1974,97 @@ class KingdomStore {
       cardTitle: card.title,
       card: redeemedCard,
       message: `成功兌換【${card.title}】！已扣除 ${card.cost} 顆可用蘋果並存入卡牌抽屜，隨時可取用！`
+    };
+  }
+
+  // --- 批次為多位大臣兌換同一種特權卡牌 ---
+  batchRedeemCard(studentIds, cardId, { skipInsufficient = true, overdraftAllowed = false } = {}) {
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+      return { success: false, message: "請至少選擇一位大臣", successful: [], skipped: [] };
+    }
+    const card = (this.data.rewardCards || []).find(c => c.id === cardId);
+    if (!card) return { success: false, message: "查無此獎勵卡牌", successful: [], skipped: [] };
+
+    const successful = [];
+    const skipped = [];
+    const nowTimeStr = new Date().toTimeString().slice(0, 5);
+    const todayStr = getTodayDateString();
+    const cost = parseInt(card.cost, 10) || 0;
+
+    if (!this.data.rewardRedemptions) this.data.rewardRedemptions = [];
+
+    studentIds.forEach(id => {
+      const student = this.data.students.find(s => s.id === id || s.seatNo === id);
+      if (!student) return;
+
+      if ((student.points || 0) < cost) {
+        if (!overdraftAllowed && skipInsufficient) {
+          skipped.push({ student, points: student.points || 0, required: cost });
+          return;
+        }
+      }
+
+      // 扣除可用蘋果 (保留 lifetimePoints 萌寵成長經驗)
+      student.points = Math.max(0, (student.points || 0) - cost);
+
+      this.syncStudentCards(student);
+      const instanceId = 'rc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      const redeemedCard = {
+        id: instanceId,
+        cardId: card.id,
+        title: card.title,
+        cost: card.cost,
+        icon: card.icon || '🎁',
+        desc: card.desc || '',
+        category: card.category || 'special',
+        redeemedAt: todayStr + ' ' + nowTimeStr
+      };
+      student.redeemedCards.push(redeemedCard);
+
+      const record = {
+        id: instanceId,
+        studentId: student.id,
+        seatNo: student.seatNo,
+        studentName: student.name,
+        cardId: card.id,
+        cardTitle: card.title,
+        cost: card.cost,
+        date: todayStr,
+        time: nowTimeStr,
+        status: 'pending'
+      };
+      this.data.rewardRedemptions.unshift(record);
+      successful.push({ student, instanceId });
+    });
+
+    if (successful.length > 0) {
+      this.data.pointLogs.unshift({
+        id: Date.now() + 1,
+        studentId: successful.length === 1 ? successful[0].student.id : 'batch_adjust',
+        points: -(cost * successful.length),
+        reason: `批次兌換特權卡【${card.title}】（已發放至 ${successful.length} 位大臣抽屜）`,
+        date: todayStr,
+        time: nowTimeStr,
+        isRedeemCard: true,
+        cardId: card.id,
+        cardTitle: card.title,
+        cardCost: cost,
+        batchRecords: successful.map(s => ({
+          studentId: s.student.id,
+          instanceId: s.instanceId,
+          cardId: card.id
+        }))
+      });
+      this.save('大臣批次兌換特權卡牌');
+    }
+
+    return {
+      success: successful.length > 0,
+      cardTitle: card.title,
+      cost,
+      successful,
+      skipped,
+      message: `成功為 ${successful.length} 位大臣兌換【${card.title}】！${skipped.length > 0 ? `（${skipped.length} 位大臣因蘋果不足略過）` : ''}`
     };
   }
 
@@ -1939,6 +2118,96 @@ class KingdomStore {
       rec.status = rec.status === 'used' ? 'pending' : 'used';
       this.save();
     }
+  }
+
+  // --- 撤銷卡牌兌換 (自卡牌抽屜徹底註銷移除、更新兌換清單狀態，並可安全沖正退回可用蘋果) ---
+  revokeCardRedemption({ studentId, instanceId, cardId, cardTitle, refundPoints = true, logReason = '' }) {
+    let student = null;
+    if (studentId) {
+      student = (this.data.students || []).find(s => s.id == studentId || s.seatNo == studentId);
+    }
+
+    // 1. 在 rewardRedemptions 中尋找對應紀錄並註銷
+    let redRecord = null;
+    if (Array.isArray(this.data.rewardRedemptions)) {
+      if (instanceId) {
+        redRecord = this.data.rewardRedemptions.find(r => r.id === instanceId);
+      }
+      if (!redRecord && student && (cardId || cardTitle)) {
+        redRecord = this.data.rewardRedemptions.find(r => 
+          (r.studentId == student.id || r.seatNo == student.seatNo) && 
+          r.status !== 'revoked' &&
+          (cardId ? r.cardId == cardId : true) &&
+          (cardTitle ? r.cardTitle === cardTitle : true)
+        );
+      }
+    }
+
+    if (redRecord) {
+      redRecord.status = 'revoked';
+      redRecord.revokedAt = getTodayDateString() + ' ' + new Date().toTimeString().slice(0, 5);
+      if (!student && redRecord.studentId) {
+        student = (this.data.students || []).find(s => s.id == redRecord.studentId || s.seatNo == redRecord.studentId);
+      }
+    }
+
+    if (!student && !instanceId) {
+      return { success: false, message: "找不到對應的大臣或卡牌紀錄" };
+    }
+
+    // 2. 從大臣的卡牌抽屜 (student.redeemedCards) 中安全移除
+    let removedCard = null;
+    if (student) {
+      this.syncStudentCards(student);
+      if (Array.isArray(student.redeemedCards) && student.redeemedCards.length > 0) {
+        let idx = -1;
+        if (instanceId) {
+          idx = student.redeemedCards.findIndex(c => c.id === instanceId);
+        }
+        if (idx === -1 && redRecord) {
+          idx = student.redeemedCards.findIndex(c => c.id === redRecord.id);
+        }
+        if (idx === -1 && cardId) {
+          idx = student.redeemedCards.findIndex(c => c.cardId === cardId);
+        }
+        if (idx === -1 && cardTitle) {
+          idx = student.redeemedCards.findIndex(c => c.title === cardTitle);
+        }
+        if (idx !== -1) {
+          removedCard = student.redeemedCards.splice(idx, 1)[0];
+        }
+      }
+    }
+
+    const title = (removedCard && removedCard.title) || (redRecord && redRecord.cardTitle) || cardTitle || '特權卡';
+    const cost = (removedCard && removedCard.cost !== undefined) 
+      ? parseInt(removedCard.cost, 10) 
+      : ((redRecord && redRecord.cost !== undefined) ? parseInt(redRecord.cost, 10) : 0);
+
+    // 3. 若需要退還可用蘋果 (refundPoints)
+    if (refundPoints && student && cost > 0) {
+      student.points = (student.points || 0) + cost;
+      if (!Array.isArray(this.data.pointLogs)) this.data.pointLogs = [];
+      this.data.pointLogs.unshift({
+        id: Date.now(),
+        studentId: student.id,
+        points: cost,
+        reason: logReason || `↩️ 導師已撤銷兌換特權卡【${title}】（已退還 ${cost} 顆蘋果並自抽屜註銷）`,
+        date: getTodayDateString(),
+        time: new Date().toTimeString().slice(0, 5),
+        isUndoLog: true
+      });
+    }
+
+    this.save();
+    return {
+      success: true,
+      studentName: student ? student.name : '',
+      cardTitle: title,
+      refundedPoints: refundPoints ? cost : 0,
+      removedCard,
+      message: `已成功撤銷【${student ? student.name : '大臣'}】的特權卡【${title}】！${refundPoints && cost > 0 ? `已退還 ${cost} 顆可用蘋果，並自抽屜彻底移除。` : '已自抽屜安全註銷。'}`
+    };
   }
 
   // --- 行為卡牌累計與特赦管理 (座位自省卡、愛班服務卡) ---

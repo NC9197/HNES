@@ -743,22 +743,7 @@
   "attendance": {},
   "homework": [],
   "pointLogs": [],
-  "announcements": [
-    {
-      "id": 1,
-      "title": "五年二班班親會將於本週五晚間隆重召開",
-      "content": "歡迎全體皇親國戚（各位家長）蒞臨王國議政廳，共同研商小兵成長大計！",
-      "date": "2026-11-12",
-      "important": true
-    },
-    {
-      "id": 2,
-      "title": "下週即將迎來王國期中學力大評量",
-      "content": "請全體小兵大臣調養精神、溫故知新，發揮平素所學爭取至高榮譽！",
-      "date": "2026-11-10",
-      "important": false
-    }
-  ],
+  "announcements": [],
   "rewardCards": [
     {
       "id": "rc_1",

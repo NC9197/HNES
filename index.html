@@ -360,7 +360,7 @@
             <div class="flex items-center space-x-2">
               <span class="text-base sm:text-xl font-black text-amber-900 bg-amber-200 px-3 py-1 rounded-xl border border-amber-400 flex items-center space-x-1">
                 <span>✍️ 今日作業抄寫項目</span>
-                <span class="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-1">左右二欄 ‧ 各四行格式</span>
+                <span class="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-1">標準六行大字格式</span>
               </span>
             </div>
 
@@ -1238,7 +1238,11 @@
               </h3>
             </div>
 
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+              <button onclick="openBatchRedeemCardsModal()" class="px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow flex items-center space-x-1.5 transition" title="多位大臣同時兌換同一種皇家特權卡牌">
+                <span>🎁</span>
+                <span>大臣批次換卡</span>
+              </button>
               <button onclick="openRewardCardModal()" class="btn-royal-gold px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 <span>新增獎勵卡牌</span>
@@ -1281,9 +1285,12 @@
               </h3>
             </div>
             <!-- 多選批次操作工具列 -->
-            <div class="flex items-center space-x-2 text-xs">
+            <div class="flex items-center space-x-2 text-xs flex-wrap gap-y-1">
               <button type="button" onclick="openPointsProjectionModal()" class="btn-royal-gold px-2.5 py-1 rounded-lg font-black shadow-2xs transition flex items-center space-x-1" title="開啟紅蘋果集點榜大屏模式">
                 <span>🖥️ 大屏模式</span>
+              </button>
+              <button type="button" onclick="openBatchRedeemCardsModal()" class="px-2.5 py-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black rounded-lg shadow-2xs transition flex items-center space-x-1" title="為勾選的大臣批次兌換同一種皇家特權卡牌">
+                <span>🎁 批次換卡</span>
               </button>
               <span id="multiSelectedCountBadge" class="font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg">
                 已選取 0 位
@@ -1756,10 +1763,10 @@
       <form onsubmit="saveContactBookData(event)" class="space-y-3.5 text-xs">
         <div>
           <label class="block font-black text-amber-950 mb-1 flex items-center justify-between">
-            <span>✍️ 今日作業抄寫項目 (左右二欄格式：左欄1~4行、右欄5~8行，每行一項)：</span>
+            <span>✍️ 作業抄寫項目 (每天六行格式，每行一項)：</span>
             <span class="text-[11px] text-amber-800 font-normal">可留空</span>
           </label>
-          <textarea id="editContactHwItems" rows="8" placeholder="例如：&#10;1. 國語習作第八課完成&#10;2. 數學習作 P.62 ~ P.65&#10;3. 訂正國語隨堂生字本&#10;4. 閱讀班書 20 頁&#10;5. 英文聽力掃碼練習&#10;6. 準備明日美勞用具&#10;7. 體能跳繩 200 下&#10;8. 家事服務一項" class="w-full p-3 rounded-xl border-2 border-amber-300 font-bold text-sm leading-relaxed focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+          <textarea id="editContactHwItems" rows="6" placeholder="例如：&#10;1. 國語習作第八課完成&#10;2. 數學習作 P.62 ~ P.65&#10;3. 訂正國語隨堂生字本&#10;4. 閱讀班書 20 頁&#10;5. 英文聽力掃碼練習&#10;6. 準備明日美勞用具" class="w-full p-3 rounded-xl border-2 border-amber-300 font-bold text-sm leading-relaxed focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
         </div>
 
         <div>
@@ -2424,17 +2431,26 @@
       </div>
 
       <!-- 即時輸入欄位 -->
-      <form onsubmit="broadcastInstantAnnouncement(event)" class="grid grid-cols-1 md:grid-cols-12 gap-2 text-xs">
-        <div class="md:col-span-4">
-          <input type="text" id="instantBroadcastTitle" placeholder="公告標題 (如：📢 體育課集合通知)" required class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-amber-400/50 text-white font-bold text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none">
+      <form onsubmit="broadcastInstantAnnouncement(event)" class="space-y-2 text-xs">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+          <div class="md:col-span-4">
+            <input type="text" id="instantBroadcastTitle" placeholder="公告標題 (如：📢 體育課集合通知)" required class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-amber-400/50 text-white font-bold text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none">
+          </div>
+          <div class="md:col-span-6">
+            <input type="text" id="instantBroadcastContent" placeholder="詳細內容 (如：第四節體育課因天氣炎熱，改至活動中心二樓集合！)" required class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-amber-400/50 text-white font-bold text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none">
+          </div>
+          <div class="md:col-span-2">
+            <button type="submit" class="w-full h-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-amber-950 font-black text-sm shadow-md flex items-center justify-center space-x-1 transition active:scale-95">
+              <span>🚀 立即投影</span>
+            </button>
+          </div>
         </div>
-        <div class="md:col-span-6">
-          <input type="text" id="instantBroadcastContent" placeholder="詳細內容 (如：第四節體育課因天氣炎熱，改至活動中心二樓集合！)" required class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-amber-400/50 text-white font-bold text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none">
-        </div>
-        <div class="md:col-span-2">
-          <button type="submit" class="w-full h-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-amber-950 font-black text-sm shadow-md flex items-center justify-center space-x-1 transition active:scale-95">
-            <span>🚀 立即廣播</span>
-          </button>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-[11px] text-slate-300 px-1 pt-1 border-t border-slate-700/60">
+          <label class="inline-flex items-center space-x-2 cursor-pointer hover:text-amber-300 transition select-none">
+            <input type="checkbox" id="broadcastSaveToAnnouncements" class="rounded border-amber-400 text-amber-500 focus:ring-0 cursor-pointer">
+            <span class="font-bold">📌 同步收錄至皇室公佈欄（預設僅現場大屏投影，不自動更新公佈欄）</span>
+          </label>
+          <span class="text-slate-400 text-[10px]">快捷範本僅載入文字供修訂，絕不直接發布</span>
         </div>
       </form>
     </div>
@@ -2639,15 +2655,45 @@
             </h3>
           </div>
           <div class="text-right shrink-0">
-            <span class="text-xs sm:text-sm font-black text-amber-900 bg-amber-200/80 px-3 py-1 rounded-xl border border-amber-300 shadow-2xs">
-              左右二欄 ‧ 各四行大字格式
+            <span id="contactProjModeBadge" class="text-xs sm:text-sm font-black text-amber-900 bg-amber-200/90 px-3 py-1 rounded-xl border border-amber-300 shadow-2xs">
+              雙天對照 ‧ 每天六行大字格式
             </span>
           </div>
         </div>
 
-        <!-- 作業抄寫項目 (左右二欄 ‧ 超大字體) -->
+        <!-- 🖥️ 大屏多天對照模式切換與快捷鍵工具列 -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5 bg-amber-200/60 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-300/80 shadow-xs">
+          <div class="flex items-center space-x-2 flex-wrap">
+            <span class="text-xs sm:text-sm font-black text-amber-950 flex items-center space-x-1">
+              <span>🖥️ 顯示模式：</span>
+            </span>
+            <button type="button" id="btnProjMode2Days" onclick="setContactProjDaysMode('2days')" class="px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-amber-500 text-amber-950 border-2 border-amber-600" title="第一欄與第二欄對照兩天份聯絡簿（例如今日＋明日）">
+              👥 雙天對照 (第一欄/第二欄)
+            </button>
+            <button type="button" id="btnProjMode3Days" onclick="setContactProjDaysMode('3days')" class="px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="三欄並排顯示三天聯絡簿（例如昨日＋今日＋明日）">
+              📅 三天並排
+            </button>
+            <button type="button" id="btnProjMode1Day" onclick="setContactProjDaysMode('1day')" class="px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="單天超大字全版顯示">
+              📄 單天大字
+            </button>
+          </div>
+          <div class="flex items-center space-x-1.5 flex-wrap">
+            <span class="text-xs font-black text-amber-800">快速切換：</span>
+            <button type="button" onclick="setContactProjPreset('today_tomorrow')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition hover:scale-105 active:scale-95" title="第1欄今日、第2欄明日">
+              ⚡ 今日＋明日
+            </button>
+            <button type="button" onclick="setContactProjPreset('yesterday_today')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition hover:scale-105 active:scale-95" title="第1欄昨日、第2欄今日">
+              ⚡ 昨日＋今日
+            </button>
+            <button type="button" onclick="setContactProjPreset('three_days')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition hover:scale-105 active:scale-95" title="今、明、後三天並排">
+              ⚡ 連續三天
+            </button>
+          </div>
+        </div>
+
+        <!-- 作業抄寫項目 (左右二欄 / 多天對照 ‧ 每天六行超大字體) -->
         <div id="contactProjHomeworkList" class="space-y-3">
-          <!-- 由 ui.js 動態渲染左欄 1~4 行與右欄 5~8 行 -->
+          <!-- 由 ui.js 動態渲染雙天或三天對照六行大字看板 -->
         </div>
 
         <!-- 早自修與重要提醒 -->
@@ -3105,6 +3151,13 @@
         <input type="hidden" id="redeemCardTargetId">
         
         <div>
+          <label class="block font-black text-amber-950 mb-1">選擇特權卡牌：</label>
+          <select id="redeemCardSelect" onchange="changeRedeemCardInModal(this.value)" class="w-full px-3 py-2 rounded-xl border-2 border-amber-300 bg-white font-black text-amber-950 text-sm">
+            <!-- 動態填入所有特權卡牌 -->
+          </select>
+        </div>
+
+        <div>
           <label class="block font-black text-amber-950 mb-1">請選擇欲兌換的大臣：</label>
           <select id="redeemStudentSelect" onchange="updateRedeemPreview()" required class="w-full px-3 py-2.5 rounded-xl border-2 border-amber-300 bg-white font-bold text-slate-800 text-sm">
             <!-- 動態填入 27 位大臣 -->
@@ -3122,6 +3175,97 @@
           <button type="submit" id="btnConfirmRedeem" class="btn-royal-gold px-5 py-2 rounded-xl font-black shadow flex items-center space-x-1.5">
             <span>🤝</span>
             <span>確認扣點並兌換</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: 大臣批次兌換特權卡牌 (Batch Redeem Reward Cards) -->
+  <!-- =============================================================== -->
+  <div id="batchRedeemCardsModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+    <div class="parchment-card max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl relative max-h-[92vh] flex flex-col rounded-2xl border-2 border-amber-400">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3 flex-shrink-0">
+        <div>
+          <span class="text-xs font-black text-amber-800">🍎 皇家藏寶閣 ‧ 批次兌換殿堂</span>
+          <h3 class="text-lg font-black text-amber-950 flex items-center space-x-2">
+            <span>🎁 大臣批次兌換同一種特權卡牌</span>
+          </h3>
+        </div>
+        <button onclick="closeBatchRedeemCardsModal()" class="text-slate-500 hover:text-slate-800 p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="submitBatchRedeemCards(event)" class="space-y-4 text-xs font-bold overflow-y-auto pr-1 flex-1">
+        <!-- 步驟 1: 選擇特權卡牌 -->
+        <div class="space-y-1.5">
+          <label class="font-black text-amber-950 block">1. 選擇欲兌換的皇家特權卡牌：</label>
+          <select id="batchRedeemCardSelect" onchange="updateBatchRedeemPreview()" class="w-full text-sm font-black py-2.5 px-3 border-2 border-amber-400 rounded-xl bg-white text-amber-950 shadow-2xs focus:ring-2 focus:ring-amber-500">
+            <!-- 動態注入所有獎勵卡 -->
+          </select>
+          <!-- 卡牌詳細資訊預覽卡 -->
+          <div id="batchRedeemCardDetailBox" class="p-3 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span id="batchRedeemCardIcon" class="text-3xl flex-shrink-0">🎁</span>
+              <div class="min-w-0">
+                <h4 id="batchRedeemCardTitle" class="text-sm font-black text-amber-950 truncate">特權卡</h4>
+                <p id="batchRedeemCardDesc" class="text-[11px] text-slate-600 truncate mt-0.5">說明</p>
+              </div>
+            </div>
+            <span id="batchRedeemCardCostBadge" class="font-mono font-black text-rose-700 bg-rose-100 border border-rose-300 px-2.5 py-1 rounded-lg text-xs whitespace-nowrap flex-shrink-0">
+              需 0 顆 🍎
+            </span>
+          </div>
+        </div>
+
+        <!-- 步驟 2: 選擇大臣對象 -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="font-black text-amber-950">2. 選擇兌換大臣對象：</label>
+            <div class="space-x-1">
+              <button type="button" onclick="selectAllBatchRedeemStudents(true)" class="px-2 py-0.5 rounded bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold">全選全班</button>
+              <button type="button" onclick="selectAllBatchRedeemStudents(false)" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800">清空</button>
+              <button type="button" onclick="invertBatchRedeemStudents()" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800">反選</button>
+            </div>
+          </div>
+          <div id="batchRedeemStudentsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-44 overflow-y-auto p-2 bg-white rounded-xl border border-amber-300">
+            <!-- 動態注入學生卡片，標注座號、姓名、現有蘋果與足額/不足狀態 -->
+          </div>
+          <div class="flex items-center justify-between text-xs font-bold pt-0.5">
+            <span id="batchRedeemSummaryBadge" class="text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded">
+              已選取 0 位大臣
+            </span>
+            <span id="batchRedeemEligibleBadge" class="text-emerald-800">
+              足額：0 位 | 不足：0 位
+            </span>
+          </div>
+        </div>
+
+        <!-- 步驟 3: 兌換防呆設定 -->
+        <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1.5">
+          <label class="flex items-center space-x-2 text-xs font-bold text-amber-900 cursor-pointer">
+            <input type="checkbox" id="batchRedeemSkipInsufficientCheck" checked onchange="updateBatchRedeemPreview()" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
+            <span>✅ 自動略過可用蘋果不足者（僅為足額大臣扣點並兌換）</span>
+          </label>
+          <p class="text-[10px] text-slate-500 pl-6 leading-tight">
+            若取消勾選，當大臣蘋果不足時將扣除其所有現有蘋果並特准頒發卡牌。
+          </p>
+        </div>
+
+        <!-- 即時試算總結 -->
+        <div id="batchRedeemCalculationBox" class="p-3 rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-950 font-bold space-y-1">
+          <!-- 動態即時計算 -->
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-amber-200 flex-shrink-0">
+          <button type="button" onclick="closeBatchRedeemCardsModal()" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold hover:bg-slate-50">
+            取消
+          </button>
+          <button type="submit" id="btnConfirmBatchRedeem" class="btn-royal-gold px-6 py-2 rounded-xl font-black shadow-md flex items-center space-x-1.5">
+            <span>🎁</span>
+            <span>確認批次兌換發放</span>
           </button>
         </div>
       </form>
@@ -4172,40 +4316,40 @@
         <div class="space-y-1.5">
           <label class="font-black text-amber-950 block">選擇調整模式：</label>
           <div class="grid grid-cols-2 gap-2">
-            <label class="flex items-center space-x-2 p-2 rounded-xl border-2 border-amber-300 bg-amber-50 cursor-pointer">
-              <input type="radio" name="adjustModeRadio" value="adjust" checked onchange="handleAdjustModeChange(this.value)">
-              <span>➕ 增減可用蘋果</span>
+            <label class="flex items-center space-x-2 p-2 rounded-xl border-2 border-amber-500 bg-amber-100/90 font-black cursor-pointer">
+              <input type="radio" name="adjustModeRadio" value="set_both" checked onchange="handleAdjustModeChange(this.value)">
+              <span>🎯 同步設定可用與總累計蘋果</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl border border-amber-300 bg-white cursor-pointer">
+              <input type="radio" name="adjustModeRadio" value="adjust" onchange="handleAdjustModeChange(this.value)">
+              <span>➕ 增減可用蘋果 (加/扣點)</span>
             </label>
             <label class="flex items-center space-x-2 p-2 rounded-xl border border-amber-300 bg-white cursor-pointer">
               <input type="radio" name="adjustModeRadio" value="set_points" onchange="handleAdjustModeChange(this.value)">
-              <span>🎯 指定可用蘋果值</span>
+              <span>🍎 僅指定可用蘋果存量</span>
             </label>
             <label class="flex items-center space-x-2 p-2 rounded-xl border border-amber-300 bg-white cursor-pointer">
               <input type="radio" name="adjustModeRadio" value="set_lifetime" onchange="handleAdjustModeChange(this.value)">
-              <span>🌟 指定生涯累積總額</span>
+              <span>🌟 僅指定總累計獲得 (萌寵經驗)</span>
             </label>
             <label class="flex items-center space-x-2 p-2 rounded-xl border border-amber-300 bg-white cursor-pointer">
               <input type="radio" name="adjustModeRadio" value="reset_points" onchange="handleAdjustModeChange(this.value)">
-              <span>🔄 僅重置可用蘋果(歸零)</span>
-            </label>
-            <label class="flex items-center space-x-2 p-2 rounded-xl border border-amber-300 bg-white cursor-pointer">
-              <input type="radio" name="adjustModeRadio" value="reset_lifetime" onchange="handleAdjustModeChange(this.value)">
-              <span>🔄 僅重置生涯總額(歸零)</span>
+              <span>🔄 僅重置可用蘋果 (歸零 0 顆)</span>
             </label>
             <label class="flex items-center space-x-2 p-2 rounded-xl border border-rose-300 bg-rose-50 text-rose-900 cursor-pointer">
               <input type="radio" name="adjustModeRadio" value="reset_both" onchange="handleAdjustModeChange(this.value)">
-              <span>⚠️ 兩者全部歸零重置</span>
+              <span>⚠️ 兩者全部徹底歸零重置</span>
             </label>
           </div>
         </div>
 
         <!-- 數值輸入區 -->
         <div id="adjustValueInputGroup" class="space-y-1.5">
-          <label id="adjustValueLabel" class="font-black text-amber-950 block">增減點數 (正數加點、負數扣點)：</label>
-          <input type="number" id="adjustPointsInput" value="5" class="w-full text-xl font-digital font-black px-3 py-1.5 border-2 border-amber-400 rounded-xl bg-white text-center">
+          <label id="adjustValueLabel" class="font-black text-amber-950 block">🎯 直接設定可用蘋果與總累計獲得為此數值 (每位所選大臣設為此數)：</label>
+          <input type="number" id="adjustPointsInput" value="100" class="w-full text-xl font-digital font-black px-3 py-1.5 border-2 border-amber-400 rounded-xl bg-white text-center">
           <label id="adjustSyncLifetimeCheckLabel" class="flex items-center space-x-2 text-xs font-bold text-amber-900 mt-1 cursor-pointer">
             <input type="checkbox" id="adjustSyncLifetimeCheck" checked class="w-4 h-4 rounded text-amber-600">
-            <span>加點時同步增加「生涯累積總額」(守護動物金化進化)</span>
+            <span id="adjustSyncLifetimeCheckText">✅ 同步設定「總累計獲得蘋果」(守護萌寵進化經驗值)</span>
           </label>
         </div>
 
