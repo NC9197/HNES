@@ -361,8 +361,56 @@ class KingdomStore {
 
     const rTime = Number(remote.lastModified) || 0;
     const lTime = Number(local.lastModified) || 0;
+    const isRemoteNewer = rTime >= lTime;
 
-    // 2. 學生名冊與點數智能雙向融合 (全方位支援手機/平板/電腦雙向同步、新增大臣如28號、點數自由調度與生涯總額歸零)
+    // 2. 獎勵卡兌換紀錄智能雙向融合 (撤銷 revoked 與使用 used 狀態具絕對最高不可逆權限，絕不倒退回 pending！)
+    const redMap = new Map();
+    const allRedemptions = [
+      ...(remote.rewardRedemptions || []),
+      ...(local.rewardRedemptions || [])
+    ];
+    allRedemptions.forEach(r => {
+      if (!r || !r.id) return;
+      const key = String(r.id);
+      if (!redMap.has(key)) {
+        redMap.set(key, { ...r });
+      } else {
+        const existing = redMap.get(key);
+        let finalStatus = 'pending';
+        let revokedAt = r.revokedAt || existing.revokedAt;
+        let usedAt = r.usedAt || existing.usedAt;
+
+        // 規則：revoked > used > pending (跨裝置只要有一端撤銷或核銷，即鎖定為最高不可逆狀態)
+        if (r.status === 'revoked' || existing.status === 'revoked') {
+          finalStatus = 'revoked';
+          if (!revokedAt) revokedAt = getTodayDateString() + ' ' + new Date().toTimeString().slice(0, 5);
+        } else if (r.status === 'used' || existing.status === 'used') {
+          finalStatus = 'used';
+          if (!usedAt) usedAt = getTodayDateString() + ' ' + new Date().toTimeString().slice(0, 5);
+        } else if (r.status === 'pending' || existing.status === 'pending') {
+          finalStatus = 'pending';
+        }
+
+        redMap.set(key, {
+          ...existing,
+          ...r,
+          status: finalStatus,
+          revokedAt: revokedAt,
+          usedAt: usedAt
+        });
+      }
+    });
+    const mergedRedemptions = Array.from(redMap.values());
+
+    // 建立所有已核銷 (used) 與已撤銷 (revoked) 卡牌的 ID 集合，供卡牌抽屜過濾清洗
+    const inactiveCardIds = new Set();
+    mergedRedemptions.forEach(r => {
+      if (r && (r.status === 'used' || r.status === 'revoked') && r.id) {
+        inactiveCardIds.add(String(r.id));
+      }
+    });
+
+    // 3. 學生名冊與點數智能雙向融合 (全方位支援手機/平板/電腦雙向同步、新增大臣如28號、點數自由調度與卡牌抽屜乾淨同步)
     const allStudentsMap = new Map();
 
     // 先填入本地現有名冊
@@ -379,8 +427,14 @@ class KingdomStore {
       const localSt = allStudentsMap.get(key);
 
       if (!localSt) {
-        // 本地沒有的全新大臣（例如手機新增的第28號大臣）：直接完整加入！
-        allStudentsMap.set(key, JSON.parse(JSON.stringify(remoteSt)));
+        // 本地沒有的全新大臣（例如手機新增的第28號大臣）：直接完整加入並清洗已撤銷卡牌
+        const newSt = JSON.parse(JSON.stringify(remoteSt));
+        if (Array.isArray(newSt.redeemedCards)) {
+          newSt.redeemedCards = newSt.redeemedCards.filter(c => c && c.id && !inactiveCardIds.has(String(c.id)));
+        } else {
+          newSt.redeemedCards = [];
+        }
+        allStudentsMap.set(key, newSt);
       } else {
         // 雙方皆有的大臣：優先採納 remote 的點數、生涯累積總額與萌寵設定
         const finalPoints = (remoteSt.points !== undefined && remoteSt.points !== null) ? Number(remoteSt.points) : (Number(localSt.points) || 0);
@@ -391,6 +445,17 @@ class KingdomStore {
         const finalPets = (remoteSt.pets && remoteSt.pets.length > 0) ? remoteSt.pets : (localSt.pets || [{ type: remoteSt.animalType || localSt.animalType || 'dog' }]);
         const finalSecondPet = remoteSt.secondPetType !== undefined ? remoteSt.secondPetType : localSt.secondPetType;
         const finalSecondExp = (remoteSt.secondPetExp !== undefined && remoteSt.secondPetExp !== null) ? Number(remoteSt.secondPetExp) : (Number(localSt.secondPetExp) || 0);
+
+        // 卡牌抽屜清洗：採用較新端抽屜或本地抽屜，並徹底移除已核銷與已撤銷卡牌
+        let baseCards = [];
+        if (isRemoteNewer && Array.isArray(remoteSt.redeemedCards)) {
+          baseCards = remoteSt.redeemedCards;
+        } else if (Array.isArray(localSt.redeemedCards)) {
+          baseCards = localSt.redeemedCards;
+        } else if (Array.isArray(remoteSt.redeemedCards)) {
+          baseCards = remoteSt.redeemedCards;
+        }
+        const cleanCards = baseCards.filter(c => c && c.id && !inactiveCardIds.has(String(c.id)));
 
         allStudentsMap.set(key, {
           ...localSt,
@@ -408,14 +473,15 @@ class KingdomStore {
           petType: remoteSt.petType || localSt.petType || 'dog',
           secondPetType: finalSecondPet,
           secondPetExp: finalSecondExp,
-          pets: finalPets
+          pets: finalPets,
+          redeemedCards: cleanCards
         });
       }
     });
 
     const mergedStudents = Array.from(allStudentsMap.values()).sort((a, b) => (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0));
 
-    // 3. 簽到表按日融合 (多裝置打卡自動合併，不遺漏任何學生)
+    // 4. 簽到表按日融合 (多裝置打卡自動合併，不遺漏任何學生)
     const mergedAttendance = { ...(local.attendance || {}) };
     if (remote.attendance && typeof remote.attendance === 'object') {
       Object.keys(remote.attendance).forEach(dateKey => {
@@ -437,7 +503,7 @@ class KingdomStore {
       });
     }
 
-    // 4. 作業按 ID 融合
+    // 5. 作業按 ID 融合
     const hwMap = new Map();
     (local.homework || []).forEach(hw => { if (hw && hw.id) hwMap.set(hw.id, JSON.parse(JSON.stringify(hw))); });
     (remote.homework || []).forEach(rHw => {
@@ -452,7 +518,7 @@ class KingdomStore {
     });
     const mergedHomework = Array.from(hwMap.values());
 
-    // 5. 聯絡簿融合
+    // 6. 聯絡簿融合
     let mergedContactBook = remote.contactBook;
     if (local.contactBook && remote.contactBook) {
       const localTime = local.contactBook.updatedAt || 0;
@@ -464,10 +530,10 @@ class KingdomStore {
       mergedContactBook = local.contactBook;
     }
 
-    // 6. 聯絡簿歷史紀錄
+    // 7. 聯絡簿歷史紀錄
     const mergedCbHistory = { ...(remote.contactBookHistory || {}), ...(local.contactBookHistory || {}) };
 
-    // 7. 歷程日誌融合
+    // 8. 歷程日誌融合
     const logMap = new Map();
     (local.pointLogs || []).forEach(l => { if (l && l.id) logMap.set(l.id, l); });
     (remote.pointLogs || []).forEach(l => { if (l && l.id) logMap.set(l.id, l); });
@@ -478,7 +544,7 @@ class KingdomStore {
     const mergedSeatingLayout = (remoteTime >= localTime) ? (remote.seatingLayout || local.seatingLayout) : (local.seatingLayout || remote.seatingLayout);
     const mergedSeatingChart = (remoteTime >= localTime) ? (remote.seatingChart || local.seatingChart) : (local.seatingChart || remote.seatingChart);
 
-    // 8. 皇室公佈欄公告融合 (保留導師真實發布之公告，不被隨意覆蓋)
+    // 9. 皇室公佈欄公告融合 (保留導師真實發布之公告，不被隨意覆蓋)
     let mergedAnnouncements = local.announcements || remote.announcements || [];
     if (Array.isArray(local.announcements) && Array.isArray(remote.announcements)) {
       const annMap = new Map();
@@ -487,13 +553,6 @@ class KingdomStore {
       mergedAnnouncements = Array.from(annMap.values());
     }
 
-    // 9. 獎勵卡兌換紀錄融合
-    const redMap = new Map();
-    (remote.rewardRedemptions || []).forEach(r => { if (r && r.id) redMap.set(r.id, r); });
-    (local.rewardRedemptions || []).forEach(r => { if (r && r.id) redMap.set(r.id, r); });
-    const mergedRedemptions = Array.from(redMap.values());
-
-    const isRemoteNewer = remoteTime >= localTime;
     const finalLastModified = Math.max(localTime, remoteTime, Date.now());
 
     const mergedData = {
@@ -512,6 +571,13 @@ class KingdomStore {
       seatingChart: mergedSeatingChart,
       lastModified: finalLastModified
     };
+
+    // 在輸出前，以校準後的 mergedRedemptions 對所有大臣執行抽屜雙向核驗
+    if (Array.isArray(mergedData.students)) {
+      mergedData.students.forEach(st => {
+        this.syncStudentCards(st, mergedData);
+      });
+    }
 
     return this.normalizeData(mergedData);
   }
@@ -1203,18 +1269,25 @@ class KingdomStore {
     }
     const data = dataObj || this.data;
     if (data && Array.isArray(data.rewardRedemptions)) {
-      // 1. 如果兌換紀錄已被核銷 (used) 或已被撤銷 (revoked)，確保不留在抽屜中
-      const inactiveIds = new Set(data.rewardRedemptions.filter(r => r.status === 'used' || r.status === 'revoked').map(r => r.id));
+      // 1. 如果兌換紀錄已被核銷 (used) 或已被撤銷 (revoked)，確保不留在抽屜中 (以 String 強制比對防型別失真)
+      const inactiveIds = new Set(
+        data.rewardRedemptions
+          .filter(r => r && (r.status === 'used' || r.status === 'revoked') && r.id)
+          .map(r => String(r.id))
+      );
       if (inactiveIds.size > 0) {
-        student.redeemedCards = student.redeemedCards.filter(c => !inactiveIds.has(c.id));
+        student.redeemedCards = student.redeemedCards.filter(c => c && c.id && !inactiveIds.has(String(c.id)));
       }
 
       // 2. 將未核銷 (pending) 且未撤銷之卡牌注入抽屜
       data.rewardRedemptions.forEach(r => {
-        if ((r.studentId === student.id || r.seatNo === student.seatNo) && r.status !== 'used' && r.status !== 'revoked') {
-          const exists = student.redeemedCards.some(c => c.id === r.id);
+        if (!r || !r.id) return;
+        const matchesStudent = (r.studentId !== undefined && (String(r.studentId) === String(student.id) || String(r.studentId) === String(student.seatNo))) ||
+                               (r.seatNo !== undefined && String(r.seatNo) === String(student.seatNo));
+        if (matchesStudent && r.status !== 'used' && r.status !== 'revoked') {
+          const exists = student.redeemedCards.some(c => c && String(c.id) === String(r.id));
           if (!exists) {
-            const cardDef = (data.rewardCards || []).find(cd => cd.id === r.cardId);
+            const cardDef = (data.rewardCards || []).find(cd => cd && String(cd.id) === String(r.cardId));
             student.redeemedCards.push({
               id: r.id,
               cardId: r.cardId,
@@ -2109,7 +2182,7 @@ class KingdomStore {
     if (!Array.isArray(student.redeemedCards) || student.redeemedCards.length === 0) {
       return { success: false, message: "該大臣卡牌抽屜中無可用卡牌" };
     }
-    const idx = student.redeemedCards.findIndex(c => c.id == instanceId || c.cardId == instanceId);
+    const idx = student.redeemedCards.findIndex(c => c && (String(c.id) === String(instanceId) || String(c.cardId) === String(instanceId)));
     if (idx === -1) {
       return { success: false, message: "卡牌抽屜中查無此卡牌" };
     }
@@ -2117,7 +2190,11 @@ class KingdomStore {
 
     // 同步更新 rewardRedemptions 紀錄狀態為 used
     if (Array.isArray(this.data.rewardRedemptions)) {
-      const rec = this.data.rewardRedemptions.find(r => r.id == usedCard.id || (r.studentId == student.id && r.cardId == usedCard.cardId && r.status !== 'used'));
+      const rec = this.data.rewardRedemptions.find(r => 
+        (usedCard && usedCard.id && String(r.id) === String(usedCard.id)) ||
+        (r.studentId == student.id && r.cardId == usedCard.cardId && r.status !== 'used') ||
+        (r.seatNo == student.seatNo && r.cardId == usedCard.cardId && r.status !== 'used')
+      );
       if (rec) {
         rec.status = 'used';
         rec.usedAt = getTodayDateString() + ' ' + new Date().toTimeString().slice(0, 5);
@@ -2134,6 +2211,7 @@ class KingdomStore {
       time: new Date().toTimeString().slice(0, 5)
     });
 
+    this.syncStudentCards(student);
     this.save();
     return {
       success: true,
@@ -2146,9 +2224,15 @@ class KingdomStore {
 
   toggleRedemptionStatus(redemptionId) {
     if (!this.data.rewardRedemptions) return;
-    const rec = this.data.rewardRedemptions.find(r => r.id === redemptionId);
+    const rec = this.data.rewardRedemptions.find(r => r && String(r.id) === String(redemptionId));
     if (rec) {
       rec.status = rec.status === 'used' ? 'pending' : 'used';
+      if (rec.status === 'used') {
+        rec.usedAt = getTodayDateString() + ' ' + new Date().toTimeString().slice(0, 5);
+      } else {
+        delete rec.usedAt;
+      }
+      this.syncAllStudentsCards();
       this.save();
     }
   }
@@ -2164,13 +2248,13 @@ class KingdomStore {
     let redRecord = null;
     if (Array.isArray(this.data.rewardRedemptions)) {
       if (instanceId) {
-        redRecord = this.data.rewardRedemptions.find(r => r.id === instanceId);
+        redRecord = this.data.rewardRedemptions.find(r => r && String(r.id) === String(instanceId));
       }
       if (!redRecord && student && (cardId || cardTitle)) {
         redRecord = this.data.rewardRedemptions.find(r => 
           (r.studentId == student.id || r.seatNo == student.seatNo) && 
           r.status !== 'revoked' &&
-          (cardId ? r.cardId == cardId : true) &&
+          (cardId ? (String(r.cardId) === String(cardId) || String(r.id) === String(cardId)) : true) &&
           (cardTitle ? r.cardTitle === cardTitle : true)
         );
       }
@@ -2195,21 +2279,22 @@ class KingdomStore {
       if (Array.isArray(student.redeemedCards) && student.redeemedCards.length > 0) {
         let idx = -1;
         if (instanceId) {
-          idx = student.redeemedCards.findIndex(c => c.id === instanceId);
+          idx = student.redeemedCards.findIndex(c => c && String(c.id) === String(instanceId));
         }
         if (idx === -1 && redRecord) {
-          idx = student.redeemedCards.findIndex(c => c.id === redRecord.id);
+          idx = student.redeemedCards.findIndex(c => c && String(c.id) === String(redRecord.id));
         }
         if (idx === -1 && cardId) {
-          idx = student.redeemedCards.findIndex(c => c.cardId === cardId);
+          idx = student.redeemedCards.findIndex(c => c && (String(c.cardId) === String(cardId) || String(c.id) === String(cardId)));
         }
         if (idx === -1 && cardTitle) {
-          idx = student.redeemedCards.findIndex(c => c.title === cardTitle);
+          idx = student.redeemedCards.findIndex(c => c && c.title === cardTitle);
         }
         if (idx !== -1) {
           removedCard = student.redeemedCards.splice(idx, 1)[0];
         }
       }
+      this.syncStudentCards(student);
     }
 
     const title = (removedCard && removedCard.title) || (redRecord && redRecord.cardTitle) || cardTitle || '特權卡';
@@ -3765,10 +3850,15 @@ class KingdomCloudSync {
           this.store.data = this.store.mergeRemoteData(normalizedRemote);
           this.store.saveInternal({ updateTimestamp: false, triggerPush: false });
           if (typeof window !== 'undefined') {
+            if (this.store && typeof this.store.syncAllStudentsCards === 'function') {
+              this.store.syncAllStudentsCards();
+            }
             if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
               window.KingdomUI.refreshCurrentView();
             }
             if (typeof renderPointsView === 'function') renderPointsView();
+            if (typeof renderRewardRedemptions === 'function') renderRewardRedemptions();
+            if (typeof renderPointsProjection === 'function') renderPointsProjection();
             if (typeof renderRosterView === 'function') renderRosterView();
             if (typeof renderMorningBoard === 'function') renderMorningBoard();
           }
@@ -3872,6 +3962,31 @@ class KingdomCloudSync {
         if (rSt.name !== lSt.name || rSt.title !== lSt.title || rSt.birthday !== lSt.birthday) {
           return true;
         }
+      }
+    }
+
+    // 4.5. 特權獎勵卡兌換與核銷/撤銷比對 (支援多裝置使用卡牌、撤銷換卡即時秒級連動)
+    const rRed = remote.rewardRedemptions || [];
+    const lRed = local.rewardRedemptions || [];
+    if (rRed.length !== lRed.length) return true;
+    const lRedMap = new Map();
+    lRed.forEach(r => { if (r && r.id) lRedMap.set(String(r.id), r); });
+    for (let i = 0; i < rRed.length; i++) {
+      const rItem = rRed[i];
+      if (!rItem || !rItem.id) continue;
+      const lItem = lRedMap.get(String(rItem.id));
+      if (!lItem) return true;
+      if (rItem.status !== lItem.status) return true;
+    }
+
+    // 比對大臣個人卡牌抽屜數量是否有變動
+    for (let i = 0; i < remote.students.length; i++) {
+      const rSt = remote.students[i];
+      const lSt = local.students.find(s => s.seatNo === rSt.seatNo || s.id === rSt.id);
+      if (lSt) {
+        const rCards = Array.isArray(rSt.redeemedCards) ? rSt.redeemedCards.length : -1;
+        const lCards = Array.isArray(lSt.redeemedCards) ? lSt.redeemedCards.length : -1;
+        if (rCards !== -1 && lCards !== -1 && rCards !== lCards) return true;
       }
     }
 

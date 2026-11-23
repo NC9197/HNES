@@ -4685,7 +4685,10 @@ function toggleRedemptionHistory() {
 
 function toggleRedemptionStatus(redemptionId) {
   window.KingdomApp.store.toggleRedemptionStatus(redemptionId);
+  window.KingdomApp.store.syncAllStudentsCards();
   renderRewardRedemptions();
+  renderPointsView();
+  if (typeof renderPointsProjection === 'function') renderPointsProjection();
 }
 
 function openRewardCardModal(cardId = null) {
@@ -4968,7 +4971,9 @@ function confirmUseStudentCard(studentId, instanceId, cardTitle) {
       window.KingdomApp.triggerConfetti();
     }
     showToast(`✨ 【${result.studentName}】成功使用了【${result.cardTitle}】！已自卡牌抽屜扣除。`, "🎉");
+    window.KingdomApp.store.syncAllStudentsCards();
     renderPointsView();
+    renderRewardRedemptions();
     renderPointsProjection();
   } else {
     alert((result && result.message) || "使用卡牌失敗");
@@ -4994,6 +4999,7 @@ function confirmRevokeStudentCard(studentId, instanceId, cardTitle, cardCost = 0
       window.KingdomApp.sound.playCoin();
     }
     showToast(`↩️ ${result.message}`, "🍎");
+    window.KingdomApp.store.syncAllStudentsCards();
     renderPointsView();
     renderRewardRedemptions();
     renderRosterView();
@@ -5026,6 +5032,7 @@ function confirmRevokeRedemptionRecord(redemptionId, studentId, cardTitle, cost 
       window.KingdomApp.sound.playCoin();
     }
     showToast(`↩️ ${result.message}`, "🍎");
+    window.KingdomApp.store.syncAllStudentsCards();
     renderRewardRedemptions();
     renderPointsView();
     renderPointsProjection();

@@ -129,24 +129,36 @@ function mergeDatasets(base, incoming) {
   var redMap = {};
   var bRed = base.rewardRedemptions || [];
   for (var br = 0; br < bRed.length; br++) {
-    if (bRed[br] && bRed[br].id) redMap[bRed[br].id] = bRed[br];
+    if (bRed[br] && bRed[br].id) redMap[String(bRed[br].id)] = bRed[br];
   }
   var iRed = incoming.rewardRedemptions || [];
   for (var ir = 0; ir < iRed.length; ir++) {
     var rItem = iRed[ir];
     if (!rItem || !rItem.id) continue;
-    if (!redMap[rItem.id]) {
-      redMap[rItem.id] = rItem;
+    var rid = String(rItem.id);
+    if (!redMap[rid]) {
+      redMap[rid] = rItem;
     } else {
-      var existRec = redMap[rItem.id];
+      var existRec = redMap[rid];
+      var finalStatus = 'pending';
+      var revokedAt = rItem.revokedAt || existRec.revokedAt;
+      var usedAt = rItem.usedAt || existRec.usedAt;
       if (rItem.status === 'revoked' || existRec.status === 'revoked') {
-        rItem.status = 'revoked';
-        rItem.revokedAt = rItem.revokedAt || existRec.revokedAt || new Date().toISOString();
+        finalStatus = 'revoked';
+        if (!revokedAt) revokedAt = new Date().toISOString();
       } else if (rItem.status === 'used' || existRec.status === 'used') {
-        rItem.status = 'used';
-        rItem.usedAt = rItem.usedAt || existRec.usedAt;
+        finalStatus = 'used';
+        if (!usedAt) usedAt = new Date().toISOString();
+      } else if (rItem.status === 'pending' || existRec.status === 'pending') {
+        finalStatus = 'pending';
       }
-      redMap[rItem.id] = rItem;
+      var mergedItem = {};
+      for (var k in existRec) { mergedItem[k] = existRec[k]; }
+      for (var k2 in rItem) { mergedItem[k2] = rItem[k2]; }
+      mergedItem.status = finalStatus;
+      if (revokedAt) mergedItem.revokedAt = revokedAt;
+      if (usedAt) mergedItem.usedAt = usedAt;
+      redMap[rid] = mergedItem;
     }
   }
   var mergedRedemptions = [];
@@ -159,7 +171,7 @@ function mergeDatasets(base, incoming) {
   for (var rIdx = 0; rIdx < mergedRedemptions.length; rIdx++) {
     var stat = mergedRedemptions[rIdx].status;
     if (stat === 'used' || stat === 'revoked') {
-      inactiveCardIds[mergedRedemptions[rIdx].id] = true;
+      inactiveCardIds[String(mergedRedemptions[rIdx].id)] = true;
     }
   }
 
@@ -173,7 +185,32 @@ function mergeDatasets(base, incoming) {
         break;
       }
     }
-    if (!iSt) return bSt;
+    if (!iSt) {
+      var bCards = (bSt.redeemedCards && Array.isArray(bSt.redeemedCards)) ? bSt.redeemedCards : [];
+      var cleanBCards = [];
+      for (var bc = 0; bc < bCards.length; bc++) {
+        if (bCards[bc] && bCards[bc].id && !inactiveCardIds[String(bCards[bc].id)]) {
+          cleanBCards.push(bCards[bc]);
+        }
+      }
+      return {
+        id: bSt.id,
+        seatNo: bSt.seatNo,
+        name: bSt.name,
+        gender: bSt.gender,
+        title: bSt.title,
+        birthday: bSt.birthday,
+        points: bSt.points || 0,
+        lifetimePoints: bSt.lifetimePoints || 0,
+        petExp: bSt.lifetimePoints || 0,
+        animalType: bSt.animalType || 'dog',
+        petType: bSt.petType || 'dog',
+        secondPetType: bSt.secondPetType || null,
+        secondPetExp: bSt.secondPetExp || 0,
+        pets: bSt.pets || [{ type: bSt.animalType || 'dog' }],
+        redeemedCards: cleanBCards
+      };
+    }
 
     // 優先採納最新推送裝置的設定值 (支援加點、扣點、重設、歸零)
     var finalPoints = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
@@ -191,7 +228,7 @@ function mergeDatasets(base, incoming) {
       : ((bSt.redeemedCards && Array.isArray(bSt.redeemedCards)) ? bSt.redeemedCards : []);
     var cleanCards = [];
     for (var c = 0; c < rawCards.length; c++) {
-      if (rawCards[c] && rawCards[c].id && !inactiveCardIds[rawCards[c].id]) {
+      if (rawCards[c] && rawCards[c].id && !inactiveCardIds[String(rawCards[c].id)]) {
         cleanCards.push(rawCards[c]);
       }
     }
@@ -229,6 +266,13 @@ function mergeDatasets(base, incoming) {
     }
     if (!exists) {
       if (!cand.redeemedCards) cand.redeemedCards = [];
+      var cleanCandCards = [];
+      for (var cc = 0; cc < cand.redeemedCards.length; cc++) {
+        if (cand.redeemedCards[cc] && cand.redeemedCards[cc].id && !inactiveCardIds[String(cand.redeemedCards[cc].id)]) {
+          cleanCandCards.push(cand.redeemedCards[cc]);
+        }
+      }
+      cand.redeemedCards = cleanCandCards;
       mergedStudents.push(cand);
     }
   }

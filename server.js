@@ -220,10 +220,53 @@ function mergeDatasets(base, incoming) {
     ? base.queenPassword
     : (incoming.queenPassword || 'queen');
 
-  // 2. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與點數自由調度)
+  // 1.5. 獎勵卡兌換紀錄智能雙向融合 (撤銷 revoked 與使用 used 狀態具絕對最高不可逆權限，絕不倒退回 pending！)
+  const redMap = new Map();
+  const allRedemptions = [...(base.rewardRedemptions || []), ...(incoming.rewardRedemptions || [])];
+  allRedemptions.forEach(r => {
+    if (!r || !r.id) return;
+    const rid = String(r.id);
+    if (!redMap.has(rid)) {
+      redMap.set(rid, { ...r });
+    } else {
+      const existing = redMap.get(rid);
+      let finalStatus = 'pending';
+      let revokedAt = r.revokedAt || existing.revokedAt;
+      let usedAt = r.usedAt || existing.usedAt;
+      if (r.status === 'revoked' || existing.status === 'revoked') {
+        finalStatus = 'revoked';
+        if (!revokedAt) revokedAt = new Date().toISOString();
+      } else if (r.status === 'used' || existing.status === 'used') {
+        finalStatus = 'used';
+        if (!usedAt) usedAt = new Date().toISOString();
+      } else if (r.status === 'pending' || existing.status === 'pending') {
+        finalStatus = 'pending';
+      }
+      redMap.set(rid, {
+        ...existing,
+        ...r,
+        status: finalStatus,
+        revokedAt: revokedAt,
+        usedAt: usedAt
+      });
+    }
+  });
+  const mergedRedemptions = Array.from(redMap.values());
+
+  const inactiveCardIds = new Set();
+  mergedRedemptions.forEach(r => {
+    if (r && (r.status === 'used' || r.status === 'revoked') && r.id) {
+      inactiveCardIds.add(String(r.id));
+    }
+  });
+
+  // 2. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與卡牌抽屜乾淨同步)
   const mergedStudents = (base.students || []).map(bSt => {
     const iSt = (incoming.students || []).find(s => s.seatNo === bSt.seatNo || s.id === bSt.id);
-    if (!iSt) return bSt;
+    if (!iSt) {
+      const bCards = (Array.isArray(bSt.redeemedCards) ? bSt.redeemedCards : []).filter(c => c && c.id && !inactiveCardIds.has(String(c.id)));
+      return { ...bSt, redeemedCards: bCards };
+    }
 
     // 優先採納最新推送裝置的設定值 (支援加點、扣點、重設、歸零)
     const finalPoints = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
@@ -234,6 +277,10 @@ function mergeDatasets(base, incoming) {
     const finalPets = (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets;
     const finalSecondPet = iSt.secondPetType !== undefined ? iSt.secondPetType : bSt.secondPetType;
     const finalSecondExp = (iSt.secondPetExp !== undefined && iSt.secondPetExp !== null) ? Number(iSt.secondPetExp) : (Number(bSt.secondPetExp) || 0);
+
+    // 卡牌抽屜清洗過濾
+    let rawCards = Array.isArray(iSt.redeemedCards) ? iSt.redeemedCards : (Array.isArray(bSt.redeemedCards) ? bSt.redeemedCards : []);
+    const cleanCards = rawCards.filter(c => c && c.id && !inactiveCardIds.has(String(c.id)));
 
     return {
       ...bSt,
@@ -246,7 +293,8 @@ function mergeDatasets(base, incoming) {
       petType: iSt.petType || bSt.petType || 'dog',
       secondPetType: finalSecondPet,
       secondPetExp: finalSecondExp,
-      pets: finalPets
+      pets: finalPets,
+      redeemedCards: cleanCards
     };
   });
 
@@ -255,7 +303,9 @@ function mergeDatasets(base, incoming) {
     if (!iSt) return;
     const exists = mergedStudents.some(s => s.seatNo === iSt.seatNo || s.id === iSt.id);
     if (!exists) {
-      mergedStudents.push({ ...iSt });
+      const cand = { ...iSt };
+      cand.redeemedCards = (Array.isArray(cand.redeemedCards) ? cand.redeemedCards : []).filter(c => c && c.id && !inactiveCardIds.has(String(c.id)));
+      mergedStudents.push(cand);
     }
   });
   mergedStudents.sort((a, b) => (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0));
@@ -322,6 +372,7 @@ function mergeDatasets(base, incoming) {
     contactBook: mergedContactBook,
     contactBookHistory: { ...(base.contactBookHistory || {}), ...(incoming.contactBookHistory || {}) },
     pointLogs: mergedPointLogs,
+    rewardRedemptions: mergedRedemptions,
     lastModified: Date.now(),
     realRosterV20261119: true
   };
