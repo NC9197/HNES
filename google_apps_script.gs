@@ -347,36 +347,43 @@ function mergeDatasets(base, incoming) {
 }
 
 // -------------------------------------------------------------
-// 資料分塊儲存核心 (突破單一屬性 9KB 限制，支援多達 500KB 班級資料)
+// 資料分塊儲存核心 (突破單一屬性 9KB 限制，支援多達 500KB 班級資料，雙向相容雙鍵名)
 // -------------------------------------------------------------
 function saveData(prop, account, str) {
   if (!str) return;
   var CHUNK_SIZE = 8000;
   var totalChunks = Math.ceil(str.length / CHUNK_SIZE);
-  var oldTotal = parseInt(prop.getProperty('chunk_cnt_' + account) || '0', 10);
+  var oldTotal1 = parseInt(prop.getProperty('chunk_cnt_' + account) || '0', 10);
+  var oldTotal2 = parseInt(prop.getProperty('data_sync_chunk_count_' + account) || '0', 10);
+  var oldTotal = Math.max(oldTotal1, oldTotal2);
 
   // 清除舊的多餘分塊
   for (var i = totalChunks; i < oldTotal; i++) {
     prop.deleteProperty('data_' + account + '_' + i);
+    prop.deleteProperty('data_sync_chunk_' + account + '_' + i);
   }
 
-  // 寫入新分塊
+  // 寫入新分塊 (雙向鍵名同步寫入，確保所有版本拉取皆能完美解鎖)
   for (var i = 0; i < totalChunks; i++) {
-    prop.setProperty('data_' + account + '_' + i, str.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+    var chunkStr = str.substr(i * CHUNK_SIZE, CHUNK_SIZE);
+    prop.setProperty('data_' + account + '_' + i, chunkStr);
+    prop.setProperty('data_sync_chunk_' + account + '_' + i, chunkStr);
   }
 
   prop.setProperty('chunk_cnt_' + account, String(totalChunks));
+  prop.setProperty('data_sync_chunk_count_' + account, String(totalChunks));
   prop.setProperty('time_' + account, String(new Date().getTime()));
 }
 
 function loadData(prop, account) {
-  var count = parseInt(prop.getProperty('chunk_cnt_' + account) || '0', 10);
+  var count = parseInt(prop.getProperty('chunk_cnt_' + account) || prop.getProperty('data_sync_chunk_count_' + account) || '0', 10);
   if (count <= 0) {
-    return prop.getProperty('data_' + account) || '{}';
+    return prop.getProperty('data_' + account) || prop.getProperty('data_sync_' + account) || '{}';
   }
   var parts = [];
   for (var i = 0; i < count; i++) {
-    parts.push(prop.getProperty('data_' + account + '_' + i) || '');
+    var chunk = prop.getProperty('data_' + account + '_' + i) || prop.getProperty('data_sync_chunk_' + account + '_' + i) || '';
+    parts.push(chunk);
   }
   return parts.join('');
 }

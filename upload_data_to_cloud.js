@@ -94,29 +94,39 @@ async function main() {
   console.log("==================================================================");
 }
 
-function postJson(targetUrl, data) {
+function postJson(targetUrl, data, redirectCount = 0, method = 'POST') {
   return new Promise((resolve, reject) => {
+    if (redirectCount > 5) return reject(new Error('Too many redirects (> 5)'));
     const urlObj = new URL(targetUrl);
-    const postData = JSON.stringify(data);
     const isHttps = urlObj.protocol === 'https:';
     const client = isHttps ? https : http;
+    const isPost = method === 'POST' && data !== null;
+    const postData = isPost ? (typeof data === 'string' ? data : JSON.stringify(data)) : '';
 
     const options = {
       hostname: urlObj.hostname,
       port: urlObj.port || (isHttps ? 443 : 80),
       path: urlObj.pathname + urlObj.search,
-      method: 'POST',
+      method: method,
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      }
+        'User-Agent': 'XiningKingdom-CloudUploader/2026',
+        'Accept': 'application/json, text/plain, */*'
+      },
+      timeout: 15000
     };
 
+    if (isPost) {
+      options.headers['Content-Type'] = 'application/json; charset=utf-8';
+      options.headers['Content-Length'] = Buffer.byteLength(postData);
+    }
+
     const req = client.request(options, (res) => {
-      // 處理 302 重定向 (Google Apps Script 特性)
+      // 處理 301, 302, 303, 307 重定向 (Google Apps Script 特性：POST 執行後 302 導向結果頁)
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        postJson(res.headers.location, data).then(resolve).catch(reject);
-        return;
+        const nextUrl = new URL(res.headers.location, targetUrl).toString();
+        const nextMethod = (res.statusCode === 307 || res.statusCode === 308) ? method : 'GET';
+        const nextData = nextMethod === 'POST' ? data : null;
+        return postJson(nextUrl, nextData, redirectCount + 1, nextMethod).then(resolve).catch(reject);
       }
 
       let body = '';
@@ -130,8 +140,12 @@ function postJson(targetUrl, data) {
       });
     });
 
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('連線 Google Apps Script 逾時 (15 秒)'));
+    });
     req.on('error', reject);
-    req.write(postData);
+    if (isPost) req.write(postData);
     req.end();
   });
 }

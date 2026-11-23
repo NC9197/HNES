@@ -3191,11 +3191,14 @@ class KingdomCloudSync {
     this.pushTimeout = null;
     this.pollInterval = null;
     this.hasCompletedInitialPull = false;
+    this.primaryLanIp = '';
+    this.lanFailCount = 0;
+    this.lanTemporarilyDisabled = false;
 
     if (typeof window !== 'undefined') {
       this.checkUrlParams();
 
-      // 1. 視窗焦點與分頁切換 (聚焦立即拉取最新)
+      // 1. 視窗焦點與分頁切換 (聚焦立即拉取最新，電信網路 4G/5G 秒級喚醒對齊)
       window.addEventListener('focus', () => {
         if (this.config.autoPull && this.config.enabled) {
           this.pull({ silent: true });
@@ -3205,10 +3208,10 @@ class KingdomCloudSync {
       // 2. 手機/平板休眠防護與喚醒對齊 (visibilitychange)
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-          // 關鍵修復：螢幕關閉或切換 APP 瞬間，立即衝刺推送本地所有變動，嚴防休眠漏推！
+          // 螢幕關閉或切換 APP 瞬間，立即衝刺推送本地所有變動，嚴防休眠漏推
           this.flushPush();
         } else if (document.visibilityState === 'visible') {
-          // 喚醒瞬間立即拉取遠端最新變動
+          // 喚醒瞬間立即拉取遠端最新變動 (強制快取阻斷)
           if (this.config.autoPull && this.config.enabled) {
             this.pull({ silent: true });
           }
@@ -3221,6 +3224,8 @@ class KingdomCloudSync {
 
       // 4. 網路斷線重連 (online)
       window.addEventListener('online', () => {
+        this.lanTemporarilyDisabled = false;
+        this.lanFailCount = 0;
         if (this.config.enabled) {
           this.pull({ silent: true });
           this.flushPush();
@@ -3230,7 +3235,7 @@ class KingdomCloudSync {
       // 5. 連接本機伺服器 SSE 即時推播 (0.05 秒極速聯動)
       this.connectSse();
 
-      // 4. 同一裝置跨分頁即時聯動 (storage event)
+      // 6. 同一裝置跨分頁即時聯動 (storage event)
       window.addEventListener('storage', (e) => {
         if (e.key === STORAGE_KEY && e.newValue) {
           try {
@@ -3245,17 +3250,43 @@ class KingdomCloudSync {
         }
       });
 
-      // 5. 若本機環境且尚未設定 Google Script，嘗試從伺服器讀取共享設定
+      // 7. 本機伺服器聯動：載入主機區網 IP 與雙向同步 Google Apps Script 網址
       const isLocalHost = isLocalHostOrLAN(window.location.hostname);
-      if (isLocalHost && !this.config.googleScriptUrl) {
+      if (isLocalHost) {
+        // 取得主機區網 IP (供手機掃碼專用網址自動轉換 localhost 為區網真實 IP)
+        try {
+          fetch('/api/network-info')
+            .then(r => r.json())
+            .then(info => {
+              if (info && info.primaryIp) {
+                this.primaryLanIp = info.primaryIp;
+                this.notify();
+              }
+            })
+            .catch(() => {});
+        } catch (_) {}
+
+        // 與伺服器 cloud_config.json 雙向同步
         try {
           fetch('/api/sync/config')
             .then(r => r.json())
             .then(data => {
-              if (data && data.googleScriptUrl && !this.config.googleScriptUrl) {
-                this.config.googleScriptUrl = data.googleScriptUrl;
-                this.saveConfig(this.config);
-                console.log('[CloudSync] 自動自本機伺服器載入 Google 雲端連接網址:', data.googleScriptUrl);
+              if (data && data.googleScriptUrl) {
+                if (!this.config.googleScriptUrl || this.config.googleScriptUrl !== data.googleScriptUrl) {
+                  this.config.googleScriptUrl = data.googleScriptUrl;
+                  this.saveConfig(this.config, false);
+                  console.log('[CloudSync] 自動自本機伺服器載入 Google 雲端連接網址:', data.googleScriptUrl);
+                }
+              } else if (this.config.googleScriptUrl) {
+                // 本機瀏覽器有但伺服器端沒有，回傳給伺服器保存供全域與後端轉推使用
+                fetch('/api/sync/config', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    googleScriptUrl: this.config.googleScriptUrl,
+                    googleAccount: this.config.googleAccount || 'xining502@gmail.com'
+                  })
+                }).catch(() => {});
               }
             })
             .catch(() => {});
@@ -3297,7 +3328,7 @@ class KingdomCloudSync {
     return defaultCfg;
   }
 
-  saveConfig(newConfig) {
+  saveConfig(newConfig, syncToServer = true) {
     this.config = { ...this.config, ...newConfig };
     if (this.config.googleAccount) {
       this.config.syncKey = this.config.googleAccount;
@@ -3311,7 +3342,7 @@ class KingdomCloudSync {
     }
     // 若在本地環境，同時寫入伺服器端 cloud_config.json
     const isLocal = isLocalHostOrLAN(typeof window !== 'undefined' ? window.location.hostname : '');
-    if (isLocal) {
+    if (isLocal && syncToServer) {
       try {
         fetch('/api/sync/config', {
           method: 'POST',
@@ -3398,7 +3429,8 @@ class KingdomCloudSync {
       googleAccount: this.config.googleAccount || 'xining502@gmail.com',
       syncKey: this.config.googleAccount || 'xining502@gmail.com',
       googleScriptUrl: this.config.googleScriptUrl || '',
-      isLocalHost: isLocalHost
+      isLocalHost: isLocalHost,
+      lanIp: this.primaryLanIp || (isLocalHost && typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? window.location.hostname : '')
     };
   }
 
@@ -3461,16 +3493,23 @@ class KingdomCloudSync {
     // 1. 若運行於本機伺服器、區網或 file:// 模式，推送到 local /api/sync
     const isLocal = isLocalHostOrLAN(typeof window !== 'undefined' ? window.location.hostname : '');
     
-    if (isLocal) {
+    if (isLocal && !this.lanTemporarilyDisabled) {
       try {
+        const localController = new AbortController();
+        const localTimeout = setTimeout(() => localController.abort(), 3500);
         const localUrl = this.getLocalApiUrl(force ? '/api/sync?force=1' : '/api/sync');
         const localRes = await fetch(localUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: payload
+          body: payload,
+          signal: localController.signal
         });
+        clearTimeout(localTimeout);
+
         if (localRes.ok) {
           pushedToAny = true;
+          this.lanFailCount = 0;
+          this.lanTemporarilyDisabled = false;
           try {
             const resJson = await localRes.json();
             if (resJson && resJson.lastModified) {
@@ -3494,13 +3533,15 @@ class KingdomCloudSync {
           pushError = `伺服器回應狀態 ${localRes.status}`;
         }
       } catch (err) {
-        console.warn('[CloudSync] 本地區網推送失敗:', err);
+        console.warn('[CloudSync] 本地區網推送失敗:', err.message);
       }
     }
 
-    // 2. 若有設定 Google Apps Script Web App 網址，推送到 Google 雲端
+    // 2. 若有設定 Google Apps Script Web App 網址，推送到 Google 雲端庫 (電信外網雙向核心)
     if (this.config.googleScriptUrl) {
       try {
+        const gasController = new AbortController();
+        const gasTimeout = setTimeout(() => gasController.abort(), 8000);
         await fetch(this.config.googleScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
@@ -3508,12 +3549,14 @@ class KingdomCloudSync {
           body: JSON.stringify({
             account: account,
             data: this.store.data
-          })
+          }),
+          signal: gasController.signal
         });
+        clearTimeout(gasTimeout);
         pushedToAny = true;
       } catch (err) {
         pushError = err.message;
-        console.warn('[CloudSync] Google 雲端推送失敗:', err);
+        console.warn('[CloudSync] Google 雲端推送失敗:', err.message);
       }
     }
 
@@ -3540,11 +3583,27 @@ class KingdomCloudSync {
     let remoteData = null;
     let pullError = null;
 
-    // 1. 優先嘗試 Google Apps Script Web App (跨裝置、跨外網最佳)
+    // 1. 優先嘗試 Google Apps Script Web App (跨裝置、跨電信外網 4G/5G 最佳且唯一雙向中繼站)
     if (this.config.googleScriptUrl) {
       try {
-        const gasUrl = `${this.config.googleScriptUrl}?account=${encodeURIComponent(account)}&action=pull`;
-        const res = await fetch(gasUrl, { cache: 'no-cache' });
+        const cacheBust = `_t=${Date.now()}&_r=${Math.random().toString(36).substring(2, 7)}`;
+        const sep = this.config.googleScriptUrl.includes('?') ? '&' : '?';
+        const gasUrl = `${this.config.googleScriptUrl}${sep}account=${encodeURIComponent(account)}&action=pull&${cacheBust}`;
+
+        const gasController = new AbortController();
+        const gasTimeout = setTimeout(() => gasController.abort(), 6500);
+
+        const res = await fetch(gasUrl, {
+          method: 'GET',
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          },
+          signal: gasController.signal
+        });
+        clearTimeout(gasTimeout);
+
         if (res.ok) {
           const json = await res.json();
           if (json && json.students && Array.isArray(json.students)) {
@@ -3552,25 +3611,47 @@ class KingdomCloudSync {
           }
         }
       } catch (err) {
-        pullError = err.message;
-        console.warn('[CloudSync] Google 雲端拉取失敗:', err);
+        pullError = err.name === 'AbortError' ? 'Google 雲端回應逾時 (6.5s)' : err.message;
+        console.warn('[CloudSync] Google 雲端拉取失敗:', err.message);
       }
     }
 
     // 2. 若在本地區網或 file:// 環境且尚未取得遠端資料，從本地 /api/sync 讀取
     const isLocal = isLocalHostOrLAN(typeof window !== 'undefined' ? window.location.hostname : '');
 
-    if (!remoteData && isLocal) {
+    // 注意：若手機切換至 4G/5G 電信網路，連線 192.168.x.x 會卡死，因此本地拉取設定 2.5 秒嚴格超時
+    if (!remoteData && isLocal && !this.lanTemporarilyDisabled) {
       try {
-        const localRes = await fetch(this.getLocalApiUrl(), { cache: 'no-cache' });
+        const localController = new AbortController();
+        const localTimeout = setTimeout(() => localController.abort(), 2500);
+
+        const localRes = await fetch(this.getLocalApiUrl(), {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          },
+          signal: localController.signal
+        });
+        clearTimeout(localTimeout);
+
         if (localRes.ok) {
           const json = await localRes.json();
           if (json && json.students && Array.isArray(json.students)) {
             remoteData = json;
+            this.lanFailCount = 0;
+            this.lanTemporarilyDisabled = false;
           }
         }
       } catch (err) {
-        console.warn('[CloudSync] 本地區網拉取失敗:', err);
+        this.lanFailCount = (this.lanFailCount || 0) + 1;
+        // 連續 2 次區網連線失敗/超時，且目前不是本機 localhost，判定手機已離開 Wi-Fi 進入電信外網
+        if (this.lanFailCount >= 2 && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+          console.warn('[CloudSync] 偵測到手機處於 4G/5G 電信外網環境，暫停區網嘗試，切換為雲端中繼模式');
+          this.lanTemporarilyDisabled = true;
+          setTimeout(() => { this.lanTemporarilyDisabled = false; }, 30000);
+        }
+        console.warn('[CloudSync] 本地區網拉取失敗 (若處於電信外網屬正常現象):', err.message);
       }
     }
 
@@ -3858,9 +3939,16 @@ class KingdomCloudSync {
 
   getShareableSyncUrl() {
     if (typeof window === 'undefined' || !window.location) return '';
-    const origin = window.location.origin;
+    let origin = window.location.origin;
     const pathname = window.location.pathname;
     const account = encodeURIComponent(this.config.googleAccount || 'xining502@gmail.com');
+
+    // 若本機是 localhost 或 127.0.0.1，替換為伺服器真實區域 IP，讓手機掃描可以直接開啟！
+    if (this.primaryLanIp && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      const port = window.location.port ? `:${window.location.port}` : '';
+      origin = `${window.location.protocol}//${this.primaryLanIp}${port}`;
+    }
+
     let url = `${origin}${pathname}?google=${account}`;
     if (this.config.googleScriptUrl) {
       url += `&gas=${encodeURIComponent(this.config.googleScriptUrl)}`;

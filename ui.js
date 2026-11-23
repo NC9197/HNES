@@ -8729,19 +8729,24 @@ function updateCloudSyncModalStatus(status) {
       badge.textContent = "同步傳輸中...";
       badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-500 text-white animate-pulse";
     } else if (status.isLocalHost) {
-      badge.textContent = "🟢 教室區網連線中";
-      badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white";
+      if (status.googleScriptUrl) {
+        badge.textContent = "🟢 本機 ＆ Google 雲端中繼雙保險";
+        badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white";
+      } else {
+        badge.textContent = "🟡 僅教室 Wi-Fi 區網連線";
+        badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-600 text-white";
+      }
     } else if (status.googleScriptUrl) {
       if (status.status === 'error') {
         badge.textContent = "連線異常";
         badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-600 text-white";
       } else {
-        badge.textContent = "🟢 Google 雲端連線中";
+        badge.textContent = "🟢 Google 官方雲端中繼站";
         badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white";
       }
     } else {
-      badge.textContent = "⚠️ 尚未連線 Google 雲端庫";
-      badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-600 text-white";
+      badge.textContent = "⚠️ 手機電信外網 (未綁定 Google 雲端)";
+      badge.className = "text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-600 text-white";
     }
   }
 
@@ -8756,11 +8761,19 @@ function updateCloudSyncModalStatus(status) {
 
   if (modeText) {
     if (status.isLocalHost) {
-      modeText.textContent = status.lanIp ? `教室 Wi-Fi 區網同步 (${status.lanIp})` : "教室 Wi-Fi 區網同步";
+      if (status.googleScriptUrl) {
+        modeText.textContent = status.lanIp 
+          ? `教室 Wi-Fi (${status.lanIp}) ＋ 4G/5G 電信外網雙向自動轉推`
+          : "本機伺服器 ＋ 4G/5G 電信外網雙向自動轉推";
+      } else {
+        modeText.textContent = status.lanIp 
+          ? `僅教室 Wi-Fi (${status.lanIp})，手機連電信網路請設定下方 Google 雲端`
+          : "僅本機伺服器，手機連電信網路請設定下方 Google 雲端庫";
+      }
     } else if (status.googleScriptUrl) {
-      modeText.textContent = "Google 官方雲端庫 (即時雙向同步)";
+      modeText.textContent = "Google 官方雲端庫 (支援 4G/5G 電信網路秒級即時同步)";
     } else {
-      modeText.textContent = "請完成下方 3 步驟啟用";
+      modeText.textContent = "⚠️ 處於電信外網，請依步驟貼上 Google Apps Script 網址以接收電腦更新";
     }
   }
 
@@ -8848,6 +8861,53 @@ function saveGoogleScriptUrl() {
   showToast("Google 雲端應用程式網址已儲存！", "👑");
   if (url) {
     sync.push();
+  }
+}
+
+async function testGoogleCloudConnection() {
+  const input = document.getElementById("googleScriptUrlInput");
+  const resultDiv = document.getElementById("testCloudResult");
+  if (!input || !resultDiv) return;
+  const url = input.value.trim();
+  if (!url) {
+    alert("請先貼上 Google Apps Script 網址！");
+    return;
+  }
+
+  resultDiv.classList.remove("hidden");
+  resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 animate-pulse";
+  resultDiv.innerHTML = "⏳ 正在測試與 Google 官方雲端中繼站雙向連線...";
+
+  const startTime = Date.now();
+  try {
+    // 優先透過本機伺服器端測試 (若伺服器運行中)
+    const serverRes = await fetch('/api/sync/test-cloud', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ googleScriptUrl: url })
+    }).then(r => r.json()).catch(() => null);
+
+    if (serverRes && serverRes.success) {
+      resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
+      resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線正常！</b> (延遲 ${serverRes.latency || (Date.now() - startTime)}ms)<br>📱 電腦端編輯後後端將自動轉推雲端，手機即使處於電信網路 (4G/5G) 亦可秒級即時同步！`;
+      return;
+    }
+
+    // 若本機伺服器未提供測試 API，以瀏覽器直接嘗試 pull 測試
+    const cacheBust = `_t=${Date.now()}&_r=${Math.random().toString(36).substring(2, 7)}`;
+    const sep = url.includes('?') ? '&' : '?';
+    const testUrl = `${url}${sep}account=xining502@gmail.com&action=pull&${cacheBust}`;
+    const directRes = await fetch(testUrl, { cache: 'no-store' });
+    const latency = Date.now() - startTime;
+    if (directRes.ok) {
+      resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
+      resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線成功！</b> (延遲 ${latency}ms)<br>📱 手機連線電信網路 (4G/5G) 可即時雙向同步！`;
+    } else {
+      throw new Error(`Google Apps Script 回應狀態碼 ${directRes.status}`);
+    }
+  } catch (err) {
+    resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-900";
+    resultDiv.innerHTML = `❌ <b>雲端連線測試未通過：</b> ${err.message}<br>💡 請檢查 Google Apps Script 部署作業設定：「誰可以存取 (Who has access)」務必設為「<b>所有人 (Anyone)</b>」！`;
   }
 }
 
@@ -9143,36 +9203,43 @@ function mergeDatasets(base, incoming) {
 }
 
 // -------------------------------------------------------------
-// 資料分塊儲存核心 (突破單一屬性 9KB 限制，支援多達 500KB 班級資料)
+// 資料分塊儲存核心 (突破單一屬性 9KB 限制，支援多達 500KB 班級資料，雙向相容雙鍵名)
 // -------------------------------------------------------------
 function saveData(prop, account, str) {
   if (!str) return;
   var CHUNK_SIZE = 8000;
   var totalChunks = Math.ceil(str.length / CHUNK_SIZE);
-  var oldTotal = parseInt(prop.getProperty('chunk_cnt_' + account) || '0', 10);
+  var oldTotal1 = parseInt(prop.getProperty('chunk_cnt_' + account) || '0', 10);
+  var oldTotal2 = parseInt(prop.getProperty('data_sync_chunk_count_' + account) || '0', 10);
+  var oldTotal = Math.max(oldTotal1, oldTotal2);
 
   // 清除舊的多餘分塊
   for (var i = totalChunks; i < oldTotal; i++) {
     prop.deleteProperty('data_' + account + '_' + i);
+    prop.deleteProperty('data_sync_chunk_' + account + '_' + i);
   }
 
-  // 寫入新分塊
+  // 寫入新分塊 (雙向鍵名同步寫入，確保所有版本拉取皆能完美解鎖)
   for (var i = 0; i < totalChunks; i++) {
-    prop.setProperty('data_' + account + '_' + i, str.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+    var chunkStr = str.substr(i * CHUNK_SIZE, CHUNK_SIZE);
+    prop.setProperty('data_' + account + '_' + i, chunkStr);
+    prop.setProperty('data_sync_chunk_' + account + '_' + i, chunkStr);
   }
 
   prop.setProperty('chunk_cnt_' + account, String(totalChunks));
+  prop.setProperty('data_sync_chunk_count_' + account, String(totalChunks));
   prop.setProperty('time_' + account, String(new Date().getTime()));
 }
 
 function loadData(prop, account) {
-  var count = parseInt(prop.getProperty('chunk_cnt_' + account) || '0', 10);
+  var count = parseInt(prop.getProperty('chunk_cnt_' + account) || prop.getProperty('data_sync_chunk_count_' + account) || '0', 10);
   if (count <= 0) {
-    return prop.getProperty('data_' + account) || '{}';
+    return prop.getProperty('data_' + account) || prop.getProperty('data_sync_' + account) || '{}';
   }
   var parts = [];
   for (var i = 0; i < count; i++) {
-    parts.push(prop.getProperty('data_' + account + '_' + i) || '');
+    var chunk = prop.getProperty('data_' + account + '_' + i) || prop.getProperty('data_sync_chunk_' + account + '_' + i) || '';
+    parts.push(chunk);
   }
   return parts.join('');
 }`;
@@ -10920,6 +10987,10 @@ if (typeof window !== 'undefined') {
   // 皇室點名簿抽屜展開控制
   window.toggleAttendanceDrawer = toggleAttendanceDrawer;
   window.toggleAllAttendanceDrawers = toggleAllAttendanceDrawers;
+
+  // 雲端同步與測試
+  window.saveGoogleScriptUrl = saveGoogleScriptUrl;
+  window.testGoogleCloudConnection = testGoogleCloudConnection;
 
   // 大臣名冊萌寵切換與抽屜控制
   window.changeRosterActivePet = changeRosterActivePet;

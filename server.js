@@ -4,6 +4,7 @@
  */
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -59,6 +60,122 @@ function broadcastSseUpdate(data) {
   }
 }
 
+// ============================================================================
+// 雲端中繼站自動轉發核心 (Cloud Relay Forwarder) - 突破電信網路 4G/5G 斷鏈限制
+// ============================================================================
+let isForwardingToGas = false;
+let pendingGasPayload = null;
+let gasForwardDebounceTimer = null;
+
+function getCloudConfig() {
+  const configPath = path.join(ROOT_DIR, 'cloud_config.json');
+  let cfg = { googleScriptUrl: '', googleAccount: 'xining502@gmail.com' };
+  if (fs.existsSync(configPath)) {
+    try { cfg = { ...cfg, ...JSON.parse(fs.readFileSync(configPath, 'utf8')) }; } catch (_) {}
+  }
+  return cfg;
+}
+
+function saveCloudConfig(updatedCfg) {
+  const configPath = path.join(ROOT_DIR, 'cloud_config.json');
+  let current = getCloudConfig();
+  const merged = { ...current, ...updatedCfg };
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(merged, null, 2), 'utf8');
+  } catch (e) {
+    console.warn('[CloudConfig] 寫入 cloud_config.json 失敗:', e.message);
+  }
+  return merged;
+}
+
+function sendHttpsRequest(targetUrl, method = 'GET', postData = null, redirectCount = 0) {
+  return new Promise((resolve, reject) => {
+    if (redirectCount > 5) return reject(new Error('Too many redirects (> 5)'));
+    const urlObj = new URL(targetUrl);
+    const isHttps = urlObj.protocol === 'https:';
+    const client = isHttps ? https : http;
+    const isPost = method === 'POST' && postData !== null;
+    const bodyStr = isPost ? (typeof postData === 'string' ? postData : JSON.stringify(postData)) : '';
+
+    const options = {
+      hostname: urlObj.hostname,
+      port: urlObj.port || (isHttps ? 443 : 80),
+      path: urlObj.pathname + urlObj.search,
+      method: method,
+      headers: {
+        'User-Agent': 'XiningKingdom-Server/2026',
+        'Accept': 'application/json, text/plain, */*'
+      },
+      timeout: 10000
+    };
+
+    if (isPost) {
+      options.headers['Content-Type'] = 'application/json; charset=utf-8';
+      options.headers['Content-Length'] = Buffer.byteLength(bodyStr);
+    }
+
+    const req = client.request(options, (res) => {
+      // 處理 301, 302, 303, 307 重定向 (Google Apps Script 特性：POST 執行後 302 導向結果頁)
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        const nextUrl = new URL(res.headers.location, targetUrl).toString();
+        const nextMethod = (res.statusCode === 307 || res.statusCode === 308) ? method : 'GET';
+        const nextData = nextMethod === 'POST' ? postData : null;
+        return sendHttpsRequest(nextUrl, nextMethod, nextData, redirectCount + 1).then(resolve).catch(reject);
+      }
+
+      let respBody = '';
+      res.on('data', chunk => respBody += chunk);
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(respBody));
+        } catch (_) {
+          resolve({ status: res.statusCode, body: respBody });
+        }
+      });
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('連線 Google Apps Script 逾時 (10 秒)'));
+    });
+    req.on('error', reject);
+
+    if (isPost) req.write(bodyStr);
+    req.end();
+  });
+}
+
+function scheduleForwardToGas(data) {
+  const cfg = getCloudConfig();
+  if (!cfg.googleScriptUrl || !cfg.googleScriptUrl.trim()) return;
+
+  pendingGasPayload = {
+    account: cfg.googleAccount || 'xining502@gmail.com',
+    data: data
+  };
+
+  if (gasForwardDebounceTimer) clearTimeout(gasForwardDebounceTimer);
+  gasForwardDebounceTimer = setTimeout(async () => {
+    if (isForwardingToGas || !pendingGasPayload) return;
+    isForwardingToGas = true;
+    const currentPayload = pendingGasPayload;
+    pendingGasPayload = null;
+
+    try {
+      console.log(`[CloudRelay] 正在自動轉推最新資料至 Google 雲端庫 (${cfg.googleScriptUrl.slice(0, 45)}...)...`);
+      const result = await sendHttpsRequest(cfg.googleScriptUrl, 'POST', currentPayload);
+      console.log(`[CloudRelay] ✅ 成功同步至 Google 雲端庫！時間戳: ${new Date().toLocaleTimeString()}, 大臣人數: ${currentPayload.data.students ? currentPayload.data.students.length : 0}`);
+    } catch (err) {
+      console.warn(`[CloudRelay] ⚠️ Google 雲端自動轉推失敗 (手機電信外網可能暫時無法即時取得):`, err.message);
+    } finally {
+      isForwardingToGas = false;
+      if (pendingGasPayload) {
+        scheduleForwardToGas(pendingGasPayload.data);
+      }
+    }
+  }, 300);
+}
+
 function mergeDatasets(base, incoming) {
   if (!base) return incoming;
   if (!incoming) return base;
@@ -75,7 +192,10 @@ function mergeDatasets(base, incoming) {
 
     // 優先採納最新推送裝置的設定值 (支援加點、扣點、重設、歸零)
     const finalPoints = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
-    const finalLifetime = (iSt.lifetimePoints !== undefined && iSt.lifetimePoints !== null) ? Number(iSt.lifetimePoints) : (Number(bSt.lifetimePoints) || 0);
+    let finalLifetime = (iSt.lifetimePoints !== undefined && iSt.lifetimePoints !== null) ? Number(iSt.lifetimePoints) : (Number(bSt.lifetimePoints) || 0);
+    if (finalLifetime <= 0 && finalPoints > 0) {
+      finalLifetime = finalPoints;
+    }
     const finalPets = (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets;
     const finalSecondPet = iSt.secondPetType !== undefined ? iSt.secondPetType : bSt.secondPetType;
     const finalSecondExp = (iSt.secondPetExp !== undefined && iSt.secondPetExp !== null) ? Number(iSt.secondPetExp) : (Number(bSt.secondPetExp) || 0);
@@ -246,12 +366,8 @@ const server = http.createServer((req, res) => {
 
   // 取得或儲存全域雲端設定 API (供本機伺服器、網頁與手機共享 Google Apps Script 網址)
   if (pathname === '/api/sync/config') {
-    const configPath = path.join(ROOT_DIR, 'cloud_config.json');
     if (req.method === 'GET') {
-      let cfg = { googleScriptUrl: '', googleAccount: 'xining502@gmail.com' };
-      if (fs.existsSync(configPath)) {
-        try { cfg = JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch (_) {}
-      }
+      const cfg = getCloudConfig();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ success: true, ...cfg }));
       return;
@@ -262,12 +378,19 @@ const server = http.createServer((req, res) => {
       req.on('end', () => {
         try {
           const parsed = JSON.parse(body || '{}');
-          let currentCfg = {};
-          if (fs.existsSync(configPath)) {
-            try { currentCfg = JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch (_) {}
+          const updated = saveCloudConfig(parsed);
+          
+          // 若設定了有效 Google Script 網址，且本機已有最新資料，主動觸發一次後端直推
+          if (updated.googleScriptUrl) {
+            const defaultSyncFilePath = path.join(ROOT_DIR, 'data_sync.json');
+            if (fs.existsSync(defaultSyncFilePath)) {
+              try {
+                const latest = JSON.parse(fs.readFileSync(defaultSyncFilePath, 'utf8'));
+                scheduleForwardToGas(latest);
+              } catch (_) {}
+            }
           }
-          const updated = { ...currentCfg, ...parsed };
-          fs.writeFileSync(configPath, JSON.stringify(updated, null, 2), 'utf8');
+
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({ success: true, message: '雲端同步設定已儲存', config: updated }));
         } catch (e) {
@@ -277,6 +400,50 @@ const server = http.createServer((req, res) => {
       });
       return;
     }
+  }
+
+  // 測試 Google Apps Script 雲端中繼站連線狀態 (供前端一鍵診斷)
+  if (pathname === '/api/sync/test-cloud' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const targetUrl = payload.googleScriptUrl || getCloudConfig().googleScriptUrl;
+        const account = payload.googleAccount || getCloudConfig().googleAccount || 'xining502@gmail.com';
+
+        if (!targetUrl) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: false, message: '尚未提供 Google Apps Script 網址' }));
+          return;
+        }
+
+        const startTime = Date.now();
+        const sep = targetUrl.includes('?') ? '&' : '?';
+        const testUrl = `${targetUrl}${sep}account=${encodeURIComponent(account)}&action=pull&_t=${startTime}`;
+        const testRes = await sendHttpsRequest(testUrl, 'GET', null);
+        const latency = Date.now() - startTime;
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: true,
+          message: `連線成功！Google 雲端中繼站運作正常 (延遲 ${latency}ms)`,
+          latency,
+          cloudDataPreview: {
+            hasStudents: !!(testRes && testRes.students),
+            studentCount: testRes && testRes.students ? testRes.students.length : 0,
+            lastModified: testRes ? testRes.lastModified : null
+          }
+        }));
+      } catch (err) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          success: false,
+          error: err.message || '連線逾時或失敗'
+        }));
+      }
+    });
+    return;
   }
 
   // 查詢伺服器歷史快照清單
@@ -442,6 +609,9 @@ const server = http.createServer((req, res) => {
           // 即時廣播給所有連線中的裝置 (電腦、手機、平板秒級同步刷新！)
           broadcastSseUpdate(finalData);
 
+          // 核心修復：伺服器後端自動轉推 Google Apps Script 雲端庫 (手機電信外網 4G/5G 雙保險！)
+          scheduleForwardToGas(finalData);
+
           console.log(`[Sync Success] 智能融合資料成功同步！大臣人數: ${finalData.students.length}, 時間戳: ${new Date(finalData.lastModified).toLocaleTimeString()}`);
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({
@@ -495,12 +665,13 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   const localIps = getLocalIpAddresses();
+  const cloudCfg = getCloudConfig();
   console.log('================================================================');
   console.log('👑 西寧國小五年二班 ‧ 西寧小小兵王國 班級經營系統伺服器已啟動！');
   console.log('================================================================');
   console.log(`\n💻 本機電腦瀏覽網址：`);
   console.log(`   👉 http://localhost:${PORT}`);
-  console.log(`\n📱 手機/平板/區域網路查閱網址 (同一 Wi-Fi 連線下)：`);
+  console.log(`\n📱 教室同一 Wi-Fi 手機/平板連線網址：`);
   if (localIps.length > 0) {
     localIps.forEach(ip => {
       console.log(`   👉 http://${ip}:${PORT}`);
@@ -508,6 +679,14 @@ server.listen(PORT, '0.0.0.0', () => {
     });
   } else {
     console.log(`   👉 http://localhost:${PORT}/?parent=1`);
+  }
+  console.log(`\n☁️ 跨 4G/5G 電信外網 Google 雲端中繼站狀態：`);
+  if (cloudCfg.googleScriptUrl) {
+    console.log(`   🟢 已啟用！本機更新將自動轉推至 Google 雲端庫 (${cloudCfg.googleScriptUrl.slice(0, 45)}...)`);
+    console.log(`   📱 手機即使切換電信網路 (4G/5G) 亦可即時雙向同步！`);
+  } else {
+    console.log(`   ⚠️ 尚未設定 Google Apps Script 網址 (目前僅限教室同一 Wi-Fi 區網同步)`);
+    console.log(`   💡 提示：點擊網頁右上角「[🟢 雲端同步]」貼上腳本網址即可開啟電信外網同步！`);
   }
   console.log('\n按下 Ctrl + C 可隨時停止伺服器。');
   console.log('================================================================\n');
