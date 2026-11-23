@@ -449,28 +449,210 @@ function startMorningClock() {
 }
 
 let currentContactDate = window.KingdomApp.getTodayDateString();
+let morningContactDaysMode = '2days'; // '2days' (預設雙天並排模式) | '1day' (單天六行模式)
+let morningContactDateCol1 = null; // 第 1 欄日期 (預設今日)
+let morningContactDateCol2 = null; // 第 2 欄日期 (預設明日)
+
+function initMorningContactDates() {
+  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  if (!morningContactDateCol1) {
+    morningContactDateCol1 = currentContactDate || today;
+  }
+  if (!morningContactDateCol2) {
+    morningContactDateCol2 = getDeltaDateString(morningContactDateCol1, 1);
+  }
+}
+
+function setMorningContactDaysMode(mode) {
+  morningContactDaysMode = mode || '2days';
+  initMorningContactDates();
+  renderMorningBoard();
+}
+
+function setMorningContactPreset(preset) {
+  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  if (preset === 'today_tomorrow') {
+    morningContactDaysMode = '2days';
+    morningContactDateCol1 = today;
+    morningContactDateCol2 = getDeltaDateString(today, 1);
+    currentContactDate = today;
+  } else if (preset === 'yesterday_today') {
+    morningContactDaysMode = '2days';
+    morningContactDateCol1 = getDeltaDateString(today, -1);
+    morningContactDateCol2 = today;
+    currentContactDate = morningContactDateCol1;
+  } else if (preset === 'single_day') {
+    morningContactDaysMode = '1day';
+    morningContactDateCol1 = currentContactDate || today;
+  }
+  renderMorningBoard();
+}
+
+function changeMorningContactColDate(colIndex, dateVal) {
+  if (!dateVal) return;
+  initMorningContactDates();
+  if (colIndex === 1) {
+    morningContactDateCol1 = dateVal;
+    currentContactDate = dateVal;
+  } else if (colIndex === 2) {
+    morningContactDateCol2 = dateVal;
+  }
+  renderMorningBoard();
+}
+
+function adjustMorningContactColDate(colIndex, delta) {
+  initMorningContactDates();
+  if (colIndex === 1) {
+    morningContactDateCol1 = getDeltaDateString(morningContactDateCol1, delta);
+    currentContactDate = morningContactDateCol1;
+  } else if (colIndex === 2) {
+    morningContactDateCol2 = getDeltaDateString(morningContactDateCol2, delta);
+  }
+  renderMorningBoard();
+}
 
 function changeContactDateDelta(delta) {
-  const parts = currentContactDate.split('-');
-  const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-  d.setDate(d.getDate() + delta);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  currentContactDate = `${y}-${m}-${day}`;
+  initMorningContactDates();
+  if (morningContactDaysMode === '2days') {
+    morningContactDateCol1 = getDeltaDateString(morningContactDateCol1, delta);
+    morningContactDateCol2 = getDeltaDateString(morningContactDateCol2, delta);
+    currentContactDate = morningContactDateCol1;
+  } else {
+    currentContactDate = getDeltaDateString(currentContactDate, delta);
+    morningContactDateCol1 = currentContactDate;
+  }
   renderMorningBoard();
 }
 
 function changeContactDateToToday() {
-  currentContactDate = window.KingdomApp.getTodayDateString();
+  const today = window.KingdomApp.getTodayDateString();
+  currentContactDate = today;
+  morningContactDateCol1 = today;
+  morningContactDateCol2 = getDeltaDateString(today, 1);
   renderMorningBoard();
 }
 
 function handleContactDatePickerChange(val) {
   if (val) {
     currentContactDate = val;
+    morningContactDateCol1 = val;
+    morningContactDateCol2 = getDeltaDateString(val, 1);
     renderMorningBoard();
   }
+}
+
+function renderMorningContactDayColumn(colIndex, dateStr) {
+  const colName = colIndex === 1 ? '第一欄' : '第二欄';
+  const book = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook) 
+    ? window.KingdomApp.store.getContactBook(dateStr) 
+    : { homeworkItems: [], reminders: [], queenMotto: '' };
+  const items = (book && book.homeworkItems) ? book.homeworkItems : [];
+  const reminders = (book && book.reminders) ? book.reminders : [];
+  const weekday = getWeekdayText(dateStr);
+  const relBadge = getRelativeDayBadge(dateStr);
+
+  const renderCardItem = (slotIdx, text) => {
+    const isFilled = Boolean(text && String(text).trim());
+    if (isFilled) {
+      return `
+        <div class="flex items-center space-x-3 p-2.5 sm:p-3 rounded-2xl bg-white/95 border-2 border-amber-300 shadow-sm transition hover:border-amber-500 min-h-[4.2rem]">
+          <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-xs border border-amber-500/40">
+            ${slotIdx}
+          </span>
+          <span class="text-lg sm:text-xl lg:text-2xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+            ${escapeContactHtml(text)}
+          </span>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[4.2rem]">
+          <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
+            ${slotIdx}
+          </span>
+          <span class="text-base sm:text-lg font-bold text-amber-900/35 italic">
+            （留白）
+          </span>
+        </div>
+      `;
+    }
+  };
+
+  // 標準固定六行大字作業
+  const rowsHtml = [1, 2, 3, 4, 5, 6].map(slotIdx => renderCardItem(slotIdx, items[slotIdx - 1] || '')).join('');
+
+  let extraRowsHtml = '';
+  if (items.length > 6) {
+    const extraItems = items.slice(6);
+    extraRowsHtml = `
+      <div class="pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
+        <span class="text-xs font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
+        <div class="space-y-2">
+          ${extraItems.map((item, idx) => renderCardItem(7 + idx, item)).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  let dayReminderNoticeHtml = '';
+  if (reminders.length > 0) {
+    dayReminderNoticeHtml = `
+      <div class="mt-2.5 p-2 rounded-xl bg-amber-100/80 border border-amber-300 text-xs font-bold text-amber-950 space-y-0.5">
+        <div class="font-black text-amber-900 flex items-center space-x-1">
+          <span>🔔 此日提醒：</span>
+        </div>
+        <ul class="list-disc list-inside space-y-0.5">
+          ${reminders.map(r => `<li>${escapeContactHtml(r)}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="space-y-3 bg-gradient-to-b from-amber-100/50 via-white/80 to-yellow-50/30 p-3 sm:p-4 rounded-3xl border-2 border-amber-400 shadow-md flex flex-col justify-between">
+      <div>
+        <!-- 頂部欄位控制與操作按鈕 -->
+        <div class="flex items-center justify-between pb-2 border-b border-amber-300/70 text-xs font-black text-amber-950 gap-1.5 flex-wrap">
+          <div class="flex items-center space-x-1.5 shrink-0">
+            <span class="text-xs sm:text-sm font-black text-amber-950 bg-amber-300/90 px-2.5 py-0.5 rounded-lg border border-amber-400 shadow-2xs">
+              📌 ${colName}
+            </span>
+            ${relBadge}
+          </div>
+          <!-- 導師手動挑選日期與前後天微調 + 快速編輯 -->
+          <div class="flex items-center space-x-1 shrink-0">
+            <button type="button" onclick="adjustMorningContactColDate(${colIndex}, -1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="前一天">◀</button>
+            <input type="date" value="${dateStr}" onchange="changeMorningContactColDate(${colIndex}, this.value)" class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs sm:text-sm bg-white border-2 border-amber-400 rounded-xl text-amber-950 font-black cursor-pointer shadow-2xs max-w-[125px] sm:max-w-[145px]" title="手動指定此欄日期">
+            <button type="button" onclick="adjustMorningContactColDate(${colIndex}, 1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="後一天">▶</button>
+            <button type="button" onclick="openEditContactModalForDate('${dateStr}')" class="px-2 sm:px-2.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-0.5 transition hover:scale-105 active:scale-95" title="編輯【${dateStr}】聯絡簿">
+              <span>✏️</span>
+              <span class="hidden sm:inline">編輯</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ★ 聯絡簿日期顯示在上方第一欄、第二欄位置，字體加粗放大 ★ -->
+        <div class="pt-2 pb-2.5 border-b-2 border-amber-400/80 flex items-center justify-between gap-2">
+          <div class="flex items-center space-x-2 flex-wrap">
+            <span class="text-xl sm:text-2xl lg:text-3xl font-black text-amber-950 tracking-wide">
+              📅 ${dateStr}
+            </span>
+            <span class="text-base sm:text-lg font-black text-amber-800 bg-amber-200/90 px-2.5 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
+              （${weekday}）
+            </span>
+          </div>
+        </div>
+
+        <!-- 作業標準六行大字 (1 ~ 6) -->
+        <div class="mt-3 space-y-2.5">
+          ${rowsHtml}
+        </div>
+
+        ${extraRowsHtml}
+        ${dayReminderNoticeHtml}
+      </div>
+    </div>
+  `;
 }
 
 function renderMorningBoard() {
@@ -524,12 +706,36 @@ function renderMorningBoard() {
     countBadge.textContent = `${checkedCount} / ${students.length} 人`;
   }
 
-  // 2. 渲染右側 70% 聯絡簿超大字體看板 (依據 currentContactDate 按日歷史查閱與編輯)
-  const contactBook = window.KingdomApp.store.getContactBook(currentContactDate);
-  
+  // 2. 渲染右側 70% 聯絡簿看板 (支援雙天並排六行 ＆ 單天模式切換)
+  initMorningContactDates();
+
+  // 更新頂部模式按鈕外觀狀態
+  const btnMode2Days = document.getElementById("btnMorningMode2Days");
+  const btnMode1Day = document.getElementById("btnMorningMode1Day");
+  const presetsGroup = document.getElementById("morningPresetsGroup");
+  const singlePickerGroup = document.getElementById("morningSingleDatePickerGroup");
+
+  if (btnMode2Days && btnMode1Day) {
+    if (morningContactDaysMode === '2days') {
+      btnMode2Days.className = "btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition";
+      btnMode1Day.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
+      if (presetsGroup) presetsGroup.classList.remove("hidden");
+      if (singlePickerGroup) singlePickerGroup.classList.add("hidden");
+    } else {
+      btnMode2Days.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
+      btnMode1Day.className = "btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition";
+      if (presetsGroup) presetsGroup.classList.add("hidden");
+      if (singlePickerGroup) singlePickerGroup.classList.remove("hidden");
+    }
+  }
+
   const dateDisplay = document.getElementById("contactBookDateDisplay");
   if (dateDisplay) {
-    dateDisplay.textContent = currentContactDate;
+    if (morningContactDaysMode === '2days') {
+      dateDisplay.textContent = `${morningContactDateCol1} ＆ ${morningContactDateCol2}`;
+    } else {
+      dateDisplay.textContent = currentContactDate;
+    }
   }
   const datePicker = document.getElementById("contactBookDatePicker");
   if (datePicker) {
@@ -538,78 +744,91 @@ function renderMorningBoard() {
 
   const hwList = document.getElementById("contactHomeworkList");
   if (hwList) {
-    const items = (contactBook && contactBook.homeworkItems) ? contactBook.homeworkItems : [];
+    if (morningContactDaysMode === '2days') {
+      const col1Html = renderMorningContactDayColumn(1, morningContactDateCol1);
+      const col2Html = renderMorningContactDayColumn(2, morningContactDateCol2);
+      hwList.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
+          ${col1Html}
+          ${col2Html}
+        </div>
+      `;
+    } else {
+      // 單天六行模式 (左欄 1~3，右欄 4~6)
+      const contactBook = window.KingdomApp.store.getContactBook(currentContactDate);
+      const items = (contactBook && contactBook.homeworkItems) ? contactBook.homeworkItems : [];
 
-    const renderCardItem = (slotIdx, text) => {
-      const isFilled = Boolean(text && text.trim());
-      if (isFilled) {
-        return `
-          <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/95 border-2 border-amber-300 shadow-sm transition hover:border-amber-500 min-h-[4.5rem]">
-            <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-xs border border-amber-500/40">
-              ${slotIdx}
-            </span>
-            <span class="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
-              ${text}
-            </span>
-          </div>
-        `;
-      } else {
-        return `
-          <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[4.5rem]">
-            <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
-              ${slotIdx}
-            </span>
-            <span class="text-lg sm:text-xl font-bold text-amber-900/35 italic">
-              （留白）
-            </span>
+      const renderCardItem = (slotIdx, text) => {
+        const isFilled = Boolean(text && text.trim());
+        if (isFilled) {
+          return `
+            <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/95 border-2 border-amber-300 shadow-sm transition hover:border-amber-500 min-h-[4.5rem]">
+              <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-xs border border-amber-500/40">
+                ${slotIdx}
+              </span>
+              <span class="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+                ${text}
+              </span>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[4.5rem]">
+              <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
+                ${slotIdx}
+              </span>
+              <span class="text-lg sm:text-xl font-bold text-amber-900/35 italic">
+                （留白）
+              </span>
+            </div>
+          `;
+        }
+      };
+
+      const leftColHtml = [1, 2, 3].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+      const rightColHtml = [4, 5, 6].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+
+      let extraRowsHtml = '';
+      if (items.length > 6) {
+        const extraItems = items.slice(6);
+        extraRowsHtml = `
+          <div class="col-span-1 md:col-span-2 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
+            <span class="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${extraItems.map((item, idx) => renderCardItem(7 + idx, item)).join('')}
+            </div>
           </div>
         `;
       }
-    };
 
-    const leftColHtml = [1, 2, 3].map(num => renderCardItem(num, items[num - 1] || '')).join('');
-    const rightColHtml = [4, 5, 6].map(num => renderCardItem(num, items[num - 1] || '')).join('');
-
-    let extraRowsHtml = '';
-    if (items.length > 6) {
-      const extraItems = items.slice(6);
-      extraRowsHtml = `
-        <div class="col-span-1 md:col-span-2 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
-          <span class="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            ${extraItems.map((item, idx) => renderCardItem(7 + idx, item)).join('')}
+      hwList.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
+          <!-- 左欄 (第 1 ~ 3 行) -->
+          <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
+            <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
+              <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 3 項)</span></span>
+              <span class="text-[11px] text-amber-800 font-mono">1 - 3</span>
+            </div>
+            <div class="space-y-2.5">
+              ${leftColHtml}
+            </div>
           </div>
+
+          <!-- 右欄 (第 4 ~ 6 行) -->
+          <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
+            <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
+              <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 4 ~ 6 項)</span></span>
+              <span class="text-[11px] text-amber-800 font-mono">4 - 6</span>
+            </div>
+            <div class="space-y-2.5">
+              ${rightColHtml}
+            </div>
+          </div>
+
+          ${extraRowsHtml}
         </div>
       `;
     }
-
-    hwList.innerHTML = `
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
-        <!-- 左欄 (第 1 ~ 3 行) -->
-        <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
-          <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-            <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 3 項)</span></span>
-            <span class="text-[11px] text-amber-800 font-mono">1 - 3</span>
-          </div>
-          <div class="space-y-2.5">
-            ${leftColHtml}
-          </div>
-        </div>
-
-        <!-- 右欄 (第 4 ~ 6 行) -->
-        <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
-          <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-            <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 4 ~ 6 項)</span></span>
-            <span class="text-[11px] text-amber-800 font-mono">4 - 6</span>
-          </div>
-          <div class="space-y-2.5">
-            ${rightColHtml}
-          </div>
-        </div>
-
-        ${extraRowsHtml}
-      </div>
-    `;
   }
 
   const reminderList = document.getElementById("contactReminderList");
@@ -3973,7 +4192,10 @@ function renderPointsView() {
     grid.innerHTML = students.map(st => {
       const aType = st.animalType || st.petType || 'dog';
       window.KingdomApp.store.syncStudentPets(st);
-      const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : (st.points || 0);
+      const pts = st.points || 0;
+      const lifetime = (st.lifetimePoints !== undefined && st.lifetimePoints > 0) 
+        ? st.lifetimePoints 
+        : (pts > 0 ? pts : (st.lifetimePoints || 0));
       const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
       const isSelected = selectedStudentIdsForPoints.has(st.id);
 
@@ -5303,9 +5525,9 @@ function renderRosterView() {
     window.KingdomApp.store.syncStudentPets(st);
     const currentPts = Math.max(0, parseInt(st.points, 10) || 0);
     let lifetime = parseInt(st.lifetimePoints, 10);
-    if (isNaN(lifetime) || lifetime < 0) {
-      lifetime = 0;
-      st.lifetimePoints = 0;
+    if (isNaN(lifetime) || lifetime < 0 || (lifetime <= 0 && currentPts > 0)) {
+      lifetime = currentPts;
+      st.lifetimePoints = currentPts;
     }
     const effectivePts = lifetime;
     const maxAllowed = 1 + Math.floor(lifetime / 500);
@@ -6698,7 +6920,9 @@ function renderPointsProjection() {
       window.KingdomApp.store.syncStudentPets(st);
       window.KingdomApp.store.syncStudentCards(st);
       const pts = st.points || 0;
-      const lifetime = st.lifetimePoints !== undefined ? st.lifetimePoints : pts;
+      const lifetime = (st.lifetimePoints !== undefined && st.lifetimePoints > 0) 
+        ? st.lifetimePoints 
+        : (pts > 0 ? pts : (st.lifetimePoints || 0));
       const petStatus = window.KingdomApp.getAnimalStatus(aType, lifetime);
       const heldCards = st.redeemedCards || [];
       const isDrawerOpen = openCardDrawerInProjectionIds.has(st.id);
@@ -7516,8 +7740,32 @@ function refreshCurrentView() {
     renderSeatingChart();
   } else if (currentMainView === 'teacher') {
     renderCurrentTeacherTab();
+    // 同步刷新點數榜與名冊，保證手機更改後電腦立即可見
+    if (typeof renderPointsView === 'function') renderPointsView();
+    if (typeof renderRosterView === 'function') renderRosterView();
   } else if (currentMainView === 'parent') {
     renderParentPortal();
+  }
+
+  // 跨裝置同步即時連動：若大屏投影彈窗開啟中，同步即時刷新大螢幕！
+  const pointsProjModal = document.getElementById("pointsProjectionModal");
+  if (pointsProjModal && !pointsProjModal.classList.contains("hidden")) {
+    if (typeof renderPointsProjection === 'function') renderPointsProjection();
+  }
+
+  const contactProjModal = document.getElementById("contactProjectionModal");
+  if (contactProjModal && !contactProjModal.classList.contains("hidden")) {
+    if (typeof renderContactProjectionView === 'function') renderContactProjectionView();
+  }
+
+  const zooProjModal = document.getElementById("zooProjectionModal");
+  if (zooProjModal && !zooProjModal.classList.contains("hidden")) {
+    if (typeof renderZooProjection === 'function') renderZooProjection();
+  }
+
+  const seatingProjModal = document.getElementById("seatingProjectionModal");
+  if (seatingProjModal && !seatingProjModal.classList.contains("hidden")) {
+    if (typeof renderSeatingProjection === 'function') renderSeatingProjection();
   }
 }
 
@@ -10608,6 +10856,28 @@ if (typeof window !== 'undefined') {
     Object.defineProperty(window, 'contactProjDateCol3', {
       get() { return contactProjDateCol3; },
       set(v) { contactProjDateCol3 = v; },
+      configurable: true
+    });
+
+    // 主畫面晨間朝會雙天並排聯絡簿屬性與導出
+    window.setMorningContactDaysMode = setMorningContactDaysMode;
+    window.setMorningContactPreset = setMorningContactPreset;
+    window.changeMorningContactColDate = changeMorningContactColDate;
+    window.adjustMorningContactColDate = adjustMorningContactColDate;
+    window.renderMorningContactDayColumn = renderMorningContactDayColumn;
+    Object.defineProperty(window, 'morningContactDaysMode', {
+      get() { return morningContactDaysMode; },
+      set(v) { morningContactDaysMode = v; },
+      configurable: true
+    });
+    Object.defineProperty(window, 'morningContactDateCol1', {
+      get() { return morningContactDateCol1; },
+      set(v) { morningContactDateCol1 = v; },
+      configurable: true
+    });
+    Object.defineProperty(window, 'morningContactDateCol2', {
+      get() { return morningContactDateCol2; },
+      set(v) { morningContactDateCol2 = v; },
       configurable: true
     });
   } catch (e) {

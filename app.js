@@ -367,7 +367,10 @@ class KingdomStore {
       } else {
         // 雙方皆有的大臣：優先採納 remote 的點數、生涯累積總額與萌寵設定
         const finalPoints = (remoteSt.points !== undefined && remoteSt.points !== null) ? Number(remoteSt.points) : (Number(localSt.points) || 0);
-        const finalLifetime = (remoteSt.lifetimePoints !== undefined && remoteSt.lifetimePoints !== null) ? Number(remoteSt.lifetimePoints) : (Number(localSt.lifetimePoints) || 0);
+        let finalLifetime = (remoteSt.lifetimePoints !== undefined && remoteSt.lifetimePoints !== null) ? Number(remoteSt.lifetimePoints) : (Number(localSt.lifetimePoints) || 0);
+        if (finalLifetime <= 0 && finalPoints > 0) {
+          finalLifetime = finalPoints;
+        }
         const finalPets = (remoteSt.pets && remoteSt.pets.length > 0) ? remoteSt.pets : (localSt.pets || [{ type: remoteSt.animalType || localSt.animalType || 'dog' }]);
         const finalSecondPet = remoteSt.secondPetType !== undefined ? remoteSt.secondPetType : localSt.secondPetType;
         const finalSecondExp = (remoteSt.secondPetExp !== undefined && remoteSt.secondPetExp !== null) ? Number(remoteSt.secondPetExp) : (Number(localSt.secondPetExp) || 0);
@@ -473,9 +476,12 @@ class KingdomStore {
     (local.rewardRedemptions || []).forEach(r => { if (r && r.id) redMap.set(r.id, r); });
     const mergedRedemptions = Array.from(redMap.values());
 
+    const isRemoteNewer = remoteTime >= localTime;
+    const finalLastModified = Math.max(localTime, remoteTime, Date.now());
+
     const mergedData = {
-      ...remote,
-      ...local,
+      ...(isRemoteNewer ? local : remote),
+      ...(isRemoteNewer ? remote : local),
       queenPassword: finalPassword,
       students: mergedStudents,
       attendance: mergedAttendance,
@@ -487,7 +493,7 @@ class KingdomStore {
       rewardRedemptions: mergedRedemptions,
       seatingLayout: mergedSeatingLayout,
       seatingChart: mergedSeatingChart,
-      lastModified: Math.max(localTime, remoteTime) || Date.now()
+      lastModified: finalLastModified
     };
 
     return this.normalizeData(mergedData);
@@ -651,16 +657,8 @@ class KingdomStore {
       parsed.lastModified = Math.max(parsed.lastModified || 0, Date.now());
     }
 
-    // 寵物飽食度歸零校驗 (v20261116：全班 27 位大臣萌寵飽食度與成長經驗歸零)
+    // 寵物飽食度歸零校驗 (v20261116：全班 27 位大臣萌寵飽食度與成長經驗歸零校準標記)
     if (!parsed.satietyResetV20261116) {
-      if (Array.isArray(parsed.students)) {
-        parsed.students.forEach(st => {
-          st.lifetimePoints = 0;
-          st.petExp = 0;
-          st.secondPetExp = 0;
-          st.secondPetType = null;
-        });
-      }
       parsed.satietyResetV20261116 = true;
     }
 
@@ -689,13 +687,16 @@ class KingdomStore {
       parsed.seatingColsV20261117 = true;
     }
 
+    // 確保可用金幣與生涯累積總額 (支援導師手動歸零與從 0 累加)
     parsed.students.forEach((st, idx) => {
-      // 確保可用金幣與生涯累積總額 (支援導師手動歸零)
-      if (st.points === undefined || st.points === null || isNaN(st.points)) st.points = 0;
-      if (st.lifetimePoints === undefined || st.lifetimePoints === null || isNaN(st.lifetimePoints)) {
-        st.lifetimePoints = Math.max(0, parseInt(st.points, 10) || 0);
+      const ptsVal = Math.max(0, parseInt(st.points, 10) || 0);
+      st.points = ptsVal;
+      let lifeVal = parseInt(st.lifetimePoints, 10);
+      if (isNaN(lifeVal) || lifeVal < 0 || (lifeVal <= 0 && ptsVal > 0)) {
+        lifeVal = ptsVal;
       }
-      st.petExp = st.lifetimePoints;
+      st.lifetimePoints = lifeVal;
+      st.petExp = lifeVal;
 
       // 強制將舊神獸 (dragon, unicorn 等) 或空值徹底遷移至柴犬預設
       let a = (st.animalType || st.petType || '').toLowerCase();
@@ -1225,9 +1226,7 @@ class KingdomStore {
     const student = this.data.students.find(s => s.id == studentId || s.seatNo == studentId);
     if (!student) return false;
     this.syncStudentPets(student);
-    const pts = Math.max(0, parseInt(student.points, 10) || 0);
-    const effectivePts = Math.min(pts, Math.max(0, parseInt(student.lifetimePoints, 10) || pts));
-    student.lifetimePoints = effectivePts;
+    const effectivePts = Math.max(0, parseInt(student.lifetimePoints, 10) || parseInt(student.points, 10) || 0);
     const maxAllowed = 1 + Math.floor(effectivePts / 500);
     const slot = parseInt(slotIndex, 10) || 0;
     const reqPts = slot * 500;
@@ -1351,7 +1350,12 @@ class KingdomStore {
     studentIds.forEach(id => {
       const student = this.data.students.find(s => s.id === id || s.seatNo === id);
       if (student) {
-        if (student.lifetimePoints === undefined) student.lifetimePoints = student.points || 0;
+        if (student.lifetimePoints === undefined || student.lifetimePoints === null || isNaN(student.lifetimePoints)) {
+          student.lifetimePoints = student.points || 0;
+        }
+        if (student.lifetimePoints <= 0 && (student.points || 0) > 0) {
+          student.lifetimePoints = student.points || 0;
+        }
 
         // 加點前精準快照 (含金幣、總飽食度、第二寵物經驗值)
         snapshots.push({
@@ -1596,22 +1600,32 @@ class KingdomStore {
       if (mode === 'set_both') {
         const target = Math.max(0, parseInt(targetPoints, 10) || 0);
         st.points = target;
+        // 生涯蘋果數量從 0 開始累計，並將設定的 target 蘋果數量加進去
         st.lifetimePoints = target;
         st.petExp = target;
       } else if (mode === 'set_points') {
         const target = Math.max(0, parseInt(targetPoints, 10) || 0);
+        const oldPts = st.points || 0;
         st.points = target;
-        if (syncLifetime) {
+        // 核心修復：若原先生涯為 0 或勾選同步，從 0 累計加上這次新增的蘋果數量 (target)！
+        // 若原先生涯已有數值且未勾選同步，若有淨增蘋果則自動累加淨增額，確保生涯永遠不低於可用蘋果！
+        if (syncLifetime || !st.lifetimePoints || st.lifetimePoints <= 0) {
           st.lifetimePoints = target;
-          st.petExp = target;
+        } else if (target > oldPts) {
+          st.lifetimePoints = (st.lifetimePoints || 0) + (target - oldPts);
         }
+        st.lifetimePoints = Math.max(target, st.lifetimePoints || 0);
+        st.petExp = st.lifetimePoints;
       } else if (mode === 'adjust') {
         const pts = parseInt(deltaPoints, 10) || 0;
         st.points = Math.max(0, (st.points || 0) + pts);
-        if (syncLifetime) {
+        // 只要是增加蘋果，生涯累積必定累加；若扣蘋果且勾選同步，則同步扣減但最低不為負
+        if (pts > 0) {
           st.lifetimePoints = Math.max(0, (st.lifetimePoints || 0) + pts);
-          st.petExp = st.lifetimePoints;
+        } else if (pts < 0 && syncLifetime) {
+          st.lifetimePoints = Math.max(0, (st.lifetimePoints || 0) + pts);
         }
+        st.petExp = st.lifetimePoints;
       } else if (mode === 'set_lifetime') {
         const target = Math.max(0, parseInt(targetLifetime, 10) || 0);
         st.lifetimePoints = target;
@@ -1619,15 +1633,17 @@ class KingdomStore {
       } else if (mode === 'reset_points') {
         st.points = 0;
       } else if (mode === 'reset_lifetime') {
-        st.lifetimePoints = 0;
-        st.petExp = 0;
+        const target = Math.max(0, parseInt(targetLifetime, 10) || 0);
+        st.lifetimePoints = target;
+        st.petExp = target;
         st.secondPetType = null;
         st.secondPetExp = 0;
         if (Array.isArray(st.pets)) st.pets = st.pets.slice(0, 1);
       } else if (mode === 'reset_both') {
-        st.points = 0;
-        st.lifetimePoints = 0;
-        st.petExp = 0;
+        const target = Math.max(0, parseInt(targetPoints, 10) || 0);
+        st.points = target;
+        st.lifetimePoints = target;
+        st.petExp = target;
         st.secondPetType = null;
         st.secondPetExp = 0;
         if (Array.isArray(st.pets)) st.pets = st.pets.slice(0, 1);
@@ -3149,10 +3165,13 @@ class KingdomSound {
 // 5. 跨裝置雲端同步引擎 (Cloud & LAN Synchronizer)
 // ===================================================================
 function isLocalHostOrLAN(hostname) {
-  if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') return true;
+  if (typeof window !== 'undefined' && window.location) {
+    if (window.location.protocol === 'file:') return true;
+    if (window.location.port !== '') return true;
+  }
   if (!hostname) return true;
   if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return true;
-  // RFC 1918 私有 IP 與教育網/區網網段
+  // RFC 1918 私有 IP 與教育網/區網網段 (如台灣中小學 TANet 10.x.x.x 等)
   if (/^10\./.test(hostname)) return true;
   if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return true;
   if (/^192\.168\./.test(hostname)) return true;
@@ -3227,7 +3246,7 @@ class KingdomCloudSync {
       });
 
       // 5. 若本機環境且尚未設定 Google Script，嘗試從伺服器讀取共享設定
-      const isLocalHost = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname);
+      const isLocalHost = isLocalHostOrLAN(window.location.hostname);
       if (isLocalHost && !this.config.googleScriptUrl) {
         try {
           fetch('/api/sync/config')
@@ -3291,8 +3310,7 @@ class KingdomCloudSync {
       console.error(e);
     }
     // 若在本地環境，同時寫入伺服器端 cloud_config.json
-    const isLocal = typeof window !== 'undefined' && 
-      (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+    const isLocal = isLocalHostOrLAN(typeof window !== 'undefined' ? window.location.hostname : '');
     if (isLocal) {
       try {
         fetch('/api/sync/config', {
@@ -3370,8 +3388,7 @@ class KingdomCloudSync {
   }
 
   getStatus() {
-    const isLocalHost = typeof window !== 'undefined' && 
-      (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+    const isLocalHost = isLocalHostOrLAN(typeof window !== 'undefined' ? window.location.hostname : '');
 
     return {
       status: this.syncStatus,
@@ -3387,7 +3404,7 @@ class KingdomCloudSync {
 
   connectSse() {
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
-    const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname);
+    const isLocal = isLocalHostOrLAN(window.location.hostname);
     if (!isLocal) return;
 
     try {
@@ -3442,8 +3459,7 @@ class KingdomCloudSync {
     const account = this.config.googleAccount || 'xining502@gmail.com';
 
     // 1. 若運行於本機伺服器、區網或 file:// 模式，推送到 local /api/sync
-    const isLocal = typeof window !== 'undefined' && 
-      (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+    const isLocal = isLocalHostOrLAN(typeof window !== 'undefined' ? window.location.hostname : '');
     
     if (isLocal) {
       try {
@@ -3542,8 +3558,7 @@ class KingdomCloudSync {
     }
 
     // 2. 若在本地區網或 file:// 環境且尚未取得遠端資料，從本地 /api/sync 讀取
-    const isLocal = typeof window !== 'undefined' && 
-      (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname));
+    const isLocal = isLocalHostOrLAN(typeof window !== 'undefined' ? window.location.hostname : '');
 
     if (!remoteData && isLocal) {
       try {
@@ -3630,8 +3645,13 @@ class KingdomCloudSync {
           // 核心修復：使用「智能融合」取代盲目整包覆蓋，保證本機與手機新編輯完整融合！
           this.store.data = this.store.mergeRemoteData(normalizedRemote);
           this.store.saveInternal({ updateTimestamp: false, triggerPush: false });
-          if (typeof window !== 'undefined' && window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
-            window.KingdomUI.refreshCurrentView();
+          if (typeof window !== 'undefined') {
+            if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+              window.KingdomUI.refreshCurrentView();
+            }
+            if (typeof renderPointsView === 'function') renderPointsView();
+            if (typeof renderRosterView === 'function') renderRosterView();
+            if (typeof renderMorningBoard === 'function') renderMorningBoard();
           }
           // 徹底移除背景自動同步時彈出的右下角 Toast，保持大螢幕與操作介面極致純淨，不再干擾導師
           isUpdated = true;
@@ -3774,8 +3794,13 @@ class KingdomCloudSync {
           this.store.recordLocalSnapshot('還原伺服器存檔前備份');
           this.store.data = this.store.normalizeData(result.data);
           this.store.saveInternal({ updateTimestamp: true, triggerPush: false });
-          if (typeof window !== 'undefined' && window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
-            window.KingdomUI.refreshCurrentView();
+          if (typeof window !== 'undefined') {
+            if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+              window.KingdomUI.refreshCurrentView();
+            }
+            if (typeof renderPointsView === 'function') renderPointsView();
+            if (typeof renderRosterView === 'function') renderRosterView();
+            if (typeof renderMorningBoard === 'function') renderMorningBoard();
           }
           return { success: true, message: result.message, studentCount: result.studentCount };
         }
@@ -3812,8 +3837,13 @@ class KingdomCloudSync {
           parsed.lastModified = Date.now();
           this.store.data = parsed;
           this.store.save();
-          if (typeof window !== 'undefined' && window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
-            window.KingdomUI.refreshCurrentView();
+          if (typeof window !== 'undefined') {
+            if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+              window.KingdomUI.refreshCurrentView();
+            }
+            if (typeof renderPointsView === 'function') renderPointsView();
+            if (typeof renderRosterView === 'function') renderRosterView();
+            if (typeof renderMorningBoard === 'function') renderMorningBoard();
           }
           await this.push({ silent: true });
           resolve({ success: true, count: parsed.students.length });

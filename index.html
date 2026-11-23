@@ -330,17 +330,39 @@
               <h3 class="text-2xl sm:text-3xl font-black text-amber-950 mt-1 tracking-wide">
                 西寧小小兵王國 ‧ 聯絡簿看板
               </h3>
-              <!-- 朝會日期獨立跳至下一行，並附歷史切換與日曆選擇器 -->
+              <!-- 朝會日期與模式切換工具列 -->
               <div class="mt-2 flex flex-wrap items-center gap-2">
-                <span class="text-xs font-black bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-300 shadow-xs">
-                  📅 朝會日期：<span id="contactBookDateDisplay"></span>
-                </span>
-                <div class="flex items-center space-x-1 bg-white/90 p-0.5 rounded-xl border border-amber-300 shadow-sm text-xs font-bold">
+                <!-- 雙天並排 vs 單天六行模式切換 -->
+                <div class="flex items-center space-x-1 bg-amber-200/90 p-1 rounded-xl border border-amber-300 shadow-2xs">
+                  <button type="button" id="btnMorningMode2Days" onclick="setMorningContactDaysMode('2days')" class="btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition" title="一次顯示兩天（第一欄今天、第二欄明天各完整六行）">
+                    📅 雙天並排模式
+                  </button>
+                  <button type="button" id="btnMorningMode1Day" onclick="setMorningContactDaysMode('1day')" class="bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition" title="單天作業六行拆左右兩欄">
+                    📄 單天六行模式
+                  </button>
+                </div>
+
+                <!-- 雙天模式快捷組合 -->
+                <div id="morningPresetsGroup" class="flex items-center space-x-1">
+                  <button type="button" onclick="setMorningContactPreset('today_tomorrow')" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition" title="快捷切換：今日與明日兩天作業">
+                    👑 今日 ＆ 明日
+                  </button>
+                  <button type="button" onclick="setMorningContactPreset('yesterday_today')" class="px-2.5 py-1 rounded-xl bg-white/90 hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition" title="快捷切換：昨日與今日兩天作業">
+                    📜 昨日 ＆ 今日
+                  </button>
+                </div>
+
+                <!-- 單天模式專用日期選擇器 -->
+                <div id="morningSingleDatePickerGroup" class="hidden flex items-center space-x-1 bg-white/90 p-0.5 rounded-xl border border-amber-300 shadow-sm text-xs font-bold">
                   <button type="button" onclick="changeContactDateDelta(-1)" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="前一天">⬅ 前一天</button>
                   <input type="date" id="contactBookDatePicker" onchange="handleContactDatePickerChange(this.value)" class="px-2 py-0.5 text-xs bg-amber-50 border border-amber-200 rounded-lg text-amber-900 font-bold cursor-pointer">
                   <button type="button" onclick="changeContactDateToToday()" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="回到今日">今日</button>
                   <button type="button" onclick="changeContactDateDelta(1)" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="後一天">後一天 ➡</button>
                 </div>
+
+                <span class="text-xs font-black bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-300 shadow-xs">
+                  📅 顯示日期：<span id="contactBookDateDisplay"></span>
+                </span>
               </div>
             </div>
             
@@ -359,8 +381,8 @@
           <div class="space-y-3">
             <div class="flex items-center space-x-2">
               <span class="text-base sm:text-xl font-black text-amber-900 bg-amber-200 px-3 py-1 rounded-xl border border-amber-400 flex items-center space-x-1">
-                <span>✍️ 今日作業抄寫項目</span>
-                <span class="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-1">標準六行大字格式</span>
+                <span>✍️ 聯絡簿作業抄寫項目</span>
+                <span class="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-1">第一欄與第二欄獨立六行大字排版</span>
               </span>
             </div>
 

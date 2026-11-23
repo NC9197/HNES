@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * 👑 西寧國小五年二班 ‧ 西寧小小兵王國 班級經營系統
- * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦終極版：智能雙向融合 + 密碼終身保護)
+ * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦終極版：智能雙向融合 + 密碼終身保護 + 特權卡撤銷連動)
  * ============================================================================
  * 
  * 核心升級亮點：
@@ -9,8 +9,12 @@
  *    - 平板與手機即使同時編輯、先後送達，作業、點數、簽到紀錄自動雙向合併，絕不互相沖刷！
  * 2. 導師密碼終身防護鎖 (Password Protection Guard)：
  *    - 雲端嚴密守護導師自訂密碼，任何預設值 queen 絕無法覆蓋導師權限！
- * 3. 500KB 超大容量自動分塊儲存 (突破單一屬性限制，支援全班大數據)。
- * 4. 支援真實 27 位大臣名冊 (洪永恩、莊淇勛...)，全手動純淨模式。
+ * 3. 特權卡撤銷與抽屜同步防護 (Card Revocation Protection)：
+ *    - 撤銷退換卡牌狀態具最高權限，自動清洗卡牌抽屜，撤銷之卡牌絕不在任何裝置復活！
+ * 4. 皇室公佈欄純淨同步 (Clean Announcements Sync)：
+ *    - 導師刪除或清空公告即時生效，不被舊假公告回沖。
+ * 5. 500KB 超大容量自動分塊儲存 (突破單一屬性限制，支援全班大數據)。
+ * 6. 支援真實 27 位大臣名冊 (洪永恩、莊淇勛...)，全手動純淨模式。
  * 
  * 部署教學 (只需 1 分鐘)：
  * 步驟 1：前往 https://script.google.com/ 打開您的專案
@@ -117,7 +121,45 @@ function mergeDatasets(base, incoming) {
     ? base.queenPassword
     : (incoming.queenPassword || 'queen');
 
-  // 2. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與點數自由調度)
+  // 2. 特權卡兌換紀錄智能雙向融合 (撤銷 revoked 與使用 used 狀態具最高權限，絕不倒退回未撤銷)
+  var redMap = {};
+  var bRed = base.rewardRedemptions || [];
+  for (var br = 0; br < bRed.length; br++) {
+    if (bRed[br] && bRed[br].id) redMap[bRed[br].id] = bRed[br];
+  }
+  var iRed = incoming.rewardRedemptions || [];
+  for (var ir = 0; ir < iRed.length; ir++) {
+    var rItem = iRed[ir];
+    if (!rItem || !rItem.id) continue;
+    if (!redMap[rItem.id]) {
+      redMap[rItem.id] = rItem;
+    } else {
+      var existRec = redMap[rItem.id];
+      if (rItem.status === 'revoked' || existRec.status === 'revoked') {
+        rItem.status = 'revoked';
+        rItem.revokedAt = rItem.revokedAt || existRec.revokedAt || new Date().toISOString();
+      } else if (rItem.status === 'used' || existRec.status === 'used') {
+        rItem.status = 'used';
+        rItem.usedAt = rItem.usedAt || existRec.usedAt;
+      }
+      redMap[rItem.id] = rItem;
+    }
+  }
+  var mergedRedemptions = [];
+  for (var rid in redMap) {
+    mergedRedemptions.push(redMap[rid]);
+  }
+
+  // 建立已註銷/已核銷 ID 表，避免撤銷之卡牌殘留在抽屜中
+  var inactiveCardIds = {};
+  for (var rIdx = 0; rIdx < mergedRedemptions.length; rIdx++) {
+    var stat = mergedRedemptions[rIdx].status;
+    if (stat === 'used' || stat === 'revoked') {
+      inactiveCardIds[mergedRedemptions[rIdx].id] = true;
+    }
+  }
+
+  // 3. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與卡牌抽屜純淨同步)
   var mergedStudents = (base.students || []).map(function(bSt) {
     var iSt = null;
     var incList = incoming.students || [];
@@ -132,9 +174,23 @@ function mergeDatasets(base, incoming) {
     // 優先採納最新推送裝置的設定值 (支援加點、扣點、重設、歸零)
     var finalPoints = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
     var finalLifetime = (iSt.lifetimePoints !== undefined && iSt.lifetimePoints !== null) ? Number(iSt.lifetimePoints) : (Number(bSt.lifetimePoints) || 0);
+    if (finalLifetime <= 0 && finalPoints > 0) {
+      finalLifetime = finalPoints;
+    }
     var finalPets = (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets;
     var finalSecondPet = iSt.secondPetType !== undefined ? iSt.secondPetType : (bSt.secondPetType || null);
     var finalSecondExp = (iSt.secondPetExp !== undefined && iSt.secondPetExp !== null) ? Number(iSt.secondPetExp) : (Number(bSt.secondPetExp) || 0);
+
+    // 卡牌抽屜同步與已註銷清洗
+    var rawCards = (iSt.redeemedCards && Array.isArray(iSt.redeemedCards))
+      ? iSt.redeemedCards
+      : ((bSt.redeemedCards && Array.isArray(bSt.redeemedCards)) ? bSt.redeemedCards : []);
+    var cleanCards = [];
+    for (var c = 0; c < rawCards.length; c++) {
+      if (rawCards[c] && rawCards[c].id && !inactiveCardIds[rawCards[c].id]) {
+        cleanCards.push(rawCards[c]);
+      }
+    }
 
     return {
       id: bSt.id,
@@ -150,7 +206,8 @@ function mergeDatasets(base, incoming) {
       petType: iSt.petType || bSt.petType || 'dog',
       secondPetType: finalSecondPet,
       secondPetExp: finalSecondExp,
-      pets: finalPets
+      pets: finalPets,
+      redeemedCards: cleanCards
     };
   });
 
@@ -167,6 +224,7 @@ function mergeDatasets(base, incoming) {
       }
     }
     if (!exists) {
+      if (!cand.redeemedCards) cand.redeemedCards = [];
       mergedStudents.push(cand);
     }
   }
@@ -276,9 +334,9 @@ function mergeDatasets(base, incoming) {
     homeworkPresets: incoming.homeworkPresets || base.homeworkPresets,
     behaviorReasons: incoming.behaviorReasons || base.behaviorReasons,
     alarmPresets: incoming.alarmPresets || base.alarmPresets,
-    announcements: incoming.announcements || base.announcements,
+    announcements: (incoming.announcements !== undefined && incoming.announcements !== null) ? incoming.announcements : (base.announcements || []),
     rewardCards: incoming.rewardCards || base.rewardCards,
-    rewardRedemptions: incoming.rewardRedemptions || base.rewardRedemptions || [],
+    rewardRedemptions: mergedRedemptions,
     behaviorCards: incoming.behaviorCards || base.behaviorCards || {},
     trafficOverrides: incoming.trafficOverrides || base.trafficOverrides || {},
     seatingLayout: incoming.seatingLayout || base.seatingLayout,
