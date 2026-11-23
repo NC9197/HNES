@@ -176,6 +176,41 @@ function scheduleForwardToGas(data) {
   }, 300);
 }
 
+// 伺服器啟動或網址更新時，主動自 Google Apps Script 雲端中繼站拉取並智能融合最新存檔
+async function pullFromGasAndMerge() {
+  const cfg = getCloudConfig();
+  if (!cfg.googleScriptUrl || !cfg.googleScriptUrl.trim()) return null;
+  const account = cfg.googleAccount || 'xining502@gmail.com';
+  const sep = cfg.googleScriptUrl.includes('?') ? '&' : '?';
+  const pullUrl = `${cfg.googleScriptUrl}${sep}account=${encodeURIComponent(account)}&action=pull&_t=${Date.now()}`;
+
+  try {
+    console.log(`[CloudRelay] 正在自 Google 雲端中繼站對齊最新存檔...`);
+    const cloudRes = await sendHttpsRequest(pullUrl, 'GET', null);
+    if (cloudRes && cloudRes.students && Array.isArray(cloudRes.students)) {
+      const defaultSyncFilePath = path.join(ROOT_DIR, 'data_sync.json');
+      let currentLocal = {};
+      if (fs.existsSync(defaultSyncFilePath)) {
+        try { currentLocal = JSON.parse(fs.readFileSync(defaultSyncFilePath, 'utf8')); } catch (_) {}
+      }
+      const merged = mergeDatasets(currentLocal, cloudRes);
+      backupFileBeforeOverwrite(defaultSyncFilePath, 'cloud_pull_boot');
+      fs.writeFileSync(defaultSyncFilePath, JSON.stringify(merged, null, 2), 'utf8');
+      const safeAccount = account.replace(/[^a-zA-Z0-9_\-@.]/g, '_');
+      const specificPath = path.join(ROOT_DIR, `data_sync_${safeAccount}.json`);
+      if (fs.existsSync(specificPath) || safeAccount) {
+        try { fs.writeFileSync(specificPath, JSON.stringify(merged, null, 2), 'utf8'); } catch (_) {}
+      }
+      broadcastSseUpdate(merged);
+      console.log(`[CloudRelay] ✅ 成功自 Google 雲端庫同步最新名冊！大臣人數: ${merged.students.length}, 時間戳: ${new Date(merged.lastModified).toLocaleTimeString()}`);
+      return merged;
+    }
+  } catch (e) {
+    console.warn(`[CloudRelay] 拉取雲端存檔跳過: ${e.message}`);
+  }
+  return null;
+}
+
 function mergeDatasets(base, incoming) {
   if (!base) return incoming;
   if (!incoming) return base;
@@ -380,15 +415,20 @@ const server = http.createServer((req, res) => {
           const parsed = JSON.parse(body || '{}');
           const updated = saveCloudConfig(parsed);
           
-          // 若設定了有效 Google Script 網址，且本機已有最新資料，主動觸發一次後端直推
+          // 若設定了有效 Google Script 網址，主動自雲端拉取最新存檔並雙向融合
           if (updated.googleScriptUrl) {
-            const defaultSyncFilePath = path.join(ROOT_DIR, 'data_sync.json');
-            if (fs.existsSync(defaultSyncFilePath)) {
-              try {
-                const latest = JSON.parse(fs.readFileSync(defaultSyncFilePath, 'utf8'));
-                scheduleForwardToGas(latest);
-              } catch (_) {}
-            }
+            pullFromGasAndMerge().then(merged => {
+              if (!merged) {
+                // 雲端無更全資料時，直推本地存檔
+                const defaultSyncFilePath = path.join(ROOT_DIR, 'data_sync.json');
+                if (fs.existsSync(defaultSyncFilePath)) {
+                  try {
+                    const latest = JSON.parse(fs.readFileSync(defaultSyncFilePath, 'utf8'));
+                    scheduleForwardToGas(latest);
+                  } catch (_) {}
+                }
+              }
+            }).catch(() => {});
           }
 
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -423,6 +463,25 @@ const server = http.createServer((req, res) => {
         const testUrl = `${targetUrl}${sep}account=${encodeURIComponent(account)}&action=pull&_t=${startTime}`;
         const testRes = await sendHttpsRequest(testUrl, 'GET', null);
         const latency = Date.now() - startTime;
+
+        // 偵測 Google 登入重定向 (說明「誰可以存取」未設為「所有人」)
+        if (testRes && typeof testRes.body === 'string' && (testRes.body.includes('ServiceLogin') || testRes.body.includes('accounts.google.com') || testRes.body.includes('<!DOCTYPE html>'))) {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            success: false,
+            error: 'Google 存取權限受限：連線被導向至 Google 帳號登入頁。請至 Google Apps Script「管理部署作業」將「誰可以存取」設為「所有人 (Anyone)」！'
+          }));
+          return;
+        }
+
+        if (testRes && testRes.status && testRes.status >= 400) {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            success: false,
+            error: `Google Apps Script 回應 HTTP ${testRes.status} 錯誤，請確認網址結尾是否為 /exec。`
+          }));
+          return;
+        }
 
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
@@ -690,4 +749,7 @@ server.listen(PORT, '0.0.0.0', () => {
   }
   console.log('\n按下 Ctrl + C 可隨時停止伺服器。');
   console.log('================================================================\n');
+
+  // 開機主動自 Google Apps Script 雲端中繼站對齊最新名冊與點數
+  pullFromGasAndMerge().catch(() => {});
 });

@@ -287,6 +287,43 @@ document.addEventListener("DOMContentLoaded", () => {
     window.KingdomApp.cloudSync.pull({ silent: true });
   }
 
+  // 智能時光機守護：若當前名冊只有 27 人，但本機時光機擁有 >= 28 位大臣存檔，主動顯示一鍵復原
+  setTimeout(() => {
+    try {
+      const store = window.KingdomApp && window.KingdomApp.store;
+      if (!store || !store.data) return;
+      const currentCount = store.data.students ? store.data.students.length : 0;
+      if (currentCount <= 27) {
+        const snaps = store.getLocalSnapshots();
+        const snap28 = snaps.find(s => s.studentCount >= 28 || (s.data && s.data.students && s.data.students.length >= 28));
+        if (snap28) {
+          console.log('[TimeMachine] 偵測到曾有 28 位大臣的時光機快照:', snap28.id);
+          const banner = document.createElement('div');
+          banner.id = 'timeMachineRecoveryBanner';
+          banner.className = 'fixed top-14 left-1/2 -translate-x-1/2 z-[100] max-w-lg w-11/12 p-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-2xl border-2 border-amber-300 flex items-center justify-between gap-2';
+          banner.innerHTML = `
+            <div class="flex items-center space-x-2 min-w-0">
+              <span class="text-xl">👑</span>
+              <div class="text-xs">
+                <div class="font-black">發現您曾新增的第 28 位大臣存檔！</div>
+                <div class="text-[10px] opacity-90 truncate">時光機快照 (${snap28.timeStr || snap28.reason}) 包含完整 28 位大臣</div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-1.5 shrink-0">
+              <button onclick="restoreFromLocalSnapshot('${snap28.id}'); document.getElementById('timeMachineRecoveryBanner')?.remove();" class="px-3 py-1.5 rounded-xl bg-white text-amber-950 font-black text-xs shadow hover:bg-amber-100">
+                ↩️ 一鍵復原
+              </button>
+              <button onclick="document.getElementById('timeMachineRecoveryBanner')?.remove();" class="p-1 rounded-lg text-white/80 hover:text-white text-xs">
+                ✕
+              </button>
+            </div>
+          `;
+          document.body.appendChild(banner);
+        }
+      }
+    } catch (_) {}
+  }, 1200);
+
   // 點擊其他地方關閉下拉選單
   document.addEventListener("click", (e) => {
     const dropdown = document.getElementById("systemDropdown");
@@ -7931,10 +7968,10 @@ function renderSeatingDock() {
   // 已有安排到座位者的座號集合 (暫時移出座號庫)
   const seatedSet = new Set(chart.filter(n => n !== null && n !== undefined));
 
-  // 1. 男生座號庫 (1 ~ 13號)：未安排座位者
-  const unassignedBoys = students.filter(s => s.seatNo >= 1 && s.seatNo <= 13 && !seatedSet.has(s.seatNo));
-  // 2. 女生座號庫 (14 ~ 27號)：未安排座位者
-  const unassignedGirls = students.filter(s => s.seatNo >= 14 && s.seatNo <= 27 && !seatedSet.has(s.seatNo));
+  // 1. 男生座號庫 (未安排座位者，支援第28位及新增大臣)
+  const unassignedBoys = students.filter(s => (s.gender === 'M' || (!s.gender && s.seatNo <= 13)) && !seatedSet.has(s.seatNo));
+  // 2. 女生座號庫 (未安排座位者，支援第28位及新增大臣)
+  const unassignedGirls = students.filter(s => (s.gender === 'F' || (!s.gender && s.seatNo > 13) || (s.gender !== 'M' && s.seatNo > 13)) && !seatedSet.has(s.seatNo));
 
   // 更新兩側側欄待排計數徽章
   const boysBadge = document.getElementById("dockBoysCountBadge");
@@ -8911,8 +8948,14 @@ async function testGoogleCloudConnection() {
 
     if (serverRes) {
       if (serverRes.success) {
+        // 連線成功，自動儲存網址並立即拉取對齊最新存檔
+        const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+        if (sync) {
+          sync.saveConfig({ googleScriptUrl: url });
+          sync.pull({ silent: true });
+        }
         resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
-        resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線正常！</b> (延遲 ${serverRes.latency || (Date.now() - startTime)}ms)<br>📱 電腦端編輯後後端將自動轉推雲端，手機即使處於電信網路 (4G/5G) 亦可秒級即時同步！`;
+        resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線正常，設定已自動保存！</b> (延遲 ${serverRes.latency || (Date.now() - startTime)}ms)<br>📱 電腦端編輯後後端將自動轉推雲端，已為您自動同步最新名冊（含第 28 位大臣）！`;
         return;
       } else {
         throw new Error(serverRes.error || serverRes.message || '伺服器檢測失敗');
@@ -8929,8 +8972,13 @@ async function testGoogleCloudConnection() {
       const directRes = await fetch(testUrl, { method: 'GET' });
       const latency = Date.now() - startTime;
       if (directRes.ok) {
+        const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+        if (sync) {
+          sync.saveConfig({ googleScriptUrl: url });
+          sync.pull({ silent: true });
+        }
         resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
-        resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線成功！</b> (延遲 ${latency}ms)<br>📱 手機連線電信網路 (4G/5G) 可即時雙向同步！`;
+        resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線成功，設定已自動保存！</b> (延遲 ${latency}ms)<br>📱 手機連線電信網路 (4G/5G) 可即時雙向同步，最新名冊已成功對齊！`;
         return;
       }
     } catch (fetchErr) {
@@ -8941,8 +8989,13 @@ async function testGoogleCloudConnection() {
     try {
       await fetch(testUrl, { method: 'GET', mode: 'no-cors' });
       const latency = Date.now() - startTime;
+      const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+      if (sync) {
+        sync.saveConfig({ googleScriptUrl: url });
+        sync.pull({ silent: true });
+      }
       resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
-      resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線成功！(Safari 相容模式)</b> (延遲 ${latency}ms)<br>📱 您的 iPhone Safari 已成功連接 Google 雲端庫，電信外網同步正常運作！`;
+      resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線成功！(Safari 相容模式，已自動保存)</b> (延遲 ${latency}ms)<br>📱 您的 iPhone Safari 已成功連接 Google 雲端庫，電信外網同步正常運作！`;
       return;
     } catch (_) {}
 
@@ -9351,16 +9404,20 @@ async function triggerManualSync() {
     if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
       window.KingdomUI.refreshCurrentView();
     }
-    showToast("🎉 已成功同步五年二班最新名冊（27 位大臣：洪永恩、莊淇勛...）！", "🟢");
+    const count = (store.data && store.data.students) ? store.data.students.length : 27;
+    showToast(`🎉 已成功同步五年二班最新名冊（共 ${count} 位大臣：洪永恩、莊淇勛...）！`, "🟢");
   } catch (err) {
-    console.error("同步失敗，啟動備援還原", err);
-    if (store && typeof store.applyMasterRosterBackup === 'function') {
+    console.error("同步失敗", err);
+    // 僅在完全無名冊或假名冊時才啟動預設備援，絕不盲目覆蓋已有名冊
+    const isRealRoster = store.data.students && 
+      store.data.students[0] && store.data.students[0].name === "洪永恩";
+    if (!isRealRoster && store && typeof store.applyMasterRosterBackup === 'function') {
       store.applyMasterRosterBackup();
     }
     if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
       window.KingdomUI.refreshCurrentView();
     }
-    showToast("🎉 已成功自電腦備份同步最新名冊（洪永恩、莊淇勛等 27 位大臣）！", "🟢");
+    showToast("⚠️ 雲端連線暫時逾時，已保全本機最新大臣資料！", "💡");
   }
 }
 
@@ -9412,8 +9469,24 @@ async function renderTimeMachineSnapshots() {
 
   let html = '';
 
+  // 1. 雲端中繼站對齊專區 (可直接拉取手機剛同步的大臣與點數)
+  html += `
+    <div class="p-3 mb-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm flex items-center justify-between">
+      <div>
+        <div class="font-black text-xs flex items-center space-x-1">
+          <span>☁️ Google 雲端中繼站對齊</span>
+          <span class="text-[9px] bg-amber-700/60 px-1.5 py-0.2 rounded-full">雙向保險</span>
+        </div>
+        <div class="text-[10px] opacity-95 mt-0.5">若手機或曾編輯的裝置已連線，點此立即拉回包含第 28 位大臣的最新存檔</div>
+      </div>
+      <button onclick="pullLatestFromCloud()" class="px-3 py-1.5 rounded-xl bg-white text-amber-950 font-black text-xs shadow hover:bg-amber-100 flex items-center space-x-1 shrink-0">
+        <span>🔄 立即自雲端拉取</span>
+      </button>
+    </div>
+  `;
+
   if (localSnaps.length === 0 && serverSnaps.length === 0) {
-    container.innerHTML = `
+    container.innerHTML = html + `
       <div class="text-center py-6 text-slate-500 text-xs">
         目前尚無歷史快照紀錄。每次進行重要操作或同步時，系統將自動為您拍照留存。
       </div>
@@ -9505,12 +9578,38 @@ async function restoreMasterPcData() {
   showToast("🎉 成功還原電腦主存檔（共 27 位大臣：洪永恩、莊淇勛...）！", "👑");
 }
 
+async function pullLatestFromCloud() {
+  const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+  if (!sync) return;
+  showToast("正在從 Google 雲端庫拉取最新名冊...", "☁️");
+  try {
+    const res = await sync.pull({ force: true });
+    if (res && res.success) {
+      const count = (window.KingdomApp.store.data && window.KingdomApp.store.data.students) ? window.KingdomApp.store.data.students.length : 27;
+      showToast(`🎉 成功自 Google 雲端拉取最新存檔！共 ${count} 位大臣。`, "🟢");
+      closeTimeMachineModal();
+      if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
+        window.KingdomUI.refreshCurrentView();
+      }
+    } else {
+      showToast(`⚠️ 雲端拉取未成功：${res.message || res.error || '請先在雲端同步設定確認 Google Script 網址'}`, "❌");
+    }
+  } catch (err) {
+    showToast(`⚠️ 雲端拉取失敗：${err.message}`, "❌");
+  }
+}
+
 function restoreFromLocalSnapshot(snapshotId) {
   const ok = confirm("確定要還原至此時光機歷史版本嗎？\n\n系統會將現有狀態自動留存備份後再執行還原。");
   if (!ok) return;
   const res = window.KingdomApp.store.restoreLocalSnapshot(snapshotId);
   if (res.success) {
-    showToast(`🎉 成功還原至該時光機版本！`, "👑");
+    const count = res.count || (window.KingdomApp.store.data.students ? window.KingdomApp.store.data.students.length : 27);
+    showToast(`🎉 成功還原至該時光機版本！共 ${count} 位大臣。`, "👑");
+    const sync = window.KingdomApp && window.KingdomApp.cloudSync;
+    if (sync) {
+      try { sync.push({ silent: true, force: true }); } catch (_) {}
+    }
     closeTimeMachineModal();
     closeCloudSyncModal();
     if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {

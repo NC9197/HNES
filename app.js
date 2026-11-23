@@ -306,7 +306,24 @@ class KingdomStore {
       (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || 
       "queen";
     
+    // 核心安全保全：保全現有名冊中超過 27 號的大臣（如導師或手機手動新增之第 28 號大臣）
+    const extraStudents = [];
+    if (this.data && Array.isArray(this.data.students)) {
+      this.data.students.forEach(st => {
+        if (st && (Number(st.seatNo) > 27 || (st.id && !MASTER_ROSTER_BACKUP_20261119.students.some(m => m.id === st.id || m.seatNo === st.seatNo)))) {
+          extraStudents.push(JSON.parse(JSON.stringify(st)));
+        }
+      });
+    }
+
     const masterCopy = JSON.parse(JSON.stringify(MASTER_ROSTER_BACKUP_20261119));
+    extraStudents.forEach(extra => {
+      if (!masterCopy.students.some(s => s.seatNo === extra.seatNo || s.id === extra.id)) {
+        masterCopy.students.push(extra);
+      }
+    });
+    masterCopy.students.sort((a, b) => (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0));
+
     masterCopy.lastModified = Math.max(Date.now(), 1795096022078);
     masterCopy.realRosterV20261119 = true;
     if (currentPass && currentPass !== 'queen') {
@@ -3255,7 +3272,7 @@ class KingdomCloudSync {
       if (isLocalHost) {
         // 取得主機區網 IP (供手機掃碼專用網址自動轉換 localhost 為區網真實 IP)
         try {
-          fetch('/api/network-info')
+          fetch(this.getLocalApiUrl('/api/network-info'))
             .then(r => r.json())
             .then(info => {
               if (info && info.primaryIp) {
@@ -3268,7 +3285,7 @@ class KingdomCloudSync {
 
         // 與伺服器 cloud_config.json 雙向同步
         try {
-          fetch('/api/sync/config')
+          fetch(this.getLocalApiUrl('/api/sync/config'))
             .then(r => r.json())
             .then(data => {
               if (data && data.googleScriptUrl) {
@@ -3276,10 +3293,12 @@ class KingdomCloudSync {
                   this.config.googleScriptUrl = data.googleScriptUrl;
                   this.saveConfig(this.config, false);
                   console.log('[CloudSync] 自動自本機伺服器載入 Google 雲端連接網址:', data.googleScriptUrl);
+                  // 取得雲端網址後立即進行一次標準雲端拉取，對齊最新 28 位大臣存檔
+                  this.pull({ silent: true });
                 }
               } else if (this.config.googleScriptUrl) {
                 // 本機瀏覽器有但伺服器端沒有，回傳給伺服器保存供全域與後端轉推使用
-                fetch('/api/sync/config', {
+                fetch(this.getLocalApiUrl('/api/sync/config'), {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -3344,7 +3363,7 @@ class KingdomCloudSync {
     const isLocal = isLocalHostOrLAN(typeof window !== 'undefined' ? window.location.hostname : '');
     if (isLocal && syncToServer) {
       try {
-        fetch('/api/sync/config', {
+        fetch(this.getLocalApiUrl('/api/sync/config'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -3726,6 +3745,17 @@ class KingdomCloudSync {
           return { success: true, timestamp: new Date(), updated: false };
         }
 
+        // 核心防舊倒灌鎖：若本機大臣人數多於遠端且時間戳更新，遠端為缺漏大臣之舊存檔，嚴防覆蓋，反向推送更新遠端！
+        const localCount = (this.store.data.students || []).length;
+        const remoteCount = (normalizedRemote.students || []).length;
+        if (localCount > remoteCount && localTime >= remoteTime && !force) {
+          console.warn(`[CloudSync] 本機名冊擁有更多大臣 (${localCount} 人 > 遠端 ${remoteCount} 人)，嚴防被缺少大臣的舊遠端倒灌，反向推送保全最新資料！`);
+          this.push({ silent: true, force: true });
+          this.syncStatus = 'success';
+          this.notify();
+          return { success: true, timestamp: new Date(), updated: false };
+        }
+
         // 智慧比對：若遠端時間戳較新、或遠端有新增點數/打卡紀錄，立即進行雙向融合
         const hasUpdates = this.hasRemoteUpdates(this.store.data, normalizedRemote);
 
@@ -3812,8 +3842,13 @@ class KingdomCloudSync {
     // 1. 若遠端時間戳明確較新，一律視為有更新
     if (rTime > lTime) return true;
 
-    // 2. 名冊人數比對：若遠端大臣人數不同（例如手機剛冊封新大臣），100% 判定有更新！
-    if (remote.students.length !== local.students.length) return true;
+    // 關鍵防舊覆蓋保護：若本地大臣人數多於遠端，且本地時間戳不小於遠端，代表遠端為缺少大臣的舊檔，絕不可視為更新！
+    if (local.students.length > remote.students.length && lTime >= rTime) {
+      return false;
+    }
+
+    // 2. 名冊人數比對：若遠端大臣人數更多（例如手機剛冊封新大臣），100% 判定有更新！
+    if (remote.students.length > local.students.length) return true;
 
     // 檢查遠端是否有本地缺少的大臣
     const hasNewStudent = remote.students.some(rSt => !local.students.some(lSt => lSt.seatNo === rSt.seatNo || lSt.id === rSt.id));
