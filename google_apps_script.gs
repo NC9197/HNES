@@ -34,9 +34,9 @@ function doGet(e) {
     var info = {
       status: "online",
       system: "西寧國小五年二班 ‧ 西寧小小兵王國 雲端同步中繼站",
-      version: "2026.v5.pure_homework_sync",
+      version: "2026.v6.shortcuts_and_timer_sync",
       time: new Date().toISOString(),
-      message: "🟢 雲端同步服務正常運作中！作業防護鎖與永久墓碑同步已全面啟用。"
+      message: "🟢 雲端同步服務正常運作中！全功能快捷庫（作業/加扣點/事由/計時）、作業防護鎖與特權卡連動已全面啟用。"
     };
     return ContentService.createTextOutput(JSON.stringify(info, null, 2))
       .setMimeType(ContentService.MimeType.JSON);
@@ -447,6 +447,7 @@ function mergeDatasets(base, incoming) {
     homeworkPresets: incoming.homeworkPresets || base.homeworkPresets,
     behaviorReasons: incoming.behaviorReasons || base.behaviorReasons,
     alarmPresets: incoming.alarmPresets || base.alarmPresets,
+    timerPresets: incoming.timerPresets || base.timerPresets,
     announcements: (incoming.announcements !== undefined && incoming.announcements !== null) ? incoming.announcements : (base.announcements || []),
     rewardCards: incoming.rewardCards || base.rewardCards,
     rewardRedemptions: mergedRedemptions,
