@@ -742,6 +742,7 @@
   "contactBookHistory": {},
   "attendance": {},
   "homework": [],
+  "deletedHomeworkIds": ["1", "2", "3"],
   "pointLogs": [],
   "announcements": [],
   "rewardCards": [

@@ -34,9 +34,9 @@ function doGet(e) {
     var info = {
       status: "online",
       system: "西寧國小五年二班 ‧ 西寧小小兵王國 雲端同步中繼站",
-      version: "2026.v4.smart_merge",
+      version: "2026.v5.pure_homework_sync",
       time: new Date().toISOString(),
-      message: "🟢 雲端同步服務正常運作中！智能融合與密碼防護鎖已全面啟用。"
+      message: "🟢 雲端同步服務正常運作中！作業防護鎖與永久墓碑同步已全面啟用。"
     };
     return ContentService.createTextOutput(JSON.stringify(info, null, 2))
       .setMimeType(ContentService.MimeType.JSON);
@@ -63,6 +63,37 @@ function doGet(e) {
 
   // 預設為拉取 (Pull) - 支援標準 JSON 與 Safari 專用 JSONP 跨網域免預檢回傳
   var jsonStr = loadData(prop, account);
+
+  // 雲端資料即時清洗防護：若歷史儲存中含有示範假作業，自動即時剃除並寫入永久墓碑
+  if (jsonStr && (jsonStr.indexOf('"homework"') !== -1 || jsonStr.indexOf('國習') !== -1 || jsonStr.indexOf('國語習作') !== -1)) {
+    try {
+      var pullData = JSON.parse(jsonStr);
+      if (pullData && pullData.homework && Array.isArray(pullData.homework)) {
+        var needsClean = false;
+        var cleanList = pullData.homework.filter(function(hw) {
+          if (!hw || !hw.id) return false;
+          var sid = String(hw.id);
+          if (sid === "1" || sid === "2" || sid === "3") { needsClean = true; return false; }
+          if (hw.date === "2026-11-16" || hw.dueDate === "2026-11-16") { needsClean = true; return false; }
+          var t = String(hw.title || '').replace(/\s+/g, '');
+          var p = String(hw.presetName || '').replace(/\s+/g, '');
+          if (t.indexOf("國語習作第八課") !== -1 || t.indexOf("生字造詞隨堂筆記") !== -1 || t.indexOf("數學習作P.62") !== -1 || t.indexOf("數學習作P62") !== -1) { needsClean = true; return false; }
+          if (p === "國習" && (!hw.date || hw.date <= "2026-11-16")) { needsClean = true; return false; }
+          return true;
+        });
+        if (needsClean) {
+          pullData.homework = cleanList;
+          if (!pullData.deletedHomeworkIds || !Array.isArray(pullData.deletedHomeworkIds)) pullData.deletedHomeworkIds = [];
+          ["1", "2", "3"].forEach(function(d) {
+            if (pullData.deletedHomeworkIds.indexOf(d) === -1) pullData.deletedHomeworkIds.push(d);
+          });
+          jsonStr = JSON.stringify(pullData);
+          saveData(prop, account, jsonStr);
+        }
+      }
+    } catch (_) {}
+  }
+
   if (p.callback) {
     return ContentService.createTextOutput(p.callback + '(' + (jsonStr || '{}') + ');')
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
@@ -305,32 +336,65 @@ function mergeDatasets(base, incoming) {
     }
   }
 
-  // 4. 作業按 ID 雙向合併 (多裝置新增與批閱互不沖刷)
+  // 4. 作業按 ID 雙向合併 + 刪除墓碑 (deletedHomeworkIds) 徹底封殺已刪除與舊示範假作業
+  var deletedHwMap = {};
+  var bDel = base.deletedHomeworkIds || [];
+  var iDel = incoming.deletedHomeworkIds || [];
+  for (var d1 = 0; d1 < bDel.length; d1++) deletedHwMap[String(bDel[d1])] = true;
+  for (var d2 = 0; d2 < iDel.length; d2++) deletedHwMap[String(iDel[d2])] = true;
+  deletedHwMap["1"] = true;
+  deletedHwMap["2"] = true;
+  deletedHwMap["3"] = true;
+
+  function isDemoOrDeletedHw(hw) {
+    if (!hw) return true;
+    var idStr = String(hw.id || '');
+    if (deletedHwMap[idStr]) return true;
+    if (idStr === "1" || idStr === "2" || idStr === "3") return true;
+    if (hw.date === "2026-11-16" || hw.dueDate === "2026-11-16") return true;
+    var t = String(hw.title || '').replace(/\s+/g, '');
+    var p = String(hw.presetName || '').replace(/\s+/g, '');
+    if (t.indexOf("國語習作第八課") !== -1 || t.indexOf("生字造詞隨堂筆記") !== -1 || t.indexOf("數學習作P.62") !== -1 || t.indexOf("數學習作P62") !== -1) return true;
+    if (p === "國習" && (!hw.date || hw.date <= "2026-11-16")) return true;
+    return false;
+  }
+
   var hwMap = {};
   var bHw = base.homework || [];
   for (var h = 0; h < bHw.length; h++) {
-    if (bHw[h] && bHw[h].id) hwMap[bHw[h].id] = bHw[h];
+    var bhItem = bHw[h];
+    if (bhItem && bhItem.id && !isDemoOrDeletedHw(bhItem)) {
+      hwMap[String(bhItem.id)] = bhItem;
+    }
   }
   var iHw = incoming.homework || [];
   for (var ih = 0; ih < iHw.length; ih++) {
     var item = iHw[ih];
-    if (!item || !item.id) continue;
-    if (!hwMap[item.id]) {
-      hwMap[item.id] = item;
+    if (!item || !item.id || isDemoOrDeletedHw(item)) continue;
+    var hidStr = String(item.id);
+    if (!hwMap[hidStr]) {
+      hwMap[hidStr] = item;
     } else {
-      var existHw = hwMap[item.id];
+      var existHw = hwMap[hidStr];
       var combinedRecords = {};
       var r1 = existHw.records || {};
       var r2 = item.records || {};
       for (var k1 in r1) combinedRecords[k1] = r1[k1];
       for (var k2 in r2) combinedRecords[k2] = r2[k2];
       item.records = combinedRecords;
-      hwMap[item.id] = item;
+      hwMap[hidStr] = item;
     }
   }
   var mergedHomework = [];
   for (var hid in hwMap) {
     mergedHomework.push(hwMap[hid]);
+  }
+  var mergedDeletedHwList = [];
+  for (var did in deletedHwMap) {
+    mergedDeletedHwList.push(did);
+  }
+  if (mergedDeletedHwList.length > 200) {
+    mergedDeletedHwList = mergedDeletedHwList.slice(-200);
   }
 
   // 5. 聯絡簿智慧融合 (取更新時間較新或內容完整者)
@@ -375,6 +439,7 @@ function mergeDatasets(base, incoming) {
     students: mergedStudents,
     attendance: mergedAttendance,
     homework: mergedHomework,
+    deletedHomeworkIds: mergedDeletedHwList,
     contactBook: mergedContactBook,
     contactBookHistory: mergedCbHistory,
     pointLogs: mergedLogs,

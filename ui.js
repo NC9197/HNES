@@ -238,6 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 啟動晨間大螢幕即時跳動秒針時鐘
   startMorningClock();
   renderAlarmPresets();
+  renderTimerPresets();
 
   // 檢查 URL 參數
   const urlParams = new URLSearchParams(window.location.search);
@@ -2507,9 +2508,17 @@ function batchMarkAllHwSubmitted(hwId) {
 function deleteHomework(hwId) {
   if (!checkTeacherAuth("刪除作業奏章")) return;
   if (!confirm("確定要刪除此項作業奏章嗎？")) return;
-  window.KingdomApp.store.data.homework = window.KingdomApp.store.data.homework.filter(h => h.id != hwId);
-  window.KingdomApp.store.syncAllHomeworkReflectionCards();
-  window.KingdomApp.store.save();
+  const store = window.KingdomApp.store;
+  if (!store.data.deletedHomeworkIds || !Array.isArray(store.data.deletedHomeworkIds)) {
+    store.data.deletedHomeworkIds = ['1', '2', '3'];
+  }
+  const idStr = String(hwId);
+  if (!store.data.deletedHomeworkIds.includes(idStr)) {
+    store.data.deletedHomeworkIds.push(idStr);
+  }
+  store.data.homework = (store.data.homework || []).filter(h => String(h.id) !== idStr);
+  store.syncAllHomeworkReflectionCards();
+  store.save('銷毀作業奏章 #' + idStr);
   showToast("🗑️ 作業奏章已銷毀");
   renderHomeworkSummaryBoard();
   renderTrafficView();
@@ -2526,13 +2535,27 @@ function renderHomeworkPresetButtons() {
   }
 
   container.innerHTML = presets.map(p => `
-    <button type="button" onclick="applyHomeworkPreset('${p.id}')"
-      class="px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-black text-xs border border-amber-300 shadow-2xs flex items-center space-x-1 transition"
-      title="套用【${p.fullName}】 (${p.subject})">
-      <span class="text-[10px] bg-amber-200 text-amber-900 px-1 rounded font-bold">${p.subject}</span>
-      <span>${p.name}</span>
-    </button>
+    <div class="inline-flex items-center rounded-lg bg-amber-100 border border-amber-300 shadow-2xs overflow-hidden group">
+      <button type="button" onclick="applyHomeworkPreset('${p.id}')"
+        class="px-2 py-1 text-amber-950 font-black text-xs hover:bg-amber-200 flex items-center space-x-1 transition"
+        title="套用【${p.fullName}】 (${p.subject})">
+        <span class="text-[10px] bg-amber-200 text-amber-900 px-1 rounded font-bold">${p.subject}</span>
+        <span>${p.name}</span>
+      </button>
+      <div class="flex items-center border-l border-amber-200 bg-amber-50">
+        <button type="button" onclick="openEditHwPresetModal('${p.id}')"
+          class="p-1 text-slate-400 hover:text-amber-700 hover:bg-amber-100 transition" title="編輯此作業快捷">
+          <i data-lucide="edit-2" class="w-3 h-3 pointer-events-none"></i>
+        </button>
+        <button type="button" onclick="deleteHwPresetPrompt('${p.id}')"
+          class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="刪除此作業快捷">
+          <i data-lucide="trash-2" class="w-3 h-3 pointer-events-none"></i>
+        </button>
+      </div>
+    </div>
   `).join('');
+
+  initLucideIcons();
 }
 
 function applyHomeworkPreset(presetId) {
@@ -2558,6 +2581,57 @@ function applyHomeworkPreset(presetId) {
 }
 
 function openAddHwPresetModal() {
+  const editIdInput = document.getElementById("editHwPresetId");
+  if (editIdInput) editIdInput.value = "";
+
+  const title = document.getElementById("hwPresetModalTitle");
+  if (title) title.innerHTML = `<span>📝 新增作業快捷範本</span>`;
+
+  const btn = document.getElementById("btnSubmitHwPreset");
+  if (btn) btn.textContent = "儲存快捷範本";
+
+  const selSubject = document.getElementById("presetSubject");
+  if (selSubject) selSubject.value = "國語";
+
+  const nameInput = document.getElementById("presetName");
+  if (nameInput) nameInput.value = "";
+
+  const fullNameInput = document.getElementById("presetFullName");
+  if (fullNameInput) fullNameInput.value = "";
+
+  const descInput = document.getElementById("presetDesc");
+  if (descInput) descInput.value = "";
+
+  document.getElementById("addHwPresetModal").classList.remove("hidden");
+  initLucideIcons();
+}
+
+function openEditHwPresetModal(presetId) {
+  const presets = window.KingdomApp.store.data.homeworkPresets || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || [];
+  const preset = presets.find(p => p.id === presetId);
+  if (!preset) return;
+
+  const editIdInput = document.getElementById("editHwPresetId");
+  if (editIdInput) editIdInput.value = preset.id;
+
+  const title = document.getElementById("hwPresetModalTitle");
+  if (title) title.innerHTML = `<span>✏️ 編輯作業快捷範本</span>`;
+
+  const btn = document.getElementById("btnSubmitHwPreset");
+  if (btn) btn.textContent = "💾 儲存修改";
+
+  const selSubject = document.getElementById("presetSubject");
+  if (selSubject) selSubject.value = preset.subject || "國語";
+
+  const nameInput = document.getElementById("presetName");
+  if (nameInput) nameInput.value = preset.name || "";
+
+  const fullNameInput = document.getElementById("presetFullName");
+  if (fullNameInput) fullNameInput.value = preset.fullName || "";
+
+  const descInput = document.getElementById("presetDesc");
+  if (descInput) descInput.value = preset.defaultDesc || "";
+
   document.getElementById("addHwPresetModal").classList.remove("hidden");
   initLucideIcons();
 }
@@ -2566,8 +2640,9 @@ function closeAddHwPresetModal() {
   document.getElementById("addHwPresetModal").classList.add("hidden");
 }
 
-function submitNewHwPreset(e) {
+function submitHwPresetForm(e) {
   e.preventDefault();
+  const editId = (document.getElementById("editHwPresetId")?.value || "").trim();
   const subject = document.getElementById("presetSubject").value;
   const name = document.getElementById("presetName").value.trim();
   const fullName = document.getElementById("presetFullName").value.trim();
@@ -2578,8 +2653,41 @@ function submitNewHwPreset(e) {
     return;
   }
 
-  window.KingdomApp.store.addHomeworkPreset({ subject, name, fullName, defaultDesc });
-  showToast(`✅ 已新增作業快捷範本【${name}】！`);
+  if (editId) {
+    window.KingdomApp.store.updateHomeworkPreset(editId, { subject, name, fullName, defaultDesc });
+    showToast(`✅ 已更新作業快捷範本【${name}】！`, "✨");
+  } else {
+    window.KingdomApp.store.addHomeworkPreset({ subject, name, fullName, defaultDesc });
+    showToast(`✅ 已新增作業快捷範本【${name}】！`, "✨");
+  }
+
+  closeAddHwPresetModal();
+  renderHomeworkPresetButtons();
+}
+
+function submitNewHwPreset(e) {
+  submitHwPresetForm(e);
+}
+
+function deleteHwPresetPrompt(presetId) {
+  const presets = window.KingdomApp.store.data.homeworkPresets || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || [];
+  const preset = presets.find(p => p.id === presetId);
+  if (!preset) return;
+
+  const ok = confirm(`🗑️ 確定要刪除作業快捷【${preset.name}】嗎？\n\n完整作業名稱：${preset.fullName}\n科目：${preset.subject}`);
+  if (!ok) return;
+
+  window.KingdomApp.store.deleteHomeworkPreset(presetId);
+  showToast(`🗑️ 已刪除作業快捷【${preset.name}】！`, "✨");
+  renderHomeworkPresetButtons();
+}
+
+function confirmResetHwPresetsToDefault() {
+  const ok = confirm("確定要將作業快捷恢復為系統預設值（國習、造詞、數習、數練、自習、社習...）嗎？\n自訂的作業快捷範本將會被重設。");
+  if (!ok) return;
+
+  window.KingdomApp.store.resetHomeworkPresets();
+  showToast("🔄 作業快捷已成功恢復為預設範本！", "✨");
   closeAddHwPresetModal();
   renderHomeworkPresetButtons();
 }
@@ -2623,9 +2731,13 @@ function submitNewHomework(e) {
     newHw.records[st.id] = 'pending';
   });
 
-  window.KingdomApp.store.data.homework.unshift(newHw);
-  window.KingdomApp.store.syncAllHomeworkReflectionCards();
-  window.KingdomApp.store.save();
+  const store = window.KingdomApp.store;
+  if (store.data.deletedHomeworkIds && Array.isArray(store.data.deletedHomeworkIds)) {
+    store.data.deletedHomeworkIds = store.data.deletedHomeworkIds.filter(id => id !== String(newHw.id));
+  }
+  store.data.homework.unshift(newHw);
+  store.syncAllHomeworkReflectionCards();
+  store.save('頒布新作業奏章: ' + title);
 
   window.KingdomApp.sound.playFanfare();
   window.KingdomApp.triggerConfetti();
@@ -3619,6 +3731,20 @@ function submitNewBehaviorReason(e) {
     showToast(`✅ 已新增事由快捷【${label}】！`, "✨");
   }
 
+  closeAddBehaviorReasonModal();
+  renderBehaviorReasonShortcuts();
+  if (typeof activeTrafficStudentId !== 'undefined' && activeTrafficStudentId) {
+    openTrafficDetailModal(activeTrafficStudentId);
+  }
+}
+
+function confirmResetBehaviorReasonsToDefault() {
+  if (!checkTeacherAuth("恢復預設常規事由")) return;
+  const ok = confirm("確定要將所有常規事由快捷恢復為系統預設值嗎？\n自訂的事由將會被重設。");
+  if (!ok) return;
+
+  window.KingdomApp.store.resetBehaviorReasons();
+  showToast("🔄 常規事由快捷已成功恢復為預設範本！", "✨");
   closeAddBehaviorReasonModal();
   renderBehaviorReasonShortcuts();
   if (typeof activeTrafficStudentId !== 'undefined' && activeTrafficStudentId) {
@@ -5057,7 +5183,10 @@ function renderPointPresets() {
           <span>${p.icon || '🌟'}</span>
           <span>${p.label} (+${p.points})</span>
         </button>
-        <button onclick="deletePointPreset('${p.id}')" class="px-1.5 py-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border-l border-emerald-200" title="刪除此規則">
+        <button onclick="openEditPointPresetModal('${p.id}')" class="px-2 py-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border-l border-emerald-200" title="編輯此規則">
+          ✏️
+        </button>
+        <button onclick="deletePointPreset('${p.id}')" class="px-2 py-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border-l border-emerald-200" title="刪除此規則">
           ✕
         </button>
       </div>
@@ -5071,7 +5200,10 @@ function renderPointPresets() {
           <span>${p.icon || '⚠️'}</span>
           <span>${p.label} (${p.points})</span>
         </button>
-        <button onclick="deletePointPreset('${p.id}')" class="px-1.5 py-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border-l border-rose-200" title="刪除此規則">
+        <button onclick="openEditPointPresetModal('${p.id}')" class="px-2 py-1.5 text-slate-400 hover:text-rose-700 hover:bg-rose-50 border-l border-rose-200" title="編輯此規則">
+          ✏️
+        </button>
+        <button onclick="deletePointPreset('${p.id}')" class="px-2 py-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border-l border-rose-200" title="刪除此規則">
           ✕
         </button>
       </div>
@@ -5313,11 +5445,15 @@ function submitNewPointPreset(e) {
 }
 
 function deletePointPreset(id) {
-  if (!confirm("確定要刪除這條自訂集點項目嗎？")) return;
-  window.KingdomApp.store.data.pointPresets = window.KingdomApp.store.data.pointPresets.filter(p => p.id !== id);
-  window.KingdomApp.store.save();
-  showToast("已刪除該集點項目");
+  const presets = window.KingdomApp.store.data.pointPresets || [];
+  const p = presets.find(x => x.id === id);
+  const name = p ? p.label : "此規則";
+  if (!confirm(`確定要刪除快捷規則【${name}】嗎？`)) return;
+  window.KingdomApp.store.deletePointPreset(id);
+  showToast(`已刪除快捷規則【${name}】`, "🗑️");
   renderPointsView();
+  renderPointPresets();
+  renderPointPresetsManageList();
 }
 
 function awardSingleStudent(studentId, points, defaultReason) {
@@ -8445,6 +8581,7 @@ function openTimerModal() {
   const modal = document.getElementById("timerModal");
   if (modal) modal.classList.remove("hidden");
   updateTimerUI();
+  renderTimerPresets();
   renderAlarmPresets();
 }
 
@@ -8452,6 +8589,152 @@ function closeTimerModal() {
   const modal = document.getElementById("timerModal");
   if (modal) modal.classList.add("hidden");
   updateFloatingTimerBar();
+}
+
+function renderTimerPresets() {
+  const container = document.getElementById("timerPresetsGrid");
+  if (!container) return;
+
+  const presets = (window.KingdomApp.store && typeof window.KingdomApp.store.getTimerPresets === 'function')
+    ? window.KingdomApp.store.getTimerPresets()
+    : (window.KingdomApp.DEFAULT_TIMER_PRESETS || []);
+
+  if (!presets || presets.length === 0) {
+    container.innerHTML = '<span class="text-xs text-amber-800/70 font-bold">尚無活動快捷，請點擊上方「➕ 新增活動快捷」建立</span>';
+    return;
+  }
+
+  container.innerHTML = presets.map(p => {
+    const safeLabel = (p.label || "").replace(/'/g, "\\'");
+    const minutes = Math.round((p.seconds || 300) / 60);
+    return `
+      <div class="inline-flex items-center rounded-lg bg-amber-100 border border-amber-300 shadow-2xs overflow-hidden group">
+        <button type="button" onclick="setTimerPreset('${safeLabel}', ${p.seconds})"
+          class="px-2.5 py-1 text-amber-950 font-black hover:bg-amber-200 transition"
+          title="快速設定倒數：${p.label} (${minutes}分鐘)">
+          ${p.btnText || p.label}
+        </button>
+        <div class="flex items-center border-l border-amber-200 bg-amber-50">
+          <button type="button" onclick="openEditTimerPresetModal('${p.id}')"
+            class="p-1 text-slate-400 hover:text-amber-800 hover:bg-amber-100 transition" title="編輯此活動快捷">
+            <i data-lucide="edit-2" class="w-3 h-3 pointer-events-none"></i>
+          </button>
+          <button type="button" onclick="deleteTimerPresetPrompt('${p.id}')"
+            class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="刪除此活動快捷">
+            <i data-lucide="trash-2" class="w-3 h-3 pointer-events-none"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  initLucideIcons();
+}
+
+function openAddTimerPresetModal() {
+  const editIdInput = document.getElementById("editTimerPresetId");
+  if (editIdInput) editIdInput.value = "";
+
+  const title = document.getElementById("timerPresetModalTitle");
+  if (title) title.innerHTML = `<span>➕ 新增課堂活動倒數快捷</span>`;
+
+  const btn = document.getElementById("btnSubmitTimerPreset");
+  if (btn) btn.textContent = "儲存快捷";
+
+  const btnTextInput = document.getElementById("timerPresetBtnText");
+  if (btnTextInput) btnTextInput.value = "";
+
+  const labelInput = document.getElementById("timerPresetLabel");
+  if (labelInput) labelInput.value = "";
+
+  const minInput = document.getElementById("timerPresetMinutes");
+  if (minInput) minInput.value = "5";
+
+  document.getElementById("manageTimerPresetModal").classList.remove("hidden");
+  initLucideIcons();
+}
+
+function openEditTimerPresetModal(id) {
+  const presets = (window.KingdomApp.store && typeof window.KingdomApp.store.getTimerPresets === 'function')
+    ? window.KingdomApp.store.getTimerPresets()
+    : [];
+  const preset = presets.find(p => p.id === id);
+  if (!preset) return;
+
+  const editIdInput = document.getElementById("editTimerPresetId");
+  if (editIdInput) editIdInput.value = preset.id;
+
+  const title = document.getElementById("timerPresetModalTitle");
+  if (title) title.innerHTML = `<span>✏️ 編輯活動計時快捷</span>`;
+
+  const btn = document.getElementById("btnSubmitTimerPreset");
+  if (btn) btn.textContent = "💾 儲存修改";
+
+  const btnTextInput = document.getElementById("timerPresetBtnText");
+  if (btnTextInput) btnTextInput.value = preset.btnText || preset.label;
+
+  const labelInput = document.getElementById("timerPresetLabel");
+  if (labelInput) labelInput.value = preset.label || "";
+
+  const minInput = document.getElementById("timerPresetMinutes");
+  if (minInput) minInput.value = Math.max(1, Math.round((preset.seconds || 300) / 60));
+
+  document.getElementById("manageTimerPresetModal").classList.remove("hidden");
+  initLucideIcons();
+}
+
+function closeTimerPresetModal() {
+  document.getElementById("manageTimerPresetModal").classList.add("hidden");
+}
+
+function submitTimerPresetForm(e) {
+  e.preventDefault();
+  const editId = (document.getElementById("editTimerPresetId")?.value || "").trim();
+  const btnText = document.getElementById("timerPresetBtnText").value.trim();
+  const label = document.getElementById("timerPresetLabel").value.trim();
+  const minutes = parseInt(document.getElementById("timerPresetMinutes").value, 10) || 5;
+  const seconds = Math.max(10, minutes * 60);
+
+  if (!btnText || !label) {
+    alert("請填寫按鈕文字與任務名稱！");
+    return;
+  }
+
+  if (editId) {
+    window.KingdomApp.store.updateTimerPreset(editId, { btnText, label, seconds });
+    showToast(`✅ 已更新活動計時快捷【${btnText}】！`, "⏱️");
+  } else {
+    window.KingdomApp.store.addTimerPreset({ btnText, label, seconds });
+    showToast(`✅ 已新增活動計時快捷【${btnText}】！`, "⏱️");
+  }
+
+  closeTimerPresetModal();
+  renderTimerPresets();
+}
+
+function deleteTimerPresetPrompt(id) {
+  const presets = (window.KingdomApp.store && typeof window.KingdomApp.store.getTimerPresets === 'function')
+    ? window.KingdomApp.store.getTimerPresets()
+    : [];
+  const preset = presets.find(p => p.id === id);
+  const name = preset ? (preset.btnText || preset.label) : "此活動快捷";
+
+  const ok = confirm(`🗑️ 確定要刪除活動倒數快捷【${name}】嗎？`);
+  if (!ok) return;
+
+  window.KingdomApp.store.deleteTimerPreset(id);
+  showToast(`🗑️ 已刪除活動快捷【${name}】！`, "✨");
+  renderTimerPresets();
+}
+
+function confirmResetTimerPresetsToDefault() {
+  const ok = confirm("確定要將課堂活動倒數快捷恢復為系統預設值（寫聯絡簿、小組討論、課堂測驗、收作業、大掃除）嗎？\n自訂的活動快捷將會被重設。");
+  if (!ok) return;
+
+  window.KingdomApp.store.resetTimerPresets();
+  showToast("🔄 活動倒數快捷已成功恢復為預設範本！", "⏱️");
+  closeTimerPresetModal();
+  renderTimerPresets();
 }
 
 function setTimerPreset(label, seconds) {
@@ -10630,6 +10913,7 @@ function openPointPresetsModal() {
   if (!checkTeacherAuth("加點快捷設定")) return;
   const modal = document.getElementById("pointPresetsModal");
   if (!modal) return;
+  cancelEditPointPreset();
   renderPointPresetsManageList();
   modal.classList.remove("hidden");
 }
@@ -10637,12 +10921,18 @@ function openPointPresetsModal() {
 function closePointPresetsModal() {
   const modal = document.getElementById("pointPresetsModal");
   if (modal) modal.classList.add("hidden");
+  cancelEditPointPreset();
 }
 
 function renderPointPresetsManageList() {
   const list = document.getElementById("presetItemsManageList");
   if (!list) return;
   const presets = window.KingdomApp.store.data.pointPresets || [];
+
+  if (presets.length === 0) {
+    list.innerHTML = '<div class="text-center py-4 text-slate-400">目前尚無加扣點快捷規則，可在下方新增或恢復預設</div>';
+    return;
+  }
 
   list.innerHTML = presets.map(p => {
     const isPlus = p.type === 'plus';
@@ -10655,36 +10945,133 @@ function renderPointPresetsManageList() {
             ${isPlus ? '+' : ''}${p.points} 點
           </span>
         </div>
-        <button type="button" onclick="deletePointPresetItem('${p.id}')" class="text-rose-600 hover:text-rose-800 p-1" title="刪除規則">
-          ✕
-        </button>
+        <div class="flex items-center space-x-1">
+          <button type="button" onclick="editPointPresetInline('${p.id}')" class="px-2 py-1 rounded bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs transition" title="編輯此規則">
+            ✏️ 編輯
+          </button>
+          <button type="button" onclick="deletePointPresetItem('${p.id}')" class="px-2 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs transition" title="刪除規則">
+            ✕ 刪除
+          </button>
+        </div>
       </div>
     `;
   }).join('');
 }
 
+function openEditPointPresetModal(id) {
+  openPointPresetsModal();
+  editPointPresetInline(id);
+}
+
+function editPointPresetInline(id) {
+  const presets = window.KingdomApp.store.data.pointPresets || [];
+  const p = presets.find(x => x.id === id);
+  if (!p) return;
+
+  const editIdInput = document.getElementById("editPointPresetId");
+  if (editIdInput) editIdInput.value = p.id;
+
+  const typeSel = document.getElementById("newPresetTypeInput");
+  if (typeSel) typeSel.value = p.type || 'plus';
+
+  const pointsInput = document.getElementById("newPresetPointsInput");
+  if (pointsInput) pointsInput.value = Math.abs(p.points || 1);
+
+  const labelInput = document.getElementById("newPresetLabelInput");
+  if (labelInput) labelInput.value = p.label || "";
+
+  const iconInput = document.getElementById("newPresetIconInput");
+  if (iconInput) iconInput.value = p.icon || (p.type === 'plus' ? '💡' : '⚠️');
+
+  const titleEl = document.getElementById("pointPresetFormTitle");
+  if (titleEl) titleEl.textContent = `✏️ 編輯快捷規則：【${p.label}】`;
+
+  const btnTextEl = document.getElementById("btnSavePointPresetText");
+  if (btnTextEl) btnTextEl.textContent = "💾 儲存修改規則";
+
+  const cancelBtn = document.getElementById("btnCancelEditPointPreset");
+  if (cancelBtn) cancelBtn.classList.remove("hidden");
+
+  const form = document.getElementById("pointPresetForm");
+  if (form) form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function cancelEditPointPreset() {
+  const editIdInput = document.getElementById("editPointPresetId");
+  if (editIdInput) editIdInput.value = "";
+
+  const labelInput = document.getElementById("newPresetLabelInput");
+  if (labelInput) labelInput.value = "";
+
+  const pointsInput = document.getElementById("newPresetPointsInput");
+  if (pointsInput) pointsInput.value = 2;
+
+  const titleEl = document.getElementById("pointPresetFormTitle");
+  if (titleEl) titleEl.textContent = "➕ 新增快捷規則項目：";
+
+  const btnTextEl = document.getElementById("btnSavePointPresetText");
+  if (btnTextEl) btnTextEl.textContent = "➕ 新增至快捷庫";
+
+  const cancelBtn = document.getElementById("btnCancelEditPointPreset");
+  if (cancelBtn) cancelBtn.classList.add("hidden");
+}
+
 function submitNewPointPresetItem(e) {
   e.preventDefault();
+  const editId = (document.getElementById("editPointPresetId")?.value || "").trim();
   const type = document.getElementById("newPresetTypeInput")?.value || 'plus';
-  const points = parseInt(document.getElementById("newPresetPointsInput")?.value, 10) || (type === 'minus' ? -1 : 2);
+  let rawPoints = parseInt(document.getElementById("newPresetPointsInput")?.value, 10);
+  if (isNaN(rawPoints) || rawPoints <= 0) rawPoints = (type === 'minus' ? 1 : 2);
+  const points = (type === 'minus') ? -Math.abs(rawPoints) : Math.abs(rawPoints);
   const label = document.getElementById("newPresetLabelInput")?.value.trim();
-  const icon = document.getElementById("newPresetIconInput")?.value.trim() || '💡';
+  const icon = document.getElementById("newPresetIconInput")?.value.trim() || (type === 'plus' ? '💡' : '⚠️');
 
-  if (!label) return;
+  if (!label) {
+    alert("請填寫規則名稱！");
+    return;
+  }
 
-  window.KingdomApp.store.addPointPreset({ type, label, points, icon });
-  showToast(`已新增快捷規則【${label}】！`, "✨");
+  if (editId) {
+    window.KingdomApp.store.updatePointPreset(editId, { type, label, points, icon });
+    showToast(`✅ 已更新快捷規則【${label}】！`, "✨");
+    cancelEditPointPreset();
+  } else {
+    window.KingdomApp.store.addPointPreset({ type, label, points, icon });
+    showToast(`✅ 已新增快捷規則【${label}】！`, "✨");
+    document.getElementById("newPresetLabelInput").value = "";
+  }
 
-  document.getElementById("newPresetLabelInput").value = "";
   renderPointPresetsManageList();
   renderPointPresets();
+  if (typeof renderPointsView === 'function') renderPointsView();
 }
 
 function deletePointPresetItem(id) {
-  if (!confirm("確定要刪除此項快捷規則嗎？")) return;
+  const presets = window.KingdomApp.store.data.pointPresets || [];
+  const p = presets.find(x => x.id === id);
+  const name = p ? p.label : "此規則";
+  if (!confirm(`確定要刪除此項快捷規則【${name}】嗎？`)) return;
   window.KingdomApp.store.deletePointPreset(id);
+  showToast(`🗑️ 已刪除快捷規則【${name}】`, "✨");
+  if (document.getElementById("editPointPresetId")?.value === id) {
+    cancelEditPointPreset();
+  }
   renderPointPresetsManageList();
   renderPointPresets();
+  if (typeof renderPointsView === 'function') renderPointsView();
+}
+
+function confirmResetPointPresetsToDefault() {
+  if (!checkTeacherAuth("恢復預設加扣點規則")) return;
+  const ok = confirm("確定要將加扣點快捷規則恢復為系統預設值嗎？\n自訂的加扣點規則將會被重設。");
+  if (!ok) return;
+
+  window.KingdomApp.store.resetPointPresets();
+  showToast("🔄 加扣點快捷規則已成功恢復為預設範本！", "🍎");
+  cancelEditPointPreset();
+  renderPointPresetsManageList();
+  renderPointPresets();
+  if (typeof renderPointsView === 'function') renderPointsView();
 }
 
 // ===================================================================
@@ -11127,6 +11514,43 @@ if (typeof window !== 'undefined') {
   window.submitAlarmPresetForm = submitAlarmPresetForm;
   window.deleteAlarmPresetItem = deleteAlarmPresetItem;
   window.confirmResetAlarmPresetsToDefault = confirmResetAlarmPresetsToDefault;
+
+  // 常用作業快捷範本管理 (新增、編輯、刪除、恢復預設)
+  window.renderHomeworkPresetButtons = renderHomeworkPresetButtons;
+  window.applyHomeworkPreset = applyHomeworkPreset;
+  window.openAddHwPresetModal = openAddHwPresetModal;
+  window.openEditHwPresetModal = openEditHwPresetModal;
+  window.closeAddHwPresetModal = closeAddHwPresetModal;
+  window.submitHwPresetForm = submitHwPresetForm;
+  window.submitNewHwPreset = submitNewHwPreset;
+  window.deleteHwPresetPrompt = deleteHwPresetPrompt;
+  window.confirmResetHwPresetsToDefault = confirmResetHwPresetsToDefault;
+
+  // 加扣點快捷規則管理 (新增、編輯、刪除、恢復預設)
+  window.renderPointPresets = renderPointPresets;
+  window.openPointPresetsModal = openPointPresetsModal;
+  window.closePointPresetsModal = closePointPresetsModal;
+  window.renderPointPresetsManageList = renderPointPresetsManageList;
+  window.openEditPointPresetModal = openEditPointPresetModal;
+  window.editPointPresetInline = editPointPresetInline;
+  window.cancelEditPointPreset = cancelEditPointPreset;
+  window.submitNewPointPresetItem = submitNewPointPresetItem;
+  window.deletePointPresetItem = deletePointPresetItem;
+  window.deletePointPreset = deletePointPreset;
+  window.confirmResetPointPresetsToDefault = confirmResetPointPresetsToDefault;
+
+  // 課堂活動倒數計時快捷管理 (新增、編輯、刪除、恢復預設)
+  window.renderTimerPresets = renderTimerPresets;
+  window.openAddTimerPresetModal = openAddTimerPresetModal;
+  window.openEditTimerPresetModal = openEditTimerPresetModal;
+  window.closeTimerPresetModal = closeTimerPresetModal;
+  window.submitTimerPresetForm = submitTimerPresetForm;
+  window.deleteTimerPresetPrompt = deleteTimerPresetPrompt;
+  window.confirmResetTimerPresetsToDefault = confirmResetTimerPresetsToDefault;
+  window.setTimerPreset = setTimerPreset;
+
+  // 常規事由快捷恢復預設
+  window.confirmResetBehaviorReasonsToDefault = confirmResetBehaviorReasonsToDefault;
 
   // 🍎 紅蘋果集點榜大屏全螢幕投影
   window.openPointsProjectionModal = openPointsProjectionModal;

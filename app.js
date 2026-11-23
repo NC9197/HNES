@@ -91,6 +91,15 @@ const DEFAULT_ALARM_PRESETS = [
   { id: 'alarm_pre_9', time: '15:55', btnText: '15:55 放學 🎒', label: '放學鐘聲回家', highlight: true }
 ];
 
+// 預設課堂活動倒數計時情境快捷庫 (導師可自由新增、修改、刪除、恢復預設)
+const DEFAULT_TIMER_PRESETS = [
+  { id: 'tm_1', label: '抄寫家庭聯絡簿', btnText: '📜 寫聯絡簿 (5分)', seconds: 300 },
+  { id: 'tm_2', label: '課堂小組討論', btnText: '👥 小組討論 (10分)', seconds: 600 },
+  { id: 'tm_3', label: '隨堂練習測驗', btnText: '✏️ 課堂測驗 (15分)', seconds: 900 },
+  { id: 'tm_4', label: '晨間寧靜閱讀', btnText: '📖 晨讀專注 (20分)', seconds: 1200 },
+  { id: 'tm_5', label: '課間下課倒數', btnText: '🔔 下課倒數 (10分)', seconds: 600 }
+];
+
 // 預設教室座位表 (5行 x 6列 = 30格)
 // 最右邊為第一排 (1~5號)，向左依序為第二排 (6~10號)、第三排 (11~15號)、第四排 (16~20號)，最左邊兩排皆為第五排 (21~27號)
 const DEFAULT_SEATING_CHART = [
@@ -503,17 +512,39 @@ class KingdomStore {
       });
     }
 
-    // 5. 作業按 ID 融合
+    // 5. 作業與刪除墓碑 (deletedHomeworkIds) 融合 (徹底阻絕已刪除作業與歷史示範假作業跨裝置起死回生)
+    const mergedDeletedHwIds = new Set([
+      '1', '2', '3', // 歷史示範假作業 ID 永固封殺
+      ...(local.deletedHomeworkIds || []).map(String),
+      ...(remote.deletedHomeworkIds || []).map(String)
+    ]);
+
+    const isFakeOrDeletedHw = (hw) => {
+      if (!hw) return true;
+      const idStr = String(hw.id || '');
+      if (mergedDeletedHwIds.has(idStr)) return true;
+      if (idStr === '1' || idStr === '2' || idStr === '3') return true;
+      if (hw.date === '2026-11-16' || hw.dueDate === '2026-11-16') return true;
+      const t = String(hw.title || '').replace(/\s+/g, '');
+      const p = String(hw.presetName || '').replace(/\s+/g, '');
+      if (t.includes('國語習作第八課') || t.includes('生字造詞隨堂筆記') || t.includes('數學習作P.62') || t.includes('數學習作P62')) return true;
+      if (p === '國習' && (!hw.date || hw.date <= '2026-11-16')) return true;
+      return false;
+    };
+
     const hwMap = new Map();
-    (local.homework || []).forEach(hw => { if (hw && hw.id) hwMap.set(hw.id, JSON.parse(JSON.stringify(hw))); });
+    (local.homework || []).forEach(hw => {
+      if (hw && hw.id && !isFakeOrDeletedHw(hw)) hwMap.set(String(hw.id), JSON.parse(JSON.stringify(hw)));
+    });
     (remote.homework || []).forEach(rHw => {
-      if (!rHw || !rHw.id) return;
-      if (!hwMap.has(rHw.id)) {
-        hwMap.set(rHw.id, JSON.parse(JSON.stringify(rHw)));
+      if (!rHw || !rHw.id || isFakeOrDeletedHw(rHw)) return;
+      const key = String(rHw.id);
+      if (!hwMap.has(key)) {
+        hwMap.set(key, JSON.parse(JSON.stringify(rHw)));
       } else {
-        const lHw = hwMap.get(rHw.id);
+        const lHw = hwMap.get(key);
         const combinedRecords = { ...(lHw.records || {}), ...(rHw.records || {}) };
-        hwMap.set(rHw.id, { ...lHw, ...rHw, records: combinedRecords });
+        hwMap.set(key, { ...lHw, ...rHw, records: combinedRecords });
       }
     });
     const mergedHomework = Array.from(hwMap.values());
@@ -562,6 +593,7 @@ class KingdomStore {
       students: mergedStudents,
       attendance: mergedAttendance,
       homework: mergedHomework,
+      deletedHomeworkIds: Array.from(mergedDeletedHwIds).slice(-200),
       contactBook: mergedContactBook,
       contactBookHistory: mergedCbHistory,
       pointLogs: mergedPointLogs,
@@ -604,6 +636,9 @@ class KingdomStore {
     if (!parsed.behaviorReasons) parsed.behaviorReasons = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS));
     if (!parsed.alarmPresets || !Array.isArray(parsed.alarmPresets) || parsed.alarmPresets.length === 0) {
       parsed.alarmPresets = JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS));
+    }
+    if (!parsed.timerPresets || !Array.isArray(parsed.timerPresets) || parsed.timerPresets.length === 0) {
+      parsed.timerPresets = JSON.parse(JSON.stringify(DEFAULT_TIMER_PRESETS));
     }
 
     // --- 聯絡簿純淨全手動模式 (絕不自動生成假作業) ---
@@ -662,17 +697,34 @@ class KingdomStore {
     }
 
     // --- 作業批閱純淨全手動模式 (完全由導師自行派發作業與登記，絕不自動生成假作業) ---
+    if (!parsed.deletedHomeworkIds || !Array.isArray(parsed.deletedHomeworkIds)) {
+      parsed.deletedHomeworkIds = ['1', '2', '3'];
+    } else {
+      ['1', '2', '3'].forEach(id => {
+        if (!parsed.deletedHomeworkIds.includes(id)) parsed.deletedHomeworkIds.push(id);
+      });
+    }
+
+    const normDeletedHwSet = new Set(parsed.deletedHomeworkIds.map(String));
+
+    const isNormFakeOrDeletedHw = (hw) => {
+      if (!hw) return true;
+      const idStr = String(hw.id || '');
+      if (normDeletedHwSet.has(idStr)) return true;
+      if (idStr === '1' || idStr === '2' || idStr === '3') return true;
+      if (hw.date === '2026-11-16' || hw.dueDate === '2026-11-16') return true;
+      const t = String(hw.title || '').replace(/\s+/g, '');
+      const p = String(hw.presetName || '').replace(/\s+/g, '');
+      if (t.includes('國語習作第八課') || t.includes('生字造詞隨堂筆記') || t.includes('數學習作P.62') || t.includes('數學習作P62')) return true;
+      if (p === '國習' && (!hw.date || hw.date <= '2026-11-16')) return true;
+      return false;
+    };
+
     if (!parsed.homework || !Array.isArray(parsed.homework)) {
       parsed.homework = [];
     } else {
-      // 清理舊版示範假作業
-      parsed.homework = parsed.homework.filter(hw => {
-        if (!hw || !hw.title) return false;
-        if (hw.title === "國語習作第 八 課完成" || hw.title === "數學習作 P.62 ~ P.65" || hw.title === "生字造詞隨堂筆記") {
-          return false;
-        }
-        return true;
-      });
+      // 清理舊版示範假作業與已刪除作業
+      parsed.homework = parsed.homework.filter(hw => !isNormFakeOrDeletedHw(hw));
     }
 
     // --- 集點歷程純淨全手動模式 ---
@@ -813,7 +865,7 @@ class KingdomStore {
       } else {
         const b = parsed.behaviorCards[st.id];
         if (b.reflectionReasons && Array.isArray(b.reflectionReasons)) {
-          b.reflectionReasons = b.reflectionReasons.filter(r => !(r.isAutoHw && (String(r.hwId) === '1' || String(r.hwId) === '2' || String(r.hwId) === '3')));
+          b.reflectionReasons = b.reflectionReasons.filter(r => !(r.isAutoHw && (normDeletedHwSet.has(String(r.hwId)) || String(r.hwId) === '1' || String(r.hwId) === '2' || String(r.hwId) === '3')));
           b.reflectionCount = b.reflectionReasons.length;
           b.reflectionCard = b.reflectionCount > 0;
           b.reflectionReason = b.reflectionReasons.map(r => r.text).join('、');
@@ -843,6 +895,7 @@ class KingdomStore {
       students: JSON.parse(JSON.stringify(DEFAULT_STUDENTS_27)),
       attendance: {},
       homework: [],
+      deletedHomeworkIds: ['1', '2', '3'],
       pointLogs: [],
       pointActionHistory: [],
       announcements: JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS)),
@@ -941,10 +994,12 @@ class KingdomStore {
       homeworkPresets: JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS)),
       behaviorReasons: JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS)),
       alarmPresets: JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS)),
+      timerPresets: JSON.parse(JSON.stringify(DEFAULT_TIMER_PRESETS)),
       contactBook: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)),
       contactBookHistory: {},
       attendance: {},
       homework: [],
+      deletedHomeworkIds: ['1', '2', '3'],
       pointLogs: [],
       pointActionHistory: [],
       announcements: JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS)),
@@ -1861,7 +1916,7 @@ class KingdomStore {
       points: pts,
       icon: icon || (type === 'minus' ? '⚠️' : '💡')
     });
-    this.save();
+    this.save('新增加扣點快捷: ' + label);
     return true;
   }
 
@@ -1873,15 +1928,23 @@ class KingdomStore {
     if (data.points !== undefined) item.points = parseInt(data.points, 10) || 1;
     if (data.icon) item.icon = data.icon.trim();
     if (data.type) item.type = data.type;
-    this.save();
+    this.save('修改加扣點快捷: ' + item.label);
     return true;
   }
 
   deletePointPreset(presetId) {
     if (!this.data.pointPresets) return false;
+    const found = this.data.pointPresets.find(p => p.id === presetId);
+    const name = found ? found.label : presetId;
     this.data.pointPresets = this.data.pointPresets.filter(p => p.id !== presetId);
-    this.save();
+    this.save('刪除加扣點快捷: ' + name);
     return true;
+  }
+
+  resetPointPresets() {
+    this.data.pointPresets = JSON.parse(JSON.stringify(DEFAULT_POINT_PRESETS));
+    this.save('恢復預設加扣點規則');
+    return this.data.pointPresets;
   }
 
   // --- 課堂作息鐘聲快捷管理 ---
@@ -1903,7 +1966,7 @@ class KingdomStore {
       highlight: !!highlight
     };
     this.data.alarmPresets.push(newPreset);
-    this.save();
+    this.save('新增作息鐘聲快捷: ' + newPreset.btnText);
     return newPreset;
   }
 
@@ -1915,70 +1978,157 @@ class KingdomStore {
     if (btnText !== undefined) preset.btnText = String(btnText).trim();
     if (label !== undefined) preset.label = String(label).trim();
     if (highlight !== undefined) preset.highlight = !!highlight;
-    this.save();
+    this.save('修改作息鐘聲快捷: ' + preset.btnText);
     return true;
   }
 
   deleteAlarmPreset(id) {
     if (!this.data.alarmPresets) return false;
+    const found = this.data.alarmPresets.find(p => p.id === id);
+    const name = found ? found.btnText : id;
     this.data.alarmPresets = this.data.alarmPresets.filter(p => p.id !== id);
-    this.save();
+    this.save('刪除作息鐘聲快捷: ' + name);
     return true;
   }
 
   resetAlarmPresets() {
     this.data.alarmPresets = JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS));
-    this.save();
+    this.save('恢復預設作息鐘聲快捷');
     return this.data.alarmPresets;
   }
 
-  // --- 作業快捷與行為原因庫 ---
-  addHomeworkPreset({ subject = "國語", name, fullName, defaultDate = null }) {
-    if (!name) return;
-    if (!this.data.homeworkPresets) this.data.homeworkPresets = [];
-    this.data.homeworkPresets.push({
+  // --- 課堂活動倒數計時情境快捷 ---
+  getTimerPresets() {
+    if (!this.data.timerPresets || !Array.isArray(this.data.timerPresets) || this.data.timerPresets.length === 0) {
+      this.data.timerPresets = JSON.parse(JSON.stringify(DEFAULT_TIMER_PRESETS));
+    }
+    return this.data.timerPresets;
+  }
+
+  addTimerPreset({ label, btnText, seconds }) {
+    if (!label) return null;
+    if (!this.data.timerPresets) this.data.timerPresets = [];
+    const sec = parseInt(seconds, 10) || 300;
+    const newPreset = {
+      id: 'tm_' + Date.now(),
+      label: String(label).trim(),
+      btnText: String(btnText || label).trim(),
+      seconds: sec
+    };
+    this.data.timerPresets.push(newPreset);
+    this.save('新增活動計時快捷: ' + newPreset.btnText);
+    return newPreset;
+  }
+
+  updateTimerPreset(id, { label, btnText, seconds }) {
+    if (!this.data.timerPresets) return false;
+    const preset = this.data.timerPresets.find(p => p.id === id);
+    if (!preset) return false;
+    if (label !== undefined) preset.label = String(label).trim();
+    if (btnText !== undefined) preset.btnText = String(btnText).trim();
+    if (seconds !== undefined) preset.seconds = parseInt(seconds, 10) || 300;
+    this.save('修改活動計時快捷: ' + preset.btnText);
+    return true;
+  }
+
+  deleteTimerPreset(id) {
+    if (!this.data.timerPresets) return false;
+    const found = this.data.timerPresets.find(p => p.id === id);
+    const name = found ? found.btnText : id;
+    this.data.timerPresets = this.data.timerPresets.filter(p => p.id !== id);
+    this.save('刪除活動計時快捷: ' + name);
+    return true;
+  }
+
+  resetTimerPresets() {
+    this.data.timerPresets = JSON.parse(JSON.stringify(DEFAULT_TIMER_PRESETS));
+    this.save('恢復預設活動計時快捷');
+    return this.data.timerPresets;
+  }
+
+  // --- 作業常用快捷範本管理 (新增、編輯、刪除、恢復預設) ---
+  addHomeworkPreset({ subject = "國語", name, fullName, defaultDesc = "", defaultDate = null }) {
+    if (!name) return null;
+    if (!this.data.homeworkPresets) this.data.homeworkPresets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
+    const newPreset = {
       id: "hw_pre_" + Date.now(),
-      subject,
-      name: name.trim(),
-      fullName: (fullName || name).trim(),
+      subject: String(subject || "國語").trim(),
+      name: String(name).trim(),
+      fullName: String(fullName || name).trim(),
+      defaultDesc: String(defaultDesc || "").trim(),
       defaultDate
-    });
-    this.save();
+    };
+    this.data.homeworkPresets.push(newPreset);
+    this.save('新增作業快捷範本: ' + newPreset.name);
+    return newPreset;
+  }
+
+  updateHomeworkPreset(presetId, { subject, name, fullName, defaultDesc }) {
+    if (!this.data.homeworkPresets) return false;
+    const preset = this.data.homeworkPresets.find(p => p.id === presetId);
+    if (!preset) return false;
+    if (subject !== undefined) preset.subject = String(subject).trim();
+    if (name !== undefined) preset.name = String(name).trim();
+    if (fullName !== undefined) preset.fullName = String(fullName || name).trim();
+    if (defaultDesc !== undefined) preset.defaultDesc = String(defaultDesc).trim();
+    this.save('修改作業快捷範本: ' + preset.name);
+    return true;
   }
 
   deleteHomeworkPreset(presetId) {
-    if (!this.data.homeworkPresets) return;
+    if (!this.data.homeworkPresets) return false;
+    const found = this.data.homeworkPresets.find(p => p.id === presetId);
+    const name = found ? found.name : presetId;
     this.data.homeworkPresets = this.data.homeworkPresets.filter(p => p.id !== presetId);
-    this.save();
+    this.save('刪除作業快捷範本: ' + name);
+    return true;
   }
 
+  resetHomeworkPresets() {
+    this.data.homeworkPresets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
+    this.save('恢復預設作業快捷範本');
+    return this.data.homeworkPresets;
+  }
+
+  // --- 常規事由快捷管理 (新增、編輯、刪除、恢復預設) ---
   addBehaviorReason({ type = "reflection", label, text }) {
-    if (!label) return;
-    if (!this.data.behaviorReasons) this.data.behaviorReasons = [];
-    this.data.behaviorReasons.push({
+    if (!label) return null;
+    if (!this.data.behaviorReasons) this.data.behaviorReasons = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS));
+    const newReason = {
       id: "br_" + Date.now(),
       type: type === "service" ? "service" : "reflection",
       label: label.trim(),
       text: (text || label).trim()
-    });
-    this.save();
+    };
+    this.data.behaviorReasons.push(newReason);
+    this.save('新增常規事由快捷: ' + newReason.label);
+    return newReason;
   }
 
   deleteBehaviorReason(reasonId) {
-    if (!this.data.behaviorReasons) return;
+    if (!this.data.behaviorReasons) return false;
+    const found = this.data.behaviorReasons.find(p => p.id === reasonId);
+    const name = found ? found.label : reasonId;
     this.data.behaviorReasons = this.data.behaviorReasons.filter(p => p.id !== reasonId);
-    this.save();
+    this.save('刪除常規事由快捷: ' + name);
+    return true;
   }
 
   updateBehaviorReason(reasonId, { type, label, text }) {
-    if (!this.data.behaviorReasons) return;
+    if (!this.data.behaviorReasons) return false;
     const found = this.data.behaviorReasons.find(p => p.id === reasonId);
-    if (found) {
-      if (type) found.type = type === "service" ? "service" : "reflection";
-      if (label) found.label = label.trim();
-      if (text !== undefined) found.text = (text || label).trim();
-      this.save();
-    }
+    if (!found) return false;
+    if (type) found.type = type === "service" ? "service" : "reflection";
+    if (label) found.label = label.trim();
+    if (text !== undefined) found.text = (text || label).trim();
+    this.save('修改常規事由快捷: ' + found.label);
+    return true;
+  }
+
+  resetBehaviorReasons() {
+    this.data.behaviorReasons = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS));
+    this.save('恢復預設常規事由快捷');
+    return this.data.behaviorReasons;
   }
 
   // --- 榮譽卡牌商城與兌換 (兌換只扣除可用點數 points，不扣除 lifetimePoints) ---
@@ -4006,21 +4156,44 @@ class KingdomCloudSync {
       }
     }
 
-    // 6. 作業比對 (遠端是否有新作業或新繳交紀錄)
-    const rHw = remote.homework || [];
-    const lHw = local.homework || [];
-    if (rHw.length > lHw.length) return true;
+    // 6. 作業與刪除墓碑比對 (支援跨裝置新增、批閱與即時刪除同步)
+    const lDelSet = new Set((local.deletedHomeworkIds || ['1', '2', '3']).map(String));
+    const rDelSet = new Set((remote.deletedHomeworkIds || ['1', '2', '3']).map(String));
+
+    // 若遠端含有本地尚未記錄的已刪除作業 ID，視為有更新
+    for (const did of rDelSet) {
+      if (!lDelSet.has(did)) return true;
+    }
+
+    const isCheckFakeOrDeleted = (hw) => {
+      if (!hw) return true;
+      const idStr = String(hw.id || '');
+      if (lDelSet.has(idStr) || rDelSet.has(idStr)) return true;
+      if (idStr === '1' || idStr === '2' || idStr === '3') return true;
+      if (hw.date === '2026-11-16' || hw.dueDate === '2026-11-16') return true;
+      const t = String(hw.title || '').replace(/\s+/g, '');
+      const p = String(hw.presetName || '').replace(/\s+/g, '');
+      if (t.includes('國語習作第八課') || t.includes('生字造詞隨堂筆記') || t.includes('數學習作P.62') || t.includes('數學習作P62')) return true;
+      if (p === '國習' && (!hw.date || hw.date <= '2026-11-16')) return true;
+      return false;
+    };
+
+    const rHw = (remote.homework || []).filter(h => !isCheckFakeOrDeleted(h));
+    const lHw = (local.homework || []).filter(h => !isCheckFakeOrDeleted(h));
+    if (rHw.length !== lHw.length) return true;
     const lHwMap = new Map();
-    lHw.forEach(h => { if (h && h.id) lHwMap.set(h.id, h); });
+    lHw.forEach(h => { if (h && h.id) lHwMap.set(String(h.id), h); });
     for (let i = 0; i < rHw.length; i++) {
       const rh = rHw[i];
       if (!rh || !rh.id) continue;
-      const lh = lHwMap.get(rh.id);
+      const lh = lHwMap.get(String(rh.id));
       if (!lh) return true;
       const rRecs = rh.records || {};
       const lRecs = lh.records || {};
       for (const s in rRecs) {
-        if (rRecs[s] && rRecs[s].status !== 'pending' && (!lRecs[s] || lRecs[s].status === 'pending')) {
+        const rVal = typeof rRecs[s] === 'string' ? rRecs[s] : ((rRecs[s] && rRecs[s].status) || 'pending');
+        const lVal = typeof lRecs[s] === 'string' ? lRecs[s] : ((lRecs[s] && lRecs[s].status) || 'pending');
+        if (rVal !== 'pending' && lVal === 'pending') {
           return true;
         }
       }

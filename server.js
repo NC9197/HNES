@@ -332,16 +332,38 @@ function mergeDatasets(base, incoming) {
     });
   }
 
-  // 4. 作業按 ID 雙向融合 (多裝置新增與批閱互不覆蓋)
+  // 4. 作業按 ID 雙向融合 + 刪除墓碑 (deletedHomeworkIds) 徹底封殺已刪除與舊示範假作業
+  const mergedDeletedHwIds = new Set([
+    '1', '2', '3', // 歷史示範假作業 ID 永固封殺
+    ...(base.deletedHomeworkIds || []).map(String),
+    ...(incoming.deletedHomeworkIds || []).map(String)
+  ]);
+
+  const isFakeOrDeletedHw = (hw) => {
+    if (!hw) return true;
+    const idStr = String(hw.id || '');
+    if (mergedDeletedHwIds.has(idStr)) return true;
+    if (idStr === '1' || idStr === '2' || idStr === '3') return true;
+    if (hw.date === '2026-11-16' || hw.dueDate === '2026-11-16') return true;
+    const t = String(hw.title || '').replace(/\s+/g, '');
+    const p = String(hw.presetName || '').replace(/\s+/g, '');
+    if (t.includes('國語習作第八課') || t.includes('生字造詞隨堂筆記') || t.includes('數學習作P.62') || t.includes('數學習作P62')) return true;
+    if (p === '國習' && (!hw.date || hw.date <= '2026-11-16')) return true;
+    return false;
+  };
+
   const hwMap = new Map();
-  (base.homework || []).forEach(hw => { if (hw && hw.id) hwMap.set(hw.id, { ...hw }); });
+  (base.homework || []).forEach(hw => {
+    if (hw && hw.id && !isFakeOrDeletedHw(hw)) hwMap.set(String(hw.id), { ...hw });
+  });
   (incoming.homework || []).forEach(iHw => {
-    if (!iHw || !iHw.id) return;
-    if (!hwMap.has(iHw.id)) {
-      hwMap.set(iHw.id, { ...iHw });
+    if (!iHw || !iHw.id || isFakeOrDeletedHw(iHw)) return;
+    const key = String(iHw.id);
+    if (!hwMap.has(key)) {
+      hwMap.set(key, { ...iHw });
     } else {
-      const bHw = hwMap.get(iHw.id);
-      hwMap.set(iHw.id, { ...bHw, ...iHw, records: { ...(bHw.records || {}), ...(iHw.records || {}) } });
+      const bHw = hwMap.get(key);
+      hwMap.set(key, { ...bHw, ...iHw, records: { ...(bHw.records || {}), ...(iHw.records || {}) } });
     }
   });
   const mergedHomework = Array.from(hwMap.values());
@@ -369,6 +391,7 @@ function mergeDatasets(base, incoming) {
     students: mergedStudents,
     attendance: mergedAttendance,
     homework: mergedHomework,
+    deletedHomeworkIds: Array.from(mergedDeletedHwIds).slice(-200),
     contactBook: mergedContactBook,
     contactBookHistory: { ...(base.contactBookHistory || {}), ...(incoming.contactBookHistory || {}) },
     pointLogs: mergedPointLogs,
