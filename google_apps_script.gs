@@ -61,8 +61,12 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // 預設為拉取 (Pull)
+  // 預設為拉取 (Pull) - 支援標準 JSON 與 Safari 專用 JSONP 跨網域免預檢回傳
   var jsonStr = loadData(prop, account);
+  if (p.callback) {
+    return ContentService.createTextOutput(p.callback + '(' + (jsonStr || '{}') + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return ContentService.createTextOutput(jsonStr || '{}')
     .setMimeType(ContentService.MimeType.JSON);
 }

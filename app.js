@@ -3593,13 +3593,9 @@ class KingdomCloudSync {
         const gasController = new AbortController();
         const gasTimeout = setTimeout(() => gasController.abort(), 6500);
 
+        // Safari 友善設計：不傳送 Cache-Control / Pragma 自訂標頭，避免觸發 Google Apps Script 不支援的 OPTIONS 預檢
         const res = await fetch(gasUrl, {
           method: 'GET',
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          },
           signal: gasController.signal
         });
         clearTimeout(gasTimeout);
@@ -3612,7 +3608,19 @@ class KingdomCloudSync {
         }
       } catch (err) {
         pullError = err.name === 'AbortError' ? 'Google 雲端回應逾時 (6.5s)' : err.message;
-        console.warn('[CloudSync] Google 雲端拉取失敗:', err.message);
+        console.warn('[CloudSync] Google 雲端標準拉取失敗:', err.message);
+
+        // 若 iPhone/iPad Safari 跨網站追蹤限制導致 Fetch 受阻，自動切換至 Safari JSONP 終極相容通道
+        if (!remoteData && typeof window !== 'undefined' && typeof document !== 'undefined') {
+          try {
+            const jsonpData = await this.pullViaJsonp(this.config.googleScriptUrl, account);
+            if (jsonpData && jsonpData.students && Array.isArray(jsonpData.students)) {
+              remoteData = jsonpData;
+              pullError = null;
+              console.log('[CloudSync] ✅ 透過 Safari JSONP 通道成功載入最新雲端存檔！');
+            }
+          } catch (_) {}
+        }
       }
     }
 
@@ -3757,6 +3765,40 @@ class KingdomCloudSync {
       this.notify();
       return { success: false, error: this.lastError };
     }
+  }
+
+  // Safari / iOS 專用 JSONP 跨網域拉取通道 (完全免疫 CORS 與 302 重定向跨域阻擋)
+  pullViaJsonp(gasUrl, account) {
+    return new Promise((resolve) => {
+      if (typeof document === 'undefined') return resolve(null);
+      const callbackName = `__gas_cb_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const script = document.createElement('script');
+      const timer = setTimeout(() => {
+        cleanup();
+        resolve(null);
+      }, 6500);
+
+      function cleanup() {
+        clearTimeout(timer);
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete window[callbackName]; } catch (_) {}
+      }
+
+      window[callbackName] = (data) => {
+        cleanup();
+        resolve(data);
+      };
+
+      script.onerror = () => {
+        cleanup();
+        resolve(null);
+      };
+
+      const cacheBust = `_t=${Date.now()}`;
+      const sep = gasUrl.includes('?') ? '&' : '?';
+      script.src = `${gasUrl}${sep}account=${encodeURIComponent(account)}&action=pull&callback=${callbackName}&${cacheBust}`;
+      document.head.appendChild(script);
+    });
   }
 
   // 檢查遠端存檔是否含有本地尚未擁有的最新資訊 (新增大臣、點數變動、打卡更新、作業新交等)

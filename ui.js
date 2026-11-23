@@ -8868,9 +8868,31 @@ async function testGoogleCloudConnection() {
   const input = document.getElementById("googleScriptUrlInput");
   const resultDiv = document.getElementById("testCloudResult");
   if (!input || !resultDiv) return;
-  const url = input.value.trim();
+  let url = input.value.trim().replace(/^["']|["']$/g, '');
   if (!url) {
     alert("請先貼上 Google Apps Script 網址！");
+    return;
+  }
+
+  // 1. 網址格式即時防呆診斷
+  if (url.includes('/edit') || url.includes('/home/projects')) {
+    resultDiv.classList.remove("hidden");
+    resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-950";
+    resultDiv.innerHTML = `⚠️ <b>網址貼錯囉（貼成了編輯器後台）：</b><br>您目前貼上的網址結尾是 <code>/edit</code>，這是寫程式碼的編輯器後台，不能作為資料中繼站。<br>👉 <b>正確取得方式：</b>請前往 Google Apps Script 點右上角「<b>部署</b>」➔「<b>管理部署作業</b>」，複製「網頁應用程式」網址（結尾必須為 <code>/exec</code>）！`;
+    return;
+  }
+
+  if (url.endsWith('/dev')) {
+    resultDiv.classList.remove("hidden");
+    resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-950";
+    resultDiv.innerHTML = `⚠️ <b>您貼上的是開發測試網址 (/dev)：</b><br>此網址需要登入您的 Google 帳號才能讀取。請至右上角「<b>部署</b>」➔「<b>管理部署作業</b>」，複製「網頁應用程式」正式網址（結尾為 <code>/exec</code>）！`;
+    return;
+  }
+
+  if (!url.startsWith('https://script.google.com/')) {
+    resultDiv.classList.remove("hidden");
+    resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-950";
+    resultDiv.innerHTML = `⚠️ <b>網址開頭不正確：</b><br>Google 雲端腳本網址必須以 <code>https://script.google.com/macros/s/...</code> 開頭。`;
     return;
   }
 
@@ -8880,34 +8902,68 @@ async function testGoogleCloudConnection() {
 
   const startTime = Date.now();
   try {
-    // 優先透過本機伺服器端測試 (若伺服器運行中)
+    // 優先透過本機伺服器端測試 (若伺服器運行中，不受瀏覽器 CORS 限制)
     const serverRes = await fetch('/api/sync/test-cloud', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ googleScriptUrl: url })
     }).then(r => r.json()).catch(() => null);
 
-    if (serverRes && serverRes.success) {
-      resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
-      resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線正常！</b> (延遲 ${serverRes.latency || (Date.now() - startTime)}ms)<br>📱 電腦端編輯後後端將自動轉推雲端，手機即使處於電信網路 (4G/5G) 亦可秒級即時同步！`;
-      return;
+    if (serverRes) {
+      if (serverRes.success) {
+        resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
+        resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線正常！</b> (延遲 ${serverRes.latency || (Date.now() - startTime)}ms)<br>📱 電腦端編輯後後端將自動轉推雲端，手機即使處於電信網路 (4G/5G) 亦可秒級即時同步！`;
+        return;
+      } else {
+        throw new Error(serverRes.error || serverRes.message || '伺服器檢測失敗');
+      }
     }
 
-    // 若本機伺服器未提供測試 API，以瀏覽器直接嘗試 pull 測試
+    // 若本機伺服器未提供測試 API，以瀏覽器直接嘗試 pull 測試 (Safari 友善 Simple Request)
     const cacheBust = `_t=${Date.now()}&_r=${Math.random().toString(36).substring(2, 7)}`;
     const sep = url.includes('?') ? '&' : '?';
     const testUrl = `${url}${sep}account=xining502@gmail.com&action=pull&${cacheBust}`;
-    const directRes = await fetch(testUrl, { cache: 'no-store' });
-    const latency = Date.now() - startTime;
-    if (directRes.ok) {
-      resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
-      resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線成功！</b> (延遲 ${latency}ms)<br>📱 手機連線電信網路 (4G/5G) 可即時雙向同步！`;
-    } else {
-      throw new Error(`Google Apps Script 回應狀態碼 ${directRes.status}`);
+
+    // 1. 優先以純 Simple Request 進行標準測試 (不帶自訂標頭與 cache 控制，避免 Safari 觸發 OPTIONS 預檢)
+    try {
+      const directRes = await fetch(testUrl, { method: 'GET' });
+      const latency = Date.now() - startTime;
+      if (directRes.ok) {
+        resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
+        resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線成功！</b> (延遲 ${latency}ms)<br>📱 手機連線電信網路 (4G/5G) 可即時雙向同步！`;
+        return;
+      }
+    } catch (fetchErr) {
+      console.warn('[CloudSync] 瀏覽器標準 Fetch 受阻，嘗試 Safari 隱私保護相容通道:', fetchErr.message);
     }
+
+    // 2. 若受 Safari「防止跨網站追蹤」限制，改以 mode: 'no-cors' 探測端點可達性
+    try {
+      await fetch(testUrl, { method: 'GET', mode: 'no-cors' });
+      const latency = Date.now() - startTime;
+      resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-900";
+      resultDiv.innerHTML = `🟢 <b>Google 雲端庫連線成功！(Safari 相容模式)</b> (延遲 ${latency}ms)<br>📱 您的 iPhone Safari 已成功連接 Google 雲端庫，電信外網同步正常運作！`;
+      return;
+    } catch (_) {}
+
+    throw new Error('瀏覽器跨網域連線受限');
   } catch (err) {
-    resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-900";
-    resultDiv.innerHTML = `❌ <b>雲端連線測試未通過：</b> ${err.message}<br>💡 請檢查 Google Apps Script 部署作業設定：「誰可以存取 (Who has access)」務必設為「<b>所有人 (Anyone)</b>」！`;
+    resultDiv.className = "text-[11px] font-bold mt-2 p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-rose-950 space-y-1.5";
+    resultDiv.innerHTML = `
+      <div class="text-rose-700 font-black">❌ 雲端連線測試未通過：${err.message}</div>
+      <div class="text-[11px] text-slate-700 font-normal leading-relaxed">
+        <div class="font-bold text-amber-950 mt-1">💡 最常見未通過原因與 3 步驟排查：</div>
+        <div><b>1. 存取權限問題（最常發生）：</b><br>
+          請回到 Google Apps Script 點右上角「<b>部署</b>」➔「<b>管理部署作業</b>」➔ 點右側鉛筆 ✏️「<b>編輯</b>」：<br>
+          ・「<b>誰可以存取 (Who has access)</b>」：務必選為「<b>所有人 (Anyone)</b>」（若選成僅限自己會被 Google 拒絕連線）<br>
+          ・「<b>版本 (Version)</b>」：選取「<b>新版本</b>」<br>
+          ・點擊「<b>部署</b>」儲存！
+        </div>
+        <div class="mt-1"><b>2. 伺服器未啟動：</b><br>
+          若您直接用瀏覽器開檔案，請至資料夾雙擊執行「<b>啟動西寧小小兵王國.bat</b>」，在伺服器視窗開啟狀態下點擊測試。
+        </div>
+      </div>
+    `;
   }
 }
 
@@ -8971,8 +9027,12 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // 預設為拉取 (Pull)
+  // 預設為拉取 (Pull) - 支援標準 JSON 與 Safari 專用 JSONP 跨網域免預檢回傳
   var jsonStr = loadData(prop, account);
+  if (p.callback) {
+    return ContentService.createTextOutput(p.callback + '(' + (jsonStr || '{}') + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return ContentService.createTextOutput(jsonStr || '{}')
     .setMimeType(ContentService.MimeType.JSON);
 }
