@@ -2892,7 +2892,7 @@ function updateTrafficCountdownClock() {
       badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-400 text-amber-950 shadow-xs";
     }
     if (targetEl) targetEl.textContent = "倒數鐘響提醒";
-    if (titleEl) titleEl.textContent = "倒數剩餘時間：";
+    if (titleEl) titleEl.textContent = "倒數剩餘：";
     if (digitsEl) {
       digitsEl.textContent = `${minStr}:${secStr}`;
       if (totalSec <= 120) {
@@ -2924,7 +2924,7 @@ function updateTrafficCountdownClock() {
       badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-400 text-blue-950 shadow-xs";
     }
     if (targetEl) targetEl.textContent = "目標：早自習 (07:40)";
-    if (titleEl) titleEl.textContent = "距離早自習開始還剩：";
+    if (titleEl) titleEl.textContent = "距早自習：";
     if (digitsEl) {
       digitsEl.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
       digitsEl.classList.remove("countdown-urgent");
@@ -2940,7 +2940,7 @@ function updateTrafficCountdownClock() {
       badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-400 text-purple-950 shadow-xs";
     }
     if (targetEl) targetEl.textContent = "今日課程圓滿結束";
-    if (titleEl) titleEl.textContent = "今日已放學，大臣們平安回家！";
+    if (titleEl) titleEl.textContent = "今日放學：";
     if (digitsEl) {
       digitsEl.textContent = "00:00";
       digitsEl.classList.remove("countdown-urgent");
@@ -2976,7 +2976,7 @@ function updateTrafficCountdownClock() {
         : "px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-400 text-emerald-950 shadow-xs";
     }
     if (targetEl) targetEl.textContent = `目標：${activeItem.targetLabel} (${activeItem.targetTime})`;
-    if (titleEl) titleEl.textContent = `距離【${activeItem.targetLabel}】鐘聲還剩：`;
+    if (titleEl) titleEl.textContent = "上課倒數：";
     if (digitsEl) {
       digitsEl.textContent = timeStr;
       if (diffSec <= 120) {
@@ -3000,7 +3000,7 @@ function updateTrafficCountdownClock() {
       badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-300 text-blue-950 shadow-xs";
     }
     if (targetEl) targetEl.textContent = `目標：${activeItem.targetLabel} (${activeItem.targetTime})`;
-    if (titleEl) titleEl.textContent = `課堂進行中・距離【${activeItem.targetLabel}】還剩：`;
+    if (titleEl) titleEl.textContent = "下課倒數：";
     if (digitsEl) {
       digitsEl.textContent = timeStr;
       digitsEl.classList.remove("countdown-urgent");

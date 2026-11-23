@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261123_v12">
+  <link rel="stylesheet" href="styles.css?v=20261124_v13">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -529,55 +529,57 @@
       </div>
 
       <!-- =============================================================== -->
-      <!-- ⏰ 第二排：當下時間與距離上課倒數看板 (單行化排版：由左而右為日期、現在時間、剩餘時間，右方快捷功能排版均不變) -->
+      <!-- ⏰ 第二排：當下時間與距離上課倒數看板 (高自適應防重疊排版) -->
       <!-- =============================================================== -->
-      <div id="trafficClockBanner" class="traffic-clock-card rounded-2xl p-2.5 sm:px-5 text-amber-100 shadow-md border-2 border-amber-500">
-        <div class="flex flex-nowrap items-center justify-between gap-3 sm:gap-4 overflow-x-auto whitespace-nowrap">
+      <div id="trafficClockBanner" class="traffic-clock-card rounded-2xl p-2.5 sm:px-4 text-amber-100 shadow-md border-2 border-amber-500">
+        <div class="flex flex-wrap lg:flex-nowrap items-center justify-between gap-2.5 sm:gap-3">
           
-          <!-- 左側區塊：單行排列（由左而右：日期 -> 現在時間 -> 剩餘時間，字體放大補滿整行） -->
-          <div class="flex flex-1 items-center justify-start space-x-2.5 sm:space-x-4 min-w-0">
-            <!-- 1. 日期 (放大顯眼) -->
-            <div class="flex items-center space-x-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-amber-500/25 border-2 border-amber-400/50 text-amber-200 font-mono shadow-xs shrink-0">
-              <span class="text-base sm:text-xl">📅</span>
-              <span id="trafficClockDate" class="text-sm sm:text-base lg:text-lg font-black tracking-wide"></span>
+          <!-- 左側時鐘與倒數區塊 (各項目獨立膠囊，自適應排列不擠壓、不重疊) -->
+          <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 min-w-0">
+            <!-- 1. 日期 -->
+            <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-200 font-mono shadow-xs shrink-0">
+              <span class="text-sm sm:text-base">📅</span>
+              <span id="trafficClockDate" class="text-xs sm:text-sm font-black tracking-wide"></span>
             </div>
 
-            <!-- 2. 現在時間 (大字體數位時鐘) -->
-            <div class="flex items-center space-x-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-black/70 border-2 border-amber-400/60 shadow-inner shrink-0">
-              <span class="text-base sm:text-xl">⏰</span>
-              <span class="text-xs sm:text-sm lg:text-base text-amber-300/90 font-bold whitespace-nowrap">現在時間:</span>
-              <span id="trafficCurrentClock" class="font-digital text-2xl sm:text-3xl lg:text-4xl font-black text-amber-300 tracking-wider">--:--:--</span>
+            <!-- 2. 現在時間 (清晰數位時鐘) -->
+            <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-black/70 border border-amber-400/60 shadow-inner shrink-0">
+              <span class="text-sm sm:text-base">⏰</span>
+              <span class="text-xs text-amber-300/80 font-bold hidden sm:inline">現在時間:</span>
+              <span id="trafficCurrentClock" class="font-digital text-lg sm:text-2xl font-black text-amber-300 tracking-wider">--:--:--</span>
             </div>
 
-            <!-- 3. 剩餘時間 (加大倒數計時補滿橫向空間) -->
-            <div class="flex items-center space-x-2.5 sm:space-x-3 px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-xl bg-amber-950/90 border-2 border-amber-500/60 shadow-inner flex-1 min-w-[280px]">
-              <span id="trafficStatusIcon" class="text-xl sm:text-2xl shrink-0">🏃</span>
-              <span id="trafficPeriodBadge" class="px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-black bg-emerald-400 text-emerald-950 shadow-xs whitespace-nowrap shrink-0">下課休息時間</span>
-              <span id="trafficScheduleTarget" class="text-xs sm:text-sm lg:text-base text-amber-300/90 font-bold hidden xl:inline truncate">目標：第三節上課 (10:30)</span>
-              <span id="trafficCountdownTitle" class="text-xs sm:text-sm lg:text-base text-amber-200 font-black whitespace-nowrap shrink-0">剩餘:</span>
-              <span id="trafficCountdownDigits" class="font-digital text-2xl sm:text-3xl lg:text-4xl font-black text-amber-300 tracking-wider">--:--</span>
+            <!-- 3. 剩餘時間 (重點倒數看板，自成獨立區塊絕不溢出) -->
+            <div class="flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-xl bg-amber-950/90 border border-amber-400/70 shadow-inner shrink-0">
+              <span id="trafficStatusIcon" class="text-base sm:text-lg shrink-0">🏃</span>
+              <span id="trafficPeriodBadge" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-400 text-emerald-950 shadow-xs whitespace-nowrap shrink-0">下課休息時間</span>
+              <span id="trafficScheduleTarget" class="text-xs text-amber-300/80 font-bold hidden 2xl:inline truncate">目標：第三節上課 (10:30)</span>
+              <span id="trafficCountdownTitle" class="text-xs text-amber-200 font-black whitespace-nowrap shrink-0">倒數:</span>
+              <span id="trafficCountdownDigits" class="font-digital text-xl sm:text-3xl font-black text-amber-300 tracking-wider shrink-0">--:--</span>
               <span id="trafficCountdownSub" class="hidden">倒數計時</span>
             </div>
           </div>
 
-          <!-- 右側：快捷倒數與鐘聲功能鍵 (排版均不變) -->
-          <div class="flex items-center space-x-1.5 flex-shrink-0">
-            <div class="flex items-center space-x-1 bg-black/40 p-1 rounded-xl border border-amber-500/30">
-              <button type="button" onclick="setManualTrafficCountdown(10, '10分鐘下課')" class="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition" title="快捷倒數 10 分鐘下課">
+          <!-- 右側：快捷倒數與鐘聲功能鍵 (固定不擠壓、獨立靠右) -->
+          <div class="flex items-center space-x-2 shrink-0">
+            <!-- 快捷倒數按鈕群 -->
+            <div class="flex items-center space-x-1 bg-black/50 p-1 rounded-xl border border-amber-500/40 shrink-0">
+              <button type="button" onclick="setManualTrafficCountdown(10, '10分鐘下課')" class="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition whitespace-nowrap" title="快捷倒數 10 分鐘下課">
                 ⏱️ 10分
               </button>
-              <button type="button" onclick="setManualTrafficCountdown(20, '20分鐘大下課')" class="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition" title="快捷倒數 20 分鐘大下課">
+              <button type="button" onclick="setManualTrafficCountdown(20, '20分鐘大下課')" class="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition whitespace-nowrap" title="快捷倒數 20 分鐘大下課">
                 🌟 20分
               </button>
-              <button type="button" onclick="setManualTrafficCountdown(5, '5分鐘短下課')" class="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition" title="快捷倒數 5 分鐘">
+              <button type="button" onclick="setManualTrafficCountdown(5, '5分鐘短下課')" class="px-2 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition whitespace-nowrap" title="快捷倒數 5 分鐘">
                 ⏱️ 5分
               </button>
-              <button type="button" id="btnTrafficResetSchedule" onclick="resetTrafficToSchedule()" class="px-2 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black transition hidden" title="恢復西寧國小課表自動作息">
+              <button type="button" id="btnTrafficResetSchedule" onclick="resetTrafficToSchedule()" class="px-2 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black transition hidden whitespace-nowrap" title="恢復西寧國小課表自動作息">
                 🔄 恢復作息
               </button>
             </div>
-            <div class="flex items-center space-x-1.5">
-              <button type="button" onclick="ringBreakBell()" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black shadow flex items-center space-x-1" title="響起鐘聲提醒全班">
+            <!-- 下課鐘聲與全螢幕 -->
+            <div class="flex items-center space-x-1.5 shrink-0">
+              <button type="button" onclick="ringBreakBell()" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black shadow flex items-center space-x-1 whitespace-nowrap" title="響起鐘聲提醒全班">
                 <span>🔔 下課鐘聲</span>
               </button>
               <button type="button" onclick="toggleFullscreen()" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 text-xs font-black shadow" title="投影全螢幕">
@@ -4682,8 +4684,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261123_shortcuts_v2"></script>
-  <script src="ui.js?v=20261123_shortcuts_v2"></script>
+  <script src="app.js?v=20261124_traffic_clock_v3"></script>
+  <script src="ui.js?v=20261124_traffic_clock_v3"></script>
 
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>
