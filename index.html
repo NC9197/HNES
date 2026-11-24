@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261124_v20">
+  <link rel="stylesheet" href="styles.css?v=20261124_v21">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -256,13 +256,13 @@
         </div>
       </div>
 
-      <!-- ★ 核心版面 (固定左右雙欄：左側即時時鐘與打卡座號網格，右側直式聯絡簿擴大看板，高度完美契合) ★ -->
-      <div class="grid grid-cols-12 gap-3 sm:gap-4 lg:gap-5 items-start">
+      <!-- ★ 核心 3 : 7 比例版面 (左側 30% 時鐘與打卡座號網格，右側 70% 剩下的部分全部為聯絡簿) ★ -->
+      <div class="grid grid-cols-1 lg:grid-cols-10 gap-4 sm:gap-6 items-start">
         
-        <!-- 【左側】：即時時鐘 ＋ 大臣到校打卡區 (置頂大時鐘，讓學生打卡與抄寫直式聯絡簿時抬頭即可看時間) -->
-        <div class="col-span-12 lg:col-span-4 xl:col-span-3 space-y-3">
+        <!-- 【左側 30%】：即時時鐘 ＋ 大臣到校打卡區 (時鐘置頂於打卡上方，打卡緊接在下) -->
+        <div class="lg:col-span-3 space-y-4">
           
-          <!-- ⏰ 晨間朝會大時鐘看板 (移至打卡區上方，配合直式聯絡簿高度，整體版面整齊大方) -->
+          <!-- ⏰ 晨間朝會大時鐘看板 (在打卡功能的上方) -->
           <div class="bg-gradient-to-br from-amber-500 via-amber-400 to-yellow-400 border-2 border-amber-600 p-3 sm:p-4 rounded-2xl shadow-md text-amber-950 text-center relative overflow-hidden">
             <div class="flex items-center justify-between pb-1 mb-1 border-b border-amber-600/30 text-xs font-black">
               <span class="flex items-center space-x-1.5">
@@ -285,7 +285,7 @@
             </div>
           </div>
 
-          <!-- 打卡區卡片 -->
+          <!-- 打卡區卡片 (在時鐘下方) -->
           <div class="parchment-card p-3 sm:p-4 space-y-3 shadow-md">
             <div class="flex items-center justify-between pb-2 border-b-2 border-amber-300">
               <div>
@@ -304,38 +304,39 @@
               </div>
             </div>
 
-          <!-- 27 位大臣座號打卡按鈕網格 (每一橫排 5 個座號，僅顯示 01~27 座號，大按鈕省空間免滾輪) -->
-          <div id="checkInGrid" class="grid grid-cols-5 gap-1.5 sm:gap-2">
-            <!-- 動態由 JavaScript 渲染 1 ~ 27 號按鈕 (每一橫排 5 個座號) -->
-          </div>
-
-          <div class="pt-2 border-t border-amber-200 text-[11px] text-amber-900 space-y-1 font-bold">
-            <div class="grid grid-cols-2 gap-1 text-[11px]">
-              <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-xs"></span>
-                <span>🟢 準時 (07:40前)</span>
-              </span>
-              <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs"></span>
-                <span>🟡 遲到 (07:40後)</span>
-              </span>
-              <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
-                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs"></span>
-                <span>🔴 缺席 (尚未打卡)</span>
-              </span>
-              <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-300">
-                <span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shadow-xs"></span>
-                <span>🏖️ 請假在府</span>
-              </span>
+            <!-- 27 位大臣座號打卡按鈕網格 (每一橫排 5 個座號，僅顯示 01~27 座號，大按鈕省空間免滾輪) -->
+            <div id="checkInGrid" class="grid grid-cols-5 gap-1.5 sm:gap-2">
+              <!-- 動態由 JavaScript 渲染 1 ~ 27 號按鈕 (每一橫排 5 個座號) -->
             </div>
-            <p class="text-[10px] text-slate-600 font-bold">
-              💡 晨檢打卡免打勾，點擊即記錄時間並以紅綠燈自動標記狀態！
-            </p>
+
+            <div class="pt-2 border-t border-amber-200 text-[11px] text-amber-900 space-y-1 font-bold">
+              <div class="grid grid-cols-2 gap-1 text-[11px]">
+                <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-xs"></span>
+                  <span>🟢 準時 (07:40前)</span>
+                </span>
+                <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shadow-xs"></span>
+                  <span>🟡 遲到 (07:40後)</span>
+                </span>
+                <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs"></span>
+                  <span>🔴 缺席 (尚未打卡)</span>
+                </span>
+                <span class="flex items-center space-x-1.5 p-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-300">
+                  <span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block shadow-xs"></span>
+                  <span>🏖️ 請假在府</span>
+                </span>
+              </div>
+              <p class="text-[10px] text-slate-600 font-bold">
+                💡 晨檢打卡免打勾，點擊即記錄時間並以紅綠燈自動標記狀態！
+              </p>
+            </div>
           </div>
         </div>
 
-        <!-- 【右側擴大聯絡簿版面】：今日聯絡簿超大字體看板 (左右二欄 ‧ 教室後排清晰可見) -->
-        <div id="contactBoardContainer" class="col-span-12 lg:col-span-8 xl:col-span-9 contact-book-board p-4 sm:p-7 space-y-5 shadow-xl">
+        <!-- 【右側剩下的部分全部都是聯絡簿】：7 欄寬 (約 70% 寬度，超大字體看板) -->
+        <div id="contactBoardContainer" class="lg:col-span-7 contact-book-board p-4 sm:p-7 space-y-5 shadow-xl">
           
           <!-- 聯絡簿頂部資訊與編輯按鈕 -->
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b-2 border-amber-400">
@@ -4258,9 +4259,6 @@
     </div>
   </div>
 
-    </div>
-  </div>
-
   <!-- Toast 訊息提示 -->
   <div id="toastNotification" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 max-w-sm bg-amber-950 border-2 border-amber-400 text-amber-200 p-3 sm:p-4 rounded-2xl shadow-2xl flex items-center justify-between space-x-3">
     <div class="flex items-center space-x-2.5 min-w-0">
@@ -4821,8 +4819,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261124_v20"></script>
-  <script src="ui.js?v=20261124_v20"></script>
+  <script src="app.js?v=20261124_v21"></script>
+  <script src="ui.js?v=20261124_v21"></script>
 
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>
