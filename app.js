@@ -528,7 +528,8 @@ class KingdomStore {
       const t = String(hw.title || '').replace(/\s+/g, '');
       const p = String(hw.presetName || '').replace(/\s+/g, '');
       if (t.includes('國語習作第八課') || t.includes('生字造詞隨堂筆記') || t.includes('數學習作P.62') || t.includes('數學習作P62')) return true;
-      if (p === '國習' && (!hw.date || hw.date <= '2026-11-16')) return true;
+      if (t === '國語習作完成' || t === '國習完成') return true;
+      if ((t === '國習' || p === '國習') && (!hw.dueDate || hw.date <= '2026-11-24' || hw.dueDate <= '2026-11-24')) return true;
       return false;
     };
 
@@ -584,6 +585,65 @@ class KingdomStore {
       mergedAnnouncements = Array.from(annMap.values());
     }
 
+    // 10. 行為卡牌與常規提醒單融合 (雙向融合兩端的自省卡理由與常規提醒單，絕不丟失任何一方新增的提醒)
+    const mergedBehaviorCards = {};
+    const localBc = local.behaviorCards || {};
+    const remoteBc = remote.behaviorCards || {};
+    const allBcStudentIds = new Set([...Object.keys(localBc), ...Object.keys(remoteBc)]);
+
+    allBcStudentIds.forEach(id => {
+      const l = localBc[id] || {};
+      const r = remoteBc[id] || {};
+
+      // 合併提醒單 (根據 slip.id 去重)
+      const slipMap = new Map();
+      (r.reminderSlips || []).forEach(s => { if (s && s.id) slipMap.set(s.id, s); });
+      (l.reminderSlips || []).forEach(s => {
+        if (s && s.id) {
+          if (!slipMap.has(s.id)) {
+            slipMap.set(s.id, s);
+          } else {
+            const existing = slipMap.get(s.id);
+            if (s.status === 'completed' || existing.status === 'completed') {
+              existing.status = 'completed';
+            }
+          }
+        }
+      });
+      const mergedSlips = Array.from(slipMap.values());
+
+      // 合併自省卡 (根據理由去重)
+      const refReasons = [...(r.reflectionReasons || [])];
+      (l.reflectionReasons || []).forEach(lr => {
+        if (!refReasons.some(rr => rr.text === lr.text && rr.isAutoHw === lr.isAutoHw && rr.hwId === lr.hwId)) {
+          refReasons.push(lr);
+        }
+      });
+
+      // 合併愛班卡
+      const srvReasons = [...(r.serviceReasons || [])];
+      (l.serviceReasons || []).forEach(ls => {
+        if (!srvReasons.some(rs => rs.text === ls.text)) {
+          srvReasons.push(ls);
+        }
+      });
+
+      const primary = isRemoteNewer ? r : l;
+      mergedBehaviorCards[id] = {
+        ...primary,
+        reminderSlips: mergedSlips,
+        reminderCount: mergedSlips.filter(s => s && s.status === 'pending').length,
+        reflectionReasons: refReasons,
+        reflectionCount: refReasons.length,
+        reflectionCard: refReasons.length > 0,
+        reflectionReason: refReasons.map(rr => rr.text).join('、'),
+        serviceReasons: srvReasons,
+        serviceCount: srvReasons.length,
+        serviceCard: srvReasons.length > 0,
+        serviceReason: srvReasons.map(rs => rs.text).join('、')
+      };
+    });
+
     const finalLastModified = Math.max(localTime, remoteTime, Date.now());
 
     const mergedData = {
@@ -599,6 +659,7 @@ class KingdomStore {
       pointLogs: mergedPointLogs,
       announcements: mergedAnnouncements,
       rewardRedemptions: mergedRedemptions,
+      behaviorCards: mergedBehaviorCards,
       seatingLayout: mergedSeatingLayout,
       seatingChart: mergedSeatingChart,
       lastModified: finalLastModified
@@ -716,7 +777,8 @@ class KingdomStore {
       const t = String(hw.title || '').replace(/\s+/g, '');
       const p = String(hw.presetName || '').replace(/\s+/g, '');
       if (t.includes('國語習作第八課') || t.includes('生字造詞隨堂筆記') || t.includes('數學習作P.62') || t.includes('數學習作P62')) return true;
-      if (p === '國習' && (!hw.date || hw.date <= '2026-11-16')) return true;
+      if (t === '國語習作完成' || t === '國習完成') return true;
+      if ((t === '國習' || p === '國習') && (!hw.dueDate || hw.date <= '2026-11-24' || hw.dueDate <= '2026-11-24')) return true;
       return false;
     };
 
@@ -857,9 +919,13 @@ class KingdomStore {
           reflectionCard: false,
           reflectionCount: 0,
           reflectionReason: '',
+          reflectionReasons: [],
           serviceCard: false,
           serviceCount: 0,
           serviceReason: '',
+          serviceReasons: [],
+          reminderSlips: [],
+          reminderCount: 0,
           history: []
         };
       } else {
@@ -870,6 +936,10 @@ class KingdomStore {
           b.reflectionCard = b.reflectionCount > 0;
           b.reflectionReason = b.reflectionReasons.map(r => r.text).join('、');
         }
+        if (!Array.isArray(b.reminderSlips)) {
+          b.reminderSlips = [];
+        }
+        b.reminderCount = b.reminderSlips.filter(s => s && s.status === 'pending').length;
       }
     });
 
@@ -2478,7 +2548,7 @@ class KingdomStore {
     };
   }
 
-  // --- 行為卡牌累計與特赦管理 (座位自省卡、愛班服務卡) ---
+  // --- 行為卡牌累計與特赦管理 (座位自省卡、愛班服務卡、常規提醒單) ---
   getReflectionCount(studentId) {
     const b = (this.data.behaviorCards && (this.data.behaviorCards[studentId])) || {};
     return b.reflectionCount !== undefined ? b.reflectionCount : (b.reflectionCard ? 1 : 0);
@@ -2487,6 +2557,74 @@ class KingdomStore {
   getServiceCount(studentId) {
     const b = (this.data.behaviorCards && (this.data.behaviorCards[studentId])) || {};
     return b.serviceCount !== undefined ? b.serviceCount : (b.serviceCard ? 1 : 0);
+  }
+
+  getReminderSlipCount(studentId) {
+    const b = (this.data.behaviorCards && (this.data.behaviorCards[studentId])) || {};
+    if (!Array.isArray(b.reminderSlips)) return 0;
+    return b.reminderSlips.filter(s => s && s.status === 'pending').length;
+  }
+
+  getStudentReminderSlips(studentId) {
+    const b = (this.data.behaviorCards && (this.data.behaviorCards[studentId])) || {};
+    return Array.isArray(b.reminderSlips) ? b.reminderSlips : [];
+  }
+
+  addReminderSlip(studentId, { reason = "常規提醒", content = "寫字提醒", targetCount = 50 } = {}) {
+    if (!this.data.behaviorCards) this.data.behaviorCards = {};
+    if (!this.data.behaviorCards[studentId]) {
+      this.data.behaviorCards[studentId] = {
+        reflectionCount: 0,
+        serviceCount: 0,
+        reflectionReasons: [],
+        serviceReasons: [],
+        reminderSlips: [],
+        reminderCount: 0,
+        dismissedHwCards: {}
+      };
+    }
+    const b = this.data.behaviorCards[studentId];
+    if (!Array.isArray(b.reminderSlips)) b.reminderSlips = [];
+    const count = parseInt(targetCount, 10) || 50;
+    const slip = {
+      id: 'slip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      reason: String(reason || '常規提醒').trim(),
+      content: String(content || reason || '寫字提醒').trim(),
+      targetCount: count,
+      status: 'pending',
+      date: getTodayDateString(),
+      time: new Date().toTimeString().slice(0, 5)
+    };
+    b.reminderSlips.push(slip);
+    b.reminderCount = b.reminderSlips.filter(s => s && s.status === 'pending').length;
+    this.save('新增常規提醒單');
+    return slip;
+  }
+
+  completeReminderSlip(studentId, slipId) {
+    if (!this.data.behaviorCards || !this.data.behaviorCards[studentId]) return;
+    const b = this.data.behaviorCards[studentId];
+    if (!Array.isArray(b.reminderSlips)) return;
+    const slip = b.reminderSlips.find(s => s && s.id === slipId);
+    if (slip) {
+      slip.status = 'completed';
+      slip.completedDate = getTodayDateString();
+      slip.completedTime = new Date().toTimeString().slice(0, 5);
+    }
+    b.reminderCount = b.reminderSlips.filter(s => s && s.status === 'pending').length;
+    this.save('完成結清提醒單');
+  }
+
+  removeReminderSlip(studentId, slipId) {
+    if (!this.data.behaviorCards || !this.data.behaviorCards[studentId]) return;
+    const b = this.data.behaviorCards[studentId];
+    if (!Array.isArray(b.reminderSlips)) return;
+    const idx = b.reminderSlips.findIndex(s => s && s.id === slipId);
+    if (idx !== -1) {
+      b.reminderSlips.splice(idx, 1);
+    }
+    b.reminderCount = b.reminderSlips.filter(s => s && s.status === 'pending').length;
+    this.save('刪除常規提醒單');
   }
 
   // --- 作業未交自動派發座位自省卡同步 (一項未交自動新增一張自省卡，標示哪項作業；導師全手動移除，系統無須自動移除) ---
@@ -2684,6 +2822,12 @@ class KingdomStore {
       b.serviceReason = "";
       b.serviceReasons = [];
     }
+    if (type === 'all' || type === 'reminder') {
+      if (Array.isArray(b.reminderSlips)) {
+        b.reminderSlips.forEach(s => { if (s) s.status = 'completed'; });
+      }
+      b.reminderCount = 0;
+    }
     this.save();
   }
 
@@ -2710,6 +2854,12 @@ class KingdomStore {
         b.serviceCard = false;
         b.serviceReason = "";
         b.serviceReasons = [];
+      }
+      if (type === 'all' || type === 'reminder') {
+        if (Array.isArray(b.reminderSlips)) {
+          b.reminderSlips.forEach(s => { if (s) s.status = 'completed'; });
+        }
+        b.reminderCount = 0;
       }
     });
     this.save();
@@ -2786,6 +2936,12 @@ class KingdomStore {
     const hasService = serviceCount > 0;
     const serviceReason = bCard.serviceReason || (hasService ? '遲到' : '');
 
+    // 2.5 罰寫提醒單判定 (常規問題提醒書寫，如聽寫簽名未交*50次)
+    const pendingSlips = (Array.isArray(bCard.reminderSlips) ? bCard.reminderSlips : []).filter(s => s && s.status === 'pending');
+    const reminderCount = pendingSlips.length;
+    const hasReminder = reminderCount > 0;
+    const reminderReason = pendingSlips.map(s => `${s.content || s.reason}*${s.targetCount}次`).join('、');
+
     // 3. 檢查今日各項作業繳交情形 (支援 submitted, late, revision, pending)
     const missingList = [];
     const revisionList = [];
@@ -2838,6 +2994,11 @@ class KingdomStore {
         hasService,
         serviceCount,
         serviceReason,
+        hasReminder,
+        reminderCount,
+        reminderReason,
+        reminderSlips: bCard.reminderSlips || [],
+        pendingReminderSlips: pendingSlips,
         missingList,
         revisionList,
         lateList,
@@ -2857,6 +3018,9 @@ class KingdomStore {
       } else if (missingList.length > 0) {
         reasons.push(...missingList.map(h => `作業未交（${h.title || h.presetName || '日常作業'}）`));
       }
+      if (hasReminder) {
+        reasons.push(...pendingSlips.map(s => `提醒單待寫（${s.content || s.reason}*${s.targetCount}次）`));
+      }
       const shortReason = reasons.join('、');
 
       return {
@@ -2873,6 +3037,11 @@ class KingdomStore {
         hasService,
         serviceCount,
         serviceReason,
+        hasReminder,
+        reminderCount,
+        reminderReason,
+        reminderSlips: bCard.reminderSlips || [],
+        pendingReminderSlips: pendingSlips,
         missingList,
         revisionList,
         lateList,
@@ -2880,9 +3049,16 @@ class KingdomStore {
       };
     }
 
-    // B. 若是有待訂正的項目 -> 黃燈 (需先完成訂正)
-    if (revisionList.length > 0) {
-      const shortReason = revisionList.map(h => `${getShortHwName(h)}訂正未繳交`).join('、');
+    // B. 若是有待訂正的項目或有未完成提醒單 -> 黃燈 (需先完成訂正或罰寫提醒單)
+    if (revisionList.length > 0 || hasReminder) {
+      const yellowReasons = [];
+      if (revisionList.length > 0) {
+        yellowReasons.push(...revisionList.map(h => `${getShortHwName(h)}訂正未繳交`));
+      }
+      if (hasReminder) {
+        yellowReasons.push(...pendingSlips.map(s => `提醒單待寫（${s.content || s.reason}*${s.targetCount}次）`));
+      }
+      const shortReason = yellowReasons.join('、');
       return {
         student,
         light: 'yellow',
@@ -2890,13 +3066,18 @@ class KingdomStore {
         shortReason,
         badgeClass: 'badge-late',
         cardClass: 'traffic-card-yellow',
-        desc: `⚠️ 無法下課原因：${shortReason}`,
+        desc: `⚠️ 無法下課原因：${shortReason}，請在座位上完成！`,
         hasReflection: false,
         reflectionCount: 0,
         reflectionReason: '',
         hasService,
         serviceCount,
         serviceReason,
+        hasReminder,
+        reminderCount,
+        reminderReason,
+        reminderSlips: bCard.reminderSlips || [],
+        pendingReminderSlips: pendingSlips,
         missingList: [],
         revisionList,
         lateList,
@@ -2919,6 +3100,11 @@ class KingdomStore {
       hasService,
       serviceCount,
       serviceReason,
+      hasReminder: false,
+      reminderCount: 0,
+      reminderReason: '',
+      reminderSlips: bCard.reminderSlips || [],
+      pendingReminderSlips: [],
       missingList: [],
       revisionList,
       lateList,
@@ -3651,7 +3837,7 @@ class KingdomCloudSync {
   startPolling() {
     if (this.pollInterval) clearInterval(this.pollInterval);
     if (!this.config.enabled || !this.config.autoPull) return;
-    const intervalMs = 3000; // 極速背景巡查 3 秒間隔
+    const intervalMs = 5000; // 5 秒優雅背景巡查間隔 (兼顧秒級即時更新與嚴防 Google Apps Script 限流)
     this.pollInterval = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       this.pull({ silent: true });
@@ -3795,22 +3981,36 @@ class KingdomCloudSync {
     if (this.config.googleScriptUrl) {
       try {
         const gasController = new AbortController();
-        const gasTimeout = setTimeout(() => gasController.abort(), 8000);
+        const gasTimeout = setTimeout(() => gasController.abort(), 8500);
+        const postPayload = JSON.stringify({
+          account: account,
+          data: this.store.data
+        });
+
         await fetch(this.config.googleScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
+          redirect: 'follow',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            account: account,
-            data: this.store.data
-          }),
+          body: postPayload,
+          keepalive: true,
           signal: gasController.signal
         });
         clearTimeout(gasTimeout);
         pushedToAny = true;
       } catch (err) {
         pushError = err.message;
-        console.warn('[CloudSync] Google 雲端推送失敗:', err.message);
+        console.warn('[CloudSync] Google 雲端標準推送失敗:', err.message);
+
+        // 手機/離頁保護：若 Fetch 失敗，嘗試使用 sendBeacon 終極衝刺推送
+        try {
+          if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+            const blob = new Blob([JSON.stringify({ account: account, data: this.store.data })], { type: 'text/plain;charset=utf-8' });
+            navigator.sendBeacon(this.config.googleScriptUrl, blob);
+            pushedToAny = true;
+            pushError = null;
+          }
+        } catch (_) {}
       }
     }
 
@@ -4006,11 +4206,17 @@ class KingdomCloudSync {
             if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
               window.KingdomUI.refreshCurrentView();
             }
+            if (typeof renderCurrentTeacherTab === 'function') renderCurrentTeacherTab();
+            if (typeof renderHomeworkSummaryBoard === 'function') renderHomeworkSummaryBoard();
+            if (typeof renderHomeworkSettlementTable === 'function') renderHomeworkSettlementTable();
             if (typeof renderPointsView === 'function') renderPointsView();
             if (typeof renderRewardRedemptions === 'function') renderRewardRedemptions();
             if (typeof renderPointsProjection === 'function') renderPointsProjection();
             if (typeof renderRosterView === 'function') renderRosterView();
             if (typeof renderMorningBoard === 'function') renderMorningBoard();
+            if (typeof renderContactProjectionView === 'function') renderContactProjectionView();
+            if (typeof renderTrafficView === 'function') renderTrafficView();
+            if (typeof renderSeatingChart === 'function') renderSeatingChart();
           }
           // 徹底移除背景自動同步時彈出的右下角 Toast，保持大螢幕與操作介面極致純淨，不再干擾導師
           isUpdated = true;
@@ -4071,16 +4277,21 @@ class KingdomCloudSync {
     });
   }
 
-  // 檢查遠端存檔是否含有本地尚未擁有的最新資訊 (新增大臣、點數變動、打卡更新、作業新交等)
+  // 檢查遠端存檔是否含有本地尚未擁有的最新資訊 (版本號遞增、新增大臣、點數變動、打卡更新、作業新交/訂正、聯絡簿更新等)
   hasRemoteUpdates(local, remote) {
     if (!remote || !remote.students || !Array.isArray(remote.students)) return false;
     if (!local || !local.students || !Array.isArray(local.students)) return true;
 
+    // 0. 單調遞增雲端版本號 (cloudRevision)：若遠端版本號大於本地，100% 判定有更新！
+    const rRev = Number(remote.cloudRevision) || 0;
+    const lRev = Number(local.cloudRevision) || 0;
+    if (rRev > lRev) return true;
+
     const rTime = Number(remote.lastModified) || 0;
     const lTime = Number(local.lastModified) || 0;
 
-    // 1. 若遠端時間戳明確較新，一律視為有更新
-    if (rTime > lTime) return true;
+    // 1. 若遠端時間戳明確較新（考慮時鐘 1 秒誤差容差），一律視為有更新
+    if (rTime > lTime + 1000) return true;
 
     // 關鍵防舊覆蓋保護：若本地大臣人數多於遠端，且本地時間戳不小於遠端，代表遠端為缺少大臣的舊檔，絕不可視為更新！
     if (local.students.length > remote.students.length && lTime >= rTime) {
@@ -4125,8 +4336,7 @@ class KingdomCloudSync {
       const rItem = rRed[i];
       if (!rItem || !rItem.id) continue;
       const lItem = lRedMap.get(String(rItem.id));
-      if (!lItem) return true;
-      if (rItem.status !== lItem.status) return true;
+      if (!lItem || rItem.status !== lItem.status) return true;
     }
 
     // 比對大臣個人卡牌抽屜數量是否有變動
@@ -4140,7 +4350,7 @@ class KingdomCloudSync {
       }
     }
 
-    // 5. 簽到表比對 (遠端是否有已簽到但本地為 pending/未到的紀錄)
+    // 5. 簽到表比對 (任何狀態不同或時間戳不同即時觸發更新)
     const rAtt = remote.attendance || {};
     const lAtt = local.attendance || {};
     for (const d in rAtt) {
@@ -4148,11 +4358,10 @@ class KingdomCloudSync {
       for (const seat in rAtt[d]) {
         const rRec = rAtt[d][seat];
         const lRec = lAtt[d][seat];
-        if (rRec && rRec.status !== 'pending') {
-          if (!lRec || lRec.status === 'pending' || lRec.time !== rRec.time) {
-            return true;
-          }
-        }
+        const rStat = (rRec && rRec.status) || 'pending';
+        const lStat = (lRec && lRec.status) || 'pending';
+        if (rStat !== lStat) return true;
+        if (rRec && lRec && rRec.checkInTime !== lRec.checkInTime) return true;
       }
     }
 
@@ -4174,7 +4383,8 @@ class KingdomCloudSync {
       const t = String(hw.title || '').replace(/\s+/g, '');
       const p = String(hw.presetName || '').replace(/\s+/g, '');
       if (t.includes('國語習作第八課') || t.includes('生字造詞隨堂筆記') || t.includes('數學習作P.62') || t.includes('數學習作P62')) return true;
-      if (p === '國習' && (!hw.date || hw.date <= '2026-11-16')) return true;
+      if (t === '國語習作完成' || t === '國習完成') return true;
+      if ((t === '國習' || p === '國習') && (!hw.dueDate || hw.date <= '2026-11-24' || hw.dueDate <= '2026-11-24')) return true;
       return false;
     };
 
@@ -4188,24 +4398,51 @@ class KingdomCloudSync {
       if (!rh || !rh.id) continue;
       const lh = lHwMap.get(String(rh.id));
       if (!lh) return true;
+      if (rh.title !== lh.title || rh.dueDate !== lh.dueDate || rh.subject !== lh.subject) return true;
       const rRecs = rh.records || {};
       const lRecs = lh.records || {};
       for (const s in rRecs) {
         const rVal = typeof rRecs[s] === 'string' ? rRecs[s] : ((rRecs[s] && rRecs[s].status) || 'pending');
         const lVal = typeof lRecs[s] === 'string' ? lRecs[s] : ((lRecs[s] && lRecs[s].status) || 'pending');
-        if (rVal !== 'pending' && lVal === 'pending') {
-          return true;
+        if (rVal !== lVal) {
+          return true; // 準時、遲交、訂正、未交狀態任一改變立即融合
         }
       }
     }
 
-    // 7. 聯絡簿比對
-    if (remote.contactBook && local.contactBook) {
-      if (Number(remote.contactBook.updatedAt || 0) > Number(local.contactBook.updatedAt || 0)) {
-        return true;
-      }
-    } else if (remote.contactBook && !local.contactBook) {
-      return true;
+    // 7. 聯絡簿深度比對
+    if (remote.contactBook || local.contactBook) {
+      const rHwItems = (remote.contactBook && remote.contactBook.homeworkItems) || [];
+      const lHwItems = (local.contactBook && local.contactBook.homeworkItems) || [];
+      if (JSON.stringify(rHwItems) !== JSON.stringify(lHwItems)) return true;
+
+      const rReminders = (remote.contactBook && remote.contactBook.reminders) || [];
+      const lReminders = (local.contactBook && local.contactBook.reminders) || [];
+      if (JSON.stringify(rReminders) !== JSON.stringify(lReminders)) return true;
+
+      const rMotto = (remote.contactBook && remote.contactBook.queenMotto) || '';
+      const lMotto = (local.contactBook && local.contactBook.queenMotto) || '';
+      if (rMotto !== lMotto) return true;
+    }
+
+    // 8. 常用作業快捷範本比對
+    if (remote.homeworkPresets && local.homeworkPresets) {
+      if (JSON.stringify(remote.homeworkPresets) !== JSON.stringify(local.homeworkPresets)) return true;
+    }
+
+    // 9. 皇室公告比對
+    if (remote.announcements && local.announcements) {
+      if (JSON.stringify(remote.announcements) !== JSON.stringify(local.announcements)) return true;
+    }
+
+    // 10. 行為卡牌與常規提醒單比對 (自省卡、愛班卡、罰寫提醒單跨裝置即時秒同步)
+    if (remote.behaviorCards || local.behaviorCards) {
+      if (JSON.stringify(remote.behaviorCards || {}) !== JSON.stringify(local.behaviorCards || {})) return true;
+    }
+
+    // 11. 座位表格局與排列比對
+    if (remote.seatingChart && local.seatingChart) {
+      if (JSON.stringify(remote.seatingChart) !== JSON.stringify(local.seatingChart)) return true;
     }
 
     return false;

@@ -1,20 +1,22 @@
 /**
  * ============================================================================
  * 👑 西寧國小五年二班 ‧ 西寧小小兵王國 班級經營系統
- * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦終極版：智能雙向融合 + 密碼終身保護 + 特權卡撤銷連動)
+ * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦終極版 v7：智能雙向融合 + 單調遞增版本號 + 直式聯絡簿同步 + 示範作業自動清洗)
  * ============================================================================
  * 
  * 核心升級亮點：
- * 1. 智能雙向融合 (Smart Non-Destructive Merge)：
+ * 1. 單調遞增雲端版本號 (Monotonic Cloud Revision)：
+ *    - 每次手機或電腦推送存檔，雲端自動將 cloudRevision 遞增 1，徹底破除不同裝置間的時鐘誤差，保證手機編輯後電腦 100% 秒級更新！
+ * 2. 智慧作業清洗防護鎖 (Demo Homework Purge & Permanent Graveyard)：
+ *    - 徹底剃除「國習」、「國語習作完成」等示範假作業，自動寫入永久墓碑 deletedHomeworkIds，絕不在任何裝置復活！
+ * 3. 智能雙向融合 (Smart Non-Destructive Merge)：
  *    - 平板與手機即使同時編輯、先後送達，作業、點數、簽到紀錄自動雙向合併，絕不互相沖刷！
- * 2. 導師密碼終身防護鎖 (Password Protection Guard)：
+ * 4. 導師密碼終身防護鎖 (Password Protection Guard)：
  *    - 雲端嚴密守護導師自訂密碼，任何預設值 queen 絕無法覆蓋導師權限！
- * 3. 特權卡撤銷與抽屜同步防護 (Card Revocation Protection)：
- *    - 撤銷退換卡牌狀態具最高權限，自動清洗卡牌抽屜，撤銷之卡牌絕不在任何裝置復活！
- * 4. 皇室公佈欄純淨同步 (Clean Announcements Sync)：
- *    - 導師刪除或清空公告即時生效，不被舊假公告回沖。
- * 5. 500KB 超大容量自動分塊儲存 (突破單一屬性限制，支援全班大數據)。
- * 6. 支援真實 27 位大臣名冊 (洪永恩、莊淇勛...)，全手動純淨模式。
+ * 5. 特權卡撤銷與抽屜同步防護 (Card Revocation Protection)：
+ *    - 撤銷退換卡牌狀態具最高權限，自動清洗卡牌抽屜，撤銷之卡牌絕不在任何裝置殘留！
+ * 6. 500KB 超大容量自動分塊儲存 (突破單一屬性限制，支援全班大數據)。
+ * 7. 支援直式聯絡簿格式同步與 27 位大臣全手動名冊。
  * 
  * 部署教學 (只需 1 分鐘)：
  * 步驟 1：前往 https://script.google.com/ 打開您的專案
@@ -34,9 +36,9 @@ function doGet(e) {
     var info = {
       status: "online",
       system: "西寧國小五年二班 ‧ 西寧小小兵王國 雲端同步中繼站",
-      version: "2026.v6.shortcuts_and_timer_sync",
+      version: "2026.v7.vertical_contact_and_bidirectional_sync",
       time: new Date().toISOString(),
-      message: "🟢 雲端同步服務正常運作中！全功能快捷庫（作業/加扣點/事由/計時）、作業防護鎖與特權卡連動已全面啟用。"
+      message: "🟢 雲端同步服務正常運作中！單調遞增版本號、直式聯絡簿同步與示範作業永久清洗鎖已全面啟用。"
     };
     return ContentService.createTextOutput(JSON.stringify(info, null, 2))
       .setMimeType(ContentService.MimeType.JSON);
@@ -49,13 +51,20 @@ function doGet(e) {
     var existingStr = loadData(prop, account);
     var existing = {};
     try { existing = JSON.parse(existingStr || '{}'); } catch (_) {}
+
+    var revKey = 'cloud_revision_' + account;
+    var currentRev = parseInt(prop.getProperty(revKey) || '0', 10) + 1;
+    prop.setProperty(revKey, String(currentRev));
+
     var merged = mergeDatasets(existing, incoming);
+    merged.cloudRevision = currentRev;
     saveData(prop, account, JSON.stringify(merged));
 
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
       action: 'push_get',
       account: account,
+      cloudRevision: currentRev,
       lastModified: merged.lastModified,
       timestamp: new Date().getTime()
     })).setMimeType(ContentService.MimeType.JSON);
@@ -63,30 +72,51 @@ function doGet(e) {
 
   // 預設為拉取 (Pull) - 支援標準 JSON 與 Safari 專用 JSONP 跨網域免預檢回傳
   var jsonStr = loadData(prop, account);
+  var revKey = 'cloud_revision_' + account;
+  var currentRev = parseInt(prop.getProperty(revKey) || '0', 10);
 
-  // 雲端資料即時清洗防護：若歷史儲存中含有示範假作業，自動即時剃除並寫入永久墓碑
-  if (jsonStr && (jsonStr.indexOf('"homework"') !== -1 || jsonStr.indexOf('國習') !== -1 || jsonStr.indexOf('國語習作') !== -1)) {
+  // 雲端資料即時清洗防護：若歷史儲存中含有示範假作業，自動即時剃除並寫入永久墓碑，確保 cloudRevision
+  if (jsonStr && jsonStr !== '{}') {
     try {
       var pullData = JSON.parse(jsonStr);
+      var modified = false;
+
+      if (!pullData.cloudRevision && currentRev > 0) {
+        pullData.cloudRevision = currentRev;
+        modified = true;
+      }
+
       if (pullData && pullData.homework && Array.isArray(pullData.homework)) {
-        var needsClean = false;
-        var cleanList = pullData.homework.filter(function(hw) {
-          if (!hw || !hw.id) return false;
-          var sid = String(hw.id);
-          if (sid === "1" || sid === "2" || sid === "3") { needsClean = true; return false; }
-          if (hw.date === "2026-11-16" || hw.dueDate === "2026-11-16") { needsClean = true; return false; }
-          var t = String(hw.title || '').replace(/\s+/g, '');
-          var p = String(hw.presetName || '').replace(/\s+/g, '');
-          if (t.indexOf("國語習作第八課") !== -1 || t.indexOf("生字造詞隨堂筆記") !== -1 || t.indexOf("數學習作P.62") !== -1 || t.indexOf("數學習作P62") !== -1) { needsClean = true; return false; }
-          if (p === "國習" && (!hw.date || hw.date <= "2026-11-16")) { needsClean = true; return false; }
-          return true;
-        });
-        if (needsClean) {
-          pullData.homework = cleanList;
-          if (!pullData.deletedHomeworkIds || !Array.isArray(pullData.deletedHomeworkIds)) pullData.deletedHomeworkIds = [];
-          ["1", "2", "3"].forEach(function(d) {
-            if (pullData.deletedHomeworkIds.indexOf(d) === -1) pullData.deletedHomeworkIds.push(d);
-          });
+        var cleanHwList = [];
+        var delList = (pullData.deletedHomeworkIds && Array.isArray(pullData.deletedHomeworkIds)) ? pullData.deletedHomeworkIds.map(String) : ["1", "2", "3"];
+        var delMap = {};
+        for (var di = 0; di < delList.length; di++) delMap[delList[di]] = true;
+        delMap["1"] = true; delMap["2"] = true; delMap["3"] = true;
+
+        for (var hi = 0; hi < pullData.homework.length; hi++) {
+          var chk = pullData.homework[hi];
+          if (!chk || !chk.id) { modified = true; continue; }
+          var csid = String(chk.id);
+          var ct = String(chk.title || '').replace(/\s+/g, '');
+          var cp = String(chk.presetName || '').replace(/\s+/g, '');
+          if (delMap[csid] || csid === "1" || csid === "2" || csid === "3" ||
+              chk.date === "2026-11-16" || chk.dueDate === "2026-11-16" ||
+              ct.indexOf("國語習作第八課") !== -1 || ct.indexOf("生字造詞隨堂筆記") !== -1 ||
+              ct.indexOf("數學習作P.62") !== -1 || ct.indexOf("數學習作P62") !== -1 ||
+              ct === "國語習作完成" || ct === "國習完成" ||
+              ((ct === "國習" || cp === "國習") && (!chk.dueDate || chk.date <= "2026-11-24" || chk.dueDate <= "2026-11-24"))) {
+            modified = true;
+            if (!delMap[csid]) {
+              delMap[csid] = true;
+              delList.push(csid);
+            }
+          } else {
+            cleanHwList.push(chk);
+          }
+        }
+        if (modified) {
+          pullData.homework = cleanHwList;
+          pullData.deletedHomeworkIds = delList;
           jsonStr = JSON.stringify(pullData);
           saveData(prop, account, jsonStr);
         }
@@ -130,14 +160,21 @@ function doPost(e) {
     existingData = JSON.parse(existingStr || '{}');
   } catch (_) {}
 
+  // 累加單調遞增雲端版本號 (Monotonic Cloud Revision)
+  var revKey = 'cloud_revision_' + account;
+  var currentRev = parseInt(prop.getProperty(revKey) || '0', 10) + 1;
+  prop.setProperty(revKey, String(currentRev));
+
   // 執行雲端智能雙向融合 (Smart Merge)，絕不覆蓋任何裝置的最新編輯
   var mergedData = mergeDatasets(existingData, incomingData);
+  mergedData.cloudRevision = currentRev;
   saveData(prop, account, JSON.stringify(mergedData));
 
   return ContentService.createTextOutput(JSON.stringify({
     success: true,
     action: 'push_post',
     account: account,
+    cloudRevision: currentRev,
     lastModified: mergedData.lastModified,
     studentCount: mergedData.students ? mergedData.students.length : 0,
     timestamp: new Date().getTime()
@@ -348,14 +385,16 @@ function mergeDatasets(base, incoming) {
 
   function isDemoOrDeletedHw(hw) {
     if (!hw) return true;
-    var idStr = String(hw.id || '');
-    if (deletedHwMap[idStr]) return true;
-    if (idStr === "1" || idStr === "2" || idStr === "3") return true;
+    var sid = String(hw.id || '');
+    if (deletedHwMap[sid]) return true;
+    if (sid === "1" || sid === "2" || sid === "3") return true;
     if (hw.date === "2026-11-16" || hw.dueDate === "2026-11-16") return true;
     var t = String(hw.title || '').replace(/\s+/g, '');
     var p = String(hw.presetName || '').replace(/\s+/g, '');
     if (t.indexOf("國語習作第八課") !== -1 || t.indexOf("生字造詞隨堂筆記") !== -1 || t.indexOf("數學習作P.62") !== -1 || t.indexOf("數學習作P62") !== -1) return true;
-    if (p === "國習" && (!hw.date || hw.date <= "2026-11-16")) return true;
+    if (t === "國語習作完成" || t === "國習完成") return true;
+    if (t === "國習" && (!hw.dueDate || hw.date <= "2026-11-24" || hw.dueDate <= "2026-11-24")) return true;
+    if (p === "國習" && (!hw.dueDate || hw.date <= "2026-11-24" || hw.dueDate <= "2026-11-24")) return true;
     return false;
   }
 
@@ -455,6 +494,7 @@ function mergeDatasets(base, incoming) {
     trafficOverrides: incoming.trafficOverrides || base.trafficOverrides || {},
     seatingLayout: incoming.seatingLayout || base.seatingLayout,
     seatingChart: incoming.seatingChart || base.seatingChart,
+    cloudRevision: incoming.cloudRevision || base.cloudRevision || 1,
     lastModified: nowTime,
     realRosterV20261119: true
   };

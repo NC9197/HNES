@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 西寧國小五年二班 ‧ 西寧小小兵王國 班級經營系統
  * 介面互動控制器 (UI Controller) - 晨間大螢幕 3:7 ＆ 作業總看板 ＆ 批次名冊升級版
  */
@@ -462,6 +462,26 @@ function startMorningClock() {
     const clockEl = document.getElementById("morningClockDisplay");
     if (clockEl) clockEl.textContent = timeStr;
 
+    const clockDateText = document.getElementById("morningClockDateText");
+    if (clockDateText) {
+      const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : '';
+      const wd = (typeof getWeekdayText === 'function') ? getWeekdayText(today) : '';
+      clockDateText.textContent = `📅 ${today} (${wd})`;
+    }
+
+    const clockNotice = document.getElementById("morningCountdownNotice");
+    if (clockNotice) {
+      const lateThreshold = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.lateThreshold) || "07:40";
+      if (timeHM < lateThreshold) {
+        const [thH, thM] = lateThreshold.split(':').map(Number);
+        const [curH, curM] = [Number(h), Number(m)];
+        const diffM = (thH * 60 + thM) - (curH * 60 + curM);
+        clockNotice.innerHTML = `⏱️ 距晨檢截止剩 <b class="text-amber-950 font-black">${diffM}</b> 分鐘`;
+      } else {
+        clockNotice.innerHTML = `📖 早自習抄寫聯絡簿中`;
+      }
+    }
+
     const alarmModalClock = document.getElementById("alarmModalCurrentClock");
     if (alarmModalClock) alarmModalClock.textContent = timeStr;
 
@@ -490,6 +510,90 @@ let currentContactDate = window.KingdomApp.getTodayDateString();
 let morningContactDaysMode = '2days'; // '2days' (預設雙天並排模式) | '1day' (單天六行模式)
 let morningContactDateCol1 = null; // 第 1 欄日期 (預設今日)
 let morningContactDateCol2 = null; // 第 2 欄日期 (預設明日)
+
+let morningContactFormat = (typeof localStorage !== 'undefined' && localStorage.getItem('xining_contact_format')) || 'vertical-rtl'; // 'vertical-rtl' (直式由右至左) | 'vertical-ltr' (直式由左至右) | 'horizontal' (橫式卡片)
+
+function setMorningContactFormat(format) {
+  morningContactFormat = format || 'vertical-rtl';
+  if (typeof localStorage !== 'undefined') {
+    try { localStorage.setItem('xining_contact_format', morningContactFormat); } catch (_) {}
+  }
+  updateContactFormatButtons();
+  if (typeof renderMorningBoard === 'function') renderMorningBoard();
+  if (typeof renderContactProjectionView === 'function') renderContactProjectionView();
+}
+
+function updateContactFormatButtons() {
+  const isRtl = morningContactFormat === 'vertical-rtl';
+  const isLtr = morningContactFormat === 'vertical-ltr';
+  const isHor = morningContactFormat === 'horizontal';
+
+  const btnRtl = document.getElementById("btnContactFormatVerticalRtl");
+  const btnLtr = document.getElementById("btnContactFormatVerticalLtr");
+  const btnHor = document.getElementById("btnContactFormatHorizontal");
+
+  const activeClass = "btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition";
+  const inactiveClass = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
+
+  if (btnRtl) btnRtl.className = isRtl ? activeClass : inactiveClass;
+  if (btnLtr) btnLtr.className = isLtr ? activeClass : inactiveClass;
+  if (btnHor) btnHor.className = isHor ? activeClass : inactiveClass;
+
+  const projRtl = document.getElementById("btnProjFormatVerticalRtl");
+  const projLtr = document.getElementById("btnProjFormatVerticalLtr");
+  const projHor = document.getElementById("btnProjFormatHorizontal");
+
+  const projActiveClass = "px-2.5 py-1 rounded-xl font-black text-xs shadow-2xs transition bg-amber-500 text-amber-950 border-2 border-amber-600";
+  const projInactiveClass = "px-2.5 py-1 rounded-xl font-bold text-xs shadow-2xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300";
+
+  if (projRtl) projRtl.className = isRtl ? projActiveClass : projInactiveClass;
+  if (projLtr) projLtr.className = isLtr ? projActiveClass : projInactiveClass;
+  if (projHor) projHor.className = isHor ? projActiveClass : projInactiveClass;
+}
+
+function renderVerticalContactGrid(items, format = 'vertical-rtl', isProjection = false) {
+  const isRtl = format === 'vertical-rtl';
+  const gridClass = isRtl ? 'contact-vertical-grid-rtl' : 'contact-vertical-grid-ltr';
+  const colMinHeight = isProjection ? 'min-h-[460px] sm:min-h-[520px]' : 'min-h-[420px] sm:min-h-[460px]';
+  const numSize = isProjection ? 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl' : 'w-8 h-8 sm:w-9 sm:h-9 text-base sm:text-lg';
+  const textSize = isProjection ? 'text-lg sm:text-2xl lg:text-3xl' : 'text-base sm:text-lg lg:text-xl';
+
+  const colsHtml = [1, 2, 3, 4, 5, 6].map(slotIdx => {
+    const text = items[slotIdx - 1] || '';
+    const isFilled = Boolean(text && String(text).trim());
+    if (isFilled) {
+      return `
+        <div class="contact-vertical-col ${colMinHeight}">
+          <div class="contact-vertical-num ${numSize}">
+            ${slotIdx}
+          </div>
+          <div class="contact-vertical-text ${textSize}">
+            ${escapeContactHtml(text)}
+          </div>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="contact-vertical-col empty-col ${colMinHeight}">
+          <div class="contact-vertical-num ${numSize}">
+            ${slotIdx}
+          </div>
+          <div class="contact-vertical-empty-label">
+            留白
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+
+  return `
+    <div class="contact-vertical-board p-2 sm:p-2.5">
+      <div class="${gridClass}">
+        ${colsHtml}
+      </div>
+    </div>
+  `;
+}
 
 function initMorningContactDates() {
   const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
@@ -681,9 +785,11 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
           </div>
         </div>
 
-        <!-- 作業標準六行大字 (1 ~ 6) -->
-        <div class="mt-3 space-y-2.5">
-          ${rowsHtml}
+        <!-- 作業標準六行大字 (支援直式 1~6 行直書與橫式卡片切換) -->
+        <div class="mt-3">
+          ${(morningContactFormat === 'vertical-rtl' || morningContactFormat === 'vertical-ltr')
+            ? renderVerticalContactGrid(items, morningContactFormat, false)
+            : `<div class="space-y-2.5">${rowsHtml}</div>`}
         </div>
 
         ${extraRowsHtml}
@@ -747,7 +853,8 @@ function renderMorningBoard() {
   // 2. 渲染右側 70% 聯絡簿看板 (支援雙天並排六行 ＆ 單天模式切換)
   initMorningContactDates();
 
-  // 更新頂部模式按鈕外觀狀態
+  // 更新頂部模式按鈕外觀狀態與直式/橫式格式按鈕
+  updateContactFormatButtons();
   const btnMode2Days = document.getElementById("btnMorningMode2Days");
   const btnMode1Day = document.getElementById("btnMorningMode1Day");
   const presetsGroup = document.getElementById("morningPresetsGroup");
@@ -792,80 +899,113 @@ function renderMorningBoard() {
         </div>
       `;
     } else {
-      // 單天六行模式 (左欄 1~3，右欄 4~6)
+      // 單天六行模式 (支援直式 1~6 行直書與橫式卡片)
       const contactBook = window.KingdomApp.store.getContactBook(currentContactDate);
       const items = (contactBook && contactBook.homeworkItems) ? contactBook.homeworkItems : [];
 
-      const renderCardItem = (slotIdx, text) => {
-        const isFilled = Boolean(text && text.trim());
-        if (isFilled) {
-          return `
-            <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/95 border-2 border-amber-300 shadow-sm transition hover:border-amber-500 min-h-[4.5rem]">
-              <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-xs border border-amber-500/40">
-                ${slotIdx}
-              </span>
-              <span class="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
-                ${text}
-              </span>
-            </div>
-          `;
-        } else {
-          return `
-            <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[4.5rem]">
-              <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
-                ${slotIdx}
-              </span>
-              <span class="text-lg sm:text-xl font-bold text-amber-900/35 italic">
-                （留白）
-              </span>
+      if (morningContactFormat === 'vertical-rtl' || morningContactFormat === 'vertical-ltr') {
+        let extraRowsHtml = '';
+        if (items.length > 6) {
+          const extraItems = items.slice(6);
+          extraRowsHtml = `
+            <div class="mt-3 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
+              <span class="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                ${extraItems.map((item, idx) => `
+                  <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-white/95 border-2 border-amber-300">
+                    <span class="w-10 h-10 rounded-xl bg-amber-400 font-black flex items-center justify-center text-amber-950">${7 + idx}</span>
+                    <span class="text-lg font-black text-slate-900">${escapeContactHtml(item)}</span>
+                  </div>
+                `).join('')}
+              </div>
             </div>
           `;
         }
-      };
 
-      const leftColHtml = [1, 2, 3].map(num => renderCardItem(num, items[num - 1] || '')).join('');
-      const rightColHtml = [4, 5, 6].map(num => renderCardItem(num, items[num - 1] || '')).join('');
-
-      let extraRowsHtml = '';
-      if (items.length > 6) {
-        const extraItems = items.slice(6);
-        extraRowsHtml = `
-          <div class="col-span-1 md:col-span-2 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
-            <span class="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              ${extraItems.map((item, idx) => renderCardItem(7 + idx, item)).join('')}
+        hwList.innerHTML = `
+          <div class="space-y-3 bg-gradient-to-b from-amber-100/50 via-white/80 to-yellow-50/30 p-3 sm:p-4 rounded-3xl border-2 border-amber-400 shadow-md">
+            <div class="flex items-center justify-between pb-2 border-b border-amber-300/70 text-xs font-black text-amber-950">
+              <span class="text-xs sm:text-sm font-black text-amber-950 bg-amber-300/90 px-2.5 py-0.5 rounded-lg border border-amber-400 shadow-2xs">
+                📜 單天完整聯絡簿 (直式 1~6 行直書，完全對齊實體聯絡簿)
+              </span>
+              <span class="text-sm sm:text-base font-black text-amber-950">📅 ${currentContactDate} (${getWeekdayText(currentContactDate)})</span>
             </div>
+            ${renderVerticalContactGrid(items, morningContactFormat, false)}
+            ${extraRowsHtml}
+          </div>
+        `;
+      } else {
+        const renderCardItem = (slotIdx, text) => {
+          const isFilled = Boolean(text && text.trim());
+          if (isFilled) {
+            return `
+              <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/95 border-2 border-amber-300 shadow-sm transition hover:border-amber-500 min-h-[4.5rem]">
+                <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-xs border border-amber-500/40">
+                  ${slotIdx}
+                </span>
+                <span class="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+                  ${text}
+                </span>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[4.5rem]">
+                <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
+                  ${slotIdx}
+                </span>
+                <span class="text-lg sm:text-xl font-bold text-amber-900/35 italic">
+                  （留白）
+                </span>
+              </div>
+            `;
+          }
+        };
+
+        const leftColHtml = [1, 2, 3].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+        const rightColHtml = [4, 5, 6].map(num => renderCardItem(num, items[num - 1] || '')).join('');
+
+        let extraRowsHtml = '';
+        if (items.length > 6) {
+          const extraItems = items.slice(6);
+          extraRowsHtml = `
+            <div class="col-span-1 md:col-span-2 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
+              <span class="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                ${extraItems.map((item, idx) => renderCardItem(7 + idx, item)).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        hwList.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
+            <!-- 左欄 (第 1 ~ 3 行) -->
+            <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
+              <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
+                <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 3 項)</span></span>
+                <span class="text-[11px] text-amber-800 font-mono">1 - 3</span>
+              </div>
+              <div class="space-y-2.5">
+                ${leftColHtml}
+              </div>
+            </div>
+
+            <!-- 右欄 (第 4 ~ 6 行) -->
+            <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
+              <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
+                <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 4 ~ 6 項)</span></span>
+                <span class="text-[11px] text-amber-800 font-mono">4 - 6</span>
+              </div>
+              <div class="space-y-2.5">
+                ${rightColHtml}
+              </div>
+            </div>
+
+            ${extraRowsHtml}
           </div>
         `;
       }
-
-      hwList.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
-          <!-- 左欄 (第 1 ~ 3 行) -->
-          <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
-            <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-              <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 3 項)</span></span>
-              <span class="text-[11px] text-amber-800 font-mono">1 - 3</span>
-            </div>
-            <div class="space-y-2.5">
-              ${leftColHtml}
-            </div>
-          </div>
-
-          <!-- 右欄 (第 4 ~ 6 行) -->
-          <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
-            <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-              <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 4 ~ 6 項)</span></span>
-              <span class="text-[11px] text-amber-800 font-mono">4 - 6</span>
-            </div>
-            <div class="space-y-2.5">
-              ${rightColHtml}
-            </div>
-          </div>
-
-          ${extraRowsHtml}
-        </div>
-      `;
     }
   }
 
@@ -2058,9 +2198,13 @@ function renderHomeworkSummaryBoard() {
               <span>✏️</span>
               <span>編輯作業</span>
             </button>
-            <button onclick="openSetRevisionModal('${hw.id}')" class="px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-xs shadow-xs flex items-center space-x-1">
+            <button onclick="openSetRevisionModal('${hw.id}', 'revision')" class="px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-xs shadow-xs flex items-center space-x-1" title="鍵盤打座號或點選登記需訂正名冊">
               <span>⚠️</span>
-              <span>設置需訂正名冊</span>
+              <span>批次需訂正</span>
+            </button>
+            <button onclick="openSetRevisionModal('${hw.id}', 'pending')" class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 font-black text-xs shadow-xs flex items-center space-x-1" title="鍵盤打座號或點選登記未繳交名冊">
+              <span>❌</span>
+              <span>批次未交</span>
             </button>
             <button onclick="batchMarkAllHwSubmitted('${hw.id}')" class="px-3 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 font-black text-xs shadow-xs flex items-center space-x-1">
               <span>✅</span>
@@ -2325,85 +2469,359 @@ function cycleHwStatus(hwId, studentId) {
 }
 
 // -------------------------------------------------------------------
-// 老師端直接設置「需訂正」名單彈窗
+// 老師端作業批次快速登記彈窗 (支援需訂正、未繳交、遲交、已交；鍵盤打座號與大按鈕點選 2合1)
 // -------------------------------------------------------------------
-function openSetRevisionModal(hwId) {
+let activeBatchTargetStatus = 'revision'; // 'revision' | 'pending' | 'late' | 'submitted'
+let activeBatchStudentIds = new Set();
+
+function openSetRevisionModal(hwId, initialTarget = 'revision') {
   activeRevisionHwId = hwId;
-  const hw = window.KingdomApp.store.data.homework.find(h => h.id == hwId);
+  activeBatchTargetStatus = initialTarget || 'revision';
+  const hw = window.KingdomApp.store.data.homework.find(h => String(h.id) === String(hwId));
   if (!hw) return;
 
-  document.getElementById("setRevisionModalTitle").textContent = `設置【${hw.title}】需訂正大臣名單`;
+  activeBatchStudentIds = new Set();
 
-  const students = window.KingdomApp.store.data.students;
-  activeRevisionStudentIds = new Set();
+  // 預設載入目前已經屬於該狀態的學生
+  loadCurrentHwStatusSeatsInternal(hw, activeBatchTargetStatus);
 
-  students.forEach(st => {
-    if (hw.records && hw.records[st.id] === 'revision') {
-      activeRevisionStudentIds.add(st.id);
+  // 更新目標狀態按鈕外觀
+  updateBatchTargetStatusButtons();
+
+  // 更新標題與按鈕文字
+  updateBatchHwModalTitleAndButton(hw);
+
+  // 渲染 27 位大臣按鈕盤
+  renderBatchHwSelectorGrid();
+
+  // 同步鍵盤輸入框與選取摘要
+  syncBatchSeatInputFromSelection();
+  updateBatchSelectionSummary();
+
+  const modal = document.getElementById("setRevisionModal");
+  if (modal) modal.classList.remove("hidden");
+
+  // 自動聚焦鍵盤輸入框
+  setTimeout(() => {
+    const input = document.getElementById("batchHwSeatInput");
+    if (input) {
+      input.focus();
+      input.select();
     }
-  });
+  }, 100);
 
-  const grid = document.getElementById("revisionSelectorGrid");
-  grid.innerHTML = students.map(st => {
-    const isChecked = activeRevisionStudentIds.has(st.id);
-    return `
-      <label class="flex items-center space-x-1.5 p-1.5 rounded-lg border border-amber-200 hover:bg-amber-100 cursor-pointer text-xs font-bold ${isChecked ? 'bg-purple-100 border-purple-400' : 'bg-white'}">
-        <input type="checkbox" onchange="toggleRevisionStudent(${st.id}, this.checked)" ${isChecked ? 'checked' : ''} class="rounded text-purple-600 focus:ring-purple-500">
-        <span>${String(st.seatNo).padStart(2, '0')}.${st.name}</span>
-      </label>
-    `;
-  }).join('');
-
-  document.getElementById("setRevisionModal").classList.remove("hidden");
   initLucideIcons();
 }
 
-function closeSetRevisionModal() {
-  document.getElementById("setRevisionModal").classList.add("hidden");
-  activeRevisionHwId = null;
+function openBatchHomeworkStatusModal(hwId, targetStatus = 'revision') {
+  openSetRevisionModal(hwId, targetStatus);
 }
 
-function toggleRevisionStudent(studentId, isChecked) {
-  if (isChecked) {
-    activeRevisionStudentIds.add(studentId);
-  } else {
-    activeRevisionStudentIds.delete(studentId);
+function closeSetRevisionModal() {
+  const modal = document.getElementById("setRevisionModal");
+  if (modal) modal.classList.add("hidden");
+  activeRevisionHwId = null;
+  activeBatchStudentIds.clear();
+}
+
+function setBatchHwTargetStatus(targetStatus) {
+  activeBatchTargetStatus = targetStatus;
+  updateBatchTargetStatusButtons();
+  const hw = window.KingdomApp.store.data.homework.find(h => String(h.id) === String(activeRevisionHwId));
+  if (hw) {
+    updateBatchHwModalTitleAndButton(hw);
   }
 }
 
-function toggleSelectAllRevision(selectAll) {
-  const students = window.KingdomApp.store.data.students;
-  students.forEach(st => {
-    if (selectAll) activeRevisionStudentIds.add(st.id);
-    else activeRevisionStudentIds.delete(st.id);
+function updateBatchTargetStatusButtons() {
+  const btnRev = document.getElementById("btnBatchTargetRevision");
+  const btnPen = document.getElementById("btnBatchTargetPending");
+  const btnLate = document.getElementById("btnBatchTargetLate");
+  const btnSub = document.getElementById("btnBatchTargetSubmitted");
+
+  const activeClasses = "p-2 rounded-xl border-2 transition flex items-center justify-center space-x-1 shadow-md ring-2 ring-amber-400 font-black";
+  const inactiveClasses = "p-2 rounded-xl border-2 transition flex items-center justify-center space-x-1 font-black bg-white hover:bg-slate-50";
+
+  if (btnRev) {
+    btnRev.className = activeBatchTargetStatus === 'revision' 
+      ? `${activeClasses} bg-purple-700 text-white border-purple-800`
+      : `${inactiveClasses} text-purple-800 border-purple-300`;
+  }
+  if (btnPen) {
+    btnPen.className = activeBatchTargetStatus === 'pending'
+      ? `${activeClasses} bg-rose-700 text-white border-rose-800`
+      : `${inactiveClasses} text-rose-800 border-rose-300`;
+  }
+  if (btnLate) {
+    btnLate.className = activeBatchTargetStatus === 'late'
+      ? `${activeClasses} bg-amber-600 text-white border-amber-700`
+      : `${inactiveClasses} text-amber-800 border-amber-300`;
+  }
+  if (btnSub) {
+    btnSub.className = activeBatchTargetStatus === 'submitted'
+      ? `${activeClasses} bg-emerald-700 text-white border-emerald-800`
+      : `${inactiveClasses} text-emerald-800 border-emerald-300`;
+  }
+}
+
+function updateBatchHwModalTitleAndButton(hw) {
+  const titleEl = document.getElementById("setRevisionModalTitle");
+  const btnSubmit = document.getElementById("btnSubmitBatchHwStatus");
+  const statusLabels = {
+    revision: '需訂正 ⚠️',
+    pending: '未繳交 ❌',
+    late: '遲交已補 ⏰',
+    submitted: '準時已交 ✅'
+  };
+  const label = statusLabels[activeBatchTargetStatus] || '批次登記';
+
+  if (titleEl) {
+    titleEl.textContent = `設置【${hw.title}】${label}名單`;
+  }
+  if (btnSubmit) {
+    btnSubmit.innerHTML = `<span>💾 儲存並登記【${label}】</span>`;
+  }
+}
+
+function renderBatchHwSelectorGrid() {
+  const grid = document.getElementById("revisionSelectorGrid");
+  if (!grid) return;
+  const students = window.KingdomApp.store.data.students || [];
+
+  grid.innerHTML = students.map(st => {
+    const isSelected = activeBatchStudentIds.has(st.id);
+    let btnClass = isSelected
+      ? "bg-amber-500 text-amber-950 border-amber-600 shadow-sm ring-2 ring-amber-400 font-black scale-102"
+      : "bg-slate-50 hover:bg-amber-100 text-slate-800 border-slate-300 font-bold";
+
+    return `
+      <button 
+        type="button" 
+        id="btnBatchSeat_${st.id}" 
+        onclick="toggleBatchHwSeat(${st.id})" 
+        class="p-2 rounded-xl border text-center transition flex flex-col items-center justify-center ${btnClass}"
+        title="點擊切換 ${String(st.seatNo).padStart(2, '0')}號 ${st.name}">
+        <span class="text-xs font-mono font-black ${isSelected ? 'text-amber-950' : 'text-slate-500'}">${String(st.seatNo).padStart(2, '0')}號</span>
+        <span class="text-xs font-black truncate max-w-[65px]">${st.name}</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function toggleBatchHwSeat(studentId) {
+  if (activeBatchStudentIds.has(studentId)) {
+    activeBatchStudentIds.delete(studentId);
+  } else {
+    activeBatchStudentIds.add(studentId);
+  }
+  updateSingleSeatButtonVisual(studentId);
+  syncBatchSeatInputFromSelection();
+  updateBatchSelectionSummary();
+}
+
+function updateSingleSeatButtonVisual(studentId) {
+  const btn = document.getElementById(`btnBatchSeat_${studentId}`);
+  if (!btn) return;
+  const isSelected = activeBatchStudentIds.has(studentId);
+  const st = (window.KingdomApp.store.data.students || []).find(s => s.id === studentId);
+  if (!st) return;
+
+  btn.className = isSelected
+    ? "p-2 rounded-xl border text-center transition flex flex-col items-center justify-center bg-amber-500 text-amber-950 border-amber-600 shadow-sm ring-2 ring-amber-400 font-black scale-102"
+    : "p-2 rounded-xl border text-center transition flex flex-col items-center justify-center bg-slate-50 hover:bg-amber-100 text-slate-800 border-slate-300 font-bold";
+
+  const seatSpan = btn.querySelector("span:first-child");
+  if (seatSpan) {
+    seatSpan.className = `text-xs font-mono font-black ${isSelected ? 'text-amber-950' : 'text-slate-500'}`;
+  }
+}
+
+// 解析輸入字串 (支援空格、逗號、分號、範圍如 1-5 或 1~5 或 1至5)
+function parseSeatInputTokens(text) {
+  if (!text) return [];
+  const tokens = String(text).split(/[\s,，;；、]+/);
+  const seatNumbers = new Set();
+
+  tokens.forEach(token => {
+    token = token.trim();
+    if (!token) return;
+    
+    // 檢查範圍格式，如 1-5、1~5、1至5
+    const rangeMatch = token.match(/^(\d+)[\-~至](\d+)$/);
+    if (rangeMatch) {
+      const start = parseInt(rangeMatch[1], 10);
+      const end = parseInt(rangeMatch[2], 10);
+      if (!isNaN(start) && !isNaN(end)) {
+        const min = Math.min(start, end);
+        const max = Math.max(start, end);
+        for (let s = min; s <= max; s++) {
+          if (s >= 1 && s <= 35) seatNumbers.add(s);
+        }
+      }
+      return;
+    }
+
+    // 單一整數
+    const num = parseInt(token, 10);
+    if (!isNaN(num) && num >= 1 && num <= 35) {
+      seatNumbers.add(num);
+    }
   });
 
-  const checkboxes = document.querySelectorAll("#revisionSelectorGrid input[type='checkbox']");
-  checkboxes.forEach(cb => cb.checked = selectAll);
+  return Array.from(seatNumbers).sort((a, b) => a - b);
+}
+
+function handleBatchHwSeatInput(text) {
+  const seatNumbers = parseSeatInputTokens(text);
+  const students = window.KingdomApp.store.data.students || [];
+
+  activeBatchStudentIds.clear();
+  seatNumbers.forEach(num => {
+    const st = students.find(s => Number(s.seatNo) === num || Number(s.id) === num);
+    if (st) activeBatchStudentIds.add(st.id);
+  });
+
+  // 更新所有 27 個按鈕外觀
+  students.forEach(st => updateSingleSeatButtonVisual(st.id));
+  updateBatchSelectionSummary();
+}
+
+function syncBatchSeatInputFromSelection() {
+  const input = document.getElementById("batchHwSeatInput");
+  if (!input) return;
+  const students = window.KingdomApp.store.data.students || [];
+  const selectedSeatNos = [];
+  students.forEach(st => {
+    if (activeBatchStudentIds.has(st.id)) {
+      selectedSeatNos.push(Number(st.seatNo));
+    }
+  });
+  selectedSeatNos.sort((a, b) => a - b);
+  input.value = selectedSeatNos.join(" ");
+}
+
+function updateBatchSelectionSummary() {
+  const summaryEl = document.getElementById("batchHwSelectionSummary");
+  if (!summaryEl) return;
+  const students = window.KingdomApp.store.data.students || [];
+  const selectedStudents = students.filter(st => activeBatchStudentIds.has(st.id));
+
+  if (selectedStudents.length === 0) {
+    summaryEl.innerHTML = `<span class="text-slate-500">⚪ 尚未選取任何大臣座號（直接鍵盤打座號或點擊號碼盤）</span>`;
+  } else {
+    const names = selectedStudents.map(st => `<b>${String(st.seatNo).padStart(2, '0')}號 ${st.name}</b>`).join('、');
+    summaryEl.innerHTML = `<span>🎯 已選取 <b>${selectedStudents.length}</b> 位大臣：${names}</span>`;
+  }
+}
+
+function selectAllBatchHwSeats() {
+  const students = window.KingdomApp.store.data.students || [];
+  students.forEach(st => activeBatchStudentIds.add(st.id));
+  students.forEach(st => updateSingleSeatButtonVisual(st.id));
+  syncBatchSeatInputFromSelection();
+  updateBatchSelectionSummary();
+}
+
+function invertBatchHwSeats() {
+  const students = window.KingdomApp.store.data.students || [];
+  students.forEach(st => {
+    if (activeBatchStudentIds.has(st.id)) activeBatchStudentIds.delete(st.id);
+    else activeBatchStudentIds.add(st.id);
+  });
+  students.forEach(st => updateSingleSeatButtonVisual(st.id));
+  syncBatchSeatInputFromSelection();
+  updateBatchSelectionSummary();
+}
+
+function clearAllBatchHwSeats() {
+  activeBatchStudentIds.clear();
+  const students = window.KingdomApp.store.data.students || [];
+  students.forEach(st => updateSingleSeatButtonVisual(st.id));
+  syncBatchSeatInputFromSelection();
+  updateBatchSelectionSummary();
+}
+
+function loadCurrentHwStatusSeatsInternal(hw, targetStatus) {
+  if (!hw || !hw.records) return;
+  const students = window.KingdomApp.store.data.students || [];
+  activeBatchStudentIds.clear();
+
+  students.forEach(st => {
+    const rec = hw.records[st.id] !== undefined ? hw.records[st.id] : hw.records[st.seatNo];
+    if (targetStatus === 'revision' && rec === 'revision') {
+      activeBatchStudentIds.add(st.id);
+    } else if (targetStatus === 'pending' && (rec === 'pending' || rec === 'missing' || !rec)) {
+      activeBatchStudentIds.add(st.id);
+    } else if (targetStatus === 'late' && rec === 'late') {
+      activeBatchStudentIds.add(st.id);
+    } else if (targetStatus === 'submitted' && (rec === 'submitted' || rec === 'excellent')) {
+      activeBatchStudentIds.add(st.id);
+    }
+  });
+}
+
+function loadCurrentHwStatusSeats() {
+  const hw = window.KingdomApp.store.data.homework.find(h => String(h.id) === String(activeRevisionHwId));
+  if (!hw) return;
+  loadCurrentHwStatusSeatsInternal(hw, activeBatchTargetStatus);
+  const students = window.KingdomApp.store.data.students || [];
+  students.forEach(st => updateSingleSeatButtonVisual(st.id));
+  syncBatchSeatInputFromSelection();
+  updateBatchSelectionSummary();
+  showToast(`📋 已載入目前【${hw.title}】的現況名單`);
 }
 
 function saveRevisionSelection() {
   if (!activeRevisionHwId) return;
-  const hw = window.KingdomApp.store.data.homework.find(h => h.id == activeRevisionHwId);
+  const hw = window.KingdomApp.store.data.homework.find(h => String(h.id) === String(activeRevisionHwId));
   if (!hw) return;
   if (!hw.records) hw.records = {};
 
-  const students = window.KingdomApp.store.data.students;
-  students.forEach(st => {
-    if (activeRevisionStudentIds.has(st.id)) {
-      hw.records[st.id] = 'revision'; // 標記需訂正
-    } else {
-      // 若原先為需訂正但現在被取消勾選，則視為已完成繳交
-      if (hw.records[st.id] === 'revision') {
-        hw.records[st.id] = 'submitted';
+  const students = window.KingdomApp.store.data.students || [];
+  let updatedCount = 0;
+
+  if (activeBatchTargetStatus === 'revision') {
+    students.forEach(st => {
+      if (activeBatchStudentIds.has(st.id)) {
+        hw.records[st.id] = 'revision';
+        updatedCount++;
+      } else {
+        if (hw.records[st.id] === 'revision') {
+          hw.records[st.id] = 'submitted';
+        }
       }
-    }
-  });
+    });
+  } else if (activeBatchTargetStatus === 'pending') {
+    students.forEach(st => {
+      if (activeBatchStudentIds.has(st.id)) {
+        hw.records[st.id] = 'pending';
+        updatedCount++;
+      } else {
+        if (hw.records[st.id] === 'pending' || hw.records[st.id] === 'missing') {
+          hw.records[st.id] = 'submitted';
+        }
+      }
+    });
+  } else if (activeBatchTargetStatus === 'late') {
+    students.forEach(st => {
+      if (activeBatchStudentIds.has(st.id)) {
+        hw.records[st.id] = 'late';
+        updatedCount++;
+      }
+    });
+  } else if (activeBatchTargetStatus === 'submitted') {
+    students.forEach(st => {
+      if (activeBatchStudentIds.has(st.id)) {
+        hw.records[st.id] = 'submitted';
+        updatedCount++;
+      }
+    });
+  }
 
   window.KingdomApp.store.syncAllHomeworkReflectionCards();
-  window.KingdomApp.store.save();
+  window.KingdomApp.store.save(`批次設置作業${activeBatchTargetStatus}`);
   window.KingdomApp.sound.playCoin();
-  showToast(`⚠️ 已成功設置【${hw.title}】共 ${activeRevisionStudentIds.size} 位需訂正大臣！`);
+  showToast(`✅ 已成功登記【${hw.title}】共 ${activeBatchStudentIds.size} 位大臣！`);
   closeSetRevisionModal();
   renderHomeworkSummaryBoard();
   renderTrafficView();
@@ -2716,13 +3134,15 @@ function submitNewHomework(e) {
   const title = titleEl.value.trim();
   const desc = document.getElementById("newHwDesc").value.trim();
   const presetName = titleEl.dataset.presetName || '';
+  const todayDate = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
 
   const newHw = {
     id: `hw-${Date.now()}`,
     subject,
     title,
     presetName,
-    dueDate,
+    date: todayDate,
+    dueDate: dueDate || todayDate,
     desc,
     records: {}
   };
@@ -2808,7 +3228,7 @@ function renderHomeworkSettlementTable() {
 // 5.5 下課紅綠燈通行儀表板 (Traffic Light Break Board Controller)
 // 包含當前即時時鐘、西寧國小作息倒數計時、超緊湊 Mini 學生卡片 (27人一覽無遺)
 // ===================================================================
-let trafficDisplayMode = 'grid5x5'; // 預設為大屏模式 (去除姓名，座號與原因一眼明瞭)
+let trafficDisplayMode = 'seating'; // 預設為與五年二班教室空間座位表 (5列x6排) 結合模式
 
 // 西寧國小五年二班課堂作息時程表
 const XINING_BELL_SCHEDULE = [
@@ -3039,23 +3459,36 @@ function toggleTrafficDrawer() {
   }
 }
 
-function toggleTrafficDisplayMode() {
-  trafficDisplayMode = trafficDisplayMode === 'grid5x5' ? 'compact' : 'grid5x5';
-  const label = document.getElementById("trafficDisplayModeLabel");
-  if (label) {
-    label.textContent = trafficDisplayMode === 'grid5x5' ? '大屏模式' : 'Mini 模式';
+function toggleTrafficDisplayMode(targetMode) {
+  if (targetMode) {
+    trafficDisplayMode = targetMode;
+  } else {
+    if (trafficDisplayMode === 'seating') trafficDisplayMode = 'grid5x5';
+    else if (trafficDisplayMode === 'grid5x5') trafficDisplayMode = 'compact';
+    else trafficDisplayMode = 'seating';
   }
-  showToast(`🖥️ 已切換為【${trafficDisplayMode === 'grid5x5' ? '大屏模式' : 'Mini 模式'}】`);
+  const label = document.getElementById("trafficDisplayModeLabel");
+  const modeNames = {
+    seating: '💺 依座位表',
+    grid5x5: '🔢 依座號順序',
+    compact: '📋 Mini 緊湊'
+  };
+  if (label) {
+    label.textContent = modeNames[trafficDisplayMode] || '切換排版';
+  }
+  showToast(`🖥️ 已切換為【${modeNames[trafficDisplayMode] || trafficDisplayMode}】`);
   renderTrafficView();
 }
 
-// --- 格式化紅綠燈雙排文字：上排未完成項目，下排愛班/自省卡牌張數 ---
+// --- 格式化紅綠燈雙排文字：上排未完成項目，下排愛班/自省/提醒單張數 ---
 function formatTrafficRows(item) {
   const rCount = item.reflectionCount || (item.hasReflection ? 1 : 0);
   const sCount = item.serviceCount || (item.hasService ? 1 : 0);
+  const remCount = item.reminderCount || 0;
 
-  // 下排：愛班卡或自省卡數量，以 (卡牌)*(張數) 顯示
+  // 下排：愛班卡或自省卡、提醒單數量
   const cardTokens = [];
+  if (remCount > 0) cardTokens.push(`📝*${remCount}`);
   if (rCount > 0) cardTokens.push(`🪑*${rCount}`);
   if (sCount > 0) cardTokens.push(`🧹*${sCount}`);
   const bottomRowText = cardTokens.length > 0 ? cardTokens.join(' ') : '✨ 無違規卡';
@@ -3068,6 +3501,8 @@ function formatTrafficRows(item) {
     if (item.revisionList && item.revisionList.length > 0) {
       const titles = item.revisionList.map(h => h.presetName || h.title || '作業').slice(0, 2).join('、');
       topRowText = `🟡 ${titles}待訂正`;
+    } else if (remCount > 0) {
+      topRowText = `🟡 提醒單待寫`;
     } else {
       topRowText = `🟡 ${item.shortReason || '待訂正'}`;
     }
@@ -3077,6 +3512,8 @@ function formatTrafficRows(item) {
       topRowText = `🔴 ${titles}未交`;
     } else if (rCount > 0) {
       topRowText = '🔴 留座自省';
+    } else if (remCount > 0) {
+      topRowText = '🔴 提醒單待寫';
     } else {
       topRowText = `🔴 ${item.shortReason || '座位自省'}`;
     }
@@ -3086,7 +3523,7 @@ function formatTrafficRows(item) {
     topRowText = item.label || '狀態未知';
   }
 
-  return { topRowText, bottomRowText, rCount, sCount, hasCards: cardTokens.length > 0 };
+  return { topRowText, bottomRowText, rCount, sCount, remCount, hasCards: cardTokens.length > 0 };
 }
 
 function renderTrafficView() {
@@ -3098,6 +3535,7 @@ function renderTrafficView() {
   let yellowCount = 0;
   let redCount = 0;
   let serviceCount = 0;
+  let reminderCountTotal = 0;
 
   // 評估全班 27 位大臣的狀態
   const evaluatedList = students.map(st => {
@@ -3107,6 +3545,7 @@ function renderTrafficView() {
     else if (status.light === 'red') redCount++;
 
     if (status.hasService) serviceCount++;
+    if (status.hasReminder) reminderCountTotal += status.reminderCount || 1;
     return status;
   });
 
@@ -3115,21 +3554,26 @@ function renderTrafficView() {
   const statY = document.getElementById("trafficStatYellow");
   const statR = document.getElementById("trafficStatRed");
   const statS = document.getElementById("trafficStatService");
+  const statRem = document.getElementById("trafficStatReminder");
   if (statG) statG.textContent = greenCount;
   if (statY) statY.textContent = yellowCount;
   if (statR) statR.textContent = redCount;
   if (statS) statS.textContent = serviceCount;
+  if (statRem) statRem.textContent = reminderCountTotal;
 
-  // 更新兩大實體獨立專區 (🪑 自省卡專區 ＆ 🧹 愛班卡專區)
+  // 更新三項實體獨立專區 (🪑 自省卡專區、🧹 愛班卡專區、📝 罰寫提醒單專區)
   let totalReflectionCards = 0;
   let totalServiceCards = 0;
+  let totalReminderSlips = 0;
   const reflectionStudents = [];
   const serviceStudents = [];
+  const reminderStudents = [];
 
   students.forEach(st => {
     const status = window.KingdomApp.store.evaluateTrafficStatus(st.id);
     const rCount = status.reflectionCount || (status.hasReflection ? 1 : 0);
     const sCount = status.serviceCount || (status.hasService ? 1 : 0);
+    const remCount = status.reminderCount || 0;
     if (rCount > 0) {
       totalReflectionCards += rCount;
       reflectionStudents.push({ id: st.id, seatNo: st.seatNo, name: st.name, count: rCount });
@@ -3138,12 +3582,18 @@ function renderTrafficView() {
       totalServiceCards += sCount;
       serviceStudents.push({ id: st.id, seatNo: st.seatNo, name: st.name, count: sCount });
     }
+    if (remCount > 0) {
+      totalReminderSlips += remCount;
+      reminderStudents.push({ id: st.id, seatNo: st.seatNo, name: st.name, count: remCount });
+    }
   });
 
   const zoneRefCountEl = document.getElementById("zoneTotalReflectionCount");
   if (zoneRefCountEl) zoneRefCountEl.textContent = totalReflectionCards;
   const zoneSrvCountEl = document.getElementById("zoneTotalServiceCount");
   if (zoneSrvCountEl) zoneSrvCountEl.textContent = totalServiceCards;
+  const zoneRemCountEl = document.getElementById("zoneTotalReminderCount");
+  if (zoneRemCountEl) zoneRemCountEl.textContent = totalReminderSlips;
 
   const zoneRefPills = document.getElementById("zoneReflectionStudentPills");
   if (zoneRefPills) {
@@ -3173,19 +3623,35 @@ function renderTrafficView() {
     }
   }
 
+  const zoneRemPills = document.getElementById("zoneReminderStudentPills");
+  if (zoneRemPills) {
+    if (reminderStudents.length === 0) {
+      zoneRemPills.innerHTML = `<span class="text-xs text-slate-500 font-bold">🎉 全班目前無待寫提醒單大臣，常規優良！</span>`;
+    } else {
+      zoneRemPills.innerHTML = reminderStudents.map(s => `
+        <button type="button" onclick="openTrafficDetailModal(${s.id})" class="px-2.5 py-1 rounded-lg bg-yellow-200 hover:bg-yellow-300 text-yellow-950 text-xs font-black transition border border-yellow-400 shadow-2xs flex items-center space-x-1" title="點擊檢視 ${s.name} 提醒單詳情">
+          <span>${String(s.seatNo).padStart(2, '0')}號 ${s.name}</span>
+          <span class="bg-yellow-600 text-white px-1.5 py-0.2 rounded-full text-[10px] font-mono">${s.count}</span>
+        </button>
+      `).join('');
+    }
+  }
+
   // 更新快速受限通報條 (#trafficCompactRestrictedPills)
   const compactRestrictedPills = document.getElementById("trafficCompactRestrictedPills");
   if (compactRestrictedPills) {
-    const restrictedList = evaluatedList.filter(item => item.light === 'red' || item.hasService);
+    const restrictedList = evaluatedList.filter(item => item.light === 'red' || item.hasService || item.hasReminder);
     if (restrictedList.length === 0) {
-      compactRestrictedPills.innerHTML = `<span class="text-xs text-emerald-700 font-black">🎉 全班目前通行無阻，無自省與愛班限制！</span>`;
+      compactRestrictedPills.innerHTML = `<span class="text-xs text-emerald-700 font-black">🎉 全班目前通行無阻，無自省、愛班或提醒單限制！</span>`;
     } else {
       compactRestrictedPills.innerHTML = restrictedList.map(item => {
         const st = item.student;
         const seatPad = String(st.seatNo).padStart(2, '0');
         const rCount = item.reflectionCount || (item.hasReflection ? 1 : 0);
         const sCount = item.serviceCount || (item.hasService ? 1 : 0);
+        const remCount = item.reminderCount || 0;
         const tags = [];
+        if (remCount > 0) tags.push(`📝${remCount}`);
         if (rCount > 0) tags.push(`🪑${rCount}`);
         if (sCount > 0) tags.push(`🧹${sCount}`);
         return `
@@ -3205,11 +3671,186 @@ function renderTrafficView() {
     if (currentTrafficFilter === 'yellow') return item.light === 'yellow';
     if (currentTrafficFilter === 'red') return item.light === 'red';
     if (currentTrafficFilter === 'service') return item.hasService;
+    if (currentTrafficFilter === 'reminder') return item.hasReminder;
     return true;
   });
 
-  // 根據顯示模式切換網格欄數
-  if (trafficDisplayMode === 'grid5x5') {
+  // 更新模式切換鈕標籤文字
+  const displayLabel = document.getElementById("trafficDisplayModeLabel");
+  if (displayLabel) {
+    const modeNames = {
+      seating: '💺 依座位表',
+      grid5x5: '🔢 依座號順序',
+      compact: '📋 Mini 模式'
+    };
+    displayLabel.textContent = modeNames[trafficDisplayMode] || '切換排版';
+  }
+
+  // 根據顯示模式渲染紅綠燈
+  if (trafficDisplayMode === 'seating') {
+    // 🌟 與教室空間座位表結合模式 (5列x6排空間格局，講台在前方，最右為第一排)
+    grid.className = "w-full space-y-2.5";
+
+    const layout = window.KingdomApp.store.getSeatingLayout() || { rows: 5, cols: 6 };
+    const chart = window.KingdomApp.store.getSeatingChart() || [];
+
+    let html = `
+      <!-- 👨‍🏫 講台 ‧ 黑板前方橫幅 -->
+      <div class="w-full text-center py-2 px-4 rounded-2xl bg-gradient-to-r from-amber-800 via-amber-700 to-amber-800 text-amber-100 font-black text-xs sm:text-sm tracking-wider shadow-md border-2 border-amber-500/70 flex items-center justify-center space-x-2">
+        <span class="text-base sm:text-lg">👨‍🏫</span>
+        <span>講台 ‧ 黑板前方（由前向後望向座位席）</span>
+      </div>
+
+      <!-- 座位排標頭 (最左兩排皆為第五排 -> 最右第一排) -->
+      <div class="grid grid-cols-6 gap-1.5 sm:gap-2 text-center font-black text-[11px] sm:text-xs">
+        ${[1, 2, 3, 4, 5, 6].map(c => `
+          <div class="py-1 px-1.5 rounded-xl bg-slate-800/90 border border-amber-500/50 text-amber-300 shadow-xs">
+            ${getSeatingColName(c, layout.cols)}
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- 5列 x 6排 課桌紅綠燈網格 -->
+      <div class="grid grid-cols-6 gap-1.5 sm:gap-2 items-stretch">
+    `;
+
+    for (let i = 0; i < chart.length; i++) {
+      const seatNo = chart[i];
+      const student = seatNo ? students.find(s => Number(s.seatNo) === Number(seatNo) || Number(s.id) === Number(seatNo)) : null;
+
+      if (!student) {
+        html += `
+          <div class="p-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100/50 flex flex-col items-center justify-center min-h-[95px] sm:min-h-[105px] text-slate-400 font-bold text-xs select-none shadow-inner">
+            <span class="text-lg opacity-40">🪑</span>
+            <span class="text-[11px] mt-0.5">空席</span>
+          </div>
+        `;
+        continue;
+      }
+
+      const item = window.KingdomApp.store.evaluateTrafficStatus(student.id);
+      const st = student;
+      const seatPad = String(st.seatNo).padStart(2, '0');
+      const rCount = item.reflectionCount || (item.hasReflection ? 1 : 0);
+      const sCount = item.serviceCount || (item.hasService ? 1 : 0);
+      const remCount = item.reminderCount || 0;
+
+      const missingTitles = (item.missingList || []).map(h => {
+        return h.presetName || (h.title ? (h.title.length > 5 ? h.title.slice(0, 4) : h.title) : '作業');
+      });
+      const revisionTitles = (item.revisionList || []).map(h => {
+        return h.presetName || (h.title ? (h.title.length > 5 ? h.title.slice(0, 4) : h.title) : '訂正');
+      });
+
+      // 篩選判定
+      let matchesFilter = true;
+      if (currentTrafficFilter === 'green') matchesFilter = (item.light === 'green');
+      else if (currentTrafficFilter === 'yellow') matchesFilter = (item.light === 'yellow');
+      else if (currentTrafficFilter === 'red') matchesFilter = (item.light === 'red');
+      else if (currentTrafficFilter === 'service') matchesFilter = (sCount > 0);
+      else if (currentTrafficFilter === 'reminder') matchesFilter = (remCount > 0);
+
+      let cardClass = '';
+      let seatBgClass = '';
+      let miniOrbClass = '';
+      let orbSymbol = '';
+      let orbTooltip = '';
+      let statusTextColor = '';
+      let statusMainText = '';
+
+      if (item.light === 'green') {
+        cardClass = 'card-green border-emerald-400 bg-emerald-50/95';
+        seatBgClass = 'bg-emerald-600 text-white';
+        miniOrbClass = 'mini-orb-green';
+        orbSymbol = '✓';
+        orbTooltip = '准許下課';
+        statusTextColor = 'text-emerald-800';
+        statusMainText = '准許下課';
+      } else if (item.light === 'yellow') {
+        cardClass = 'card-yellow border-amber-400 bg-amber-50/95';
+        seatBgClass = 'bg-amber-600 text-white';
+        miniOrbClass = 'mini-orb-yellow';
+        orbSymbol = '!';
+        orbTooltip = item.label || '待訂正 / 待寫提醒單';
+        statusTextColor = 'text-amber-950';
+        if (revisionTitles.length > 0) {
+          statusMainText = `待訂正: ${revisionTitles.slice(0, 2).join('、')}`;
+        } else if (remCount > 0) {
+          statusMainText = `提醒單待寫`;
+        } else {
+          statusMainText = item.shortReason || '待訂正';
+        }
+      } else if (item.light === 'red') {
+        cardClass = 'card-red border-rose-400 bg-rose-50/95';
+        seatBgClass = 'bg-rose-600 text-white';
+        miniOrbClass = 'mini-orb-red';
+        orbSymbol = '🛑';
+        orbTooltip = item.label || '留座自省';
+        statusTextColor = 'text-rose-950';
+        if (missingTitles.length > 0) {
+          statusMainText = `缺交: ${missingTitles.slice(0, 2).join('、')}`;
+        } else if (rCount > 0) {
+          statusMainText = '座位自省';
+        } else {
+          statusMainText = item.shortReason || '禁止下課';
+        }
+      } else {
+        cardClass = 'card-leave border-slate-300 bg-slate-100/90';
+        seatBgClass = 'bg-slate-500 text-white';
+        miniOrbClass = 'mini-orb-leave';
+        orbSymbol = '🏖️';
+        orbTooltip = '今日請假';
+        statusTextColor = 'text-slate-600';
+        statusMainText = '今日請假';
+      }
+
+      const missText = missingTitles.join('、');
+      const revText = revisionTitles.join('、');
+
+      html += `
+        <div onclick="openTrafficDetailModal(${st.id})" 
+          class="traffic-desk-card ${cardClass} p-2 rounded-2xl border-2 shadow-sm cursor-pointer transition transform hover:scale-[1.02] flex flex-col justify-between min-h-[95px] sm:min-h-[105px] ${matchesFilter ? '' : 'opacity-25 grayscale'}"
+          title="${seatPad}號 ${st.name} (點擊開啟通行詳情)">
+          
+          <!-- 頂部：座號與大臣姓名 ＆ 狀態燈珠 -->
+          <div class="flex items-center justify-between pb-1 border-b border-black/10">
+            <div class="flex items-center space-x-1 min-w-0">
+              <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded-md shadow-2xs ${seatBgClass}">
+                ${seatPad}號
+              </span>
+              <span class="font-cute font-black text-xs sm:text-sm text-slate-900 truncate max-w-[55px] sm:max-w-[70px]">
+                ${st.name}
+              </span>
+            </div>
+            <div class="mini-orb ${miniOrbClass}" title="${orbTooltip}">
+              ${orbSymbol}
+            </div>
+          </div>
+
+          <!-- 中間：主狀態與詳細事由 -->
+          <div class="py-1 flex-1 flex flex-col justify-center space-y-0.5">
+            <div class="text-[11px] font-black ${statusTextColor} flex items-center space-x-1 truncate" title="${statusMainText}">
+              <span class="truncate">${statusMainText}</span>
+            </div>
+
+            <!-- 徽章列 (提醒單、自省卡、愛班卡、缺交、訂正) -->
+            <div class="flex items-center flex-wrap gap-1 text-[10px] font-bold pt-0.5">
+              ${remCount > 0 ? `<span class="bg-yellow-200 text-yellow-950 px-1 rounded shadow-2xs font-black">📝提醒*${remCount}</span>` : ''}
+              ${rCount > 0 ? `<span class="bg-rose-200 text-rose-950 px-1 rounded shadow-2xs font-black">🪑自省*${rCount}</span>` : ''}
+              ${sCount > 0 ? `<span class="bg-orange-200 text-orange-950 px-1 rounded shadow-2xs font-black">🧹愛班*${sCount}</span>` : ''}
+              ${missText ? `<span class="bg-rose-100 text-rose-900 px-1 rounded truncate max-w-[75px]" title="缺交：${missText}">缺:${missText}</span>` : ''}
+              ${revText ? `<span class="bg-amber-100 text-amber-900 px-1 rounded truncate max-w-[75px]" title="訂正：${revText}">訂:${revText}</span>` : ''}
+              ${remCount === 0 && rCount === 0 && sCount === 0 && !missText && !revText ? (item.light === 'green' ? '<span class="text-emerald-700/80 font-bold">✨暢行無阻</span>' : '') : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    html += `</div></div>`;
+    grid.innerHTML = html;
+
+  } else if (trafficDisplayMode === 'grid5x5') {
     // 大屏模式核心版面：固定 5 欄排布 (前 5 列共 25 人，第 6 列 2 人)，排版嚴格不隨視窗縮放改變
     grid.className = "traffic-grid-5x5";
     
@@ -3530,7 +4171,7 @@ function renderTrafficView() {
 
 function filterTrafficLight(type) {
   currentTrafficFilter = type;
-  const buttons = ['all', 'green', 'yellow', 'red', 'service'];
+  const buttons = ['all', 'green', 'yellow', 'red', 'service', 'reminder'];
   buttons.forEach(b => {
     const el = document.getElementById(`btnTrafficFilter-${b}`);
     if (el) {
@@ -3892,6 +4533,7 @@ function openTrafficDetailModal(studentId) {
 
   const refCount = status.reflectionCount || (status.hasReflection ? 1 : 0);
   const srvCount = status.serviceCount || (status.hasService ? 1 : 0);
+  const remCount = status.reminderCount || 0;
   const bCard = (window.KingdomApp.store.data.behaviorCards && (window.KingdomApp.store.data.behaviorCards[st.id] || window.KingdomApp.store.data.behaviorCards[st.seatNo])) || {};
 
   // 作業列表與狀態摘要
@@ -3928,7 +4570,10 @@ function openTrafficDetailModal(studentId) {
         </div>
         <p class="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed">${status.desc}</p>
       </div>
-      <div class="flex items-center space-x-2 flex-shrink-0">
+      <div class="flex items-center flex-wrap gap-2 flex-shrink-0">
+        <span class="text-xs sm:text-sm font-black px-3 py-1.5 rounded-xl ${remCount > 0 ? 'bg-yellow-100 text-yellow-900 border border-yellow-300' : 'bg-slate-100 text-slate-600'}">
+          📝 提醒單：${remCount} 張
+        </span>
         <span class="text-xs sm:text-sm font-black px-3 py-1.5 rounded-xl ${refCount > 0 ? 'bg-rose-100 text-rose-900 border border-rose-300' : 'bg-slate-100 text-slate-600'}">
           🪑 自省卡：${refCount} 張
         </span>
@@ -4091,6 +4736,104 @@ function openTrafficDetailModal(studentId) {
         </div>
       </div>
 
+      <!-- ============================================================== -->
+      <!-- 獨立專區 3：📝 罰寫提醒單專區 (常規提醒・書寫省思・附繳驗結清) -->
+      <!-- ============================================================== -->
+      <div class="col-span-1 lg:col-span-2 bg-gradient-to-br from-yellow-50 via-white to-amber-50 p-4 rounded-2xl border-2 border-yellow-400 space-y-3 shadow-xs">
+        <!-- 專區標題與待寫累計 -->
+        <div class="flex items-center justify-between pb-2.5 border-b-2 border-yellow-300">
+          <div class="flex items-center space-x-2">
+            <span class="text-2xl">📝</span>
+            <div>
+              <h4 class="text-base sm:text-lg font-black text-amber-950">常規提醒單專區</h4>
+              <span class="text-[11px] text-amber-800 font-bold">常規違規書寫提醒語句（例如：聽寫簽名未交，寫「聽寫要記得簽名*50次」）</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-[11px] text-amber-800 font-bold block">待完成提醒單</span>
+            <div class="text-base sm:text-lg font-black text-amber-800">
+              <span class="text-xl sm:text-2xl font-digital">${remCount}</span> 張
+            </div>
+          </div>
+        </div>
+
+        <!-- 快速新增與特赦按鈕列 -->
+        <div class="flex flex-wrap items-center justify-between gap-1.5">
+          <span class="text-xs font-black text-amber-900">提醒單管理：</span>
+          <div class="flex items-center space-x-1.5 text-xs sm:text-sm font-black">
+            <button type="button" onclick="addCustomReminderSlipPrompt(${st.id})" class="px-3 py-1.5 rounded-xl bg-yellow-200 hover:bg-yellow-300 text-amber-950 border border-yellow-400 shadow-2xs font-black" title="自訂提醒單事由與次數">+ 自訂提醒單</button>
+            <button type="button" onclick="pardonStudentCard(${st.id}, 'reminder')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-2xs font-black" title="將所有提醒單全部特赦結清">🕊️ 提醒單全清</button>
+          </div>
+        </div>
+
+        <!-- 現存提醒單清單 -->
+        <div class="space-y-1.5">
+          <span class="text-xs sm:text-sm font-black text-amber-950 block">📋 現存提醒單明細 (學生寫完請點 ✅ 繳驗結清)：</span>
+          ${(bCard.reminderSlips && bCard.reminderSlips.length > 0) ? `
+            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+              ${bCard.reminderSlips.map((slip, sIdx) => {
+                const isPending = slip.status === 'pending';
+                return `
+                  <div class="flex items-center justify-between p-2.5 rounded-xl ${isPending ? 'bg-amber-100/80 border-2 border-amber-300' : 'bg-slate-100 border border-slate-300 opacity-60'} text-xs sm:text-sm">
+                    <div class="flex flex-col min-w-0 mr-2">
+                      <div class="flex items-center space-x-1.5">
+                        <span class="font-black text-amber-950">${sIdx + 1}. 【${slip.reason || '常規提醒'}】</span>
+                        <span class="text-[10px] ${isPending ? 'bg-amber-500 text-white' : 'bg-slate-400 text-white'} px-1.5 py-0.2 rounded font-bold">${isPending ? '🟡 待完成' : '✅ 已繳驗'}</span>
+                      </div>
+                      <div class="text-xs font-black text-amber-900 mt-0.5">
+                        ✍️ 提醒句子：<span class="underline decoration-amber-500 font-bold">「${slip.content}」</span> × <span class="text-rose-700 font-mono text-sm">${slip.targetCount}</span> 次
+                      </div>
+                      <span class="text-[10px] text-slate-500 mt-0.5">派發時間：${slip.date || ''} ${slip.time || ''}</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 flex-shrink-0">
+                      ${isPending ? `
+                        <button type="button" onclick="completeStudentReminderSlip(${st.id}, '${slip.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs" title="學生已寫完指定次數，核驗並放行">
+                          ✅ 繳驗結清
+                        </button>
+                      ` : ''}
+                      <button type="button" onclick="removeStudentReminderSlip(${st.id}, '${slip.id}')" class="px-2 py-1.5 rounded-lg text-xs font-black bg-white hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-300 shadow-2xs" title="刪除此張提醒單">
+                        ❌ 刪除
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : `
+            <div class="p-3 rounded-xl bg-amber-50/50 border border-dashed border-amber-300 text-slate-500 font-bold text-center text-xs sm:text-sm">
+              ✨ 目前無生效中的常規提醒單
+            </div>
+          `}
+        </div>
+
+        <!-- 常見提醒單快捷核發按鈕列 -->
+        <div class="pt-2.5 border-t border-yellow-300 space-y-1.5">
+          <div class="text-xs sm:text-sm font-black text-amber-950">
+            ⚡ 常見提醒單範本（點擊一鍵核發）：
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="quickAddReminderSlip(${st.id}, '聽寫簽名未交', '聽寫要記得簽名', 50)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：聽寫要記得簽名*50次">
+              📝 聽寫簽名未交 (*50次)
+            </button>
+            <button type="button" onclick="quickAddReminderSlip(${st.id}, '聯絡簿未簽名', '聯絡簿要記得請家長簽名', 30)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：聯絡簿要記得請家長簽名*30次">
+              📝 聯絡簿未簽 (*30次)
+            </button>
+            <button type="button" onclick="quickAddReminderSlip(${st.id}, '學用品未帶', '每天出門前檢查書包學用品', 30)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：每天出門前檢查書包學用品*30次">
+              📝 學用品未帶 (*30次)
+            </button>
+            <button type="button" onclick="quickAddReminderSlip(${st.id}, '走廊奔跑追逐', '走廊慢慢走不奔跑', 50)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：走廊慢慢走不奔跑*50次">
+              📝 走廊奔跑追逐 (*50次)
+            </button>
+            <button type="button" onclick="quickAddReminderSlip(${st.id}, '課堂分心聊天', '上課專心聽講不說話', 30)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：上課專心聽講不說話*30次">
+              📝 課堂分心聊天 (*30次)
+            </button>
+            <button type="button" onclick="quickAddReminderSlip(${st.id}, '座位周遭髒亂', '隨手撿垃圾保持座位整潔', 30)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：隨手撿垃圾保持座位整潔*30次">
+              📝 座位周遭髒亂 (*30次)
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- 📝 今日各項作業進度 (折疊卡片，字體大方) -->
@@ -4134,6 +4877,52 @@ function setTrafficOverrideFromModal(studentId, overrideLight) {
   const name = student ? student.name : '';
   showToast(`👑 已更新【${name}】的下課通行燈號！`);
   closeTrafficDetailModal();
+  renderTrafficView();
+}
+
+// -------------------------------------------------------------------
+// 📝 常規提醒單管理 (快速新增、自訂指派、繳驗結清、移除)
+// -------------------------------------------------------------------
+function quickAddReminderSlip(studentId, reason, content, count) {
+  if (!checkTeacherAuth("新增常規提醒單")) return;
+  window.KingdomApp.store.addReminderSlip(studentId, { reason, content, targetCount: count });
+  window.KingdomApp.sound.playCoin();
+  const st = (window.KingdomApp.store.data.students || []).find(s => s.id === studentId);
+  const name = st ? st.name : '大臣';
+  showToast(`📝 已為【${name}】指派提醒單：${content}*${count}次！`);
+  openTrafficDetailModal(studentId);
+  renderTrafficView();
+}
+
+function addCustomReminderSlipPrompt(studentId) {
+  if (!checkTeacherAuth("自訂常規提醒單")) return;
+  const st = (window.KingdomApp.store.data.students || []).find(s => s.id === studentId);
+  const name = st ? st.name : '大臣';
+  const reason = prompt(`請輸入為【${name}】派發提醒單的常規問題（例如：聽寫簽名未交、課堂聊天、學用品未帶）：`, "常規提醒");
+  if (!reason) return;
+  const content = prompt(`請輸入學生要書寫的提醒語句（例如：聽寫要記得簽名）：`, reason);
+  if (!content) return;
+  const countStr = prompt(`請輸入指定罰寫/提醒次數（例如：50 或 30）：`, "50");
+  const count = parseInt(countStr, 10) || 50;
+  quickAddReminderSlip(studentId, reason, content, count);
+}
+
+function completeStudentReminderSlip(studentId, slipId) {
+  if (!checkTeacherAuth("核驗結清提醒單")) return;
+  window.KingdomApp.store.completeReminderSlip(studentId, slipId);
+  window.KingdomApp.sound.playLevelUp();
+  const st = (window.KingdomApp.store.data.students || []).find(s => s.id === studentId);
+  const name = st ? st.name : '大臣';
+  showToast(`🎉【${name}】已完成提醒單書寫並繳驗結清！`);
+  openTrafficDetailModal(studentId);
+  renderTrafficView();
+}
+
+function removeStudentReminderSlip(studentId, slipId) {
+  if (!checkTeacherAuth("刪除提醒單")) return;
+  window.KingdomApp.store.removeReminderSlip(studentId, slipId);
+  showToast("🗑️ 已移除此張提醒單");
+  openTrafficDetailModal(studentId);
   renderTrafficView();
 }
 
@@ -6760,9 +7549,11 @@ function renderDayColumn(colIndex, dateStr, totalCols) {
           </span>
         </div>
 
-        <!-- 6 行標準大字作業抄寫項目 -->
-        <div class="space-y-2 sm:space-y-2.5 pt-2.5">
-          ${rowsHtml}
+        <!-- 6 行標準大字作業抄寫項目 (支援直式 1~6 行直書與橫式卡片切換) -->
+        <div class="pt-2.5">
+          ${(morningContactFormat === 'vertical-rtl' || morningContactFormat === 'vertical-ltr')
+            ? renderVerticalContactGrid(items, morningContactFormat, true)
+            : `<div class="space-y-2 sm:space-y-2.5">${rowsHtml}</div>`}
           ${extraRowsHtml}
         </div>
       </div>
@@ -6777,6 +7568,7 @@ function renderContactProjectionView() {
   const modal = document.getElementById("contactProjectionModal");
   if (!modal || modal.classList.contains("hidden")) return;
 
+  updateContactFormatButtons();
   initContactProjDates();
 
   const todayStr = window.KingdomApp.getTodayDateString();
@@ -9314,16 +10106,22 @@ function copyGoogleAppsScriptCode() {
   const code = `/**
  * ============================================================================
  * 👑 西寧國小五年二班 ‧ 西寧小小兵王國 班級經營系統
- * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦終極版：智能雙向融合 + 密碼終身保護)
+ * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦終極版 v7：智能雙向融合 + 單調遞增版本號 + 直式聯絡簿同步 + 示範作業自動清洗)
  * ============================================================================
  * 
  * 核心升級亮點：
- * 1. 智能雙向融合 (Smart Non-Destructive Merge)：
+ * 1. 單調遞增雲端版本號 (Monotonic Cloud Revision)：
+ *    - 每次手機或電腦推送存檔，雲端自動將 cloudRevision 遞增 1，徹底破除不同裝置間的時鐘誤差，保證手機編輯後電腦 100% 秒級更新！
+ * 2. 智慧作業清洗防護鎖 (Demo Homework Purge & Permanent Graveyard)：
+ *    - 徹底剃除「國習」、「國語習作完成」等示範假作業，自動寫入永久墓碑 deletedHomeworkIds，絕不在任何裝置復活！
+ * 3. 智能雙向融合 (Smart Non-Destructive Merge)：
  *    - 平板與手機即使同時編輯、先後送達，作業、點數、簽到紀錄自動雙向合併，絕不互相沖刷！
- * 2. 導師密碼終身防護鎖 (Password Protection Guard)：
+ * 4. 導師密碼終身防護鎖 (Password Protection Guard)：
  *    - 雲端嚴密守護導師自訂密碼，任何預設值 queen 絕無法覆蓋導師權限！
- * 3. 500KB 超大容量自動分塊儲存 (突破單一屬性限制，支援全班大數據)。
- * 4. 支援真實 27 位大臣名冊 (洪永恩、莊淇勛...)，全手動純淨模式。
+ * 5. 特權卡撤銷與抽屜同步防護 (Card Revocation Protection)：
+ *    - 撤銷退換卡牌狀態具最高權限，自動清洗卡牌抽屜，撤銷之卡牌絕不在任何裝置殘留！
+ * 6. 500KB 超大容量自動分塊儲存 (突破單一屬性限制，支援全班大數據)。
+ * 7. 支援直式聯絡簿格式同步與 27 位大臣全手動名冊。
  * 
  * 部署教學 (只需 1 分鐘)：
  * 步驟 1：前往 https://script.google.com/ 打開您的專案
@@ -9343,9 +10141,9 @@ function doGet(e) {
     var info = {
       status: "online",
       system: "西寧國小五年二班 ‧ 西寧小小兵王國 雲端同步中繼站",
-      version: "2026.v4.smart_merge",
+      version: "2026.v7.vertical_contact_and_bidirectional_sync",
       time: new Date().toISOString(),
-      message: "🟢 雲端同步服務正常運作中！智能融合與密碼防護鎖已全面啟用。"
+      message: "🟢 雲端同步服務正常運作中！單調遞增版本號、直式聯絡簿同步與示範作業永久清洗鎖已全面啟用。"
     };
     return ContentService.createTextOutput(JSON.stringify(info, null, 2))
       .setMimeType(ContentService.MimeType.JSON);
@@ -9358,13 +10156,20 @@ function doGet(e) {
     var existingStr = loadData(prop, account);
     var existing = {};
     try { existing = JSON.parse(existingStr || '{}'); } catch (_) {}
+
+    var revKey = 'cloud_revision_' + account;
+    var currentRev = parseInt(prop.getProperty(revKey) || '0', 10) + 1;
+    prop.setProperty(revKey, String(currentRev));
+
     var merged = mergeDatasets(existing, incoming);
+    merged.cloudRevision = currentRev;
     saveData(prop, account, JSON.stringify(merged));
 
     return ContentService.createTextOutput(JSON.stringify({
       success: true,
       action: 'push_get',
       account: account,
+      cloudRevision: currentRev,
       lastModified: merged.lastModified,
       timestamp: new Date().getTime()
     })).setMimeType(ContentService.MimeType.JSON);
@@ -9372,6 +10177,58 @@ function doGet(e) {
 
   // 預設為拉取 (Pull) - 支援標準 JSON 與 Safari 專用 JSONP 跨網域免預檢回傳
   var jsonStr = loadData(prop, account);
+  var revKey = 'cloud_revision_' + account;
+  var currentRev = parseInt(prop.getProperty(revKey) || '0', 10);
+
+  // 雲端資料即時清洗防護：若歷史儲存中含有示範假作業，自動即時剃除並寫入永久墓碑，確保 cloudRevision
+  if (jsonStr && jsonStr !== '{}') {
+    try {
+      var pullData = JSON.parse(jsonStr);
+      var modified = false;
+
+      if (!pullData.cloudRevision && currentRev > 0) {
+        pullData.cloudRevision = currentRev;
+        modified = true;
+      }
+
+      if (pullData && pullData.homework && Array.isArray(pullData.homework)) {
+        var cleanHwList = [];
+        var delList = (pullData.deletedHomeworkIds && Array.isArray(pullData.deletedHomeworkIds)) ? pullData.deletedHomeworkIds.map(String) : ["1", "2", "3"];
+        var delMap = {};
+        for (var di = 0; di < delList.length; di++) delMap[delList[di]] = true;
+        delMap["1"] = true; delMap["2"] = true; delMap["3"] = true;
+
+        for (var hi = 0; hi < pullData.homework.length; hi++) {
+          var chk = pullData.homework[hi];
+          if (!chk || !chk.id) { modified = true; continue; }
+          var csid = String(chk.id);
+          var ct = String(chk.title || '').replace(/\s+/g, '');
+          var cp = String(chk.presetName || '').replace(/\s+/g, '');
+          if (delMap[csid] || csid === "1" || csid === "2" || csid === "3" ||
+              chk.date === "2026-11-16" || chk.dueDate === "2026-11-16" ||
+              ct.indexOf("國語習作第八課") !== -1 || ct.indexOf("生字造詞隨堂筆記") !== -1 ||
+              ct.indexOf("數學習作P.62") !== -1 || ct.indexOf("數學習作P62") !== -1 ||
+              ct === "國語習作完成" || ct === "國習完成" ||
+              ((ct === "國習" || cp === "國習") && (!chk.dueDate || chk.date <= "2026-11-24" || chk.dueDate <= "2026-11-24"))) {
+            modified = true;
+            if (!delMap[csid]) {
+              delMap[csid] = true;
+              delList.push(csid);
+            }
+          } else {
+            cleanHwList.push(chk);
+          }
+        }
+        if (modified) {
+          pullData.homework = cleanHwList;
+          pullData.deletedHomeworkIds = delList;
+          jsonStr = JSON.stringify(pullData);
+          saveData(prop, account, jsonStr);
+        }
+      }
+    } catch (_) {}
+  }
+
   if (p.callback) {
     return ContentService.createTextOutput(p.callback + '(' + (jsonStr || '{}') + ');')
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
@@ -9408,14 +10265,21 @@ function doPost(e) {
     existingData = JSON.parse(existingStr || '{}');
   } catch (_) {}
 
+  // 累加單調遞增雲端版本號 (Monotonic Cloud Revision)
+  var revKey = 'cloud_revision_' + account;
+  var currentRev = parseInt(prop.getProperty(revKey) || '0', 10) + 1;
+  prop.setProperty(revKey, String(currentRev));
+
   // 執行雲端智能雙向融合 (Smart Merge)，絕不覆蓋任何裝置的最新編輯
   var mergedData = mergeDatasets(existingData, incomingData);
+  mergedData.cloudRevision = currentRev;
   saveData(prop, account, JSON.stringify(mergedData));
 
   return ContentService.createTextOutput(JSON.stringify({
     success: true,
     action: 'push_post',
     account: account,
+    cloudRevision: currentRev,
     lastModified: mergedData.lastModified,
     studentCount: mergedData.students ? mergedData.students.length : 0,
     timestamp: new Date().getTime()
@@ -9434,7 +10298,57 @@ function mergeDatasets(base, incoming) {
     ? base.queenPassword
     : (incoming.queenPassword || 'queen');
 
-  // 2. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與點數自由調度)
+  // 2. 特權卡兌換紀錄智能雙向融合 (撤銷 revoked 與使用 used 狀態具最高權限，絕不倒退回未撤銷)
+  var redMap = {};
+  var bRed = base.rewardRedemptions || [];
+  for (var br = 0; br < bRed.length; br++) {
+    if (bRed[br] && bRed[br].id) redMap[String(bRed[br].id)] = bRed[br];
+  }
+  var iRed = incoming.rewardRedemptions || [];
+  for (var ir = 0; ir < iRed.length; ir++) {
+    var rItem = iRed[ir];
+    if (!rItem || !rItem.id) continue;
+    var rid = String(rItem.id);
+    if (!redMap[rid]) {
+      redMap[rid] = rItem;
+    } else {
+      var existRec = redMap[rid];
+      var finalStatus = 'pending';
+      var revokedAt = rItem.revokedAt || existRec.revokedAt;
+      var usedAt = rItem.usedAt || existRec.usedAt;
+      if (rItem.status === 'revoked' || existRec.status === 'revoked') {
+        finalStatus = 'revoked';
+        if (!revokedAt) revokedAt = new Date().toISOString();
+      } else if (rItem.status === 'used' || existRec.status === 'used') {
+        finalStatus = 'used';
+        if (!usedAt) usedAt = new Date().toISOString();
+      } else if (rItem.status === 'pending' || existRec.status === 'pending') {
+        finalStatus = 'pending';
+      }
+      var mergedItem = {};
+      for (var k in existRec) { mergedItem[k] = existRec[k]; }
+      for (var k2 in rItem) { mergedItem[k2] = rItem[k2]; }
+      mergedItem.status = finalStatus;
+      if (revokedAt) mergedItem.revokedAt = revokedAt;
+      if (usedAt) mergedItem.usedAt = usedAt;
+      redMap[rid] = mergedItem;
+    }
+  }
+  var mergedRedemptions = [];
+  for (var rid in redMap) {
+    mergedRedemptions.push(redMap[rid]);
+  }
+
+  // 建立已註銷/已核銷 ID 表，避免撤銷之卡牌殘留在抽屜中
+  var inactiveCardIds = {};
+  for (var rIdx = 0; rIdx < mergedRedemptions.length; rIdx++) {
+    var stat = mergedRedemptions[rIdx].status;
+    if (stat === 'used' || stat === 'revoked') {
+      inactiveCardIds[String(mergedRedemptions[rIdx].id)] = true;
+    }
+  }
+
+  // 3. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與卡牌抽屜純淨同步)
   var mergedStudents = (base.students || []).map(function(bSt) {
     var iSt = null;
     var incList = incoming.students || [];
@@ -9444,14 +10358,53 @@ function mergeDatasets(base, incoming) {
         break;
       }
     }
-    if (!iSt) return bSt;
+    if (!iSt) {
+      var bCards = (bSt.redeemedCards && Array.isArray(bSt.redeemedCards)) ? bSt.redeemedCards : [];
+      var cleanBCards = [];
+      for (var bc = 0; bc < bCards.length; bc++) {
+        if (bCards[bc] && bCards[bc].id && !inactiveCardIds[String(bCards[bc].id)]) {
+          cleanBCards.push(bCards[bc]);
+        }
+      }
+      return {
+        id: bSt.id,
+        seatNo: bSt.seatNo,
+        name: bSt.name,
+        gender: bSt.gender,
+        title: bSt.title,
+        birthday: bSt.birthday,
+        points: bSt.points || 0,
+        lifetimePoints: bSt.lifetimePoints || 0,
+        petExp: bSt.lifetimePoints || 0,
+        animalType: bSt.animalType || 'dog',
+        petType: bSt.petType || 'dog',
+        secondPetType: bSt.secondPetType || null,
+        secondPetExp: bSt.secondPetExp || 0,
+        pets: bSt.pets || [{ type: bSt.animalType || 'dog' }],
+        redeemedCards: cleanBCards
+      };
+    }
 
     // 優先採納最新推送裝置的設定值 (支援加點、扣點、重設、歸零)
     var finalPoints = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
     var finalLifetime = (iSt.lifetimePoints !== undefined && iSt.lifetimePoints !== null) ? Number(iSt.lifetimePoints) : (Number(bSt.lifetimePoints) || 0);
+    if (finalLifetime <= 0 && finalPoints > 0) {
+      finalLifetime = finalPoints;
+    }
     var finalPets = (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets;
     var finalSecondPet = iSt.secondPetType !== undefined ? iSt.secondPetType : (bSt.secondPetType || null);
     var finalSecondExp = (iSt.secondPetExp !== undefined && iSt.secondPetExp !== null) ? Number(iSt.secondPetExp) : (Number(bSt.secondPetExp) || 0);
+
+    // 卡牌抽屜同步與已註銷清洗
+    var rawCards = (iSt.redeemedCards && Array.isArray(iSt.redeemedCards))
+      ? iSt.redeemedCards
+      : ((bSt.redeemedCards && Array.isArray(bSt.redeemedCards)) ? bSt.redeemedCards : []);
+    var cleanCards = [];
+    for (var c = 0; c < rawCards.length; c++) {
+      if (rawCards[c] && rawCards[c].id && !inactiveCardIds[String(rawCards[c].id)]) {
+        cleanCards.push(rawCards[c]);
+      }
+    }
 
     return {
       id: bSt.id,
@@ -9467,7 +10420,8 @@ function mergeDatasets(base, incoming) {
       petType: iSt.petType || bSt.petType || 'dog',
       secondPetType: finalSecondPet,
       secondPetExp: finalSecondExp,
-      pets: finalPets
+      pets: finalPets,
+      redeemedCards: cleanCards
     };
   });
 
@@ -9484,6 +10438,14 @@ function mergeDatasets(base, incoming) {
       }
     }
     if (!exists) {
+      if (!cand.redeemedCards) cand.redeemedCards = [];
+      var cleanCandCards = [];
+      for (var cc = 0; cc < cand.redeemedCards.length; cc++) {
+        if (cand.redeemedCards[cc] && cand.redeemedCards[cc].id && !inactiveCardIds[String(cand.redeemedCards[cc].id)]) {
+          cleanCandCards.push(cand.redeemedCards[cc]);
+        }
+      }
+      cand.redeemedCards = cleanCandCards;
       mergedStudents.push(cand);
     }
   }
@@ -9516,32 +10478,67 @@ function mergeDatasets(base, incoming) {
     }
   }
 
-  // 4. 作業按 ID 雙向合併 (多裝置新增與批閱互不沖刷)
+  // 4. 作業按 ID 雙向合併 + 刪除墓碑 (deletedHomeworkIds) 徹底封殺已刪除與舊示範假作業
+  var deletedHwMap = {};
+  var bDel = base.deletedHomeworkIds || [];
+  var iDel = incoming.deletedHomeworkIds || [];
+  for (var d1 = 0; d1 < bDel.length; d1++) deletedHwMap[String(bDel[d1])] = true;
+  for (var d2 = 0; d2 < iDel.length; d2++) deletedHwMap[String(iDel[d2])] = true;
+  deletedHwMap["1"] = true;
+  deletedHwMap["2"] = true;
+  deletedHwMap["3"] = true;
+
+  function isDemoOrDeletedHw(hw) {
+    if (!hw) return true;
+    var sid = String(hw.id || '');
+    if (deletedHwMap[sid]) return true;
+    if (sid === "1" || sid === "2" || sid === "3") return true;
+    if (hw.date === "2026-11-16" || hw.dueDate === "2026-11-16") return true;
+    var t = String(hw.title || '').replace(/\s+/g, '');
+    var p = String(hw.presetName || '').replace(/\s+/g, '');
+    if (t.indexOf("國語習作第八課") !== -1 || t.indexOf("生字造詞隨堂筆記") !== -1 || t.indexOf("數學習作P.62") !== -1 || t.indexOf("數學習作P62") !== -1) return true;
+    if (t === "國語習作完成" || t === "國習完成") return true;
+    if (t === "國習" && (!hw.dueDate || hw.date <= "2026-11-24" || hw.dueDate <= "2026-11-24")) return true;
+    if (p === "國習" && (!hw.dueDate || hw.date <= "2026-11-24" || hw.dueDate <= "2026-11-24")) return true;
+    return false;
+  }
+
   var hwMap = {};
   var bHw = base.homework || [];
   for (var h = 0; h < bHw.length; h++) {
-    if (bHw[h] && bHw[h].id) hwMap[bHw[h].id] = bHw[h];
+    var bhItem = bHw[h];
+    if (bhItem && bhItem.id && !isDemoOrDeletedHw(bhItem)) {
+      hwMap[String(bhItem.id)] = bhItem;
+    }
   }
   var iHw = incoming.homework || [];
   for (var ih = 0; ih < iHw.length; ih++) {
     var item = iHw[ih];
-    if (!item || !item.id) continue;
-    if (!hwMap[item.id]) {
-      hwMap[item.id] = item;
+    if (!item || !item.id || isDemoOrDeletedHw(item)) continue;
+    var hidStr = String(item.id);
+    if (!hwMap[hidStr]) {
+      hwMap[hidStr] = item;
     } else {
-      var existHw = hwMap[item.id];
+      var existHw = hwMap[hidStr];
       var combinedRecords = {};
       var r1 = existHw.records || {};
       var r2 = item.records || {};
       for (var k1 in r1) combinedRecords[k1] = r1[k1];
       for (var k2 in r2) combinedRecords[k2] = r2[k2];
       item.records = combinedRecords;
-      hwMap[item.id] = item;
+      hwMap[hidStr] = item;
     }
   }
   var mergedHomework = [];
   for (var hid in hwMap) {
     mergedHomework.push(hwMap[hid]);
+  }
+  var mergedDeletedHwList = [];
+  for (var did in deletedHwMap) {
+    mergedDeletedHwList.push(did);
+  }
+  if (mergedDeletedHwList.length > 200) {
+    mergedDeletedHwList = mergedDeletedHwList.slice(-200);
   }
 
   // 5. 聯絡簿智慧融合 (取更新時間較新或內容完整者)
@@ -9586,6 +10583,7 @@ function mergeDatasets(base, incoming) {
     students: mergedStudents,
     attendance: mergedAttendance,
     homework: mergedHomework,
+    deletedHomeworkIds: mergedDeletedHwList,
     contactBook: mergedContactBook,
     contactBookHistory: mergedCbHistory,
     pointLogs: mergedLogs,
@@ -9593,13 +10591,15 @@ function mergeDatasets(base, incoming) {
     homeworkPresets: incoming.homeworkPresets || base.homeworkPresets,
     behaviorReasons: incoming.behaviorReasons || base.behaviorReasons,
     alarmPresets: incoming.alarmPresets || base.alarmPresets,
-    announcements: incoming.announcements || base.announcements,
+    timerPresets: incoming.timerPresets || base.timerPresets,
+    announcements: (incoming.announcements !== undefined && incoming.announcements !== null) ? incoming.announcements : (base.announcements || []),
     rewardCards: incoming.rewardCards || base.rewardCards,
-    rewardRedemptions: incoming.rewardRedemptions || base.rewardRedemptions || [],
+    rewardRedemptions: mergedRedemptions,
     behaviorCards: incoming.behaviorCards || base.behaviorCards || {},
     trafficOverrides: incoming.trafficOverrides || base.trafficOverrides || {},
     seatingLayout: incoming.seatingLayout || base.seatingLayout,
     seatingChart: incoming.seatingChart || base.seatingChart,
+    cloudRevision: incoming.cloudRevision || base.cloudRevision || 1,
     lastModified: nowTime,
     realRosterV20261119: true
   };
@@ -9645,8 +10645,8 @@ function loadData(prop, account) {
     parts.push(chunk);
   }
   return parts.join('');
-}`;
-
+}
+`;
   navigator.clipboard.writeText(code).then(() => {
     showToast("📋 已複製 Google 雲端腳本代碼！請至 script.google.com 貼上並部署。", "🎉");
   }).catch(() => {
@@ -11440,6 +12440,24 @@ if (typeof window !== 'undefined') {
   window.openTrafficDetailModal = openTrafficDetailModal;
   window.closeTrafficDetailModal = closeTrafficDetailModal;
   window.toggleTrafficDrawer = toggleTrafficDrawer;
+  window.setTrafficOverrideFromModal = setTrafficOverrideFromModal;
+  window.quickAddReminderSlip = quickAddReminderSlip;
+  window.addCustomReminderSlipPrompt = addCustomReminderSlipPrompt;
+  window.completeStudentReminderSlip = completeStudentReminderSlip;
+  window.removeStudentReminderSlip = removeStudentReminderSlip;
+
+  // 作業批次登記
+  window.openSetRevisionModal = openSetRevisionModal;
+  window.openBatchHomeworkStatusModal = openBatchHomeworkStatusModal;
+  window.closeSetRevisionModal = closeSetRevisionModal;
+  window.setBatchHwTargetStatus = setBatchHwTargetStatus;
+  window.handleBatchHwSeatInput = handleBatchHwSeatInput;
+  window.toggleBatchHwSeat = toggleBatchHwSeat;
+  window.selectAllBatchHwSeats = selectAllBatchHwSeats;
+  window.invertBatchHwSeats = invertBatchHwSeats;
+  window.clearAllBatchHwSeats = clearAllBatchHwSeats;
+  window.loadCurrentHwStatusSeats = loadCurrentHwStatusSeats;
+  window.saveRevisionSelection = saveRevisionSelection;
 
   // 教室座位表大屏全螢幕投影 (僅顯示中間座位表與講台)
   window.openSeatingProjectionModal = openSeatingProjectionModal;
@@ -11498,6 +12516,14 @@ if (typeof window !== 'undefined') {
     Object.defineProperty(window, 'morningContactDateCol2', {
       get() { return morningContactDateCol2; },
       set(v) { morningContactDateCol2 = v; },
+      configurable: true
+    });
+    window.setMorningContactFormat = setMorningContactFormat;
+    window.updateContactFormatButtons = updateContactFormatButtons;
+    window.renderVerticalContactGrid = renderVerticalContactGrid;
+    Object.defineProperty(window, 'morningContactFormat', {
+      get() { return morningContactFormat; },
+      set(v) { morningContactFormat = v; },
       configurable: true
     });
   } catch (e) {

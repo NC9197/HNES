@@ -806,6 +806,51 @@ header .nav-btn-wordbreak > span {
 }
 
 /* =================================================================== */
+/* 教室座位表紅綠燈課桌樣式 (空間座位與通行狀態完美結合) */
+/* =================================================================== */
+.traffic-desk-card {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1rem;
+}
+.traffic-desk-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 18px -4px rgba(0, 0, 0, 0.15);
+}
+.traffic-desk-card.card-green {
+  background: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #34d399;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
+}
+.traffic-desk-card.card-green:hover {
+  border-color: #10b981;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+}
+.traffic-desk-card.card-yellow {
+  background: linear-gradient(145deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #fbbf24;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+}
+.traffic-desk-card.card-yellow:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.25);
+}
+.traffic-desk-card.card-red {
+  background: linear-gradient(145deg, #fff1f2 0%, #ffe4e6 100%);
+  border-color: #f87171;
+  box-shadow: 0 2px 6px rgba(244, 63, 94, 0.15);
+}
+.traffic-desk-card.card-red:hover {
+  border-color: #f43f5e;
+  box-shadow: 0 6px 16px rgba(244, 63, 94, 0.25);
+}
+.traffic-desk-card.card-leave {
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+  border-color: #94a3b8;
+  opacity: 0.85;
+}
+
+/* =================================================================== */
 /* 教室座位表大屏全螢幕投影樣式 (藍天白雲朝氣風格・長方形高可視排版) */
 /* =================================================================== */
 #seatingProjectionModal {
@@ -1035,3 +1080,132 @@ header .nav-btn-wordbreak > span {
     background: white !important;
   }
 }
+
+/* ==========================================================================
+   📜 學生真實直式聯絡簿專用風格 (完全貼合國小聯絡簿格子與由右至左直行書寫習慣)
+   ========================================================================== */
+.contact-vertical-board {
+  background: linear-gradient(180deg, #fffef9 0%, #faf6eb 100%);
+  border: 2px solid #eab308;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px rgba(234, 179, 8, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.contact-vertical-grid-rtl {
+  display: flex;
+  flex-direction: row-reverse; /* 由右至左排列，完全貼合台灣小學聯絡簿直行由右至左格式 */
+  gap: 0.65rem;
+  align-items: stretch;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 0.5rem 0.25rem;
+}
+
+.contact-vertical-grid-ltr {
+  display: flex;
+  flex-direction: row; /* 由左至右排列 */
+  gap: 0.65rem;
+  align-items: stretch;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 0.5rem 0.25rem;
+}
+
+.contact-vertical-col {
+  flex: 1 1 0;
+  min-width: 58px;
+  max-width: 140px;
+  min-height: 420px;
+  background: #ffffff;
+  border: 2px solid #fde047;
+  border-radius: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.65rem 0.35rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.contact-vertical-col:hover {
+  transform: translateY(-2px);
+  border-color: #f59e0b;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.22);
+}
+
+.contact-vertical-col.empty-col {
+  background: #fffdf7;
+  border: 2px dashed #fcd34d;
+  opacity: 0.75;
+}
+
+.contact-vertical-num {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.65rem;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.35);
+  flex-shrink: 0;
+}
+
+.contact-vertical-col.empty-col .contact-vertical-num {
+  background: #fef3c7;
+  color: #b45309;
+  box-shadow: none;
+}
+
+.contact-vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-weight: 900;
+  font-size: 1.45rem;
+  line-height: 1.45;
+  letter-spacing: 0.12em;
+  color: #0f172a;
+  flex: 1;
+  padding: 0.25rem 0;
+  display: flex;
+  align-items: center;
+  word-break: break-all;
+  text-align: start;
+}
+
+@media (min-width: 640px) {
+  .contact-vertical-text {
+    font-size: 1.65rem;
+  }
+  .contact-vertical-col {
+    min-height: 460px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .contact-vertical-text {
+    font-size: 1.85rem;
+  }
+  .contact-vertical-col {
+    min-height: 500px;
+  }
+}
+
+.contact-vertical-empty-label {
+  writing-mode: vertical-rl;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #d97706;
+  opacity: 0.4;
+  letter-spacing: 0.3em;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
