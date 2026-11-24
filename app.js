@@ -76,7 +76,7 @@ const DEFAULT_BEHAVIOR_REASONS = [
   { id: 'br_srv_3', type: 'service', label: '打掃責任區未落實', text: '打掃責任區未落實' },
   { id: 'br_srv_4', type: 'service', label: '忘記清空抽屜置物櫃', text: '忘記抽屜與置物櫃清空' },
   { id: 'br_srv_5', type: 'service', label: '公物使用後未歸位', text: '公物使用後未歸位' },
-  // 常規提醒單快捷 (罰寫提醒)
+  // 常規提醒單快捷 (自我提醒書寫)
   { id: 'br_rem_1', type: 'reminder', label: '聽寫記得簽名', text: '聽寫要記得簽名' },
   { id: 'br_rem_2', type: 'reminder', label: '作業記得帶到校', text: '作業記得帶到學校' },
   { id: 'br_rem_3', type: 'reminder', label: '上課專心不插嘴', text: '上課專心不隨意插嘴' },
@@ -2981,7 +2981,7 @@ class KingdomStore {
     const hasService = serviceCount > 0;
     const serviceReason = bCard.serviceReason || (hasService ? '遲到' : '');
 
-    // 2.5 罰寫提醒單判定 (常規問題提醒書寫，如聽寫簽名未交*50次)
+    // 2.5 常規提醒單判定 (常規問題提醒書寫，如聽寫簽名未交*50次)
     const pendingSlips = (Array.isArray(bCard.reminderSlips) ? bCard.reminderSlips : []).filter(s => s && s.status === 'pending');
     const reminderCount = pendingSlips.length;
     const hasReminder = reminderCount > 0;
@@ -3094,7 +3094,7 @@ class KingdomStore {
       };
     }
 
-    // B. 若是有待訂正的項目或有未完成提醒單 -> 黃燈 (需先完成訂正或罰寫提醒單)
+    // B. 若是有待訂正的項目或有未完成提醒單 -> 黃燈 (需先完成訂正或完成提醒單)
     if (revisionList.length > 0 || hasReminder) {
       const yellowReasons = [];
       if (revisionList.length > 0) {
@@ -4484,7 +4484,7 @@ class KingdomCloudSync {
       if (JSON.stringify(remote.announcements) !== JSON.stringify(local.announcements)) return true;
     }
 
-    // 10. 行為卡牌與常規提醒單比對 (自省卡、愛班卡、罰寫提醒單跨裝置即時秒同步)
+    // 10. 行為卡牌與常規提醒單比對 (自省卡、愛班卡、常規提醒單跨裝置即時秒同步)
     if (remote.behaviorCards || local.behaviorCards) {
       if (JSON.stringify(remote.behaviorCards || {}) !== JSON.stringify(local.behaviorCards || {})) return true;
     }

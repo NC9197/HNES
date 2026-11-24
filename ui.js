@@ -575,24 +575,72 @@ function updateContactFormatButtons() {
   if (projHor) projHor.className = isHor ? projActiveClass : projInactiveClass;
 }
 
+function convertFullwidthToHalfwidth(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/[\uFF10-\uFF19]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+    .replace(/[\uFF21-\uFF3A\uFF41-\uFF5A]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+    .replace(/\uFF0E/g, '.')
+    .replace(/\uFF1A/g, ':');
+}
+
 function formatVerticalContactText(rawText) {
   if (rawText === null || rawText === undefined) return '';
-  const str = String(rawText);
-  // 正則匹配英文字母、數字及相連的常見符號 (如 P.62, 1~10, Unit 3, NO.1, Ch.4, 100)，包裝成橫向縱中橫 span
-  const pattern = /[A-Za-z0-9\.\-~～_#/@%]+(?:\s+[A-Za-z0-9\.\-~～_#/@%]+)*/g;
-  let result = '';
-  let lastIdx = 0;
-  let match;
-  while ((match = pattern.exec(str)) !== null) {
-    if (match.index > lastIdx) {
-      result += escapeContactHtml(str.slice(lastIdx, match.index));
-    }
-    result += '<span class="tcy">' + escapeContactHtml(match[0]) + '</span>';
-    lastIdx = pattern.lastIndex;
-  }
-  if (lastIdx < str.length) {
-    result += escapeContactHtml(str.slice(lastIdx));
-  }
+  let str = String(rawText);
+
+  // 1. 頁碼區間 (含前綴 P. 或後綴 頁，或兩者皆有)
+  // 範例：數學習作６５－６６頁、數學習作 P.65-66、國甲 32~35頁、P.65~P.66
+  // 依國小直式聯絡簿規範：Ｐ．(橫向正立)、６５(橫向正立)、－(直式連接號︱)、６６(橫向正立) 依序垂直跳下一行/格
+  str = str.replace(/(?:P\.?|p\.?|Ｐ[\.．]?|ｐ[\.．]?)\s*([0-9０-９]+)\s*[-－~～—–―─到至]\s*(?:P\.?|p\.?|Ｐ[\.．]?|ｐ[\.．]?)?\s*([0-9０-９]+)\s*頁?/gi, (_, s, e) => {
+    const start = convertFullwidthToHalfwidth(s);
+    const end = convertFullwidthToHalfwidth(e);
+    return `\x01P.\x02\x01${start}\x02\x03\x01${end}\x02`;
+  });
+
+  str = str.replace(/([0-9０-９]+)\s*[-－~～—–―─到至]\s*([0-9０-９]+)\s*頁/g, (_, s, e) => {
+    const start = convertFullwidthToHalfwidth(s);
+    const end = convertFullwidthToHalfwidth(e);
+    return `\x01P.\x02\x01${start}\x02\x03\x01${end}\x02`;
+  });
+
+  // 2. 單一頁碼 (例如：P.65 或 65頁)
+  str = str.replace(/(?:P\.?|p\.?|Ｐ[\.．]?|ｐ[\.．]?)\s*([0-9０-９]+)\s*頁?/gi, (_, p) => {
+    const page = convertFullwidthToHalfwidth(p);
+    return `\x01P.\x02\x01${page}\x02`;
+  });
+
+  str = str.replace(/([0-9０-９]+)\s*頁/g, (_, p) => {
+    const page = convertFullwidthToHalfwidth(p);
+    return `\x01P.\x02\x01${page}\x02`;
+  });
+
+  // 3. 一般數字範圍 (例如：聽寫 1~10, 1-10)
+  str = str.replace(/([0-9０-９]+)\s*[-－~～—–―─]\s*([0-9０-９]+)/g, (_, s, e) => {
+    const start = convertFullwidthToHalfwidth(s);
+    const end = convertFullwidthToHalfwidth(e);
+    return `\x01${start}\x02\x03\x01${end}\x02`;
+  });
+
+  // 4. 其餘未標記之英文字母、數字 (切分已產生的標記避免重複包裹)
+  const pattern = /(\x01.*?\x02|\x03)/g;
+  const parts = str.split(pattern);
+  str = parts.map(part => {
+    if (part.startsWith('\x01') || part === '\x03') return part;
+    const norm = convertFullwidthToHalfwidth(part);
+    return norm.replace(/[A-Za-z0-9\.\*#/@%]+(?:\s+[A-Za-z0-9\.\*#/@%]+)*/g, token => {
+      if (token.includes(' ')) {
+        return token.split(/\s+/).filter(Boolean).map(sub => `\x01${sub}\x02`).join('');
+      }
+      return `\x01${token}\x02`;
+    });
+  }).join('');
+
+  // 5. HTML 安全跳脫處理，並還原標籤
+  let result = escapeContactHtml(str)
+    .replace(/\x01(.*?)\x02/g, (_, content) => `<span class="tcy">${content}</span>`)
+    .replace(/\x03/g, '<span class="v-dash">︱</span>')
+    .replace(/\r?\n/g, '<br>');
+
   return result;
 }
 
@@ -3610,7 +3658,7 @@ function renderTrafficView() {
   if (statS) statS.textContent = serviceCount;
   if (statRem) statRem.textContent = reminderCountTotal;
 
-  // 更新三項實體獨立專區 (🪑 自省卡專區、🧹 愛班卡專區、📝 罰寫提醒單專區)
+  // 更新三項實體獨立專區 (🪑 自省卡專區、🧹 愛班卡專區、📝 提醒單專區)
   let totalReflectionCards = 0;
   let totalServiceCards = 0;
   let totalReminderSlips = 0;
@@ -3861,13 +3909,13 @@ function renderTrafficView() {
           class="traffic-desk-card ${cardClass} p-2 rounded-2xl border-2 shadow-sm cursor-pointer transition transform hover:scale-[1.02] flex flex-col justify-between min-h-[95px] sm:min-h-[105px] ${matchesFilter ? '' : 'opacity-25 grayscale'}"
           title="${seatPad}號 ${st.name} (點擊開啟通行詳情)">
           
-          <!-- 頂部：座號與大臣姓名 ＆ 狀態燈珠 -->
+          <!-- 頂部：座號與大臣姓名 ＆ 狀態燈珠 (字體放大，確保後方學生清晰可見) -->
           <div class="flex items-center justify-between pb-1 border-b border-black/10">
-            <div class="flex items-center space-x-1 min-w-0">
-              <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded-md shadow-2xs ${seatBgClass}">
+            <div class="flex items-center space-x-1.5 min-w-0">
+              <span class="font-cute font-black text-xs sm:text-sm px-1.5 py-0.5 rounded-md shadow-2xs ${seatBgClass} font-mono flex-shrink-0">
                 ${seatPad}號
               </span>
-              <span class="font-cute font-black text-xs sm:text-sm text-slate-900 truncate max-w-[55px] sm:max-w-[70px]">
+              <span class="font-cute font-black text-sm sm:text-base lg:text-lg text-slate-950 truncate max-w-[80px] sm:max-w-[105px] tracking-wide filter drop-shadow-2xs">
                 ${st.name}
               </span>
             </div>
@@ -4011,10 +4059,11 @@ function renderTrafficView() {
           class="traffic-card-5x5 ${cardClass}"
           title="${seatPad}號 (點擊開啟通行詳情)">
           
-          <!-- 頂部：座號標示 (去除姓名) 與 發光狀態燈珠 -->
+          <!-- 頂部：座號標示與大臣姓名 ＆ 發光狀態燈珠 -->
           <div class="flex items-center justify-between pb-1 border-b border-black/5">
-            <div class="flex items-center space-x-1">
-              <span class="font-cute font-black text-sm px-2 py-0.5 rounded-lg shadow-2xs ${seatBgClass}">${seatPad}號</span>
+            <div class="flex items-center space-x-1.5 min-w-0">
+              <span class="font-cute font-black text-sm px-2 py-0.5 rounded-lg shadow-2xs ${seatBgClass} font-mono flex-shrink-0">${seatPad}號</span>
+              <span class="font-cute font-black text-sm sm:text-base text-slate-950 truncate max-w-[75px] filter drop-shadow-2xs">${st.name}</span>
             </div>
             <div class="mini-orb ${miniOrbClass}" title="${orbTooltip}">${orbSymbol}</div>
           </div>
@@ -4084,9 +4133,9 @@ function renderTrafficView() {
           title="${seatPad}號 ${st.name} | ${topRowText} | ${bottomRowText}">
           
           <!-- 左側：座號與大臣姓名 -->
-          <div class="flex items-center space-x-1 flex-shrink-0">
-            <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded ${seatBgClass}">${seatPad}</span>
-            <span class="font-cute font-black text-sm text-slate-900 truncate max-w-[50px]">${st.name}</span>
+          <div class="flex items-center space-x-1.5 flex-shrink-0">
+            <span class="font-cute font-black text-xs px-1.5 py-0.5 rounded ${seatBgClass} font-mono">${seatPad}</span>
+            <span class="font-cute font-black text-sm sm:text-base text-slate-950 truncate max-w-[65px]">${st.name}</span>
           </div>
 
           <!-- 中間：上下雙排顯示 (上排：未完成項目；下排：卡牌*張數) -->
@@ -4464,6 +4513,67 @@ function addCustomServiceCardToStudent(studentId, reason) {
   showToast(`🧹 已為大臣指派愛班卡：${reason}`);
 }
 
+// 常規提醒單次數快捷設定與自訂管理
+const DEFAULT_REMINDER_TIMES_PRESETS = [10, 20, 30, 50, 100];
+
+function getReminderTimesPresets() {
+  try {
+    const raw = localStorage.getItem('xining_reminder_times_presets');
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr) && arr.length > 0) {
+        return arr.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n > 0);
+      }
+    }
+  } catch (e) {}
+  return [...DEFAULT_REMINDER_TIMES_PRESETS];
+}
+
+function setReminderTimesInput(val) {
+  const input = document.getElementById("behaviorReminderTimesInput");
+  if (input) {
+    input.value = val;
+  }
+  renderReminderTimesShortcuts();
+}
+
+function renderReminderTimesShortcuts() {
+  const container = document.getElementById("behaviorReminderTimesShortcuts");
+  if (!container) return;
+  const presets = getReminderTimesPresets();
+  const input = document.getElementById("behaviorReminderTimesInput");
+  const currentVal = input ? parseInt(input.value, 10) : 50;
+  
+  container.innerHTML = presets.map(times => {
+    const isActive = currentVal === times;
+    return `
+      <button type="button" onclick="setReminderTimesInput(${times})"
+        class="px-2.5 py-1 rounded-lg border font-black transition active:scale-95 shadow-2xs ${isActive ? 'bg-amber-500 text-white border-amber-600 ring-2 ring-amber-300' : 'bg-white hover:bg-yellow-100 text-amber-950 border-amber-300'}">
+        ${times}次
+      </button>
+    `;
+  }).join('');
+}
+
+function editReminderTimesPresets() {
+  if (!checkTeacherAuth("編輯提醒次數快捷")) return;
+  const presets = getReminderTimesPresets();
+  const defaultStr = presets.join(", ");
+  const input = prompt(`請輸入自訂提醒次數快捷組合（以逗號或空格分隔數字，例如：10, 20, 30, 50, 100）：`, defaultStr);
+  if (input === null) return;
+  const numbers = input.split(/[\s,，;；]+/).map(t => parseInt(t.trim(), 10)).filter(n => !isNaN(n) && n > 0 && n <= 500);
+  if (numbers.length === 0) {
+    showToast("⚠️ 請至少輸入一個有效的次數數字 (1~500)！", "⚠️");
+    return;
+  }
+  const uniqueNumbers = Array.from(new Set(numbers)).sort((a, b) => a - b);
+  try {
+    localStorage.setItem('xining_reminder_times_presets', JSON.stringify(uniqueNumbers));
+  } catch (e) {}
+  showToast(`✅ 已更新提醒次數快捷：${uniqueNumbers.join('次、')}次`, "⚙️");
+  renderReminderTimesShortcuts();
+}
+
 function openBehaviorCardModal(defaultType = 'reflection') {
   if (!checkTeacherAuth("派發常規紀律卡牌（自省卡/愛班卡/提醒單）")) return;
   const grid = document.getElementById("behaviorStudentSelectorGrid");
@@ -4483,7 +4593,7 @@ function openBehaviorCardModal(defaultType = 'reflection') {
       if (cardType === 'service') {
         modalTitle.innerHTML = `<span>🧹 派發全班愛班服務卡 (課間愛班勞動)</span>`;
       } else if (cardType === 'reminder') {
-        modalTitle.innerHTML = `<span>📝 派發全班常規提醒單 (黃燈・罰寫提醒)</span>`;
+        modalTitle.innerHTML = `<span>📝 派發全班常規提醒單 (黃燈・自我提醒)</span>`;
       } else {
         modalTitle.innerHTML = `<span>🪑 派發全班座位自省卡 (紅燈・留座自省)</span>`;
       }
@@ -4494,6 +4604,7 @@ function openBehaviorCardModal(defaultType = 'reflection') {
       if (cardType === 'reminder') {
         remWrapper.classList.remove("hidden");
         if (reasonInput) reasonInput.placeholder = "例如：聽寫要記得簽名、遵守走廊常規慢行";
+        renderReminderTimesShortcuts();
       } else {
         remWrapper.classList.add("hidden");
         if (reasonInput) {
@@ -4511,6 +4622,11 @@ function openBehaviorCardModal(defaultType = 'reflection') {
 
   updateModalDisplay(defaultType);
   document.getElementById("behaviorCardModal").classList.remove("hidden");
+
+  const timesInput = document.getElementById("behaviorReminderTimesInput");
+  if (timesInput) {
+    timesInput.oninput = () => renderReminderTimesShortcuts();
+  }
 
   // 監聽單選按鈕變更，自動更換事由快捷列與次數設定
   const typeRadios = document.querySelectorAll('input[name="behaviorCardType"]');
@@ -4813,7 +4929,7 @@ function openTrafficDetailModal(studentId) {
       </div>
 
       <!-- ============================================================== -->
-      <!-- 獨立專區 3：📝 罰寫提醒單專區 (常規提醒・書寫省思・附繳驗結清) -->
+      <!-- 獨立專區 3：📝 提醒單專區 (常規提醒・書寫省思・附繳驗結清) -->
       <!-- ============================================================== -->
       <div class="col-span-1 lg:col-span-2 bg-gradient-to-br from-yellow-50 via-white to-amber-50 p-4 rounded-2xl border-2 border-yellow-400 space-y-3 shadow-xs">
         <!-- 專區標題與待寫累計 -->
@@ -4978,7 +5094,7 @@ function addCustomReminderSlipPrompt(studentId) {
   if (!reason) return;
   const content = prompt(`請輸入學生要書寫的提醒語句（例如：聽寫要記得簽名）：`, reason);
   if (!content) return;
-  const countStr = prompt(`請輸入指定罰寫/提醒次數（例如：50 或 30）：`, "50");
+  const countStr = prompt(`請輸入指定提醒書寫次數（例如：50 或 30）：`, "50");
   const count = parseInt(countStr, 10) || 50;
   quickAddReminderSlip(studentId, reason, content, count);
 }
@@ -5396,6 +5512,16 @@ function renderPointsView() {
         </div>
       `;
     }).join('');
+
+    // 自動初始化所有展開卡牌抽屜內的兌換按鈕狀態與扣點判斷
+    students.forEach(st => {
+      if (window.openCardDrawerStudentIds && window.openCardDrawerStudentIds.has(st.id)) {
+        const select = document.getElementById(`drawerRedeemSelect-${st.id}`);
+        if (select && select.value) {
+          updateDrawerRedeemButton(st.id, select.value);
+        }
+      }
+    });
   }
 
   // 渲染獎懲歷史日誌 (支援逐筆撤銷與復原)
@@ -5580,38 +5706,38 @@ function renderRewardCards() {
   }
 
   grid.innerHTML = cards.map(c => `
-    <div class="reward-card p-4 flex flex-col justify-between">
+    <div class="reward-card p-3 sm:p-3.5 flex flex-col justify-between rounded-2xl shadow-sm transition-all hover:shadow-md">
       <div>
-        <div class="flex items-center justify-between pb-2 border-b border-amber-200">
-          <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
+        <div class="flex items-center justify-between pb-1.5 border-b border-amber-200">
+          <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
             ${c.category || '班級特權'}
           </span>
-          <span class="font-mono font-black text-amber-700 bg-amber-200/90 px-2 py-0.5 rounded text-xs shadow-sm">
-            🪙 ${c.cost} 點
+          <span class="font-mono font-black text-rose-700 bg-rose-100 border border-rose-300 px-1.5 py-0.2 rounded text-[11px] shadow-2xs">
+            🍎 ${c.cost} 顆
           </span>
         </div>
 
-        <div class="mt-2.5 flex items-center space-x-2.5">
-          <span class="text-3xl flex-shrink-0">${c.icon || '🎁'}</span>
-          <div>
-            <h4 class="text-base font-black text-slate-900">${c.title}</h4>
+        <div class="mt-2 flex items-center space-x-2">
+          <span class="text-2xl flex-shrink-0">${c.icon || '🎁'}</span>
+          <div class="min-w-0">
+            <h4 class="text-sm font-black text-slate-900 truncate leading-snug">${c.title}</h4>
           </div>
         </div>
 
-        <p class="mt-2 text-xs text-amber-950 font-medium leading-relaxed bg-white/70 p-2.5 rounded-xl border border-amber-200/80">
+        <p class="mt-1.5 text-[11px] text-amber-950 font-medium leading-snug bg-white/70 p-2 rounded-xl border border-amber-200/80 min-h-[42px] line-clamp-2" title="${c.desc || ''}">
           ${c.desc || '無特殊說明'}
         </p>
       </div>
 
-      <div class="mt-3.5 pt-2 border-t border-amber-200 flex items-center space-x-1.5 text-xs font-bold">
-        <button onclick="openRedeemCardModal('${c.id}')" class="flex-1 py-1.5 rounded-xl btn-royal-gold font-black shadow flex items-center justify-center space-x-1">
+      <div class="mt-2.5 pt-1.5 border-t border-amber-200 flex items-center space-x-1 text-xs font-bold">
+        <button onclick="openRedeemCardModal('${c.id}')" class="flex-1 py-1 rounded-xl btn-royal-gold font-black shadow-2xs flex items-center justify-center space-x-1 text-[11px]">
           <span>🤝</span>
-          <span>大臣兌換</span>
+          <span>兌換</span>
         </button>
-        <button onclick="openRewardCardModal('${c.id}')" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300">
+        <button onclick="openRewardCardModal('${c.id}')" class="px-2 py-1 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-[11px]">
           編輯
         </button>
-        <button onclick="deleteRewardCard('${c.id}')" class="px-2 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200" title="刪除卡牌">
+        <button onclick="deleteRewardCard('${c.id}')" class="px-1.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px]" title="刪除卡牌">
           ✕
         </button>
       </div>
@@ -5771,9 +5897,37 @@ function openRedeemCardModal(cardId) {
     `).join('');
   }
 
+  const seatInput = document.getElementById("redeemSeatNoInput");
+  if (seatInput && students[0]) {
+    seatInput.value = students[0].seatNo;
+  }
+
   updateRedeemPreview();
   document.getElementById("redeemCardModal").classList.remove("hidden");
   initLucideIcons();
+}
+
+function handleRedeemSingleSeatInput(val) {
+  const students = window.KingdomApp.store.data.students || [];
+  const seatNo = parseInt(String(val || '').trim(), 10);
+  if (!isNaN(seatNo)) {
+    const st = students.find(s => Number(s.seatNo) === seatNo || Number(s.id) === seatNo);
+    if (st) {
+      const select = document.getElementById("redeemStudentSelect");
+      if (select) select.value = st.id;
+      updateRedeemPreview();
+    }
+  }
+}
+
+function handleRedeemSingleSelectChange(studentId) {
+  const students = window.KingdomApp.store.data.students || [];
+  const st = students.find(s => Number(s.id) === Number(studentId));
+  const seatInput = document.getElementById("redeemSeatNoInput");
+  if (st && seatInput) {
+    seatInput.value = st.seatNo;
+  }
+  updateRedeemPreview();
 }
 
 function changeRedeemCardInModal(newCardId) {
@@ -5864,6 +6018,11 @@ function updateRedeemPreview() {
   const btn = document.getElementById("btnConfirmRedeem");
 
   if (!card || !student || !previewBox) return;
+
+  const seatInput = document.getElementById("redeemSeatNoInput");
+  if (seatInput && document.activeElement !== seatInput) {
+    seatInput.value = student.seatNo;
+  }
 
   const remaining = student.points - card.cost;
   const isEnough = remaining >= 0;
@@ -8941,9 +9100,16 @@ function renderSeatingChart() {
              ondragend="handleSeatDragEnd(event)"
              onclick="handleSeatClick(${i})">
           <div class="flex items-center justify-between text-xs w-full">
-            <span class="seat-badge-cute inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-300 to-yellow-200 text-amber-950 border border-amber-400 font-mono whitespace-nowrap">
-              <span>${String(student.seatNo).padStart(2, '0')} 號</span>
-            </span>
+            <div class="flex items-center space-x-1" onclick="event.stopPropagation()">
+              <span class="text-[10px] font-bold text-amber-900/80">座號</span>
+              <input type="number" min="1" max="27"
+                     draggable="false"
+                     class="seat-direct-input w-10 text-center font-black text-xs bg-amber-50/95 border border-amber-400 rounded px-0.5 py-0.5 text-amber-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                     value="${student.seatNo}"
+                     title="直接輸入座號 (1~27) 可換位，清空即移出"
+                     onchange="handleSeatDirectInput(${i}, this.value)"
+                     onkeydown="if(event.key==='Enter'){ this.blur(); }">
+            </div>
             <div class="flex items-center space-x-1">
               ${lightBadge}
               ${attBadge}
@@ -8969,7 +9135,7 @@ function renderSeatingChart() {
         </div>
       `;
     } else {
-      // 空位
+      // 空位 (支援直接打座號入座)
       html += `
         <div class="seat-desk-card seat-desk-empty ${isSelected ? 'seat-selected ring-4 ring-amber-500' : ''}"
              id="seatDesk-${i}"
@@ -8977,10 +9143,21 @@ function renderSeatingChart() {
              ondragleave="handleSeatDragLeave(event, ${i})"
              ondrop="handleSeatDrop(event, ${i})"
              onclick="handleSeatClick(${i})">
-          <div class="my-auto text-center flex items-center justify-center space-x-1.5">
-            <span class="text-base opacity-75">🪑</span>
-            <span class="text-xs font-black text-amber-900/80 font-cute">空席</span>
-            <span class="text-[9px] text-amber-700/60 font-bold">(點或拖)</span>
+          <div class="my-auto text-center flex flex-col items-center justify-center w-full py-0.5">
+            <div class="flex items-center justify-center space-x-1 text-xs text-amber-900/80 mb-0.5">
+              <span class="text-xs opacity-75">🪑</span>
+              <span class="font-bold text-[11px]">席位 ${i + 1}</span>
+            </div>
+            <div class="flex items-center justify-center space-x-1" onclick="event.stopPropagation()">
+              <span class="text-[10px] font-bold text-amber-800">座號</span>
+              <input type="number" min="1" max="27"
+                     draggable="false"
+                     class="seat-direct-input w-11 text-center font-black text-xs bg-white border border-amber-400 rounded px-1 py-0.5 text-amber-950 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                     placeholder="號碼"
+                     title="輸入 1~27 座號立即安排學生入座"
+                     onchange="handleSeatDirectInput(${i}, this.value)"
+                     onkeydown="if(event.key==='Enter'){ this.blur(); }">
+            </div>
           </div>
         </div>
       `;
@@ -9314,6 +9491,45 @@ function removeStudentFromSeat(idx) {
     showToast(`💺 已將【${student ? `${student.seatNo}號 ${student.name}` : '該席位'}】移出，回到下方待入座托盤！`, "🎒");
     renderSeatingChart();
   }
+}
+
+function handleSeatDirectInput(seatIdx, seatNoVal) {
+  const chart = window.KingdomApp.store.getSeatingChart();
+  const students = window.KingdomApp.store.data.students || [];
+  
+  const raw = String(seatNoVal === undefined || seatNoVal === null ? "" : seatNoVal).trim();
+  if (!raw) {
+    window.KingdomApp.store.setSeatStudent(seatIdx, null);
+    showToast(`💺 已清空席位 ${seatIdx + 1}`, "ℹ️");
+    renderSeatingChart();
+    return;
+  }
+  
+  const seatNo = parseInt(raw, 10);
+  if (isNaN(seatNo) || seatNo < 1 || seatNo > 27) {
+    showToast("⚠️ 座號請輸入 1 至 27！", "⚠️");
+    renderSeatingChart();
+    return;
+  }
+  
+  const st = students.find(s => Number(s.seatNo) === seatNo || Number(s.id) === seatNo);
+  if (!st) {
+    showToast(`⚠️ 找不到座號 ${seatNo} 號學生！`, "⚠️");
+    renderSeatingChart();
+    return;
+  }
+  
+  const oldIdx = chart.indexOf(st.seatNo);
+  window.KingdomApp.store.setSeatStudent(seatIdx, st.seatNo);
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+    try { window.KingdomApp.sound.playCoin(); } catch (e) {}
+  }
+  if (oldIdx !== -1 && oldIdx !== seatIdx) {
+    showToast(`💺 已將 ${st.name} (${st.seatNo}號) 移至席位 ${seatIdx + 1} (與原座位對調)`, "👑");
+  } else {
+    showToast(`💺 已安排 ${st.name} (${st.seatNo}號) 入座席位 ${seatIdx + 1}`, "👑");
+  }
+  renderSeatingChart();
 }
 
 function filterDockView(filter) {
@@ -11814,6 +12030,7 @@ function openBatchRedeemCardsModal(defaultCardId = null) {
   }
 
   renderBatchRedeemStudentsGrid();
+  syncBatchRedeemSeatInputFromSelection();
   updateBatchRedeemPreview();
 
   modal.classList.remove("hidden");
@@ -11823,6 +12040,32 @@ function openBatchRedeemCardsModal(defaultCardId = null) {
 function closeBatchRedeemCardsModal() {
   const modal = document.getElementById("batchRedeemCardsModal");
   if (modal) modal.classList.add("hidden");
+}
+
+function syncBatchRedeemSeatInputFromSelection() {
+  const input = document.getElementById("batchRedeemSeatInput");
+  if (!input) return;
+  const students = window.KingdomApp.store.data.students || [];
+  const selectedSeatNos = [];
+  students.forEach(st => {
+    if (activeBatchRedeemStudentIds.has(st.id)) {
+      selectedSeatNos.push(Number(st.seatNo));
+    }
+  });
+  selectedSeatNos.sort((a, b) => a - b);
+  input.value = selectedSeatNos.join(" ");
+}
+
+function handleBatchRedeemSeatInput(text) {
+  const seatNumbers = parseSeatInputTokens(text);
+  const students = window.KingdomApp.store.data.students || [];
+  activeBatchRedeemStudentIds.clear();
+  seatNumbers.forEach(num => {
+    const st = students.find(s => Number(s.seatNo) === num || Number(s.id) === num);
+    if (st) activeBatchRedeemStudentIds.add(st.id);
+  });
+  renderBatchRedeemStudentsGrid();
+  updateBatchRedeemPreview();
 }
 
 function renderBatchRedeemStudentsGrid() {
@@ -11857,6 +12100,7 @@ function toggleBatchRedeemStudent(studentId, isChecked) {
   if (isChecked) activeBatchRedeemStudentIds.add(studentId);
   else activeBatchRedeemStudentIds.delete(studentId);
   renderBatchRedeemStudentsGrid();
+  syncBatchRedeemSeatInputFromSelection();
   updateBatchRedeemPreview();
 }
 
@@ -11868,6 +12112,7 @@ function selectAllBatchRedeemStudents(select) {
     activeBatchRedeemStudentIds.clear();
   }
   renderBatchRedeemStudentsGrid();
+  syncBatchRedeemSeatInputFromSelection();
   updateBatchRedeemPreview();
 }
 
@@ -11878,6 +12123,7 @@ function invertBatchRedeemStudents() {
     else activeBatchRedeemStudentIds.add(st.id);
   });
   renderBatchRedeemStudentsGrid();
+  syncBatchRedeemSeatInputFromSelection();
   updateBatchRedeemPreview();
 }
 
@@ -12500,6 +12746,10 @@ if (typeof window !== 'undefined') {
   window.invertBatchRedeemStudents = invertBatchRedeemStudents;
   window.updateBatchRedeemPreview = updateBatchRedeemPreview;
   window.submitBatchRedeemCards = submitBatchRedeemCards;
+  window.handleRedeemSingleSeatInput = handleRedeemSingleSeatInput;
+  window.handleRedeemSingleSelectChange = handleRedeemSingleSelectChange;
+  window.syncBatchRedeemSeatInputFromSelection = syncBatchRedeemSeatInputFromSelection;
+  window.handleBatchRedeemSeatInput = handleBatchRedeemSeatInput;
 
   // 全班加點與大臣獎懲錯誤操作復原機制
   window.showUndoNotificationBanner = showUndoNotificationBanner;
@@ -12522,6 +12772,7 @@ if (typeof window !== 'undefined') {
   window.handleDockDrop = handleDockDrop;
   window.handleDockStudentClick = handleDockStudentClick;
   window.removeStudentFromSeat = removeStudentFromSeat;
+  window.handleSeatDirectInput = handleSeatDirectInput;
   window.filterDockView = filterDockView;
   window.clearAllSeatsPrompt = clearAllSeatsPrompt;
   window.autoAssignOrderPrompt = autoAssignOrderPrompt;
@@ -12556,6 +12807,10 @@ if (typeof window !== 'undefined') {
   window.closeBehaviorCardModal = closeBehaviorCardModal;
   window.toggleAllBehaviorStudents = toggleAllBehaviorStudents;
   window.submitBehaviorCards = submitBehaviorCards;
+  window.getReminderTimesPresets = getReminderTimesPresets;
+  window.renderReminderTimesShortcuts = renderReminderTimesShortcuts;
+  window.editReminderTimesPresets = editReminderTimesPresets;
+  window.setReminderTimesInput = setReminderTimesInput;
 
   // 作業批次登記
   window.openSetRevisionModal = openSetRevisionModal;
@@ -12632,6 +12887,8 @@ if (typeof window !== 'undefined') {
     window.setMorningContactFormat = setMorningContactFormat;
     window.updateContactFormatButtons = updateContactFormatButtons;
     window.renderVerticalContactGrid = renderVerticalContactGrid;
+    window.formatVerticalContactText = formatVerticalContactText;
+    window.convertFullwidthToHalfwidth = convertFullwidthToHalfwidth;
     Object.defineProperty(window, 'morningContactFormat', {
       get() { return morningContactFormat; },
       set(v) { morningContactFormat = v; },

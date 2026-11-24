@@ -97,7 +97,7 @@ body {
 .minister-card {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 .minister-card:hover {
   transform: translateY(-3px);
@@ -569,6 +569,14 @@ body {
 
 .seat-desk-card:hover .seat-badge-cute {
   transform: scale(1.05);
+}
+
+.seat-desk-card input,
+.seat-desk-empty input,
+.seat-direct-input {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text !important;
 }
 
 .seat-student-name {
@@ -1193,6 +1201,21 @@ header .nav-btn-wordbreak > span {
   margin: 0.12em 0;
   white-space: nowrap;
   max-width: 100%;
+}
+
+/* 直式連接號 (Vertical Dash)：直排頁碼與範圍區間之垂直連接線 (︱) */
+.contact-vertical-text .v-dash,
+.v-dash {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  font-weight: 900;
+  line-height: 1;
+  margin: 0.08em auto;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 1.15em;
 }
 
 @media (min-width: 640px) {

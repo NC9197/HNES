@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261124_v24">
+  <link rel="stylesheet" href="styles.css?v=20261124_v26">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -256,11 +256,11 @@
         </div>
       </div>
 
-      <!-- ★ 核心 3 : 7 比例版面 (左側 30% 時鐘與打卡座號網格，右側 70% 剩下的部分全部為聯絡簿) ★ -->
-      <div class="grid grid-cols-1 lg:grid-cols-10 gap-4 sm:gap-6 items-start">
+      <!-- ★ 核心 3 : 7 比例版面 (左側 30% 時鐘與打卡座號網格，右側 70% 聯絡簿，組成工整對齊矩形) ★ -->
+      <div class="grid grid-cols-1 lg:grid-cols-10 gap-4 sm:gap-6 items-stretch">
         
-        <!-- 【左側 30%】：即時時鐘 ＋ 大臣到校打卡區 (時鐘置頂於打卡上方，打卡緊接在下) -->
-        <div class="lg:col-span-3 space-y-4">
+        <!-- 【左側 30%】：即時時鐘 ＋ 大臣到校打卡區 (時鐘置頂於打卡上方，與右方聯絡簿等高矩形) -->
+        <div class="lg:col-span-3 flex flex-col space-y-4">
           
           <!-- ⏰ 晨間朝會大時鐘看板 (在打卡功能的上方) -->
           <div class="bg-gradient-to-br from-amber-500 via-amber-400 to-yellow-400 border-2 border-amber-600 p-3 sm:p-4 rounded-2xl shadow-md text-amber-950 text-center relative overflow-hidden">
@@ -335,8 +335,8 @@
           </div>
         </div>
 
-        <!-- 【右側剩下的部分全部都是聯絡簿】：7 欄寬 (約 70% 寬度，超大字體看板) -->
-        <div id="contactBoardContainer" class="lg:col-span-7 contact-book-board p-4 sm:p-7 space-y-5 shadow-xl">
+        <!-- 【右側剩下的部分全部都是聯絡簿】：7 欄寬 (約 70% 寬度，超大字體看板，與左側組成完美矩形) -->
+        <div id="contactBoardContainer" class="lg:col-span-7 contact-book-board p-4 sm:p-7 space-y-5 shadow-xl flex flex-col justify-between">
           
           <!-- 聯絡簿頂部資訊與編輯按鈕 -->
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b-2 border-amber-400">
@@ -531,7 +531,7 @@
             <button onclick="openBehaviorCardModal('service')" class="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣指派愛班服務卡 (課間愛班勞動)">
               <span>🧹 派愛班</span>
             </button>
-            <button onclick="openBehaviorCardModal('reminder')" class="px-2 py-1 rounded-lg bg-yellow-50 hover:bg-yellow-100 text-amber-950 border border-yellow-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣派發常規提醒單 (黃燈・罰寫提醒)">
+            <button onclick="openBehaviorCardModal('reminder')" class="px-2 py-1 rounded-lg bg-yellow-50 hover:bg-yellow-100 text-amber-950 border border-yellow-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣派發常規提醒單 (黃燈・自我提醒)">
               <span>📝 派提醒</span>
             </button>
           </div>
@@ -644,7 +644,7 @@
         </div>
       </div>
 
-      <!-- ★ 紀律卡牌三大獨立管理專區：🪑 座位自省卡專區 ＆ 🧹 愛班服務卡專區 ＆ 📝 罰寫提醒單專區 (抽屜式可收合) ★ -->
+      <!-- ★ 紀律卡牌三大獨立管理專區：🪑 座位自省卡專區 ＆ 🧹 愛班服務卡專區 ＆ 📝 提醒單專區 (抽屜式可收合) ★ -->
       <div id="trafficManagementDrawer" class="hidden grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 transition-all duration-200">
         <!-- 獨立專區 1：🪑 座位自省卡專區 -->
         <div class="bg-gradient-to-br from-rose-50 via-white to-rose-100/70 p-3 sm:p-4 rounded-2xl border-2 border-rose-400 shadow-sm space-y-2.5">
@@ -730,14 +730,14 @@
           </div>
         </div>
 
-        <!-- 獨立專區 3：📝 罰寫提醒單專區 -->
+        <!-- 獨立專區 3：📝 提醒單專區 -->
         <div class="bg-gradient-to-br from-yellow-50 via-white to-amber-100/70 p-3 sm:p-4 rounded-2xl border-2 border-yellow-400 shadow-sm space-y-2.5">
           <div class="flex items-center justify-between pb-2 border-b-2 border-yellow-200">
             <div class="flex items-center space-x-2">
               <span class="text-2xl">📝</span>
               <div>
                 <h3 class="text-sm sm:text-base font-black text-amber-950 flex items-center space-x-1.5">
-                  <span>罰寫提醒單專區</span>
+                  <span>提醒單專區</span>
                   <span class="text-[10px] bg-yellow-200 text-yellow-900 px-1.5 py-0.2 rounded-full font-bold">常規提醒書寫</span>
                 </h3>
                 <span class="text-[11px] text-amber-800 font-bold">聽寫簽名、聯絡簿、學用品等常規問題提醒書寫</span>
@@ -1380,8 +1380,8 @@
             </div>
           </div>
 
-          <!-- 獎勵卡牌網格 -->
-          <div id="rewardCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <!-- 獎勵卡牌網格 (每行五張緊湊排版) -->
+          <div id="rewardCardsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3">
             <!-- 動態渲染獎勵卡牌 -->
           </div>
         </div>
@@ -2770,14 +2770,72 @@
       </div>
     </div>
 
-    <!-- 中央核心區：左右黃金雙欄 (左側時鐘+打卡 30% : 右側聯絡簿 70%) -->
-    <div class="flex-1 my-3 w-full max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-10 gap-4 sm:gap-6 items-start">
+    <!-- 🖥️ 大屏控制工具列 (模式切換、快速切換、直式/橫式排版、朝會日期集中於頂部，讓下方內容完全以「第一欄、第二欄」與左側時鐘頂部切齊) -->
+    <div class="flex flex-wrap items-center justify-between gap-2.5 bg-slate-900/80 border-2 border-amber-500/50 p-2.5 sm:p-3 rounded-2xl shadow-xl w-full max-w-[1600px] mx-auto backdrop-blur-md flex-shrink-0 mt-2">
+      <!-- 顯示模式 -->
+      <div class="flex items-center space-x-1.5 flex-wrap">
+        <span class="text-xs font-black text-amber-300 flex items-center space-x-1">
+          <span>🖥️ 顯示模式：</span>
+        </span>
+        <button type="button" id="btnProjMode2Days" onclick="setContactProjDaysMode('2days')" class="px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-amber-500 text-amber-950 border-2 border-amber-600" title="第一欄與第二欄對照兩天份聯絡簿（例如今日＋明日）">
+          👥 雙天對照 (第一欄/第二欄)
+        </button>
+        <button type="button" id="btnProjMode3Days" onclick="setContactProjDaysMode('3days')" class="px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="三欄並排顯示三天聯絡簿（例如昨日＋今日＋明日）">
+          📅 三天並排
+        </button>
+        <button type="button" id="btnProjMode1Day" onclick="setContactProjDaysMode('1day')" class="px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="單天超大字全版顯示">
+          📄 單天大字
+        </button>
+      </div>
+
+      <!-- 快速切換 -->
+      <div class="flex items-center space-x-1.5 flex-wrap">
+        <span class="text-xs font-black text-amber-200">快速切換：</span>
+        <button type="button" onclick="setContactProjPreset('today_tomorrow')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition hover:scale-105 active:scale-95" title="第1欄今日、第2欄明日">
+          ⚡ 今日＋明日
+        </button>
+        <button type="button" onclick="setContactProjPreset('yesterday_today')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition hover:scale-105 active:scale-95" title="第1欄昨日、第2欄今日">
+          ⚡ 昨日＋今日
+        </button>
+        <button type="button" onclick="setContactProjPreset('three_days')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition hover:scale-105 active:scale-95" title="今、明、後三天並排">
+          ⚡ 連續三天
+        </button>
+      </div>
+
+      <!-- 📜 配合學生聯絡簿格式：直式 (右至左 / 左至右) 與橫式卡片切換 -->
+      <div class="flex items-center space-x-1.5 flex-wrap">
+        <span class="text-xs font-black text-amber-300">聯絡簿排版：</span>
+        <button type="button" id="btnProjFormatVerticalRtl" onclick="setMorningContactFormat('vertical-rtl')" class="px-2.5 py-1 rounded-xl font-black text-xs shadow-2xs transition bg-amber-500 text-amber-950 border-2 border-amber-600" title="配合學生真實聯絡簿格式（由右至左 1~6 直行，完全對照學生手邊聯絡簿）">
+          📜 直式 (右至左)
+        </button>
+        <button type="button" id="btnProjFormatVerticalLtr" onclick="setMorningContactFormat('vertical-ltr')" class="px-2.5 py-1 rounded-xl font-bold text-xs shadow-2xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="直式聯絡簿格式（由左至右 1~6 直行）">
+          📜 直式 (左至右)
+        </button>
+        <button type="button" id="btnProjFormatHorizontal" onclick="setMorningContactFormat('horizontal')" class="px-2.5 py-1 rounded-xl font-bold text-xs shadow-2xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="橫向長條卡片模式">
+          📄 橫式卡片
+        </button>
+      </div>
+
+      <!-- 朝會日期與格式標籤 -->
+      <div class="flex items-center space-x-2 shrink-0">
+        <span class="text-xs font-black text-amber-950 bg-amber-300 px-2.5 py-1 rounded-xl border border-amber-400 shadow-2xs">
+          📅 <span id="contactProjDateDisplay">載入中</span>
+        </span>
+        <span id="contactProjModeBadge" class="text-xs font-black text-amber-200 bg-amber-950/60 px-2.5 py-1 rounded-xl border border-amber-500/40 shadow-2xs hidden sm:inline">
+          雙天對照 ‧ 每天六行大字格式
+        </span>
+      </div>
+    </div>
+
+    <!-- 中央核心區：左右黃金雙欄 (左側時鐘+打卡 30% : 右側第一欄、第二欄聯絡簿 70%) -->
+    <!-- ★ 從「第一欄、第二欄」開始往下與左側的打卡及時鐘形成一個完美的工整矩形 ★ -->
+    <div class="flex-1 my-3 w-full max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-10 gap-4 sm:gap-6 items-stretch">
       
-      <!-- 【左側 30%】：即時時鐘 ＋ 大臣到校打卡區 (時鐘置頂於打卡上方，與右方聯絡簿組成矩形) -->
-      <div class="lg:col-span-3 space-y-4">
+      <!-- 【左側 30%】：即時時鐘 ＋ 大臣到校打卡區 (時鐘置頂於打卡上方，與右方第一欄、第二欄水平切齊) -->
+      <div class="lg:col-span-3 flex flex-col space-y-4">
         
-        <!-- ⏰ 大屏投影即時朝會時鐘看板 (置頂於打卡區上方) -->
-        <div class="bg-gradient-to-br from-amber-500 via-amber-400 to-yellow-400 border-2 border-amber-600 p-3.5 sm:p-4 rounded-3xl shadow-xl text-amber-950 text-center relative overflow-hidden">
+        <!-- ⏰ 大屏投影即時朝會時鐘看板 (置頂於打卡區上方，頂部與右側第一欄第二欄完全切齊) -->
+        <div class="bg-gradient-to-br from-amber-500 via-amber-400 to-yellow-400 border-2 border-amber-600 p-3.5 sm:p-4 rounded-3xl shadow-xl text-amber-950 text-center relative overflow-hidden flex-shrink-0">
           <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-amber-600/30 text-xs font-black">
             <span class="flex items-center space-x-1.5">
               <span class="text-base sm:text-lg">⏰</span>
@@ -2800,22 +2858,24 @@
         </div>
 
         <!-- ⏱️ 大臣晨檢打卡區 (在大屏投影下完整保留 27 位大臣打卡功能，緊接在時鐘下方) -->
-        <div class="bg-slate-900/80 border-2 border-amber-500/60 rounded-3xl p-3.5 sm:p-4 space-y-3 shadow-2xl backdrop-blur-md">
-          <div class="flex items-center justify-between pb-2 border-b border-amber-500/40">
-            <div>
-              <span class="text-[11px] text-amber-300/80 font-bold block">點擊座號打卡 / 再次點擊快速更動</span>
-              <h3 class="text-base sm:text-lg font-black text-amber-200 flex items-center space-x-1.5">
-                <span>⏱️ 大臣晨檢打卡</span>
-              </h3>
+        <div class="bg-slate-900/80 border-2 border-amber-500/60 rounded-3xl p-3.5 sm:p-4 space-y-3 shadow-2xl backdrop-blur-md flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-amber-500/40">
+              <div>
+                <span class="text-[11px] text-amber-300/80 font-bold block">點擊座號打卡 / 再次點擊快速更動</span>
+                <h3 class="text-base sm:text-lg font-black text-amber-200 flex items-center space-x-1.5">
+                  <span>⏱️ 大臣晨檢打卡</span>
+                </h3>
+              </div>
+              <span class="text-[11px] bg-amber-400/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-400/40">
+                觸控直接簽到
+              </span>
             </div>
-            <span class="text-[11px] bg-amber-400/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-400/40">
-              觸控直接簽到
-            </span>
-          </div>
 
-          <!-- 27 位座號打卡網格 (每橫排 5 個座號，5*5+2) -->
-          <div id="contactProjCheckInGrid" class="grid grid-cols-5 gap-1.5 sm:gap-2">
-            <!-- 由 ui.js 動態渲染 1 ~ 27 號大按鈕 -->
+            <!-- 27 位座號打卡網格 (每橫排 5 個座號，5*5+2) -->
+            <div id="contactProjCheckInGrid" class="grid grid-cols-5 gap-1.5 sm:gap-2 pt-2">
+              <!-- 由 ui.js 動態渲染 1 ~ 27 號大按鈕 -->
+            </div>
           </div>
 
           <!-- 打卡狀態圖例說明 -->
@@ -2828,92 +2888,27 @@
         </div>
       </div>
 
-      <!-- 【右側聯絡簿看板】：大屏超大字體 (佔據剩餘 70% 欄寬，與左側打卡+時鐘組成完美矩形) -->
-      <div class="lg:col-span-7 bg-gradient-to-b from-amber-50 via-white to-amber-100/90 text-amber-950 border-4 border-amber-400 rounded-3xl p-4 sm:p-7 space-y-4 shadow-2xl">
+      <!-- 【右側聯絡簿看板】：大屏超大字體 (佔據剩餘 70% 欄寬，直接以「第一欄、第二欄」為頂，與左側時鐘打卡組成完美矩形) -->
+      <div class="lg:col-span-7 flex flex-col space-y-4">
         
-        <!-- 聯絡簿頂部資訊 -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b-2 border-amber-400">
-          <div>
-            <div class="flex items-center space-x-2">
-              <span class="bg-amber-950 text-amber-200 text-xs px-3 py-0.5 rounded-full font-black tracking-wider shadow">
-                📜 每日回家奏章
-              </span>
-              <span class="text-xs font-black text-amber-900 bg-amber-200/90 px-2.5 py-0.5 rounded-lg border border-amber-400/60 shadow-xs">
-                📅 朝會日期：<span id="contactProjDateDisplay"></span>
-              </span>
-            </div>
-            <h3 class="text-2xl sm:text-3xl lg:text-4xl font-black text-amber-950 mt-1 tracking-wide">
-              西寧小小兵王國 ‧ 聯絡簿看板
-            </h3>
-          </div>
-          <div class="text-right shrink-0">
-            <span id="contactProjModeBadge" class="text-xs sm:text-sm font-black text-amber-900 bg-amber-200/90 px-3 py-1 rounded-xl border border-amber-300 shadow-2xs">
-              雙天對照 ‧ 每天六行大字格式
-            </span>
-          </div>
-        </div>
-
-        <!-- 🖥️ 大屏多天對照模式切換與快捷鍵工具列 -->
-        <div class="flex flex-wrap items-center justify-between gap-2.5 bg-amber-200/60 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-300/80 shadow-xs">
-          <div class="flex items-center space-x-2 flex-wrap">
-            <span class="text-xs sm:text-sm font-black text-amber-950 flex items-center space-x-1">
-              <span>🖥️ 顯示模式：</span>
-            </span>
-            <button type="button" id="btnProjMode2Days" onclick="setContactProjDaysMode('2days')" class="px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-amber-500 text-amber-950 border-2 border-amber-600" title="第一欄與第二欄對照兩天份聯絡簿（例如今日＋明日）">
-              👥 雙天對照 (第一欄/第二欄)
-            </button>
-            <button type="button" id="btnProjMode3Days" onclick="setContactProjDaysMode('3days')" class="px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="三欄並排顯示三天聯絡簿（例如昨日＋今日＋明日）">
-              📅 三天並排
-            </button>
-            <button type="button" id="btnProjMode1Day" onclick="setContactProjDaysMode('1day')" class="px-3.5 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="單天超大字全版顯示">
-              📄 單天大字
-            </button>
-          </div>
-          <div class="flex items-center space-x-1.5 flex-wrap">
-            <span class="text-xs font-black text-amber-800">快速切換：</span>
-            <button type="button" onclick="setContactProjPreset('today_tomorrow')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition hover:scale-105 active:scale-95" title="第1欄今日、第2欄明日">
-              ⚡ 今日＋明日
-            </button>
-            <button type="button" onclick="setContactProjPreset('yesterday_today')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition hover:scale-105 active:scale-95" title="第1欄昨日、第2欄今日">
-              ⚡ 昨日＋今日
-            </button>
-            <button type="button" onclick="setContactProjPreset('three_days')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition hover:scale-105 active:scale-95" title="今、明、後三天並排">
-              ⚡ 連續三天
-            </button>
-          </div>
-          <!-- 📜 配合學生聯絡簿格式：直式 (右至左 / 左至右) 與橫式卡片切換 -->
-          <div class="flex items-center space-x-1.5 flex-wrap pt-1 sm:pt-0 border-t sm:border-t-0 border-amber-300/60 w-full sm:w-auto">
-            <span class="text-xs font-black text-amber-950">聯絡簿排版：</span>
-            <button type="button" id="btnProjFormatVerticalRtl" onclick="setMorningContactFormat('vertical-rtl')" class="px-2.5 py-1 rounded-xl font-black text-xs shadow-2xs transition bg-amber-500 text-amber-950 border-2 border-amber-600" title="配合學生真實聯絡簿格式（由右至左 1~6 直行，完全對照學生手邊聯絡簿）">
-              📜 直式 (右至左)
-            </button>
-            <button type="button" id="btnProjFormatVerticalLtr" onclick="setMorningContactFormat('vertical-ltr')" class="px-2.5 py-1 rounded-xl font-bold text-xs shadow-2xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="直式聯絡簿格式（由左至右 1~6 直行）">
-              📜 直式 (左至右)
-            </button>
-            <button type="button" id="btnProjFormatHorizontal" onclick="setMorningContactFormat('horizontal')" class="px-2.5 py-1 rounded-xl font-bold text-xs shadow-2xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="橫向長條卡片模式">
-              📄 橫式卡片
-            </button>
-          </div>
-        </div>
-
-        <!-- 作業抄寫項目 (左右二欄 / 多天對照 ‧ 每天六行超大字體) -->
-        <div id="contactProjHomeworkList" class="space-y-3">
-          <!-- 由 ui.js 動態渲染雙天或三天對照六行大字看板 -->
+        <!-- 作業抄寫項目 (最頂端直接是第一欄、第二欄！與左側時鐘水平切齊) -->
+        <div id="contactProjHomeworkList" class="space-y-4 flex-1">
+          <!-- 由 ui.js 動態渲染雙天或三天對照六行大字看板（📌 第一欄 ＆ 📌 第二欄） -->
         </div>
 
         <!-- 早自修與重要提醒 -->
-        <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-4 sm:p-5 rounded-2xl space-y-1.5 shadow-sm">
-          <div class="flex items-center space-x-2 text-amber-950 font-black text-lg sm:text-2xl">
+        <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-3.5 sm:p-4 rounded-2xl space-y-1 shadow-sm">
+          <div class="flex items-center space-x-2 text-amber-950 font-black text-base sm:text-lg">
             <span>🔔 早自修和重要提醒：</span>
           </div>
-          <ul id="contactProjReminderList" class="space-y-1 text-lg sm:text-2xl font-black text-amber-900 list-disc list-inside">
+          <ul id="contactProjReminderList" class="space-y-0.5 text-base sm:text-xl font-black text-amber-900 list-disc list-inside">
             <!-- 動態渲染提醒項目 -->
           </ul>
         </div>
 
         <!-- 每日聖諭 / 格言 -->
-        <div class="bg-white/90 border-2 border-amber-300 p-3 rounded-xl text-center shadow-xs">
-          <p id="contactProjQueenMotto" class="text-base sm:text-lg font-black text-amber-950 italic">
+        <div class="bg-white/90 border-2 border-amber-300 p-2.5 rounded-xl text-center shadow-xs">
+          <p id="contactProjQueenMotto" class="text-sm sm:text-base font-black text-amber-950 italic">
             👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
           </p>
         </div>
@@ -3363,10 +3358,22 @@
         </div>
 
         <div>
-          <label class="block font-black text-amber-950 mb-1">請選擇欲兌換的大臣：</label>
-          <select id="redeemStudentSelect" onchange="updateRedeemPreview()" required class="w-full px-3 py-2.5 rounded-xl border-2 border-amber-300 bg-white font-bold text-slate-800 text-sm">
-            <!-- 動態填入 27 位大臣 -->
-          </select>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block font-black text-amber-950">請選擇欲兌換的大臣：</label>
+            <span class="text-[11px] text-amber-800 font-bold">可直接輸入座號快速選取</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-1 shrink-0 bg-amber-100 px-2 py-1.5 rounded-xl border border-amber-300 shadow-2xs">
+              <span class="text-xs font-black text-amber-950">座號:</span>
+              <input type="number" id="redeemSeatNoInput" min="1" max="27"
+                     placeholder="1~27"
+                     oninput="handleRedeemSingleSeatInput(this.value)"
+                     class="w-14 px-2 py-1 rounded-lg border-2 border-amber-400 bg-white font-black text-center text-sm text-amber-950 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner">
+            </div>
+            <select id="redeemStudentSelect" onchange="handleRedeemSingleSelectChange(this.value)" required class="flex-1 px-3 py-2 rounded-xl border-2 border-amber-300 bg-white font-bold text-slate-800 text-sm">
+              <!-- 動態填入 27 位大臣 -->
+            </select>
+          </div>
         </div>
 
         <div id="redeemPointsPreviewBox" class="p-3 rounded-xl border text-xs font-bold space-y-1">
@@ -3434,6 +3441,18 @@
               <button type="button" onclick="selectAllBatchRedeemStudents(false)" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800">清空</button>
               <button type="button" onclick="invertBatchRedeemStudents()" class="px-2 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800">反選</button>
             </div>
+          </div>
+          <!-- 快速輸入座號區 (比照作業訂正輸入模式) -->
+          <div class="bg-amber-100/70 p-2 rounded-xl border border-amber-300 space-y-1">
+            <div class="flex items-center justify-between">
+              <label for="batchRedeemSeatInput" class="text-xs font-black text-amber-950 flex items-center space-x-1">
+                <span>⌨️ 快速輸入座號：</span>
+                <span class="text-[10px] text-amber-800 font-normal">（如：1 3 5 或 1-5 或 1~5，支援範圍）</span>
+              </label>
+            </div>
+            <input type="text" id="batchRedeemSeatInput" oninput="handleBatchRedeemSeatInput(this.value)"
+                   placeholder="直接輸入座號，如：1 3 5 10-15"
+                   class="w-full px-3 py-1.5 rounded-lg border-2 border-amber-400 bg-white font-mono font-black text-sm text-amber-950 placeholder-amber-900/40 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner">
           </div>
           <div id="batchRedeemStudentsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-44 overflow-y-auto p-2 bg-white rounded-xl border border-amber-300">
             <!-- 動態注入學生卡片，標注座號、姓名、現有蘋果與足額/不足狀態 -->
@@ -3503,7 +3522,7 @@
             </label>
             <label class="flex items-center space-x-2 p-2.5 rounded-xl border-2 border-yellow-400 bg-yellow-50 cursor-pointer font-black text-amber-950 text-xs sm:text-sm">
               <input type="radio" name="behaviorCardType" value="reminder" class="text-yellow-600 focus:ring-yellow-500">
-              <span>📝 常規提醒單 (罰寫)</span>
+              <span>📝 常規提醒單</span>
             </label>
           </div>
         </div>
@@ -3535,22 +3554,27 @@
           </div>
         </div>
 
-        <!-- 常規提醒單專屬：罰寫目標次數 (預設50次，選提醒單時自動顯示) -->
+        <!-- 常規提醒單專屬：提醒書寫目標次數 (預設50次，選提醒單時自動顯示) -->
         <div id="behaviorReminderCountWrapper" class="hidden p-3 bg-yellow-50/90 rounded-xl border-2 border-yellow-300 space-y-2">
           <div class="flex items-center justify-between">
             <label class="font-black text-amber-950 text-xs sm:text-sm flex items-center space-x-1">
-              <span>✍️ 提醒單罰寫次數：</span>
+              <span>✍️ 提醒書寫目標次數：</span>
             </label>
-            <span class="text-xs text-amber-800 font-bold">預設 50 次，點擊快捷快速切換</span>
+            <div class="flex items-center space-x-1.5">
+              <span class="text-xs text-amber-800 font-bold">預設 50 次</span>
+              <button type="button" onclick="editReminderTimesPresets()" class="text-xs text-amber-900 bg-amber-200/90 hover:bg-amber-300 px-2 py-0.5 rounded-lg border border-amber-400 font-black transition flex items-center space-x-1 shadow-2xs" title="自訂提醒次數快捷組合">
+                <span>⚙️</span>
+                <span>編輯快捷</span>
+              </button>
+            </div>
           </div>
-          <div class="flex items-center space-x-2">
-            <input type="number" id="behaviorReminderTimesInput" min="1" max="500" value="50" class="w-24 px-3 py-1.5 rounded-lg border-2 border-amber-400 bg-white font-black text-center text-amber-950">
-            <span class="font-bold text-amber-950 text-sm">次</span>
-            <div class="flex items-center space-x-1 text-xs">
-              <button type="button" onclick="document.getElementById('behaviorReminderTimesInput').value=20" class="px-2 py-1 rounded bg-white hover:bg-yellow-100 border border-amber-300 font-bold text-amber-900">20次</button>
-              <button type="button" onclick="document.getElementById('behaviorReminderTimesInput').value=30" class="px-2 py-1 rounded bg-white hover:bg-yellow-100 border border-amber-300 font-bold text-amber-900">30次</button>
-              <button type="button" onclick="document.getElementById('behaviorReminderTimesInput').value=50" class="px-2 py-1 rounded bg-amber-500 text-white font-black">50次</button>
-              <button type="button" onclick="document.getElementById('behaviorReminderTimesInput').value=100" class="px-2 py-1 rounded bg-white hover:bg-yellow-100 border border-amber-300 font-bold text-amber-900">100次</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center space-x-1 shrink-0">
+              <input type="number" id="behaviorReminderTimesInput" min="1" max="500" value="50" class="w-20 px-3 py-1.5 rounded-lg border-2 border-amber-400 bg-white font-black text-center text-amber-950 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner">
+              <span class="font-bold text-amber-950 text-sm">次</span>
+            </div>
+            <div id="behaviorReminderTimesShortcuts" class="flex flex-wrap items-center gap-1.5 text-xs">
+              <!-- 動態注入可自訂編輯之次數快捷按鈕 -->
             </div>
           </div>
         </div>
@@ -4881,8 +4905,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261124_v24"></script>
-  <script src="ui.js?v=20261124_v24"></script>
+  <script src="app.js?v=20261124_v26"></script>
+  <script src="ui.js?v=20261124_v26"></script>
 
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>
