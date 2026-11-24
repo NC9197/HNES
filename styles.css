@@ -1172,10 +1172,27 @@ header .nav-btn-wordbreak > span {
   color: #0f172a;
   flex: 1;
   padding: 0.25rem 0;
-  display: flex;
-  align-items: center;
+  display: inline-block;
+  margin: 0 auto;
   word-break: break-all;
   text-align: start;
+}
+
+/* 縱中橫 (Tate-chū-yoko)：直式聯絡簿中之英文字母、數字與常見符號橫向正立顯示，不用歪頭看 */
+.contact-vertical-text .tcy,
+.tcy {
+  display: inline-block;
+  writing-mode: horizontal-tb;
+  text-orientation: initial;
+  letter-spacing: 0;
+  line-height: 1.1;
+  text-align: center;
+  vertical-align: middle;
+  font-family: inherit;
+  font-weight: 900;
+  margin: 0.12em 0;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 @media (min-width: 640px) {

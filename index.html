@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261124_v21">
+  <link rel="stylesheet" href="styles.css?v=20261124_v22">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -2730,12 +2730,6 @@
       </div>
 
       <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
-        <!-- 投影數位大時鐘 -->
-        <div class="bg-black/60 px-3.5 py-1.5 rounded-xl border border-amber-400/50 text-center shadow-inner hidden sm:block">
-          <span class="text-[10px] text-amber-300/80 font-bold block">目前朝會時間 (07:40截止)</span>
-          <span id="contactProjectionLiveClock" class="font-digital text-xl sm:text-2xl font-black text-amber-300 tracking-wider">--:--:--</span>
-        </div>
-
         <!-- 即時打卡統計人數徽章 -->
         <div class="bg-emerald-950/80 border-2 border-emerald-400 px-3.5 py-1.5 rounded-xl text-center shadow-md">
           <span class="text-[10px] text-emerald-300 font-bold block">到校打卡進度</span>
@@ -2759,39 +2753,66 @@
       </div>
     </div>
 
-    <!-- 中央核心區：左右黃金雙欄 (左側打卡 30% : 右側聯絡簿 70%) -->
-    <div class="flex-1 my-3 w-full max-w-[1600px] mx-auto grid grid-cols-12 gap-3 sm:gap-4 lg:gap-5 items-start">
+    <!-- 中央核心區：左右黃金雙欄 (左側時鐘+打卡 30% : 右側聯絡簿 70%) -->
+    <div class="flex-1 my-3 w-full max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-10 gap-4 sm:gap-6 items-start">
       
-      <!-- 【左側打卡區】：在大屏投影下完整保留 27 位大臣打卡功能！ -->
-      <div class="col-span-12 lg:col-span-4 xl:col-span-3 bg-slate-900/80 border-2 border-amber-500/60 rounded-3xl p-3.5 sm:p-4 space-y-3 shadow-2xl backdrop-blur-md">
-        <div class="flex items-center justify-between pb-2 border-b border-amber-500/40">
-          <div>
-            <span class="text-[11px] text-amber-300/80 font-bold block">點擊座號打卡 / 再次點擊快速更動</span>
-            <h3 class="text-base sm:text-lg font-black text-amber-200 flex items-center space-x-1.5">
-              <span>⏱️ 大臣晨檢打卡</span>
-            </h3>
+      <!-- 【左側 30%】：即時時鐘 ＋ 大臣到校打卡區 (時鐘置頂於打卡上方，與右方聯絡簿組成矩形) -->
+      <div class="lg:col-span-3 space-y-4">
+        
+        <!-- ⏰ 大屏投影即時朝會時鐘看板 (置頂於打卡區上方) -->
+        <div class="bg-gradient-to-br from-amber-500 via-amber-400 to-yellow-400 border-2 border-amber-600 p-3.5 sm:p-4 rounded-3xl shadow-xl text-amber-950 text-center relative overflow-hidden">
+          <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-amber-600/30 text-xs font-black">
+            <span class="flex items-center space-x-1.5">
+              <span class="text-base sm:text-lg">⏰</span>
+              <span>即時朝會時間</span>
+            </span>
+            <span id="contactProjClockBadge" class="text-[11px] font-black bg-amber-950/15 text-amber-950 px-2 py-0.5 rounded-full">
+              07:40 晨檢截止
+            </span>
           </div>
-          <span class="text-[11px] bg-amber-400/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-400/40">
-            觸控直接簽到
-          </span>
+          
+          <!-- 大時鐘主顯示 -->
+          <div id="contactProjectionLiveClock" class="font-digital text-3xl sm:text-4xl lg:text-5xl font-black text-amber-950 tracking-wider my-0.5 drop-shadow-xs">
+            07:30:00
+          </div>
+          
+          <div class="flex items-center justify-between text-[11px] sm:text-xs font-bold text-amber-900 pt-1.5 border-t border-amber-600/20">
+            <span id="contactProjClockDateText">📅 載入中...</span>
+            <span id="contactProjCountdownNotice" class="font-black text-amber-950">🔔 請盡速完成打卡</span>
+          </div>
         </div>
 
-        <!-- 27 位座號打卡網格 (每橫排 5 個座號，5*5+2) -->
-        <div id="contactProjCheckInGrid" class="grid grid-cols-5 gap-1.5 sm:gap-2">
-          <!-- 由 ui.js 動態渲染 1 ~ 27 號大按鈕 -->
-        </div>
+        <!-- ⏱️ 大臣晨檢打卡區 (在大屏投影下完整保留 27 位大臣打卡功能，緊接在時鐘下方) -->
+        <div class="bg-slate-900/80 border-2 border-amber-500/60 rounded-3xl p-3.5 sm:p-4 space-y-3 shadow-2xl backdrop-blur-md">
+          <div class="flex items-center justify-between pb-2 border-b border-amber-500/40">
+            <div>
+              <span class="text-[11px] text-amber-300/80 font-bold block">點擊座號打卡 / 再次點擊快速更動</span>
+              <h3 class="text-base sm:text-lg font-black text-amber-200 flex items-center space-x-1.5">
+                <span>⏱️ 大臣晨檢打卡</span>
+              </h3>
+            </div>
+            <span class="text-[11px] bg-amber-400/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-400/40">
+              觸控直接簽到
+            </span>
+          </div>
 
-        <!-- 打卡狀態圖例說明 -->
-        <div class="pt-2 border-t border-slate-700/80 flex flex-wrap items-center justify-between gap-1 text-[11px] font-bold">
-          <span class="text-emerald-400 flex items-center space-x-1"><span>🟢</span><span>準時</span></span>
-          <span class="text-amber-300 flex items-center space-x-1"><span>🟡</span><span>遲到</span></span>
-          <span class="text-rose-400 flex items-center space-x-1"><span>🔴</span><span>未到</span></span>
-          <span class="text-purple-300 flex items-center space-x-1"><span>🏖️</span><span>請假</span></span>
+          <!-- 27 位座號打卡網格 (每橫排 5 個座號，5*5+2) -->
+          <div id="contactProjCheckInGrid" class="grid grid-cols-5 gap-1.5 sm:gap-2">
+            <!-- 由 ui.js 動態渲染 1 ~ 27 號大按鈕 -->
+          </div>
+
+          <!-- 打卡狀態圖例說明 -->
+          <div class="pt-2 border-t border-slate-700/80 flex flex-wrap items-center justify-between gap-1 text-[11px] font-bold">
+            <span class="text-emerald-400 flex items-center space-x-1"><span>🟢</span><span>準時</span></span>
+            <span class="text-amber-300 flex items-center space-x-1"><span>🟡</span><span>遲到</span></span>
+            <span class="text-rose-400 flex items-center space-x-1"><span>🔴</span><span>未到</span></span>
+            <span class="text-purple-300 flex items-center space-x-1"><span>🏖️</span><span>請假</span></span>
+          </div>
         </div>
       </div>
 
-      <!-- 【右側聯絡簿看板】：大屏超大字體 (左右二欄各 4 行作業 + 早自修提醒 + 聖諭) -->
-      <div class="col-span-12 lg:col-span-8 xl:col-span-9 bg-gradient-to-b from-amber-50 via-white to-amber-100/90 text-amber-950 border-4 border-amber-400 rounded-3xl p-4 sm:p-7 space-y-4 shadow-2xl">
+      <!-- 【右側聯絡簿看板】：大屏超大字體 (佔據剩餘 70% 欄寬，與左側打卡+時鐘組成完美矩形) -->
+      <div class="lg:col-span-7 bg-gradient-to-b from-amber-50 via-white to-amber-100/90 text-amber-950 border-4 border-amber-400 rounded-3xl p-4 sm:p-7 space-y-4 shadow-2xl">
         
         <!-- 聯絡簿頂部資訊 -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b-2 border-amber-400">
@@ -4819,8 +4840,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261124_v21"></script>
-  <script src="ui.js?v=20261124_v21"></script>
+  <script src="app.js?v=20261124_v22"></script>
+  <script src="ui.js?v=20261124_v22"></script>
 
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>

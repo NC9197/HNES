@@ -482,6 +482,30 @@ function startMorningClock() {
       }
     }
 
+    // 同步更新聯絡簿大屏全螢幕投影之大時鐘與晨檢提示
+    const projClockEl = document.getElementById("contactProjectionLiveClock");
+    if (projClockEl) projClockEl.textContent = timeStr;
+
+    const projClockDateText = document.getElementById("contactProjClockDateText");
+    if (projClockDateText) {
+      const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : '';
+      const wd = (typeof getWeekdayText === 'function') ? getWeekdayText(today) : '';
+      projClockDateText.textContent = `📅 ${today} (${wd})`;
+    }
+
+    const projClockNotice = document.getElementById("contactProjCountdownNotice");
+    if (projClockNotice) {
+      const lateThreshold = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.lateThreshold) || "07:40";
+      if (timeHM < lateThreshold) {
+        const [thH, thM] = lateThreshold.split(':').map(Number);
+        const [curH, curM] = [Number(h), Number(m)];
+        const diffM = (thH * 60 + thM) - (curH * 60 + curM);
+        projClockNotice.innerHTML = `⏱️ 距晨檢截止剩 <b class="text-amber-950 font-black">${diffM}</b> 分鐘`;
+      } else {
+        projClockNotice.innerHTML = `📖 早自習抄寫聯絡簿中`;
+      }
+    }
+
     const alarmModalClock = document.getElementById("alarmModalCurrentClock");
     if (alarmModalClock) alarmModalClock.textContent = timeStr;
 
@@ -551,6 +575,27 @@ function updateContactFormatButtons() {
   if (projHor) projHor.className = isHor ? projActiveClass : projInactiveClass;
 }
 
+function formatVerticalContactText(rawText) {
+  if (rawText === null || rawText === undefined) return '';
+  const str = String(rawText);
+  // 正則匹配英文字母、數字及相連的常見符號 (如 P.62, 1~10, Unit 3, NO.1, Ch.4, 100)，包裝成橫向縱中橫 span
+  const pattern = /[A-Za-z0-9\.\-~～_#/@%]+(?:\s+[A-Za-z0-9\.\-~～_#/@%]+)*/g;
+  let result = '';
+  let lastIdx = 0;
+  let match;
+  while ((match = pattern.exec(str)) !== null) {
+    if (match.index > lastIdx) {
+      result += escapeContactHtml(str.slice(lastIdx, match.index));
+    }
+    result += '<span class="tcy">' + escapeContactHtml(match[0]) + '</span>';
+    lastIdx = pattern.lastIndex;
+  }
+  if (lastIdx < str.length) {
+    result += escapeContactHtml(str.slice(lastIdx));
+  }
+  return result;
+}
+
 function renderVerticalContactGrid(items, format = 'vertical-rtl', isProjection = false) {
   const isRtl = format === 'vertical-rtl';
   const gridClass = isRtl ? 'contact-vertical-grid-rtl' : 'contact-vertical-grid-ltr';
@@ -568,7 +613,7 @@ function renderVerticalContactGrid(items, format = 'vertical-rtl', isProjection 
             ${slotIdx}
           </div>
           <div class="contact-vertical-text ${textSize}">
-            ${escapeContactHtml(text)}
+            ${formatVerticalContactText(text)}
           </div>
         </div>
       `;
@@ -2067,6 +2112,7 @@ function setStudentHomeworkStatus(hwId, studentId, targetStatus) {
   if (!hw.records) hw.records = {};
 
   hw.records[studentId] = targetStatus;
+  window.KingdomApp.store.lastLocalHomeworkEditTime = Date.now();
 
   if (targetStatus === 'pending' || targetStatus === 'missing') {
     const b = window.KingdomApp.store.data.behaviorCards && window.KingdomApp.store.data.behaviorCards[studentId];
@@ -2451,6 +2497,7 @@ function cycleHwStatus(hwId, studentId) {
   }
 
   hw.records[studentId] = nextStatus;
+  window.KingdomApp.store.lastLocalHomeworkEditTime = Date.now();
 
   if (nextStatus === 'pending' || nextStatus === 'missing') {
     const b = window.KingdomApp.store.data.behaviorCards && window.KingdomApp.store.data.behaviorCards[studentId];
@@ -2818,6 +2865,7 @@ function saveRevisionSelection() {
     });
   }
 
+  window.KingdomApp.store.lastLocalHomeworkEditTime = Date.now();
   window.KingdomApp.store.syncAllHomeworkReflectionCards();
   window.KingdomApp.store.save(`批次設置作業${activeBatchTargetStatus}`);
   window.KingdomApp.sound.playCoin();
@@ -2914,6 +2962,7 @@ function batchMarkAllHwSubmitted(hwId) {
     hw.records[st.id] = 'submitted';
   });
 
+  window.KingdomApp.store.lastLocalHomeworkEditTime = Date.now();
   window.KingdomApp.store.syncAllHomeworkReflectionCards();
   window.KingdomApp.store.save();
   window.KingdomApp.sound.playCoin();
@@ -7263,9 +7312,33 @@ function openContactProjectionModal() {
 
   function updateContactProjClock() {
     const clockEl = document.getElementById("contactProjectionLiveClock");
-    if (clockEl) {
-      const now = new Date();
-      clockEl.textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    const timeStr = `${h}:${m}:${s}`;
+    const timeHM = `${h}:${m}`;
+
+    if (clockEl) clockEl.textContent = timeStr;
+
+    const projClockDateText = document.getElementById("contactProjClockDateText");
+    if (projClockDateText) {
+      const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : '';
+      const wd = (typeof getWeekdayText === 'function') ? getWeekdayText(today) : '';
+      projClockDateText.textContent = `📅 ${today} (${wd})`;
+    }
+
+    const projClockNotice = document.getElementById("contactProjCountdownNotice");
+    if (projClockNotice) {
+      const lateThreshold = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.lateThreshold) || "07:40";
+      if (timeHM < lateThreshold) {
+        const [thH, thM] = lateThreshold.split(':').map(Number);
+        const [curH, curM] = [Number(h), Number(m)];
+        const diffM = (thH * 60 + thM) - (curH * 60 + curM);
+        projClockNotice.innerHTML = `⏱️ 距晨檢截止剩 <b class="text-amber-950 font-black">${diffM}</b> 分鐘`;
+      } else {
+        projClockNotice.innerHTML = `📖 早自習抄寫聯絡簿中`;
+      }
     }
   }
   updateContactProjClock();
@@ -8903,10 +8976,17 @@ function renderSeatingDock() {
   // 已有安排到座位者的座號集合 (暫時移出座號庫)
   const seatedSet = new Set(chart.filter(n => n !== null && n !== undefined));
 
-  // 1. 男生座號庫 (未安排座位者，支援第28位及新增大臣)
-  const unassignedBoys = students.filter(s => (s.gender === 'M' || (!s.gender && s.seatNo <= 13)) && !seatedSet.has(s.seatNo));
-  // 2. 女生座號庫 (未安排座位者，支援第28位及新增大臣)
-  const unassignedGirls = students.filter(s => (s.gender === 'F' || (!s.gender && s.seatNo > 13) || (s.gender !== 'M' && s.seatNo > 13)) && !seatedSet.has(s.seatNo));
+  // 性別判別：五年二班 1~13 號為男生，14~27 號為女生 (24號林詠泓、27號楊淳閔為女生，清空座位時100%落入右側女生庫)
+  const isBoyStudent = (s) => {
+    const seat = Number(s.seatNo);
+    if (seat >= 1 && seat <= 13) return true;
+    if (seat >= 14 && seat <= 27) return false;
+    return s.gender === 'M';
+  };
+  // 1. 男生座號庫 (未安排座位者，左側)
+  const unassignedBoys = students.filter(s => isBoyStudent(s) && !seatedSet.has(s.seatNo));
+  // 2. 女生座號庫 (未安排座位者，右側)
+  const unassignedGirls = students.filter(s => !isBoyStudent(s) && !seatedSet.has(s.seatNo));
 
   // 更新兩側側欄待排計數徽章
   const boysBadge = document.getElementById("dockBoysCountBadge");
