@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * 👑 西寧國小五年二班 ‧ 西寧小小兵王國 班級經營系統
- * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦終極版 v7：智能雙向融合 + 單調遞增版本號 + 直式聯絡簿同步 + 示範作業自動清洗)
+ * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦終極版 v8：常規提醒單融合 + 座位表紅綠燈 + 單調遞增版本號 + 直式聯絡簿同步 + 示範作業自動清洗)
  * ============================================================================
  * 
  * 核心升級亮點：
@@ -36,9 +36,9 @@ function doGet(e) {
     var info = {
       status: "online",
       system: "西寧國小五年二班 ‧ 西寧小小兵王國 雲端同步中繼站",
-      version: "2026.v7.vertical_contact_and_bidirectional_sync",
+      version: "2026.v8.reminder_slips_seating_and_monotonic_sync",
       time: new Date().toISOString(),
-      message: "🟢 雲端同步服務正常運作中！單調遞增版本號、直式聯絡簿同步與示範作業永久清洗鎖已全面啟用。"
+      message: "🟢 雲端同步服務正常運作中！常規提醒單融合、單調遞增版本號、直式聯絡簿同步與示範作業永久清洗鎖已全面啟用。"
     };
     return ContentService.createTextOutput(JSON.stringify(info, null, 2))
       .setMimeType(ContentService.MimeType.JSON);
@@ -261,11 +261,13 @@ function mergeDatasets(base, incoming) {
           cleanBCards.push(bCards[bc]);
         }
       }
+      var sSeat1 = Number(bSt.seatNo);
+      var g1 = (sSeat1 >= 1 && sSeat1 <= 13) ? 'M' : ((sSeat1 >= 14 && sSeat1 <= 27) ? 'F' : (bSt.gender || 'M'));
       return {
         id: bSt.id,
         seatNo: bSt.seatNo,
         name: bSt.name,
-        gender: bSt.gender,
+        gender: g1,
         title: bSt.title,
         birthday: bSt.birthday,
         points: bSt.points || 0,
@@ -301,11 +303,13 @@ function mergeDatasets(base, incoming) {
       }
     }
 
+    var sSeat2 = Number(bSt.seatNo);
+    var g2 = (sSeat2 >= 1 && sSeat2 <= 13) ? 'M' : ((sSeat2 >= 14 && sSeat2 <= 27) ? 'F' : (iSt.gender || bSt.gender || 'M'));
     return {
       id: bSt.id,
       seatNo: bSt.seatNo,
       name: iSt.name || bSt.name,
-      gender: iSt.gender || bSt.gender,
+      gender: g2,
       title: iSt.title || bSt.title,
       birthday: iSt.birthday || bSt.birthday,
       points: finalPoints,
@@ -419,7 +423,16 @@ function mergeDatasets(base, incoming) {
       var r1 = existHw.records || {};
       var r2 = item.records || {};
       for (var k1 in r1) combinedRecords[k1] = r1[k1];
-      for (var k2 in r2) combinedRecords[k2] = r2[k2];
+      for (var k2 in r2) {
+        var baseStat = combinedRecords[k2];
+        var inStat = r2[k2];
+        // 核心防倒灌：若雲端或本地已完成 (submitted / excellent)，絕不被舊的 pending 或 revision 逆轉倒退！
+        if ((baseStat === 'submitted' || baseStat === 'excellent') && (inStat === 'pending' || inStat === 'revision')) {
+          // 保留已完成狀態
+        } else {
+          combinedRecords[k2] = inStat;
+        }
+      }
       item.records = combinedRecords;
       hwMap[hidStr] = item;
     }
@@ -470,6 +483,97 @@ function mergeDatasets(base, incoming) {
   mergedLogs.sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
   if (mergedLogs.length > 50) mergedLogs = mergedLogs.slice(0, 50);
 
+  // 8. 行為卡牌與常規提醒單智能雙向融合 (reminderSlips, reflectionReasons, serviceReasons)
+  var mergedBehaviorCards = {};
+  var bBc = base.behaviorCards || {};
+  var iBc = incoming.behaviorCards || {};
+  var bcKeys = {};
+  for (var k in bBc) bcKeys[k] = true;
+  for (var k in iBc) bcKeys[k] = true;
+
+  for (var stId in bcKeys) {
+    var bCard = bBc[stId] || {};
+    var iCard = iBc[stId] || {};
+
+    // 合併提醒單 (依 slip.id 去重保留完成狀態)
+    var slipMap = {};
+    var bSlips = bCard.reminderSlips || [];
+    for (var s1 = 0; s1 < bSlips.length; s1++) {
+      if (bSlips[s1] && bSlips[s1].id) slipMap[bSlips[s1].id] = bSlips[s1];
+    }
+    var iSlips = iCard.reminderSlips || [];
+    for (var s2 = 0; s2 < iSlips.length; s2++) {
+      var islip = iSlips[s2];
+      if (!islip || !islip.id) continue;
+      if (!slipMap[islip.id]) {
+        slipMap[islip.id] = islip;
+      } else {
+        if (islip.status === 'completed' || slipMap[islip.id].status === 'completed') {
+          slipMap[islip.id].status = 'completed';
+        }
+      }
+    }
+    var combinedSlips = [];
+    for (var sid in slipMap) combinedSlips.push(slipMap[sid]);
+
+    // 合併自省卡理由 (依 text、isAutoHw、hwId 去重)
+    var combinedRef = [];
+    var bRef = bCard.reflectionReasons || [];
+    var iRef = iCard.reflectionReasons || [];
+    for (var r1 = 0; r1 < bRef.length; r1++) combinedRef.push(bRef[r1]);
+    for (var r2 = 0; r2 < iRef.length; r2++) {
+      var ir = iRef[r2];
+      var dup = false;
+      for (var cr = 0; cr < combinedRef.length; cr++) {
+        if (combinedRef[cr].text === ir.text && combinedRef[cr].isAutoHw === ir.isAutoHw && combinedRef[cr].hwId === ir.hwId) {
+          dup = true; break;
+        }
+      }
+      if (!dup) combinedRef.push(ir);
+    }
+
+    // 合併愛班卡理由 (依 text 去重)
+    var combinedSrv = [];
+    var bSrv = bCard.serviceReasons || [];
+    var iSrv = iCard.serviceReasons || [];
+    for (var v1 = 0; v1 < bSrv.length; v1++) combinedSrv.push(bSrv[v1]);
+    for (var v2 = 0; v2 < iSrv.length; v2++) {
+      var isv = iSrv[v2];
+      var dupSrv = false;
+      for (var cs = 0; cs < combinedSrv.length; cs++) {
+        if (combinedSrv[cs].text === isv.text) {
+          dupSrv = true; break;
+        }
+      }
+      if (!dupSrv) combinedSrv.push(isv);
+    }
+
+    var baseObj = (iCard && iCard.reflectionCount !== undefined) ? iCard : bCard;
+    var mergedCardObj = {};
+    for (var propKey in baseObj) mergedCardObj[propKey] = baseObj[propKey];
+    mergedCardObj.reminderSlips = combinedSlips;
+    var pendingSlipCount = 0;
+    for (var sc = 0; sc < combinedSlips.length; sc++) {
+      if (combinedSlips[sc] && combinedSlips[sc].status === 'pending') pendingSlipCount++;
+    }
+    mergedCardObj.reminderCount = pendingSlipCount;
+    mergedCardObj.reflectionReasons = combinedRef;
+    mergedCardObj.reflectionCount = combinedRef.length;
+    mergedCardObj.reflectionCard = combinedRef.length > 0;
+    var refTexts = [];
+    for (var t1 = 0; t1 < combinedRef.length; t1++) refTexts.push(combinedRef[t1].text);
+    mergedCardObj.reflectionReason = refTexts.join('、');
+    
+    mergedCardObj.serviceReasons = combinedSrv;
+    mergedCardObj.serviceCount = combinedSrv.length;
+    mergedCardObj.serviceCard = combinedSrv.length > 0;
+    var srvTexts = [];
+    for (var t2 = 0; t2 < combinedSrv.length; t2++) srvTexts.push(combinedSrv[t2].text);
+    mergedCardObj.serviceReason = srvTexts.join('、');
+
+    mergedBehaviorCards[stId] = mergedCardObj;
+  }
+
   var nowTime = new Date().getTime();
 
   return {
@@ -490,7 +594,7 @@ function mergeDatasets(base, incoming) {
     announcements: (incoming.announcements !== undefined && incoming.announcements !== null) ? incoming.announcements : (base.announcements || []),
     rewardCards: incoming.rewardCards || base.rewardCards,
     rewardRedemptions: mergedRedemptions,
-    behaviorCards: incoming.behaviorCards || base.behaviorCards || {},
+    behaviorCards: mergedBehaviorCards,
     trafficOverrides: incoming.trafficOverrides || base.trafficOverrides || {},
     seatingLayout: incoming.seatingLayout || base.seatingLayout,
     seatingChart: incoming.seatingChart || base.seatingChart,

@@ -4277,7 +4277,7 @@ function toggleSingleStudentService(studentId) {
   renderTrafficView();
 }
 
-// --- 常規卡牌發布事由快捷管理 (座位自省卡、愛班服務卡：支援導師新增、編輯、刪除) ---
+// --- 常規卡牌發布事由快捷管理 (座位自省卡、愛班服務卡、常規提醒單：支援導師新增、編輯、刪除) ---
 function renderBehaviorReasonShortcuts() {
   const container = document.getElementById("behaviorReasonShortcutsBar");
   if (!container) return;
@@ -4293,19 +4293,25 @@ function renderBehaviorReasonShortcuts() {
     return;
   }
 
+  const borderClass = type === 'reflection' 
+    ? 'bg-rose-50 border-rose-300 text-rose-950' 
+    : (type === 'service' ? 'bg-orange-50 border-orange-300 text-orange-950' : 'bg-yellow-50 border-yellow-400 text-amber-950');
+  const icon = type === 'reflection' ? '🪑' : (type === 'service' ? '🧹' : '📝');
+  const dividerClass = type === 'reflection' ? 'border-rose-200' : (type === 'service' ? 'border-orange-200' : 'border-yellow-300');
+
   container.innerHTML = filtered.map(r => `
-    <div class="inline-flex items-center rounded-lg border ${type === 'reflection' ? 'bg-rose-50 border-rose-300 text-rose-950' : 'bg-orange-50 border-orange-300 text-orange-950'} font-bold shadow-2xs overflow-hidden">
+    <div class="inline-flex items-center rounded-lg border ${borderClass} font-bold shadow-2xs overflow-hidden">
       <button type="button" onclick="applyBehaviorReason('${r.id}')"
         class="px-2 py-1 text-xs hover:bg-black/5 transition flex items-center space-x-1" title="點擊套用事由：${r.text}">
-        <span>${type === 'reflection' ? '🪑' : '🧹'}</span>
+        <span>${icon}</span>
         <span>${r.label}</span>
       </button>
       <button type="button" onclick="event.stopPropagation(); openEditBehaviorReasonModal('${r.id}')"
-        class="px-1.5 py-1 text-[11px] text-slate-500 hover:text-amber-800 hover:bg-black/10 transition border-l ${type === 'reflection' ? 'border-rose-200' : 'border-orange-200'}" title="編輯此快捷事由">
+        class="px-1.5 py-1 text-[11px] text-slate-500 hover:text-amber-800 hover:bg-black/10 transition border-l ${dividerClass}" title="編輯此快捷事由">
         ✏️
       </button>
       <button type="button" onclick="event.stopPropagation(); deleteBehaviorReasonPrompt('${r.id}')"
-        class="px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-700 hover:bg-black/10 transition border-l ${type === 'reflection' ? 'border-rose-200' : 'border-orange-200'}" title="刪除此快捷事由">
+        class="px-1.5 py-1 text-[11px] text-slate-400 hover:text-rose-700 hover:bg-black/10 transition border-l ${dividerClass}" title="刪除此快捷事由">
         🗑️
       </button>
     </div>
@@ -4459,7 +4465,7 @@ function addCustomServiceCardToStudent(studentId, reason) {
 }
 
 function openBehaviorCardModal(defaultType = 'reflection') {
-  if (!checkTeacherAuth("派發常規紀律卡牌（自省卡/愛班卡）")) return;
+  if (!checkTeacherAuth("派發常規紀律卡牌（自省卡/愛班卡/提醒單）")) return;
   const grid = document.getElementById("behaviorStudentSelectorGrid");
   const students = window.KingdomApp.store.data.students || [];
   if (grid) {
@@ -4472,28 +4478,45 @@ function openBehaviorCardModal(defaultType = 'reflection') {
   }
 
   const modalTitle = document.getElementById("behaviorModalMainTitle");
-  if (modalTitle) {
-    modalTitle.innerHTML = defaultType === 'service'
-      ? `<span>🧹 派發全班愛班服務卡 (課間愛班勞動)</span>`
-      : `<span>🪑 派發全班座位自省卡 (紅燈・禁止下課)</span>`;
-  }
+  const updateModalDisplay = (cardType) => {
+    if (modalTitle) {
+      if (cardType === 'service') {
+        modalTitle.innerHTML = `<span>🧹 派發全班愛班服務卡 (課間愛班勞動)</span>`;
+      } else if (cardType === 'reminder') {
+        modalTitle.innerHTML = `<span>📝 派發全班常規提醒單 (黃燈・罰寫提醒)</span>`;
+      } else {
+        modalTitle.innerHTML = `<span>🪑 派發全班座位自省卡 (紅燈・留座自省)</span>`;
+      }
+    }
+    const remWrapper = document.getElementById("behaviorReminderCountWrapper");
+    const reasonInput = document.getElementById("behaviorReasonInput");
+    if (remWrapper) {
+      if (cardType === 'reminder') {
+        remWrapper.classList.remove("hidden");
+        if (reasonInput) reasonInput.placeholder = "例如：聽寫要記得簽名、遵守走廊常規慢行";
+      } else {
+        remWrapper.classList.add("hidden");
+        if (reasonInput) {
+          reasonInput.placeholder = cardType === 'service'
+            ? "例如：打掃時間分心聊天、教室公物未歸位"
+            : "例如：上課分心屢勸不聽、走廊危險奔跑、作業未帶留座";
+        }
+      }
+    }
+    renderBehaviorReasonShortcuts();
+  };
 
   const targetRadio = document.querySelector(`input[name="behaviorCardType"][value="${defaultType}"]`);
   if (targetRadio) targetRadio.checked = true;
 
+  updateModalDisplay(defaultType);
   document.getElementById("behaviorCardModal").classList.remove("hidden");
-  renderBehaviorReasonShortcuts();
 
-  // 監聽單選按鈕變更，自動更換事由快捷列
+  // 監聽單選按鈕變更，自動更換事由快捷列與次數設定
   const typeRadios = document.querySelectorAll('input[name="behaviorCardType"]');
   typeRadios.forEach(radio => {
     radio.onchange = () => {
-      if (modalTitle) {
-        modalTitle.innerHTML = radio.value === 'service'
-          ? `<span>🧹 派發全班愛班服務卡 (課間愛班勞動)</span>`
-          : `<span>🪑 派發全班座位自省卡 (紅燈・禁止下課)</span>`;
-      }
-      renderBehaviorReasonShortcuts();
+      updateModalDisplay(radio.value);
     };
   });
 
@@ -4511,8 +4534,10 @@ function toggleAllBehaviorStudents(select) {
 
 function submitBehaviorCards(e) {
   e.preventDefault();
-  const type = document.querySelector('input[name="behaviorCardType"]:checked').value;
-  const reason = document.getElementById("behaviorReasonInput").value.trim();
+  const typeRadio = document.querySelector('input[name="behaviorCardType"]:checked');
+  const type = typeRadio ? typeRadio.value : 'reflection';
+  const reason = document.getElementById("behaviorReasonInput").value.trim() || (type === 'reminder' ? '常規提醒' : '常規違規');
+  const targetCount = parseInt(document.getElementById("behaviorReminderTimesInput")?.value, 10) || 50;
   const checkedBoxes = Array.from(document.querySelectorAll('input[name="behaviorStudentCheckbox"]:checked'));
 
   if (checkedBoxes.length === 0) {
@@ -4524,12 +4549,14 @@ function submitBehaviorCards(e) {
     const studentId = parseInt(cb.value, 10);
     if (type === 'reflection') {
       window.KingdomApp.store.setReflectionCard(studentId, true, reason);
-    } else {
+    } else if (type === 'service') {
       window.KingdomApp.store.setServiceCard(studentId, true, reason);
+    } else if (type === 'reminder') {
+      window.KingdomApp.store.addReminderSlip(studentId, { reason, content: reason, targetCount });
     }
   });
 
-  const cardName = type === 'reflection' ? '🪑 座位自省卡 (紅燈)' : '🧹 愛班服務卡';
+  const cardName = type === 'reflection' ? '🪑 座位自省卡 (紅燈)' : (type === 'service' ? '🧹 愛班服務卡' : `📝 常規提醒單 (${targetCount}次)`);
   showToast(`📣 已成功為 ${checkedBoxes.length} 位大臣派發【${cardName}】！`);
   closeBehaviorCardModal();
   renderTrafficView();
@@ -12525,6 +12552,10 @@ if (typeof window !== 'undefined') {
   window.addCustomReminderSlipPrompt = addCustomReminderSlipPrompt;
   window.completeStudentReminderSlip = completeStudentReminderSlip;
   window.removeStudentReminderSlip = removeStudentReminderSlip;
+  window.openBehaviorCardModal = openBehaviorCardModal;
+  window.closeBehaviorCardModal = closeBehaviorCardModal;
+  window.toggleAllBehaviorStudents = toggleAllBehaviorStudents;
+  window.submitBehaviorCards = submitBehaviorCards;
 
   // 作業批次登記
   window.openSetRevisionModal = openSetRevisionModal;

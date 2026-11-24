@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261124_v22">
+  <link rel="stylesheet" href="styles.css?v=20261124_v24">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -521,21 +521,36 @@
           </div>
         </div>
 
-        <!-- 右側：導師操作功能列 (單排緊湊排列) -->
-        <div class="flex flex-nowrap items-center space-x-1.5 font-bold flex-shrink-0">
-          <!-- 特赦按鈕群 -->
-          <div class="flex items-center space-x-1 bg-amber-100/90 p-0.5 rounded-lg border border-amber-300 shadow-2xs text-[11px]">
-            <button onclick="confirmPardonAll('reminder')" class="px-1.5 py-0.5 rounded bg-white hover:bg-yellow-50 text-yellow-800 border border-yellow-300 shadow-2xs flex items-center space-x-0.5" title="全班常規提醒單全部特赦結清">
-              <span>📝</span>
-              <span>提醒單免</span>
+        <!-- 右側：導師操作功能列 (依職能群組清晰排布：【派發功能組】、【特赦清除組】、【排版與抽屜】) -->
+        <div class="flex flex-nowrap items-center space-x-2 font-bold flex-shrink-0">
+          <!-- 1. 派發快捷按鈕群 (三大常規：自省卡、愛班卡、提醒單) -->
+          <div class="flex items-center space-x-1 bg-amber-100/90 p-1 rounded-xl border border-amber-300 shadow-2xs">
+            <button onclick="openBehaviorCardModal('reflection')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-950 border border-rose-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣派發座位自省卡 (紅燈・留座自省)">
+              <span>🪑 派自省</span>
             </button>
+            <button onclick="openBehaviorCardModal('service')" class="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣指派愛班服務卡 (課間愛班勞動)">
+              <span>🧹 派愛班</span>
+            </button>
+            <button onclick="openBehaviorCardModal('reminder')" class="px-2 py-1 rounded-lg bg-yellow-50 hover:bg-yellow-100 text-amber-950 border border-yellow-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣派發常規提醒單 (黃燈・罰寫提醒)">
+              <span>📝 派提醒</span>
+            </button>
+          </div>
+
+          <span class="text-amber-400/60 font-bold">|</span>
+
+          <!-- 2. 特赦清除按鈕群 (自省免、愛班免、提醒免、全免) -->
+          <div class="flex items-center space-x-1 bg-amber-100/90 p-1 rounded-xl border border-amber-300 shadow-2xs text-[11px]">
             <button onclick="confirmPardonAll('reflection')" class="px-1.5 py-0.5 rounded bg-white hover:bg-rose-50 text-rose-800 border border-rose-300 shadow-2xs flex items-center space-x-0.5" title="全班自省卡全部歸零清除">
               <span>🕊️</span>
-              <span>自省特赦</span>
+              <span>自省免</span>
             </button>
             <button onclick="confirmPardonAll('service')" class="px-1.5 py-0.5 rounded bg-white hover:bg-orange-50 text-orange-800 border border-orange-300 shadow-2xs flex items-center space-x-0.5" title="全班愛班服務卡全部歸零清除">
               <span>🧹</span>
-              <span>愛班特赦</span>
+              <span>愛班免</span>
+            </button>
+            <button onclick="confirmPardonAll('reminder')" class="px-1.5 py-0.5 rounded bg-white hover:bg-yellow-50 text-yellow-800 border border-yellow-300 shadow-2xs flex items-center space-x-0.5" title="全班常規提醒單全部特赦結清">
+              <span>📝</span>
+              <span>提醒免</span>
             </button>
             <button onclick="confirmPardonAll('all')" class="px-1.5 py-0.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs flex items-center space-x-0.5 font-black" title="完全特赦全部卡牌歸零">
               <span>✨</span>
@@ -545,25 +560,15 @@
 
           <span class="text-amber-400/60 font-bold">|</span>
 
-          <!-- 派卡快捷按鈕 -->
-          <button onclick="openBehaviorCardModal('reflection')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-950 border border-rose-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣派發座位自省卡 (紅燈・留座自省)">
-            <span>🪑 派自省</span>
-          </button>
-          <button onclick="openBehaviorCardModal('service')" class="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-400 text-xs font-black shadow-2xs flex items-center space-x-0.5" title="為大臣指派愛班服務卡 (課間愛班勞動)">
-            <span>🧹 派愛班</span>
-          </button>
-
-          <span class="text-amber-400/60 font-bold">|</span>
-
-          <!-- 模式切換 -->
-          <button onclick="toggleTrafficDisplayMode()" id="btnTrafficDisplayMode" class="px-2 py-1 rounded-lg bg-amber-950 text-amber-300 text-xs font-black flex items-center space-x-1 shadow-2xs" title="切換教室座位表、座號大屏模式或 Mini 緊湊模式">
-            <span id="trafficDisplayModeLabel">💺 依座位表</span>
-          </button>
-
-          <!-- 管理抽屜開關 -->
-          <button type="button" onclick="toggleTrafficDrawer()" id="btnTrafficDrawerToggle" class="px-2 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 text-xs transition font-black" title="展開或收合自省卡與愛班服務卡管理專區">
-            <span>📜 抽屜 ▾</span>
-          </button>
+          <!-- 3. 排版與抽屜切換群 -->
+          <div class="flex items-center space-x-1">
+            <button onclick="toggleTrafficDisplayMode()" id="btnTrafficDisplayMode" class="px-2 py-1 rounded-lg bg-amber-950 text-amber-300 text-xs font-black flex items-center space-x-1 shadow-2xs" title="切換教室座位表、座號大屏模式或 Mini 緊湊模式">
+              <span id="trafficDisplayModeLabel">💺 依座位表</span>
+            </button>
+            <button type="button" onclick="toggleTrafficDrawer()" id="btnTrafficDrawerToggle" class="px-2 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 text-xs transition font-black" title="展開或收合自省卡與愛班服務卡管理專區">
+              <span>📜 抽屜 ▾</span>
+            </button>
+          </div>
         </div>
 
       </div>
@@ -750,6 +755,9 @@
           <div class="flex flex-wrap items-center justify-between gap-1.5 text-xs">
             <span class="text-amber-900 font-bold text-[11px]">💡 說明：學生完成書寫後繳驗核銷放行</span>
             <div class="flex items-center space-x-1.5">
+              <button type="button" onclick="openBehaviorCardModal('reminder')" class="px-2.5 py-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black shadow-2xs flex items-center space-x-1 text-xs">
+                <span>+ 派發提醒單</span>
+              </button>
               <button type="button" onclick="confirmPardonAll('reminder')" class="px-2.5 py-1 rounded-xl bg-white hover:bg-yellow-50 text-yellow-800 border border-yellow-300 font-black shadow-2xs flex items-center space-x-1 text-xs">
                 <span>🕊️ 全班提醒單全免</span>
               </button>
@@ -1006,24 +1014,33 @@
             <span class="text-xl">🚦</span>
             <div>
               <h4 class="font-black text-amber-950">下課通行與懲戒卡牌管理</h4>
-              <span class="text-[11px] text-amber-800 font-bold">導師可在此直接進行全班特赦、派發自省卡或派發愛班卡</span>
+              <span class="text-[11px] text-amber-800 font-bold">導師可在此直接進行全班特赦、派發自省卡、愛班卡或常規提醒單</span>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-1.5 font-bold">
+            <!-- 派發功能組 -->
+            <button onclick="openBehaviorCardModal('reflection')" class="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-2xs flex items-center space-x-1 font-black" title="為大臣派發座位自省卡">
+              <span>🪑 派發自省卡</span>
+            </button>
+            <button onclick="openBehaviorCardModal('service')" class="px-2.5 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-2xs flex items-center space-x-1 font-black" title="為大臣指派愛班服務卡">
+              <span>🧹 派發愛班卡</span>
+            </button>
+            <button onclick="openBehaviorCardModal('reminder')" class="px-2.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white shadow-2xs flex items-center space-x-1 font-black" title="為大臣派發常規提醒單">
+              <span>📝 派發提醒單</span>
+            </button>
+            <span class="text-amber-400 font-bold mx-0.5">|</span>
+            <!-- 特赦清除組 -->
             <button onclick="confirmPardonAll('reflection')" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-rose-800 border border-rose-300 shadow-2xs flex items-center space-x-1" title="全班自省卡全部歸零清除">
               <span>🕊️ 全班自省特赦</span>
             </button>
             <button onclick="confirmPardonAll('service')" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-orange-50 text-orange-800 border border-orange-300 shadow-2xs flex items-center space-x-1" title="全班愛班服務卡全部歸零清除">
               <span>🧹 全班愛班特赦</span>
             </button>
-            <button onclick="confirmPardonAll('all')" class="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs flex items-center space-x-1 font-black" title="自省與愛班完全特赦">
+            <button onclick="confirmPardonAll('reminder')" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-yellow-50 text-yellow-800 border border-yellow-300 shadow-2xs flex items-center space-x-1" title="全班常規提醒單全部特赦結清">
+              <span>📝 全班提醒特赦</span>
+            </button>
+            <button onclick="confirmPardonAll('all')" class="px-2.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white shadow-2xs flex items-center space-x-1 font-black" title="自省、愛班與提醒單完全特赦">
               <span>✨ 完全特赦</span>
-            </button>
-            <button onclick="openBehaviorCardModal('reflection')" class="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-2xs flex items-center space-x-1 font-black" title="為大臣派發座位自省卡">
-              <span>🪑 派發自省卡</span>
-            </button>
-            <button onclick="openBehaviorCardModal('service')" class="px-2.5 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-2xs flex items-center space-x-1 font-black" title="為大臣指派愛班服務卡">
-              <span>🧹 派發愛班卡</span>
             </button>
           </div>
         </div>
@@ -3465,7 +3482,7 @@
     <div class="parchment-card max-w-lg w-full max-h-[90vh] flex flex-col rounded-2xl shadow-2xl border-2 border-amber-400 overflow-hidden">
       <div class="flex items-center justify-between border-b-2 border-amber-300 p-4 bg-gradient-to-r from-amber-200 via-yellow-200 to-amber-300 flex-shrink-0">
         <h3 id="behaviorModalMainTitle" class="text-base sm:text-lg font-black text-amber-950 flex items-center space-x-2">
-          <span>🪑 派發常規紀律卡牌 (座位自省卡 / 愛班服務卡)</span>
+          <span>🪑 派發常規紀律卡牌 (座位自省卡 / 愛班服務卡 / 常規提醒單)</span>
         </h3>
         <button onclick="closeBehaviorCardModal()" class="w-8 h-8 rounded-full bg-white/80 hover:bg-rose-100 text-slate-700 hover:text-rose-700 flex items-center justify-center border border-amber-300 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -3475,14 +3492,18 @@
       <form onsubmit="submitBehaviorCards(event)" class="overflow-y-auto p-4 sm:p-5 space-y-4 text-sm flex-1">
         <div>
           <label class="block font-black text-amber-950 mb-1.5">派發卡牌類型：</label>
-          <div class="grid grid-cols-2 gap-2">
-            <label class="flex items-center space-x-2 p-3 rounded-xl border-2 border-rose-300 bg-rose-50 cursor-pointer font-black text-rose-950 text-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <label class="flex items-center space-x-2 p-2.5 rounded-xl border-2 border-rose-300 bg-rose-50 cursor-pointer font-black text-rose-950 text-xs sm:text-sm">
               <input type="radio" name="behaviorCardType" value="reflection" checked class="text-rose-600 focus:ring-rose-500">
-              <span>🪑 座位自省卡 (紅燈・禁止下課)</span>
+              <span>🪑 座位自省卡 (紅燈)</span>
             </label>
-            <label class="flex items-center space-x-2 p-3 rounded-xl border-2 border-orange-300 bg-orange-50 cursor-pointer font-black text-orange-950 text-sm">
+            <label class="flex items-center space-x-2 p-2.5 rounded-xl border-2 border-orange-300 bg-orange-50 cursor-pointer font-black text-orange-950 text-xs sm:text-sm">
               <input type="radio" name="behaviorCardType" value="service" class="text-orange-600 focus:ring-orange-500">
-              <span>🧹 愛班服務卡 (課間愛班勞動)</span>
+              <span>🧹 愛班服務卡 (勞動)</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2.5 rounded-xl border-2 border-yellow-400 bg-yellow-50 cursor-pointer font-black text-amber-950 text-xs sm:text-sm">
+              <input type="radio" name="behaviorCardType" value="reminder" class="text-yellow-600 focus:ring-yellow-500">
+              <span>📝 常規提醒單 (罰寫)</span>
             </label>
           </div>
         </div>
@@ -3511,6 +3532,26 @@
           <input type="text" id="behaviorReasonInput" required placeholder="例如：上課分心屢勸不聽、走廊危險奔跑、作業未帶留座" class="w-full px-3 py-2.5 rounded-xl border-2 border-amber-300 bg-white font-bold text-sm">
           <div id="behaviorReasonShortcutsBar" class="flex flex-wrap gap-1.5 mt-2 text-xs">
             <!-- 動態依據當前選取的自省卡或愛班卡填入事由快捷標籤 -->
+          </div>
+        </div>
+
+        <!-- 常規提醒單專屬：罰寫目標次數 (預設50次，選提醒單時自動顯示) -->
+        <div id="behaviorReminderCountWrapper" class="hidden p-3 bg-yellow-50/90 rounded-xl border-2 border-yellow-300 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-black text-amber-950 text-xs sm:text-sm flex items-center space-x-1">
+              <span>✍️ 提醒單罰寫次數：</span>
+            </label>
+            <span class="text-xs text-amber-800 font-bold">預設 50 次，點擊快捷快速切換</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input type="number" id="behaviorReminderTimesInput" min="1" max="500" value="50" class="w-24 px-3 py-1.5 rounded-lg border-2 border-amber-400 bg-white font-black text-center text-amber-950">
+            <span class="font-bold text-amber-950 text-sm">次</span>
+            <div class="flex items-center space-x-1 text-xs">
+              <button type="button" onclick="document.getElementById('behaviorReminderTimesInput').value=20" class="px-2 py-1 rounded bg-white hover:bg-yellow-100 border border-amber-300 font-bold text-amber-900">20次</button>
+              <button type="button" onclick="document.getElementById('behaviorReminderTimesInput').value=30" class="px-2 py-1 rounded bg-white hover:bg-yellow-100 border border-amber-300 font-bold text-amber-900">30次</button>
+              <button type="button" onclick="document.getElementById('behaviorReminderTimesInput').value=50" class="px-2 py-1 rounded bg-amber-500 text-white font-black">50次</button>
+              <button type="button" onclick="document.getElementById('behaviorReminderTimesInput').value=100" class="px-2 py-1 rounded bg-white hover:bg-yellow-100 border border-amber-300 font-bold text-amber-900">100次</button>
+            </div>
           </div>
         </div>
 
@@ -4840,8 +4881,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261124_v22"></script>
-  <script src="ui.js?v=20261124_v22"></script>
+  <script src="app.js?v=20261124_v24"></script>
+  <script src="ui.js?v=20261124_v24"></script>
 
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>
