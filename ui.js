@@ -3862,7 +3862,6 @@ function confirmResetBellScheduleToDefault() {
   renderBellScheduleManageList();
   updateTrafficCountdownClock();
 }
-}
 
 function toggleTrafficDrawer() {
   const drawer = document.getElementById("trafficManagementDrawer");
@@ -4835,13 +4834,6 @@ function submitNewBehaviorReason(e) {
     window.KingdomApp.store.addBehaviorReason({ type, label, text, targetCount });
     showToast(`✅ 已新增事由快捷【${label}】！`, "✨");
   }
-
-  closeAddBehaviorReasonModal();
-  renderBehaviorReasonShortcuts();
-  if (typeof activeTrafficStudentId !== 'undefined' && activeTrafficStudentId) {
-    openTrafficDetailModal(activeTrafficStudentId);
-  }
-}
 
   closeAddBehaviorReasonModal();
   renderBehaviorReasonShortcuts();
