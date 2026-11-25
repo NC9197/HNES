@@ -1236,46 +1236,57 @@ header .nav-btn-wordbreak > span {
   }
 }
 
-/* 聯絡簿看板（常規看板）內容高度縮減約 1/4，讓早自修提醒往上移切齊左側 26-28 號打卡底部 */
+/* 聯絡簿看板每一直行底端精準對齊左側 26-28 號打卡，大字體超清晰方便後排學生抄寫，早自修提醒完全上移不需縮放頁面 */
 #contactBoardContainer .contact-vertical-board {
   padding: 0.25rem 0.35rem;
 }
 
 #contactBoardContainer .contact-vertical-col {
-  min-height: 330px;
-  padding: 0.35rem 0.2rem 0.45rem 0.2rem;
-  border-radius: 0.85rem;
+  height: 395px;
+  min-height: 395px;
+  max-height: 395px;
+  padding: 0.35rem 0.25rem 0.45rem 0.25rem;
+  border-radius: 1rem;
+  overflow-y: hidden;
+  overflow-x: auto;
 }
 
 #contactBoardContainer .contact-vertical-num {
-  width: 1.85rem;
-  height: 1.85rem;
-  font-size: 1rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  font-size: 1.15rem;
   margin-bottom: 0.35rem;
-  border-radius: 0.5rem;
+  border-radius: 0.55rem;
+  font-weight: 900;
+  flex-shrink: 0;
 }
 
 #contactBoardContainer .contact-vertical-text {
-  font-size: 1.25rem;
-  line-height: 1.35;
+  font-size: 1.65rem;
+  line-height: 1.45;
   letter-spacing: 0.08em;
+  font-weight: 900;
 }
 
 @media (min-width: 640px) {
   #contactBoardContainer .contact-vertical-col {
-    min-height: 350px;
+    height: 395px;
+    min-height: 395px;
+    max-height: 395px;
   }
   #contactBoardContainer .contact-vertical-text {
-    font-size: 1.35rem;
+    font-size: 1.75rem;
   }
 }
 
 @media (min-width: 1024px) {
   #contactBoardContainer .contact-vertical-col {
-    min-height: 365px;
+    height: 395px;
+    min-height: 395px;
+    max-height: 395px;
   }
   #contactBoardContainer .contact-vertical-text {
-    font-size: 1.45rem;
+    font-size: 1.85rem;
   }
 }
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261125_v32">
+  <link rel="stylesheet" href="styles.css?v=20261125_v34">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -405,41 +405,39 @@
         </div>
 
         <!-- 【右側剩下的部分全部都是聯絡簿內容雙欄】：7 欄寬 (約 70% 寬度，超大字體看板，頂部與左側時鐘切齊，組成完美矩形) -->
-        <div id="contactBoardContainer" class="lg:col-span-7 contact-book-board p-3 sm:p-5 space-y-3.5 shadow-xl flex flex-col justify-between">
+        <div id="contactBoardContainer" class="lg:col-span-7 contact-book-board p-3 sm:p-4 space-y-2.5 shadow-xl flex flex-col justify-between">
           
-          <!-- 聯絡簿條目 (左右二欄 ‧ 內容高度緊湊縮減約 1/4，使早自修提醒精準切齊左側 26-28 號打卡底部) -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between pb-1.5 border-b-2 border-amber-400">
-              <span class="text-sm sm:text-lg font-black text-amber-900 bg-amber-200 px-2.5 py-0.5 sm:py-1 rounded-xl border border-amber-400 flex items-center space-x-1 shadow-xs">
+          <!-- 聯絡簿條目 (每一直行底端精準對齊左側 26-28 號打卡，大字體超清晰) -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between pb-1 border-b border-amber-300/80">
+              <span class="text-xs sm:text-sm font-black text-amber-900 flex items-center space-x-1.5">
                 <span>✍️ 聯絡簿作業抄寫項目</span>
-                <span class="text-[11px] sm:text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-1">第一欄與第二欄獨立六行大字排版</span>
+                <span class="text-[10px] text-amber-800 font-bold bg-amber-200/80 px-2 py-0.5 rounded-md">雙欄直書大字</span>
               </span>
-              <span class="text-xs font-black text-amber-800 bg-amber-100/90 px-2.5 py-0.5 rounded-lg border border-amber-300 hidden sm:inline">
-                📜 照手邊聯絡簿認真抄寫
+              <span class="text-[11px] font-bold text-amber-800 hidden sm:inline">
+                📜 照實體聯絡簿直行由右至左認真抄寫
               </span>
             </div>
 
             <!-- 左右二欄作業抄寫網格 (由 JavaScript 動態渲染) -->
-            <div id="contactHomeworkList" class="space-y-2">
-              <!-- 動態由 JavaScript 渲染左欄 1~4 行與右欄 5~8 行 -->
+            <div id="contactHomeworkList">
+              <!-- 動態由 JavaScript 渲染左欄與右欄 -->
             </div>
           </div>
 
-          <!-- 早自修與重要提醒醒目金黃色卡 (位置往上移，底部切齊左側 26-28 號打卡按鈕底端) -->
-          <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-2.5 sm:p-3.5 rounded-2xl space-y-1 shadow-sm">
-            <div class="flex items-center space-x-2 text-amber-950 font-black text-sm sm:text-base">
-              <span>🔔 早自修和重要提醒：</span>
+          <!-- 早自修與重要提醒醒目金黃色卡 (緊鄰直行底部，完全往上移，底部切齊左側打卡區底緣) -->
+          <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-2.5 sm:p-3 rounded-2xl space-y-1 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-1.5 text-amber-950 font-black text-sm sm:text-base">
+                <span>🔔 早自修和重要提醒：</span>
+              </div>
+              <p id="contactQueenMotto" class="text-xs font-black text-amber-900/90 italic hidden sm:block">
+                👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
+              </p>
             </div>
             <ul id="contactReminderList" class="space-y-0.5 text-xs sm:text-sm lg:text-base font-bold text-amber-900 list-disc list-inside">
               <!-- 動態渲染提醒項目 -->
             </ul>
-          </div>
-
-          <!-- 皇后聖諭 / 靜思格言 (精緻緊湊排版，與左側打卡狀態說明列完美同高呼應) -->
-          <div class="bg-white/80 border-2 border-amber-300 py-1.5 px-3 rounded-xl text-center">
-            <p id="contactQueenMotto" class="text-xs sm:text-sm font-black text-amber-950 italic">
-              👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
-            </p>
           </div>
 
           <!-- 📜 歷日聯絡簿歷史存檔簿 (按日存檔總覽，預設收合以讓出空間同時顯示打卡與提醒) -->
@@ -1177,36 +1175,46 @@
         
         <!-- ★★★ 當天各項作業繳交情形【統整大看板】 ★★★ -->
         <div class="parchment-card p-5 sm:p-6 space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b-2 border-amber-400">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 border-b-2 border-amber-400">
             <div>
-              <span class="text-amber-800 text-xs font-bold">📊 今日作業總看板</span>
-              <h2 class="text-2xl font-black text-amber-950 flex items-center space-x-2">
-                <span>當天各項作業繳交情形統整看板</span>
+              <div class="flex items-center space-x-2">
+                <span class="text-amber-800 text-xs font-bold">📊 作業繳交與訂正管理</span>
+                <span id="hwCurrentDateBadge" class="text-xs font-black bg-amber-200 text-amber-950 px-2 py-0.5 rounded-md border border-amber-400 shadow-2xs">
+                  📅 今日
+                </span>
+              </div>
+              <h2 class="text-xl sm:text-2xl font-black text-amber-950 flex items-center space-x-2">
+                <span>單日各項作業未交 ‧ 訂正情形統整看板</span>
               </h2>
               <p class="text-xs text-amber-800 font-medium mt-0.5">
-                一覽每項作業之「已交」、「需訂正」及「未交」名單。老師可直接點擊「設置需訂正」快速指定！
+                僅顯示指定單日作業量（版面緊湊免長下拉）。可由上方切換日期或作業進行快速編輯！
               </p>
             </div>
+
+            <!-- 日期導航切換與作業操作快捷工具列 -->
             <div class="flex flex-wrap items-center gap-2">
-              <div class="flex items-center space-x-1.5 bg-white px-3 py-1.5 rounded-xl border-2 border-amber-300 shadow-sm text-xs font-bold text-amber-950">
-                <span>📅 歷史作業日期：</span>
-                <input type="date" id="hwHistoryDatePicker" onchange="filterHomeworkByDate(this.value)" class="bg-transparent font-bold cursor-pointer">
-                <button type="button" onclick="showAllHomeworkHistory()" class="px-2 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 ml-1">全部歷史</button>
+              <!-- 快捷日期控制器 (前一天 / 日期選擇器 / 後一天 / 今天) -->
+              <div class="flex items-center space-x-1 bg-white px-2.5 py-1 rounded-xl border-2 border-amber-300 shadow-sm text-xs font-bold text-amber-950">
+                <button type="button" onclick="adjustHomeworkFilterDate(-1)" class="w-7 h-7 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-black flex items-center justify-center transition active:scale-95" title="切換至前一天作業">◀</button>
+                <input type="date" id="hwHistoryDatePicker" onchange="filterHomeworkByDate(this.value)" class="bg-transparent font-bold cursor-pointer text-xs sm:text-sm px-1 py-0.5 text-amber-950" title="選擇特定日期">
+                <button type="button" onclick="adjustHomeworkFilterDate(1)" class="w-7 h-7 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 font-black flex items-center justify-center transition active:scale-95" title="切換至後一天作業">▶</button>
+                <button type="button" onclick="goToTodayHomework()" class="px-2 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-black transition active:scale-95">今日</button>
               </div>
-              <button onclick="openEditContactModal()" class="px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 font-black text-xs sm:text-sm shadow-sm flex items-center space-x-1.5" title="編輯今日大螢幕聯絡簿">
-                <i data-lucide="edit-3" class="w-4 h-4 text-amber-700"></i>
-                <span>✏️ 編輯每日聯絡簿</span>
+
+              <button onclick="openEditContactModal()" class="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 font-black text-xs shadow-sm flex items-center space-x-1" title="編輯今日大螢幕聯絡簿">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5 text-amber-700"></i>
+                <span>✏️ 聯絡簿</span>
               </button>
-              <button onclick="openNewHomeworkModal()" class="btn-royal-gold px-4 py-2 rounded-xl text-sm font-black flex items-center space-x-2 shadow">
+              <button onclick="openNewHomeworkModal()" class="btn-royal-gold px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                <span>頒發新奏章 (新增作業)</span>
+                <span>➕ 頒發新作業</span>
               </button>
             </div>
           </div>
 
-          <!-- 各項作業繳交統整看板容器 (卡片式四欄展示：已交 / 遲交 / 需訂正 / 未交) -->
-          <div id="homeworkSummaryBoardContainer" class="space-y-6">
-            <!-- 動態注入各作業的 已交 / 遲交 / 需訂正 / 未交 名冊 -->
+          <!-- 各項作業繳交統整看板容器 (卡片式四欄展示：已交 / 遲交 / 需訂正 / 未交，支援單日作業切換頁籤) -->
+          <div id="homeworkSummaryBoardContainer" class="space-y-4">
+            <!-- 動態注入指定單日的 已交 / 遲交 / 需訂正 / 未交 名冊 -->
           </div>
 
           <!-- ★★★ 學期作業繳交總結算表 (期末平時成績結算專用) ★★★ -->
@@ -5018,8 +5026,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261125_v32"></script>
-  <script src="ui.js?v=20261125_v32"></script>
+  <script src="app.js?v=20261125_v34"></script>
+  <script src="ui.js?v=20261125_v34"></script>
 
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>

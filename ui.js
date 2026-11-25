@@ -647,9 +647,9 @@ function formatVerticalContactText(rawText) {
 function renderVerticalContactGrid(items, format = 'vertical-rtl', isProjection = false) {
   const isRtl = format === 'vertical-rtl';
   const gridClass = isRtl ? 'contact-vertical-grid-rtl' : 'contact-vertical-grid-ltr';
-  const colMinHeight = isProjection ? 'min-h-[460px] sm:min-h-[520px]' : 'min-h-[330px] sm:min-h-[360px]';
-  const numSize = isProjection ? 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl' : 'w-7 h-7 sm:w-8 sm:h-8 text-sm sm:text-base';
-  const textSize = isProjection ? 'text-lg sm:text-2xl lg:text-3xl' : 'text-sm sm:text-base lg:text-lg';
+  const colMinHeight = isProjection ? 'min-h-[460px] sm:min-h-[520px]' : 'h-[395px] min-h-[395px] max-h-[395px]';
+  const numSize = isProjection ? 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl' : 'w-8 h-8 sm:w-9 sm:h-9 text-base sm:text-lg';
+  const textSize = isProjection ? 'text-xl sm:text-2xl lg:text-3xl' : 'text-xl sm:text-2xl lg:text-3xl';
 
   const colsHtml = [1, 2, 3, 4, 5, 6].map(slotIdx => {
     const text = items[slotIdx - 1] || '';
@@ -790,22 +790,22 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
     const isFilled = Boolean(text && String(text).trim());
     if (isFilled) {
       return `
-        <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[3.15rem]">
-          <span class="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-base sm:text-lg font-black shrink-0 shadow-2xs border border-amber-500/40">
+        <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[3.35rem]">
+          <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-lg sm:text-xl font-black shrink-0 shadow-2xs border border-amber-500/40">
             ${slotIdx}
           </span>
-          <span class="text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+          <span class="text-lg sm:text-xl lg:text-2xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
             ${escapeContactHtml(text)}
           </span>
         </div>
       `;
     } else {
       return `
-        <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[3.15rem]">
-          <span class="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-base sm:text-lg font-black shrink-0">
+        <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[3.35rem]">
+          <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-lg sm:text-xl font-black shrink-0">
             ${slotIdx}
           </span>
-          <span class="text-sm sm:text-base font-bold text-amber-900/35 italic">
+          <span class="text-base sm:text-lg font-bold text-amber-900/35 italic">
             （留白）
           </span>
         </div>
@@ -846,35 +846,29 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
   return `
     <div class="space-y-2 bg-gradient-to-b from-amber-100/50 via-white/80 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-400 shadow-md flex flex-col justify-between">
       <div>
-        <!-- 頂部欄位控制與操作按鈕 -->
-        <div class="flex items-center justify-between pb-1.5 border-b border-amber-300/70 text-xs font-black text-amber-950 gap-1.5 flex-wrap">
+        <!-- 頂部欄位與日期整合橫列 (單行整合，節省垂直高度，讓每一直行精準對齊 26-28 號打卡) -->
+        <div class="flex items-center justify-between pb-1.5 border-b-2 border-amber-400/80 text-xs font-black text-amber-950 gap-1.5 flex-wrap">
           <div class="flex items-center space-x-1.5 shrink-0">
             <span class="text-xs sm:text-sm font-black text-amber-950 bg-amber-300/90 px-2.5 py-0.5 rounded-lg border border-amber-400 shadow-2xs">
               📌 ${colName}
             </span>
-            ${relBadge}
-          </div>
-          <!-- 導師手動挑選日期與前後天微調 + 快速編輯 -->
-          <div class="flex items-center space-x-1 shrink-0">
-            <button type="button" onclick="adjustMorningContactColDate(${colIndex}, -1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="前一天">◀</button>
-            <input type="date" value="${dateStr}" onchange="changeMorningContactColDate(${colIndex}, this.value)" class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs sm:text-sm bg-white border-2 border-amber-400 rounded-xl text-amber-950 font-black cursor-pointer shadow-2xs max-w-[125px] sm:max-w-[145px]" title="手動指定此欄日期">
-            <button type="button" onclick="adjustMorningContactColDate(${colIndex}, 1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="後一天">▶</button>
-            <button type="button" onclick="openEditContactModalForDate('${dateStr}')" class="px-2 sm:px-2.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-0.5 transition hover:scale-105 active:scale-95" title="編輯【${dateStr}】聯絡簿">
-              <span>✏️</span>
-              <span class="hidden sm:inline">編輯</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- ★ 聯絡簿日期顯示在上方第一欄、第二欄位置，字體加粗放大 ★ -->
-        <div class="pt-1 pb-1.5 border-b-2 border-amber-400/80 flex items-center justify-between gap-2">
-          <div class="flex items-center space-x-2 flex-wrap">
-            <span class="text-lg sm:text-xl lg:text-2xl font-black text-amber-950 tracking-wide">
+            <span class="text-base sm:text-lg font-black text-amber-950 tracking-wide">
               📅 ${dateStr}
             </span>
             <span class="text-xs sm:text-sm font-black text-amber-800 bg-amber-200/90 px-2 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
               （${weekday}）
             </span>
+            ${relBadge}
+          </div>
+          <!-- 導師手動挑選日期與前後天微調 + 快速編輯 -->
+          <div class="flex items-center space-x-1 shrink-0">
+            <button type="button" onclick="adjustMorningContactColDate(${colIndex}, -1)" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="前一天">◀</button>
+            <input type="date" value="${dateStr}" onchange="changeMorningContactColDate(${colIndex}, this.value)" class="px-1.5 py-0.5 text-xs bg-white border-2 border-amber-400 rounded-lg text-amber-950 font-black cursor-pointer shadow-2xs max-w-[120px] sm:max-w-[135px]" title="手動指定此欄日期">
+            <button type="button" onclick="adjustMorningContactColDate(${colIndex}, 1)" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="後一天">▶</button>
+            <button type="button" onclick="openEditContactModalForDate('${dateStr}')" class="px-2 py-0.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-0.5 transition hover:scale-105 active:scale-95" title="編輯【${dateStr}】聯絡簿">
+              <span>✏️</span>
+              <span class="hidden sm:inline">編輯</span>
+            </button>
           </div>
         </div>
 
@@ -1016,8 +1010,8 @@ function renderMorningBoard() {
         }
 
         hwList.innerHTML = `
-          <div class="space-y-3 bg-gradient-to-b from-amber-100/50 via-white/80 to-yellow-50/30 p-3 sm:p-4 rounded-3xl border-2 border-amber-400 shadow-md">
-            <div class="flex items-center justify-between pb-2 border-b border-amber-300/70 text-xs font-black text-amber-950">
+          <div class="space-y-2 bg-gradient-to-b from-amber-100/50 via-white/80 to-yellow-50/30 p-2 sm:p-2.5 rounded-2xl border-2 border-amber-400 shadow-md">
+            <div class="flex items-center justify-between pb-1.5 border-b border-amber-300/70 text-xs font-black text-amber-950">
               <span class="text-xs sm:text-sm font-black text-amber-950 bg-amber-300/90 px-2.5 py-0.5 rounded-lg border border-amber-400 shadow-2xs">
                 📜 單天完整聯絡簿 (直式 1~6 行直書，完全對齊實體聯絡簿)
               </span>
@@ -1032,22 +1026,22 @@ function renderMorningBoard() {
           const isFilled = Boolean(text && text.trim());
           if (isFilled) {
             return `
-              <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[3.25rem]">
-                <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-base sm:text-lg font-black shrink-0 shadow-2xs border border-amber-500/40">
+              <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[3.35rem]">
+                <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-lg sm:text-xl font-black shrink-0 shadow-2xs border border-amber-500/40">
                   ${slotIdx}
                 </span>
-                <span class="text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+                <span class="text-lg sm:text-xl lg:text-2xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
                   ${escapeContactHtml(text)}
                 </span>
               </div>
             `;
           } else {
             return `
-              <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[3.25rem]">
-                <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-base sm:text-lg font-black shrink-0">
+              <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[3.35rem]">
+                <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-lg sm:text-xl font-black shrink-0">
                   ${slotIdx}
                 </span>
-                <span class="text-sm sm:text-base font-bold text-amber-900/35 italic">
+                <span class="text-base sm:text-lg font-bold text-amber-900/35 italic">
                   （留白）
                 </span>
               </div>
@@ -2191,19 +2185,56 @@ function renderHomeworkSummaryBoard() {
   const allHwList = window.KingdomApp.store.data.homework || [];
   const students = window.KingdomApp.store.data.students || [];
 
-  // 日期過濾
-  let homeworkList = allHwList;
-  if (typeof currentHwFilterDate !== 'undefined' && currentHwFilterDate && currentHwFilterDate !== 'ALL') {
-    homeworkList = allHwList.filter(h => h.date === currentHwFilterDate);
+  // 嚴格設定只顯示單日作業量（預設為今日，確保版面不需長度下拉）
+  initHomeworkFilterDate();
+  const todayStr = window.KingdomApp.getTodayDateString();
+
+  // 同步更新頂部日期選擇器與徽章
+  const picker = document.getElementById("hwHistoryDatePicker");
+  if (picker && picker.value !== currentHwFilterDate) {
+    picker.value = currentHwFilterDate;
+  }
+  const dateBadge = document.getElementById("hwCurrentDateBadge");
+  if (dateBadge) {
+    const weekday = getWeekdayText(currentHwFilterDate);
+    const isToday = currentHwFilterDate === todayStr;
+    dateBadge.textContent = `📅 ${currentHwFilterDate} (${weekday})${isToday ? ' 【今日】' : ''}`;
   }
 
-  if (homeworkList.length === 0) {
+  // 取得指定單日之全部作業
+  const dayHomeworkList = allHwList.filter(h => h.date === currentHwFilterDate || h.dueDate === currentHwFilterDate);
+
+  if (dayHomeworkList.length === 0) {
+    const weekday = getWeekdayText(currentHwFilterDate);
+    const isToday = currentHwFilterDate === todayStr;
     container.innerHTML = `
-      <div class="parchment-card p-8 text-center text-slate-600 font-bold space-y-2">
-        <p>目前在指定日期 (${currentHwFilterDate || '今日'}) 尚無登記的作業奏章。</p>
-        <button onclick="showAllHomeworkHistory()" class="px-4 py-1.5 rounded-xl btn-royal-gold text-xs font-black shadow">
-          查看所有歷史作業
-        </button>
+      <div class="parchment-card p-6 sm:p-8 text-center text-slate-700 font-bold space-y-3.5 rounded-2xl border-2 border-dashed border-amber-300 shadow-2xs">
+        <div class="text-4xl sm:text-5xl drop-shadow-xs">📜</div>
+        <div class="space-y-1">
+          <h3 class="text-base sm:text-lg font-black text-amber-950">
+            ${currentHwFilterDate} (${weekday})${isToday ? ' 【今日】' : ''} 尚無登記的作業奏章
+          </h3>
+          <p class="text-xs text-amber-900/70 max-w-md mx-auto">
+            此日尚未頒布任何回家作業或課堂習作。版面僅專注展示單日內容，避免下拉過長。
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+          <button onclick="openNewHomeworkModal('${currentHwFilterDate}')" class="btn-royal-gold px-4 py-2 rounded-xl text-xs sm:text-sm font-black shadow flex items-center space-x-1.5 transition active:scale-95">
+            <span>➕</span>
+            <span>為【${currentHwFilterDate}】新增作業</span>
+          </button>
+          <button onclick="adjustHomeworkFilterDate(-1)" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95">
+            ◀ 前一天
+          </button>
+          <button onclick="adjustHomeworkFilterDate(1)" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95">
+            後一天 ▶
+          </button>
+          ${!isToday ? `
+            <button onclick="goToTodayHomework()" class="px-3.5 py-2 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-black shadow-2xs transition active:scale-95">
+              🚩 回到今天
+            </button>
+          ` : ''}
+        </div>
       </div>
     `;
     renderHomeworkSettlementTable();
@@ -2211,7 +2242,57 @@ function renderHomeworkSummaryBoard() {
     return;
   }
 
-  container.innerHTML = homeworkList.map(hw => {
+  // 驗證目前聚焦作業是否仍存在於當日清單中
+  if (currentHwFilterId !== 'ALL' && !dayHomeworkList.some(h => String(h.id) === String(currentHwFilterId))) {
+    currentHwFilterId = 'ALL';
+  }
+
+  const displayedHwList = (currentHwFilterId !== 'ALL')
+    ? dayHomeworkList.filter(h => String(h.id) === String(currentHwFilterId))
+    : dayHomeworkList;
+
+  // 產生「當日作業快捷標籤列」 (若當日有多項作業，可單鍵切換要編輯的作業，徹底免滾動！)
+  let tabsBarHtml = '';
+  if (dayHomeworkList.length > 1) {
+    const isAllActive = currentHwFilterId === 'ALL';
+    tabsBarHtml = `
+      <div class="bg-gradient-to-r from-amber-100/90 to-yellow-100/90 p-2 sm:p-2.5 rounded-2xl border-2 border-amber-300 flex items-center justify-between gap-2 flex-wrap shadow-2xs">
+        <div class="flex items-center space-x-1.5 flex-wrap gap-y-1.5">
+          <span class="text-xs font-black text-amber-950 mr-1 flex items-center space-x-1">
+            <span>🎯</span>
+            <span>選擇當日作業：</span>
+          </span>
+          <button onclick="selectSingleHomeworkTab('ALL')" class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${isAllActive ? 'bg-amber-500 text-amber-950 shadow-xs ring-2 ring-amber-600/60' : 'bg-white hover:bg-amber-50 text-slate-700 border border-amber-300'}">
+            📑 顯示當日全部 (${dayHomeworkList.length}項)
+          </button>
+          ${dayHomeworkList.map(h => {
+            const isActive = String(currentHwFilterId) === String(h.id);
+            let pendingCount = 0;
+            let revisionCount = 0;
+            students.forEach(st => {
+              const status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
+              if (status === 'pending') pendingCount++;
+              else if (status === 'revision') revisionCount++;
+            });
+            const badgeText = pendingCount > 0 ? `未交 ${pendingCount}` : (revisionCount > 0 ? `需訂正 ${revisionCount}` : '已全齊');
+            const badgeClass = pendingCount > 0 ? 'bg-rose-500 text-white' : (revisionCount > 0 ? 'bg-purple-500 text-white' : 'bg-emerald-600 text-white');
+            return `
+              <button onclick="selectSingleHomeworkTab('${h.id}')" class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center space-x-1.5 ${isActive ? 'bg-amber-500 text-amber-950 shadow-xs ring-2 ring-amber-600/60' : 'bg-white hover:bg-amber-50 text-slate-800 border border-amber-300'}">
+                <span>${h.subject ? `[${h.subject}]` : ''} ${escapeContactHtml(h.title)}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full font-black ${badgeClass}">${badgeText}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+        <button onclick="openNewHomeworkModal('${currentHwFilterDate}')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">
+          <span>➕</span>
+          <span>新增此日作業</span>
+        </button>
+      </div>
+    `;
+  }
+
+  const cardsHtml = displayedHwList.map(hw => {
     const submittedList = [];
     const lateList = [];
     const revisionList = [];
@@ -2378,6 +2459,8 @@ function renderHomeworkSummaryBoard() {
       </div>
     `;
   }).join('');
+
+  container.innerHTML = tabsBarHtml + cardsHtml;
 
   renderHomeworkSettlementTable();
   renderContactBookHistoryList();
@@ -3212,8 +3295,11 @@ function confirmResetHwPresetsToDefault() {
   renderHomeworkPresetButtons();
 }
 
-function openNewHomeworkModal() {
-  document.getElementById("newHwDueDate").value = window.KingdomApp.getTodayDateString();
+function openNewHomeworkModal(targetDate) {
+  const dateInput = document.getElementById("newHwDueDate");
+  if (dateInput) {
+    dateInput.value = targetDate || currentHwFilterDate || window.KingdomApp.getTodayDateString();
+  }
   const titleEl = document.getElementById("newHwTitle");
   if (titleEl) {
     titleEl.value = "";
@@ -3237,14 +3323,15 @@ function submitNewHomework(e) {
   const desc = document.getElementById("newHwDesc").value.trim();
   const presetName = titleEl.dataset.presetName || '';
   const todayDate = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const targetDate = dueDate || currentHwFilterDate || todayDate;
 
   const newHw = {
     id: `hw-${Date.now()}`,
     subject,
     title,
     presetName,
-    date: todayDate,
-    dueDate: dueDate || todayDate,
+    date: targetDate,
+    dueDate: dueDate || targetDate,
     desc,
     records: {}
   };
@@ -3260,6 +3347,10 @@ function submitNewHomework(e) {
   store.data.homework.unshift(newHw);
   store.syncAllHomeworkReflectionCards();
   store.save('頒布新作業奏章: ' + title);
+
+  // 切換聚焦至此項新作業，確保能立刻在畫面上直接編輯與指派
+  currentHwFilterDate = targetDate;
+  currentHwFilterId = newHw.id;
 
   window.KingdomApp.sound.playFanfare();
   window.KingdomApp.triggerConfetti();
@@ -12939,20 +13030,59 @@ function setSeatToEmpty() {
 }
 
 // ===================================================================
-// 歷史作業查詢與篩選 (Homework History Filter)
+// 單日作業查詢與快速切換 (Single-Day Homework Filter & Quick Selection)
 // ===================================================================
 let currentHwFilterDate = null;
+let currentHwFilterId = 'ALL';
+
+function initHomeworkFilterDate() {
+  if (!currentHwFilterDate || currentHwFilterDate === 'ALL') {
+    currentHwFilterDate = (window.KingdomApp && window.KingdomApp.getTodayDateString) 
+      ? window.KingdomApp.getTodayDateString() 
+      : new Date().toISOString().slice(0, 10);
+  }
+}
+
+function adjustHomeworkFilterDate(deltaDays) {
+  initHomeworkFilterDate();
+  const parts = currentHwFilterDate.split('-');
+  if (parts.length === 3) {
+    const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    d.setDate(d.getDate() + deltaDays);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    currentHwFilterDate = `${y}-${m}-${day}`;
+  } else {
+    currentHwFilterDate = window.KingdomApp.getTodayDateString();
+  }
+  currentHwFilterId = 'ALL';
+  renderHomeworkSummaryBoard();
+}
 
 function filterHomeworkByDate(dateVal) {
-  currentHwFilterDate = dateVal;
+  if (!dateVal) {
+    currentHwFilterDate = window.KingdomApp.getTodayDateString();
+  } else {
+    currentHwFilterDate = dateVal;
+  }
+  currentHwFilterId = 'ALL';
+  renderHomeworkSummaryBoard();
+}
+
+function goToTodayHomework() {
+  currentHwFilterDate = window.KingdomApp.getTodayDateString();
+  currentHwFilterId = 'ALL';
+  renderHomeworkSummaryBoard();
+}
+
+function selectSingleHomeworkTab(hwId) {
+  currentHwFilterId = hwId;
   renderHomeworkSummaryBoard();
 }
 
 function showAllHomeworkHistory() {
-  currentHwFilterDate = 'ALL';
-  const picker = document.getElementById("hwHistoryDatePicker");
-  if (picker) picker.value = "";
-  renderHomeworkSummaryBoard();
+  goToTodayHomework();
 }
 
 function pardonAllReflectionCards() {
@@ -13007,6 +13137,9 @@ if (typeof window !== 'undefined') {
   window.pardonAllReflectionCards = pardonAllReflectionCards;
   window.pardonAllServiceCards = pardonAllServiceCards;
   window.filterHomeworkByDate = filterHomeworkByDate;
+  window.adjustHomeworkFilterDate = adjustHomeworkFilterDate;
+  window.goToTodayHomework = goToTodayHomework;
+  window.selectSingleHomeworkTab = selectSingleHomeworkTab;
   window.showAllHomeworkHistory = showAllHomeworkHistory;
   window.openZooFeedModal = openZooFeedModal;
   window.closeZooFeedModal = closeZooFeedModal;
