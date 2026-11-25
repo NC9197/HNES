@@ -33,7 +33,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261126_v37">
+  <link rel="stylesheet" href="styles.css?v=20261126_v38">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
   <!-- 頂部明亮黃金導航列 (Bright Royal Golden Navbar) -->
@@ -285,14 +285,17 @@
             <span id="contactBookDateDisplay"></span>
           </span>
         </div>
-        <!-- 右側操作按鈕：編輯聯絡簿項目 與 大屏投影 -->
-        <div class="flex items-center space-x-2 shrink-0">
-          <button type="button" onclick="openContactProjectionModal()" class="btn-royal-gold px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-sm transform hover:scale-105 active:scale-95 transition" title="全螢幕大屏投影聯絡簿（保留到校打卡功能）">
+        <!-- 右側操作按鈕：獨立編輯早自修提醒、編輯聯絡簿作業 與 大屏投影 -->
+        <div class="flex items-center space-x-2 shrink-0 flex-wrap gap-y-1">
+          <button type="button" onclick="openContactProjectionModal()" class="btn-royal-gold px-3 py-1.5 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-sm transform hover:scale-105 active:scale-95 transition" title="全螢幕大屏投影聯絡簿（保留到校打卡功能）">
             <span>🖥️ 大屏投影</span>
           </button>
-          <button type="button" onclick="openEditContactModal()" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border-2 border-amber-400 font-black text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 transition">
+          <button type="button" onclick="openEditRemindersModal()" id="btnOpenEditRemindersNav" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 border-2 border-amber-500 font-black text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 transition transform hover:scale-105 active:scale-95" title="獨立編輯早自修與重要提醒">
+            <span>🔔 獨立編輯早自修與提醒</span>
+          </button>
+          <button type="button" onclick="openEditContactModal()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border-2 border-amber-400 font-black text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 transition">
             <i data-lucide="edit-3" class="w-4 h-4 text-amber-700"></i>
-            <span>✏️ 編輯聯絡簿項目</span>
+            <span>✏️ 編輯作業</span>
           </button>
         </div>
       </div>
@@ -391,16 +394,21 @@
           <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-3 sm:p-4 rounded-2xl space-y-2 shadow-sm flex-1 min-h-[175px] sm:min-h-[195px] flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between pb-1.5 border-b border-amber-300/80 mb-2">
-                <div class="flex items-center space-x-1.5 text-amber-950 font-black text-sm sm:text-base lg:text-lg">
-                  <span class="text-base sm:text-lg">🔔</span>
+                <div class="flex items-center space-x-1.5 text-amber-950 font-black text-base sm:text-lg lg:text-xl">
+                  <span class="text-lg sm:text-xl">🔔</span>
                   <span>早自修和重要提醒：</span>
                 </div>
-                <p id="contactQueenMotto" class="text-xs sm:text-sm font-black text-amber-900/90 italic hidden sm:block">
-                  👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
-                </p>
+                <div class="flex items-center space-x-2">
+                  <button type="button" onclick="openEditRemindersModal()" class="px-2.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs sm:text-sm border border-amber-500 shadow-2xs flex items-center space-x-1 transition hover:scale-105 active:scale-95" title="獨立編輯早自修與重要提醒">
+                    <span>✏️ 獨立編輯</span>
+                  </button>
+                  <p id="contactQueenMotto" class="text-xs sm:text-sm font-black text-amber-900/90 italic hidden xl:block">
+                    👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
+                  </p>
+                </div>
               </div>
-              <ul id="contactReminderList" class="space-y-1.5 text-sm sm:text-base lg:text-lg font-black text-amber-950 list-none pl-0">
-                <!-- 動態渲染提醒項目 -->
+              <ul id="contactReminderList" class="space-y-2 text-base sm:text-lg lg:text-xl font-black text-amber-950 list-none pl-0">
+                <!-- 動態渲染提醒項目 (字體放大和聯絡簿一樣) -->
               </ul>
             </div>
             <!-- 底部裝飾與加強提示標籤 -->
@@ -481,16 +489,21 @@
             <div class="lg:col-span-7 bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-3 rounded-2xl shadow-sm flex flex-col justify-between space-y-2">
               <div>
                 <div class="flex items-center justify-between pb-1.5 border-b border-amber-300/80 mb-1.5">
-                  <div class="flex items-center space-x-1.5 text-amber-950 font-black text-xs sm:text-sm lg:text-base">
+                  <div class="flex items-center space-x-1.5 text-amber-950 font-black text-sm sm:text-base lg:text-lg">
                     <span class="text-base sm:text-lg">🔔</span>
                     <span>早自修和重要提醒 (三天重點匯總)：</span>
                   </div>
-                  <p id="contactQueenMotto3Days" class="text-xs font-black text-amber-900/90 italic hidden sm:block">
-                    👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
-                  </p>
+                  <div class="flex items-center space-x-2">
+                    <button type="button" onclick="openEditRemindersModal()" class="px-2 py-0.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs border border-amber-500 shadow-2xs flex items-center space-x-1 transition hover:scale-105 active:scale-95" title="獨立編輯早自修與重要提醒">
+                      <span>✏️ 獨立編輯</span>
+                    </button>
+                    <p id="contactQueenMotto3Days" class="text-xs font-black text-amber-900/90 italic hidden xl:block">
+                      👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
+                    </p>
+                  </div>
                 </div>
-                <ul id="contactReminderList3Days" class="space-y-1.5 text-sm sm:text-base lg:text-lg font-black text-amber-950 list-none pl-0 max-h-[145px] overflow-y-auto pr-1">
-                  <!-- 由 renderMorningBoard() 動態渲染 -->
+                <ul id="contactReminderList3Days" class="space-y-2 text-base sm:text-lg lg:text-xl font-black text-amber-950 list-none pl-0 max-h-[165px] overflow-y-auto pr-1">
+                  <!-- 由 renderMorningBoard() 動態渲染 (字體放大和聯絡簿一樣) -->
                 </ul>
               </div>
               <div class="pt-1.5 border-t border-amber-300/60 flex items-center justify-between text-[11px] sm:text-xs font-bold text-amber-900/80">
@@ -1809,6 +1822,96 @@
       </form>
     </div>
   </div>
+  <!-- =============================================================== -->
+  <!-- MODAL: 獨立編輯早自修與重要提醒彈窗 (Edit Reminders Independent Modal) -->
+  <!-- =============================================================== -->
+  <div id="editRemindersModal" class="hidden fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+    <div class="parchment-card max-w-xl w-full p-5 sm:p-6 space-y-4 shadow-2xl border-2 border-amber-400">
+      <div class="flex items-center justify-between border-b-2 border-amber-300 pb-3">
+        <div class="flex items-center space-x-2">
+          <span class="text-2xl">🔔</span>
+          <div>
+            <h3 id="editRemindersModalDateTitle" class="text-lg sm:text-xl font-black text-amber-950">
+              獨立編輯早自修與重要提醒
+            </h3>
+            <p class="text-[11px] font-bold text-amber-800">
+              專注編輯晨間自修與注意事項，不影響作業抄寫項目
+            </p>
+          </div>
+        </div>
+        <button type="button" onclick="closeEditRemindersModal()" class="w-8 h-8 rounded-full bg-white/80 hover:bg-rose-100 text-slate-700 hover:text-rose-700 flex items-center justify-center border border-amber-300 transition shadow-xs">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <!-- 快速日期切換列 -->
+      <div class="flex items-center justify-between bg-amber-100/70 p-2.5 rounded-xl border border-amber-300 text-xs font-bold gap-2 flex-wrap">
+        <span class="text-amber-950 font-black flex items-center space-x-1 shrink-0">
+          <span>📅 當前編輯日期：</span>
+          <span id="editRemindersCurrentDateBadge" class="bg-amber-300/90 text-amber-950 px-2 py-0.5 rounded-md border border-amber-400 font-mono"></span>
+        </span>
+        <div class="flex items-center space-x-1">
+          <label for="editRemindersDatePicker" class="text-amber-900 text-[11px]">切換日期：</label>
+          <input type="date" id="editRemindersDatePicker" onchange="handleRemindersDatePickerChange(this.value)" class="px-2 py-0.5 text-xs bg-white border border-amber-300 rounded-lg text-amber-900 font-bold cursor-pointer">
+        </div>
+      </div>
+      <!-- 快捷常用範本按鈕群 -->
+      <div class="space-y-1.5">
+        <span class="text-xs font-black text-amber-900 flex items-center space-x-1">
+          <span>⚡ 點擊快速插入常用範本：</span>
+        </span>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" onclick="appendReminderPreset('早自修：全班保持專注靜心自修')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
+            📖 專注靜心自修
+          </button>
+          <button type="button" onclick="appendReminderPreset('早自修：國語生字造詞隨堂練習')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
+            ✍️ 國語生字練習
+          </button>
+          <button type="button" onclick="appendReminderPreset('早自修：數學隨堂演練計算題')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
+            ➗ 數學隨堂演練
+          </button>
+          <button type="button" onclick="appendReminderPreset('早自修：閱讀班書並記錄閱讀日誌')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
+            📚 閱讀班書日誌
+          </button>
+          <button type="button" onclick="appendReminderPreset('重要提醒：明日有體育課，請穿著西寧王國運動服與運動鞋')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
+            🏃 明穿運動服鞋
+          </button>
+          <button type="button" onclick="appendReminderPreset('重要提醒：請檢查家長聯絡簿簽名並繳交')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
+            📝 聯絡簿簽名
+          </button>
+          <button type="button" onclick="appendReminderPreset('重要提醒：攜帶美勞課所需用具與剪刀色紙')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
+            🎨 攜帶美勞用具
+          </button>
+          <button type="button" onclick="appendReminderPreset('生活提醒：用餐完畢徹底潔牙並整理桌面')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
+            🪥 餐後潔牙整理
+          </button>
+        </div>
+      </div>
+      <form onsubmit="saveRemindersData(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-black text-amber-950 mb-1 flex items-center justify-between">
+            <span class="text-sm">🔔 早自修和重要提醒內容 (一行一項，字體自動放大展示)：</span>
+            <span class="text-[11px] text-amber-800 font-normal">留空則顯示預設自習提示</span>
+          </label>
+          <textarea id="editRemindersText" rows="5" placeholder="例如：&#10;早自修：國語隨堂生字造詞練習與成語訂正&#10;重要提醒：明天第二節有體育課，請穿著西寧王國運動服與運動鞋&#10;午餐提醒：請備妥個人環保餐具與餐後潔牙用品" class="w-full p-3.5 rounded-xl border-2 border-amber-400 bg-white font-black text-base leading-relaxed text-amber-950 shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none"></textarea>
+        </div>
+        <div>
+          <label class="block font-black text-amber-950 mb-1 flex items-center justify-between">
+            <span>👑 皇后每日聖諭 / 班級勵志格言：</span>
+            <span class="text-[11px] text-amber-800 font-normal">可自訂每日金句</span>
+          </label>
+          <input type="text" id="editRemindersMotto" placeholder="細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！" class="w-full px-3 py-2 rounded-xl border-2 border-amber-400 bg-white font-bold text-sm text-amber-950 focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-xs">
+        </div>
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t border-amber-200">
+          <button type="button" onclick="closeEditRemindersModal()" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold hover:bg-slate-100 transition">
+            取消
+          </button>
+          <button type="submit" class="btn-royal-gold px-6 py-2 rounded-xl font-black text-sm shadow-md transition transform hover:scale-105 active:scale-95">
+            💾 儲存並發布提醒至大螢幕
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
   <!-- MODAL: 作業快速設置「需訂正 / 未繳交 / 遲交 / 已繳」座號鍵盤盤 -->
   <div id="setRevisionModal" class="hidden fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
     <div class="parchment-card max-w-xl w-full p-4 sm:p-6 space-y-3.5 shadow-2xl border-2 border-amber-400">
@@ -2702,13 +2805,18 @@
         <div id="contactProjHomeworkList" class="space-y-4 flex-1">
           <!-- 由 ui.js 動態渲染雙天或三天對照六行大字看板（📌 第一欄 ＆ 📌 第二欄） -->
         </div>
-        <!-- 早自修與重要提醒 -->
+        <!-- 早自修與重要提醒 (字體放大和聯絡簿一樣，附獨立編輯按鈕) -->
         <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-3.5 sm:p-4 rounded-2xl space-y-1 shadow-sm">
-          <div class="flex items-center space-x-2 text-amber-950 font-black text-base sm:text-lg">
-            <span>🔔 早自修和重要提醒：</span>
+          <div class="flex items-center justify-between pb-1 border-b border-amber-300/80">
+            <div class="flex items-center space-x-2 text-amber-950 font-black text-lg sm:text-xl lg:text-2xl">
+              <span>🔔 早自修和重要提醒：</span>
+            </div>
+            <button type="button" onclick="openEditRemindersModal()" class="px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs sm:text-sm border border-amber-500 shadow-2xs flex items-center space-x-1 transition hover:scale-105 active:scale-95" title="獨立編輯早自修與重要提醒">
+              <span>✏️ 獨立編輯</span>
+            </button>
           </div>
-          <ul id="contactProjReminderList" class="space-y-0.5 text-base sm:text-xl font-black text-amber-900 list-disc list-inside">
-            <!-- 動態渲染提醒項目 -->
+          <ul id="contactProjReminderList" class="space-y-1 text-lg sm:text-2xl lg:text-3xl font-black text-amber-900 list-disc list-inside">
+            <!-- 動態渲染提醒項目 (大屏超大字展示) -->
           </ul>
         </div>
         <!-- 每日聖諭 / 格言 -->
@@ -2768,15 +2876,20 @@
           <div class="lg:col-span-7 bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-3 rounded-2xl space-y-1.5 shadow-md flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between pb-1 border-b border-amber-300/80 mb-1">
-                <div class="flex items-center space-x-1.5 text-amber-950 font-black text-sm sm:text-base">
+                <div class="flex items-center space-x-1.5 text-amber-950 font-black text-sm sm:text-base lg:text-lg">
                   <span>🔔 早自修和重要提醒 (三天重點匯總)：</span>
                 </div>
-                <p id="contactProjQueenMotto3Days" class="text-xs font-black text-amber-900/90 italic hidden sm:block">
-                  👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
-                </p>
+                <div class="flex items-center space-x-2">
+                  <button type="button" onclick="openEditRemindersModal()" class="px-2 py-0.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs border border-amber-500 shadow-2xs flex items-center space-x-1 transition hover:scale-105 active:scale-95" title="獨立編輯早自修與重要提醒">
+                    <span>✏️ 獨立編輯</span>
+                  </button>
+                  <p id="contactProjQueenMotto3Days" class="text-xs font-black text-amber-900/90 italic hidden xl:block">
+                    👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
+                  </p>
+                </div>
               </div>
-              <ul id="contactProjReminderList3Days" class="space-y-1 text-sm sm:text-base lg:text-lg font-black text-amber-900 list-disc list-inside max-h-[140px] overflow-y-auto pr-1">
-                <!-- 動態渲染三天匯總提醒 -->
+              <ul id="contactProjReminderList3Days" class="space-y-1 text-base sm:text-xl lg:text-2xl font-black text-amber-900 list-disc list-inside max-h-[160px] overflow-y-auto pr-1">
+                <!-- 動態渲染三天匯總提醒 (大屏超大字展示) -->
               </ul>
             </div>
             <div class="pt-1 border-t border-amber-300/60 flex items-center justify-between text-[11px] font-bold text-amber-900/80">
@@ -4679,8 +4792,8 @@
     </div>
   </div>
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261126_v37"></script>
-  <script src="ui.js?v=20261126_v37"></script>
+  <script src="app.js?v=20261126_v38"></script>
+  <script src="ui.js?v=20261126_v38"></script>
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>
     (function() {

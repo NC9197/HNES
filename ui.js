@@ -879,19 +879,15 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
   return `
     <div class="space-y-2 bg-gradient-to-b from-amber-100/50 via-white/80 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-400 shadow-md flex flex-col justify-between">
       <div>
-        <!-- 頂部欄位與日期整合橫列 (單行整合，節省垂直高度，讓每一直行精準對齊 26-28 號打卡) -->
+        <!-- 頂部欄位與日期整合橫列 (已刪除第幾欄與今天明天，日期字體放大加粗) -->
         <div class="flex items-center justify-between pb-1.5 border-b-2 border-amber-400/80 text-xs font-black text-amber-950 gap-1.5 flex-wrap">
-          <div class="flex items-center space-x-1.5 shrink-0">
-            <span class="text-xs sm:text-sm font-black text-amber-950 bg-amber-300/90 px-2.5 py-0.5 rounded-lg border border-amber-400 shadow-2xs">
-              📌 ${colName}
-            </span>
-            <span class="text-base sm:text-lg font-black text-amber-950 tracking-wide">
+          <div class="flex items-center space-x-2 shrink-0">
+            <span class="text-lg sm:text-xl lg:text-2xl font-black text-amber-950 tracking-wider">
               📅 ${dateStr}
             </span>
-            <span class="text-xs sm:text-sm font-black text-amber-800 bg-amber-200/90 px-2 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
-              （${weekday}）
+            <span class="text-sm sm:text-base font-black text-amber-900 bg-amber-200/90 px-2.5 py-0.5 rounded-xl border border-amber-300 shadow-2xs">
+              ${weekday}
             </span>
-            ${relBadge}
           </div>
           <!-- 導師手動挑選日期與前後天微調 + 快速編輯 -->
           <div class="flex items-center space-x-1 shrink-0">
@@ -1076,15 +1072,15 @@ function renderMorningBoard() {
 
     if (all3Reminders.length === 0) {
       reminderList3Days.innerHTML = `
-        <li class="text-amber-900/70 text-xs sm:text-sm font-bold list-none py-1 flex items-center space-x-1.5">
-          <span>✨</span>
+        <li class="text-amber-900/80 text-sm sm:text-base lg:text-lg font-black list-none py-1.5 flex items-center space-x-2">
+          <span class="text-base sm:text-lg">✨</span>
           <span>今日早自修各司其職，無特殊附加提醒，請全班保持專注靜心自習！</span>
         </li>
       `;
     } else {
       reminderList3Days.innerHTML = all3Reminders.map(item => `
-        <li class="leading-snug py-0.5 text-xs sm:text-sm lg:text-base flex items-start space-x-1.5 text-amber-950 font-black">
-          <span class="text-amber-600 mt-0.5 shrink-0 text-sm">📌</span>
+        <li class="leading-relaxed py-1 text-base sm:text-lg lg:text-xl flex items-start space-x-2 text-amber-950 font-black">
+          <span class="text-amber-600 mt-0.5 shrink-0 text-base sm:text-lg">📌</span>
           <span class="flex-1 break-words">${escapeContactHtml(item)}</span>
         </li>
       `).join('');
@@ -1191,7 +1187,7 @@ function renderMorningBoard() {
             <!-- 左欄 (第 1 ~ 3 行) -->
             <div class="space-y-1.5 sm:space-y-2 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2 sm:p-2.5 rounded-xl border border-amber-300/80 shadow-2xs">
               <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-                <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 3 項)</span></span>
+                <span class="flex items-center space-x-1"><span class="font-black text-amber-950 text-sm">第 1 ~ 3 項</span></span>
                 <span class="text-[11px] text-amber-800 font-mono">1 - 3</span>
               </div>
               <div class="space-y-1.5">
@@ -1202,7 +1198,7 @@ function renderMorningBoard() {
             <!-- 右欄 (第 4 ~ 6 行) -->
             <div class="space-y-1.5 sm:space-y-2 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2 sm:p-2.5 rounded-xl border border-amber-300/80 shadow-2xs">
               <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
-                <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 4 ~ 6 項)</span></span>
+                <span class="flex items-center space-x-1"><span class="font-black text-amber-950 text-sm">第 4 ~ 6 項</span></span>
                 <span class="text-[11px] text-amber-800 font-mono">4 - 6</span>
               </div>
               <div class="space-y-1.5">
@@ -1234,15 +1230,15 @@ function renderMorningBoard() {
 
     if (reminders.length === 0) {
       reminderList.innerHTML = `
-        <li class="text-amber-900/70 text-sm sm:text-base font-bold list-none py-1.5 flex items-center space-x-2">
-          <span class="text-base sm:text-lg">✨</span>
+        <li class="text-amber-900/80 text-base sm:text-lg lg:text-xl font-black list-none py-2 flex items-center space-x-2">
+          <span class="text-lg sm:text-xl">✨</span>
           <span>今日早自修各司其職，無特殊附加提醒，請全班保持專注靜心自習！</span>
         </li>
       `;
     } else {
       reminderList.innerHTML = reminders.map(item => `
-        <li class="leading-relaxed py-1 text-sm sm:text-base lg:text-lg flex items-start space-x-2 text-amber-950 font-black">
-          <span class="text-amber-600 mt-0.5 shrink-0 text-base">📌</span>
+        <li class="leading-relaxed py-1.5 text-base sm:text-lg lg:text-xl flex items-start space-x-2 text-amber-950 font-black">
+          <span class="text-amber-600 mt-0.5 shrink-0 text-lg sm:text-xl">📌</span>
           <span class="flex-1 break-words">${escapeContactHtml(item)}</span>
         </li>
       `).join('');
@@ -1521,6 +1517,139 @@ function saveContactBookData(e) {
   }
   showToast(`📜 ${targetDate} 聯絡簿奏章已成功修訂發布！`, "👑");
   closeEditContactModal();
+  renderMorningBoard();
+  if (typeof renderContactProjectionView === 'function') {
+    renderContactProjectionView();
+  }
+}
+
+// ===============================================================
+// 獨立編輯早自修與重要提醒控制器 (Independent Reminders Controller)
+// ===============================================================
+let currentRemindersEditDate = null;
+
+function openEditRemindersModal(dateStr) {
+  if (!checkTeacherAuth("編輯早自修與重要提醒")) return;
+  const targetDate = dateStr || currentContactDate || window.KingdomApp.getTodayDateString();
+  currentRemindersEditDate = targetDate;
+
+  const titleEl = document.getElementById("editRemindersModalDateTitle");
+  if (titleEl) {
+    titleEl.textContent = `獨立編輯早自修與重要提醒 (${targetDate})`;
+  }
+
+  const badgeEl = document.getElementById("editRemindersCurrentDateBadge");
+  if (badgeEl) {
+    badgeEl.textContent = targetDate;
+  }
+
+  const pickerEl = document.getElementById("editRemindersDatePicker");
+  if (pickerEl) {
+    pickerEl.value = targetDate;
+  }
+
+  const cb = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+    ? window.KingdomApp.store.getContactBook(targetDate)
+    : null;
+
+  const textEl = document.getElementById("editRemindersText");
+  const mottoEl = document.getElementById("editRemindersMotto");
+
+  if (textEl) {
+    const remList = (cb && cb.reminders && Array.isArray(cb.reminders)) ? cb.reminders : [];
+    textEl.value = remList.join('\n');
+  }
+
+  if (mottoEl) {
+    mottoEl.value = (cb && cb.queenMotto) ? cb.queenMotto : '';
+  }
+
+  const modal = document.getElementById("editRemindersModal");
+  if (modal) {
+    modal.classList.remove("hidden");
+  }
+  initLucideIcons();
+
+  setTimeout(() => {
+    if (textEl) textEl.focus();
+  }, 100);
+}
+
+function closeEditRemindersModal() {
+  const modal = document.getElementById("editRemindersModal");
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+}
+
+function handleRemindersDatePickerChange(newDate) {
+  if (!newDate) return;
+  currentRemindersEditDate = newDate;
+  const badgeEl = document.getElementById("editRemindersCurrentDateBadge");
+  if (badgeEl) badgeEl.textContent = newDate;
+  const titleEl = document.getElementById("editRemindersModalDateTitle");
+  if (titleEl) titleEl.textContent = `獨立編輯早自修與重要提醒 (${newDate})`;
+
+  const cb = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+    ? window.KingdomApp.store.getContactBook(newDate)
+    : null;
+
+  const textEl = document.getElementById("editRemindersText");
+  const mottoEl = document.getElementById("editRemindersMotto");
+
+  if (textEl) {
+    const remList = (cb && cb.reminders && Array.isArray(cb.reminders)) ? cb.reminders : [];
+    textEl.value = remList.join('\n');
+  }
+  if (mottoEl) {
+    mottoEl.value = (cb && cb.queenMotto) ? cb.queenMotto : '';
+  }
+}
+
+function appendReminderPreset(text) {
+  const textEl = document.getElementById("editRemindersText");
+  if (!textEl) return;
+  const currentVal = textEl.value.trim();
+  if (currentVal.length === 0) {
+    textEl.value = text;
+  } else {
+    textEl.value = currentVal + '\n' + text;
+  }
+  textEl.focus();
+}
+
+function saveRemindersData(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  if (!checkTeacherAuth("儲存早自修與重要提醒")) return;
+
+  const targetDate = currentRemindersEditDate || currentContactDate || window.KingdomApp.getTodayDateString();
+  const textEl = document.getElementById("editRemindersText");
+  const mottoEl = document.getElementById("editRemindersMotto");
+
+  const rawText = textEl ? textEl.value : "";
+  const motto = mottoEl ? mottoEl.value : "";
+
+  const reminders = rawText.split('\n').map(s => s.trim()).filter(Boolean);
+
+  const existingCb = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+    ? window.KingdomApp.store.getContactBook(targetDate)
+    : null;
+
+  const homeworkItems = (existingCb && existingCb.homeworkItems && Array.isArray(existingCb.homeworkItems))
+    ? existingCb.homeworkItems
+    : [];
+
+  window.KingdomApp.store.saveContactBook(targetDate, {
+    homeworkItems: homeworkItems,
+    reminders: reminders,
+    queenMotto: motto.trim() || "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"
+  });
+
+  if (window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+    window.KingdomApp.sound.playFanfare();
+  }
+  showToast(`🔔 ${targetDate} 早自修與重要提醒已成功修訂發布！`, "👑");
+  closeEditRemindersModal();
   renderMorningBoard();
   if (typeof renderContactProjectionView === 'function') {
     renderContactProjectionView();
@@ -7294,6 +7423,13 @@ function toggleRosterPetDrawer(studentId) {
 if (typeof window !== 'undefined') {
   window.changeRosterActivePet = changeRosterActivePet;
   window.toggleRosterPetDrawer = toggleRosterPetDrawer;
+
+  // 早自修與重要提醒獨立編輯
+  window.openEditRemindersModal = openEditRemindersModal;
+  window.closeEditRemindersModal = closeEditRemindersModal;
+  window.handleRemindersDatePickerChange = handleRemindersDatePickerChange;
+  window.appendReminderPreset = appendReminderPreset;
+  window.saveRemindersData = saveRemindersData;
 }
 
 function renderRosterView() {
@@ -8295,7 +8431,7 @@ function renderDayColumn(colIndex, dateStr, totalCols) {
   const minHeight = isThreeCols ? 'min-h-[3.8rem]' : (isSingleCol ? 'min-h-[4.5rem]' : 'min-h-[4.2rem]');
   const numBadgeSize = isThreeCols ? 'w-9 h-9 sm:w-10 sm:h-10 text-lg sm:text-xl' : (isSingleCol ? 'w-11 h-11 sm:w-13 sm:h-13 text-2xl sm:text-3xl' : 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl');
   const textClass = isThreeCols ? 'text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-snug break-words flex-1' : (isSingleCol ? 'text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-wide leading-snug break-words flex-1' : 'text-lg sm:text-xl lg:text-2xl font-black text-slate-900 tracking-wide leading-snug break-words flex-1');
-  const dateTextSize = isThreeCols ? 'text-xl sm:text-2xl lg:text-2xl font-black text-amber-950 tracking-wide' : 'text-2xl sm:text-3xl lg:text-4xl font-black text-amber-950 tracking-wide';
+  const dateTextSize = isThreeCols ? 'text-2xl sm:text-3xl lg:text-4xl font-black text-amber-950 tracking-wider' : (isSingleCol ? 'text-3xl sm:text-4xl lg:text-5xl font-black text-amber-950 tracking-wider' : 'text-2xl sm:text-3xl lg:text-4xl font-black text-amber-950 tracking-wider');
 
   const renderCardItem = (slotIdx, text) => {
     const isFilled = Boolean(text && String(text).trim());
@@ -8601,13 +8737,13 @@ function renderContactProjectionView() {
     if (projReminderList3Days) {
       if (allReminders.length === 0) {
         projReminderList3Days.innerHTML = `
-          <li class="text-amber-900/60 text-sm sm:text-base font-bold list-none">（目前所選日期無特殊早自修或重要提醒）</li>
+          <li class="text-amber-900/80 text-base sm:text-xl font-black list-none py-1">（目前所選日期無特殊早自修或重要提醒）</li>
         `;
       } else {
         projReminderList3Days.innerHTML = allReminders.map(item => `
-          <li class="leading-relaxed py-0.5">
-            <span class="font-black text-amber-950 bg-amber-200/80 px-2 py-0.5 rounded-lg border border-amber-300 text-xs sm:text-sm mr-1">
-              ${item.date} (${item.weekday}) ‧ ${item.colName}
+          <li class="leading-relaxed py-1 text-base sm:text-xl lg:text-2xl font-black text-amber-950">
+            <span class="font-black text-amber-950 bg-amber-200/90 px-2.5 py-0.5 rounded-lg border border-amber-300 text-xs sm:text-sm mr-1.5">
+              📅 ${item.date} (${item.weekday})
             </span>
             <span>${escapeContactHtml(item.text)}</span>
           </li>
@@ -8649,13 +8785,13 @@ function renderContactProjectionView() {
   if (projReminderList && contactProjDaysMode !== '3days') {
     if (allReminders.length === 0) {
       projReminderList.innerHTML = `
-        <li class="text-amber-900/60 text-base sm:text-xl font-bold list-none">（目前所選日期無特殊早自修或重要提醒）</li>
+        <li class="text-amber-900/80 text-lg sm:text-2xl font-black list-none py-1">（目前所選日期無特殊早自修或重要提醒）</li>
       `;
     } else {
       projReminderList.innerHTML = allReminders.map(item => `
-        <li class="leading-relaxed py-0.5">
-          <span class="font-black text-amber-950 bg-amber-200/80 px-2 py-0.5 rounded-lg border border-amber-300 text-sm sm:text-base mr-1">
-            ${item.date} (${item.weekday}) ‧ ${item.colName}
+        <li class="leading-relaxed py-1 text-lg sm:text-2xl lg:text-3xl font-black text-amber-950">
+          <span class="font-black text-amber-950 bg-amber-200/90 px-2.5 py-0.5 rounded-lg border border-amber-300 text-sm sm:text-base mr-1.5">
+            📅 ${item.date} (${item.weekday})
           </span>
           <span>${escapeContactHtml(item.text)}</span>
         </li>
@@ -13714,6 +13850,13 @@ if (typeof window !== 'undefined') {
   // 大臣名冊萌寵切換與抽屜控制
   window.changeRosterActivePet = changeRosterActivePet;
   window.toggleRosterPetDrawer = toggleRosterPetDrawer;
+
+  // 早自修與重要提醒獨立編輯
+  window.openEditRemindersModal = openEditRemindersModal;
+  window.closeEditRemindersModal = closeEditRemindersModal;
+  window.handleRemindersDatePickerChange = handleRemindersDatePickerChange;
+  window.appendReminderPreset = appendReminderPreset;
+  window.saveRemindersData = saveRemindersData;
 }
 
 // 全域鍵盤與投影事件監聽 (支援 Esc 鍵一鍵關閉並退出全螢幕)
