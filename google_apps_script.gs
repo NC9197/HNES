@@ -1,26 +1,12 @@
 /**
  * ============================================================================
  * 👑 西寧國小五年二班 ‧ 西寧小小兵王國 班級經營系統
- * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦終極版 v8：常規提醒單融合 + 座位表紅綠燈 + 單調遞增版本號 + 直式聯絡簿同步 + 示範作業自動清洗)
+ * Google Apps Script 雲端專屬同步中繼站 (2026 旗艦精煉版 v8.1：常規提醒單融合 + 座位表紅綠燈 + 單調遞增版本號 + 直式聯絡簿同步 + 示範作業自動清洗)
  * ============================================================================
  * 
- * 核心升級亮點：
- * 1. 單調遞增雲端版本號 (Monotonic Cloud Revision)：
- *    - 每次手機或電腦推送存檔，雲端自動將 cloudRevision 遞增 1，徹底破除不同裝置間的時鐘誤差，保證手機編輯後電腦 100% 秒級更新！
- * 2. 智慧作業清洗防護鎖 (Demo Homework Purge & Permanent Graveyard)：
- *    - 徹底剃除「國習」、「國語習作完成」等示範假作業，自動寫入永久墓碑 deletedHomeworkIds，絕不在任何裝置復活！
- * 3. 智能雙向融合 (Smart Non-Destructive Merge)：
- *    - 平板與手機即使同時編輯、先後送達，作業、點數、簽到紀錄自動雙向合併，絕不互相沖刷！
- * 4. 導師密碼終身防護鎖 (Password Protection Guard)：
- *    - 雲端嚴密守護導師自訂密碼，任何預設值 queen 絕無法覆蓋導師權限！
- * 5. 特權卡撤銷與抽屜同步防護 (Card Revocation Protection)：
- *    - 撤銷退換卡牌狀態具最高權限，自動清洗卡牌抽屜，撤銷之卡牌絕不在任何裝置殘留！
- * 6. 500KB 超大容量自動分塊儲存 (突破單一屬性限制，支援全班大數據)。
- * 7. 支援直式聯絡簿格式同步與 27 位大臣全手動名冊。
- * 
- * 部署教學 (只需 1 分鐘)：
+ * 部署教學 (只需 30 秒)：
  * 步驟 1：前往 https://script.google.com/ 打開您的專案
- * 步驟 2：全選並貼上覆蓋 Code.gs 中的全部內容
+ * 步驟 2：按 Ctrl+A 全選並貼上覆蓋 程式碼.gs / Code.gs 中的全部內容
  * 步驟 3：點擊右上角「部署」➔「管理部署作業」➔ 鉛筆圖示「編輯」
  * 步驟 4：版本選擇「新版本 (New version)」，點擊「部署」即完成！
  */
@@ -36,7 +22,7 @@ function doGet(e) {
     var info = {
       status: "online",
       system: "西寧國小五年二班 ‧ 西寧小小兵王國 雲端同步中繼站",
-      version: "2026.v8.reminder_slips_seating_and_monotonic_sync",
+      version: "2026.v8.streamlined",
       time: new Date().toISOString(),
       message: "🟢 雲端同步服務正常運作中！常規提醒單融合、單調遞增版本號、直式聯絡簿同步與示範作業永久清洗鎖已全面啟用。"
     };
@@ -44,58 +30,46 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  var revKey = 'cloud_revision_' + account;
+
   // 接收 GET 方式推送 (Fallback Push)
   if (action === 'push' && p.payload) {
     var incoming = {};
     try { incoming = JSON.parse(p.payload); } catch (_) {}
-    var existingStr = loadData(prop, account);
     var existing = {};
-    try { existing = JSON.parse(existingStr || '{}'); } catch (_) {}
-
-    var revKey = 'cloud_revision_' + account;
+    try { existing = JSON.parse(loadData(prop, account) || '{}'); } catch (_) {}
     var currentRev = parseInt(prop.getProperty(revKey) || '0', 10) + 1;
     prop.setProperty(revKey, String(currentRev));
-
     var merged = mergeDatasets(existing, incoming);
     merged.cloudRevision = currentRev;
     saveData(prop, account, JSON.stringify(merged));
-
     return ContentService.createTextOutput(JSON.stringify({
-      success: true,
-      action: 'push_get',
-      account: account,
-      cloudRevision: currentRev,
-      lastModified: merged.lastModified,
-      timestamp: new Date().getTime()
+      success: true, action: 'push_get', account: account,
+      cloudRevision: currentRev, lastModified: merged.lastModified, timestamp: new Date().getTime()
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
   // 預設為拉取 (Pull) - 支援標準 JSON 與 Safari 專用 JSONP 跨網域免預檢回傳
   var jsonStr = loadData(prop, account);
-  var revKey = 'cloud_revision_' + account;
   var currentRev = parseInt(prop.getProperty(revKey) || '0', 10);
 
-  // 雲端資料即時清洗防護：若歷史儲存中含有示範假作業，自動即時剃除並寫入永久墓碑，確保 cloudRevision
+  // 雲端資料即時清洗防護：若歷史儲存中含有示範假作業，自動即時剃除並寫入永久墓碑
   if (jsonStr && jsonStr !== '{}') {
     try {
       var pullData = JSON.parse(jsonStr);
       var modified = false;
-
       if (!pullData.cloudRevision && currentRev > 0) {
         pullData.cloudRevision = currentRev;
         modified = true;
       }
+      if (pullData && Array.isArray(pullData.homework)) {
+        var cleanHw = [];
+        var delMap = { "1": true, "2": true, "3": true };
+        var delList = Array.isArray(pullData.deletedHomeworkIds) ? pullData.deletedHomeworkIds.map(String) : ["1", "2", "3"];
+        delList.forEach(function(id) { delMap[id] = true; });
 
-      if (pullData && pullData.homework && Array.isArray(pullData.homework)) {
-        var cleanHwList = [];
-        var delList = (pullData.deletedHomeworkIds && Array.isArray(pullData.deletedHomeworkIds)) ? pullData.deletedHomeworkIds.map(String) : ["1", "2", "3"];
-        var delMap = {};
-        for (var di = 0; di < delList.length; di++) delMap[delList[di]] = true;
-        delMap["1"] = true; delMap["2"] = true; delMap["3"] = true;
-
-        for (var hi = 0; hi < pullData.homework.length; hi++) {
-          var chk = pullData.homework[hi];
-          if (!chk || !chk.id) { modified = true; continue; }
+        pullData.homework.forEach(function(chk) {
+          if (!chk || !chk.id) { modified = true; return; }
           var csid = String(chk.id);
           var ct = String(chk.title || '').replace(/\s+/g, '');
           var cp = String(chk.presetName || '').replace(/\s+/g, '');
@@ -106,16 +80,13 @@ function doGet(e) {
               ct === "國語習作完成" || ct === "國習完成" ||
               ((ct === "國習" || cp === "國習") && (!chk.dueDate || chk.date <= "2026-11-24" || chk.dueDate <= "2026-11-24"))) {
             modified = true;
-            if (!delMap[csid]) {
-              delMap[csid] = true;
-              delList.push(csid);
-            }
+            if (!delMap[csid]) { delMap[csid] = true; delList.push(csid); }
           } else {
-            cleanHwList.push(chk);
+            cleanHw.push(chk);
           }
-        }
+        });
         if (modified) {
-          pullData.homework = cleanHwList;
+          pullData.homework = cleanHw;
           pullData.deletedHomeworkIds = delList;
           jsonStr = JSON.stringify(pullData);
           saveData(prop, account, jsonStr);
@@ -136,15 +107,9 @@ function doPost(e) {
   var prop = PropertiesService.getScriptProperties();
   var raw = (e && e.postData && e.postData.contents) ? e.postData.contents : '{}';
   var body = {};
-
-  try {
-    body = JSON.parse(raw);
-  } catch (err) {
-    body = { data: raw };
-  }
+  try { body = JSON.parse(raw); } catch (_) { body = { data: raw }; }
 
   var account = (body.account || (e && e.parameter && e.parameter.account) || 'default').toLowerCase().replace(/[^a-z0-9_]/g, '_');
-  
   var incomingData = null;
   if (body.data !== undefined && body.data !== null) {
     incomingData = (typeof body.data === 'string') ? JSON.parse(body.data) : body.data;
@@ -154,30 +119,23 @@ function doPost(e) {
     try { incomingData = JSON.parse(raw); } catch (_) { incomingData = body; }
   }
 
-  var existingStr = loadData(prop, account);
-  var existingData = {};
-  try {
-    existingData = JSON.parse(existingStr || '{}');
-  } catch (_) {}
+  var existing = {};
+  try { existing = JSON.parse(loadData(prop, account) || '{}'); } catch (_) {}
 
   // 累加單調遞增雲端版本號 (Monotonic Cloud Revision)
   var revKey = 'cloud_revision_' + account;
   var currentRev = parseInt(prop.getProperty(revKey) || '0', 10) + 1;
   prop.setProperty(revKey, String(currentRev));
 
-  // 執行雲端智能雙向融合 (Smart Merge)，絕不覆蓋任何裝置的最新編輯
-  var mergedData = mergeDatasets(existingData, incomingData);
+  // 執行雲端智能雙向融合 (Smart Merge)
+  var mergedData = mergeDatasets(existing, incomingData);
   mergedData.cloudRevision = currentRev;
   saveData(prop, account, JSON.stringify(mergedData));
 
   return ContentService.createTextOutput(JSON.stringify({
-    success: true,
-    action: 'push_post',
-    account: account,
-    cloudRevision: currentRev,
-    lastModified: mergedData.lastModified,
-    studentCount: mergedData.students ? mergedData.students.length : 0,
-    timestamp: new Date().getTime()
+    success: true, action: 'push_post', account: account,
+    cloudRevision: currentRev, lastModified: mergedData.lastModified,
+    studentCount: mergedData.students ? mergedData.students.length : 0, timestamp: new Date().getTime()
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -188,409 +146,191 @@ function mergeDatasets(base, incoming) {
   if (!base || typeof base !== 'object' || !base.students) return incoming || {};
   if (!incoming || typeof incoming !== 'object' || !incoming.students) return base || {};
 
-  // 1. 導師密碼終身防護鎖：絕不被預設值 "queen" 覆蓋
+  // 1. 導師密碼終身防護鎖
   var finalPassword = (base.queenPassword && base.queenPassword !== 'queen')
-    ? base.queenPassword
-    : (incoming.queenPassword || 'queen');
+    ? base.queenPassword : (incoming.queenPassword || 'queen');
 
-  // 2. 特權卡兌換紀錄智能雙向融合 (撤銷 revoked 與使用 used 狀態具最高權限，絕不倒退回未撤銷)
-  var redMap = {};
-  var bRed = base.rewardRedemptions || [];
-  for (var br = 0; br < bRed.length; br++) {
-    if (bRed[br] && bRed[br].id) redMap[String(bRed[br].id)] = bRed[br];
-  }
-  var iRed = incoming.rewardRedemptions || [];
-  for (var ir = 0; ir < iRed.length; ir++) {
-    var rItem = iRed[ir];
-    if (!rItem || !rItem.id) continue;
-    var rid = String(rItem.id);
+  // 2. 特權卡兌換紀錄融合 (撤銷與已用具最高優先級，避免已撤銷卡牌在抽屜殘留)
+  var redMap = {}, inactiveCardIds = {};
+  (base.rewardRedemptions || []).concat(incoming.rewardRedemptions || []).forEach(function(r) {
+    if (!r || !r.id) return;
+    var rid = String(r.id);
     if (!redMap[rid]) {
-      redMap[rid] = rItem;
+      redMap[rid] = r;
     } else {
-      var existRec = redMap[rid];
-      var finalStatus = 'pending';
-      var revokedAt = rItem.revokedAt || existRec.revokedAt;
-      var usedAt = rItem.usedAt || existRec.usedAt;
-      if (rItem.status === 'revoked' || existRec.status === 'revoked') {
-        finalStatus = 'revoked';
-        if (!revokedAt) revokedAt = new Date().toISOString();
-      } else if (rItem.status === 'used' || existRec.status === 'used') {
-        finalStatus = 'used';
-        if (!usedAt) usedAt = new Date().toISOString();
-      } else if (rItem.status === 'pending' || existRec.status === 'pending') {
-        finalStatus = 'pending';
-      }
-      var mergedItem = {};
-      for (var k in existRec) { mergedItem[k] = existRec[k]; }
-      for (var k2 in rItem) { mergedItem[k2] = rItem[k2]; }
-      mergedItem.status = finalStatus;
-      if (revokedAt) mergedItem.revokedAt = revokedAt;
-      if (usedAt) mergedItem.usedAt = usedAt;
-      redMap[rid] = mergedItem;
+      var prev = redMap[rid];
+      var status = (r.status === 'revoked' || prev.status === 'revoked') ? 'revoked'
+                 : ((r.status === 'used' || prev.status === 'used') ? 'used' : 'pending');
+      redMap[rid] = Object.assign({}, prev, r, {
+        status: status,
+        revokedAt: r.revokedAt || prev.revokedAt,
+        usedAt: r.usedAt || prev.usedAt
+      });
     }
-  }
-  var mergedRedemptions = [];
-  for (var rid in redMap) {
-    mergedRedemptions.push(redMap[rid]);
-  }
-
-  // 建立已註銷/已核銷 ID 表，避免撤銷之卡牌殘留在抽屜中
-  var inactiveCardIds = {};
-  for (var rIdx = 0; rIdx < mergedRedemptions.length; rIdx++) {
-    var stat = mergedRedemptions[rIdx].status;
-    if (stat === 'used' || stat === 'revoked') {
-      inactiveCardIds[String(mergedRedemptions[rIdx].id)] = true;
+    if (redMap[rid].status === 'used' || redMap[rid].status === 'revoked') {
+      inactiveCardIds[rid] = true;
     }
-  }
+  });
+  var mergedRedemptions = Object.keys(redMap).map(function(k) { return redMap[k]; });
 
-  // 3. 學生名冊與點數智能融合 (支援手機/平板/電腦雙向同步、新增大臣與卡牌抽屜純淨同步)
+  // 3. 學生名冊與點數智能融合
+  var incStudentMap = {};
+  (incoming.students || []).forEach(function(s) { if (s) incStudentMap[s.seatNo] = s; });
+
   var mergedStudents = (base.students || []).map(function(bSt) {
-    var iSt = null;
-    var incList = incoming.students || [];
-    for (var i = 0; i < incList.length; i++) {
-      if (incList[i].seatNo === bSt.seatNo || incList[i].id === bSt.id) {
-        iSt = incList[i];
-        break;
-      }
-    }
-    if (!iSt) {
-      var bCards = (bSt.redeemedCards && Array.isArray(bSt.redeemedCards)) ? bSt.redeemedCards : [];
-      var cleanBCards = [];
-      for (var bc = 0; bc < bCards.length; bc++) {
-        if (bCards[bc] && bCards[bc].id && !inactiveCardIds[String(bCards[bc].id)]) {
-          cleanBCards.push(bCards[bc]);
-        }
-      }
-      var sSeat1 = Number(bSt.seatNo);
-      var g1 = (sSeat1 >= 1 && sSeat1 <= 13) ? 'M' : ((sSeat1 >= 14 && sSeat1 <= 27) ? 'F' : (bSt.gender || 'M'));
-      return {
-        id: bSt.id,
-        seatNo: bSt.seatNo,
-        name: bSt.name,
-        gender: g1,
-        title: bSt.title,
-        birthday: bSt.birthday,
-        points: bSt.points || 0,
-        lifetimePoints: bSt.lifetimePoints || 0,
-        petExp: bSt.lifetimePoints || 0,
-        animalType: bSt.animalType || 'dog',
-        petType: bSt.petType || 'dog',
-        secondPetType: bSt.secondPetType || null,
-        secondPetExp: bSt.secondPetExp || 0,
-        pets: bSt.pets || [{ type: bSt.animalType || 'dog' }],
-        redeemedCards: cleanBCards
-      };
-    }
+    var iSt = incStudentMap[bSt.seatNo] || {};
+    var rawCards = Array.isArray(iSt.redeemedCards) ? iSt.redeemedCards : (Array.isArray(bSt.redeemedCards) ? bSt.redeemedCards : []);
+    var cleanCards = rawCards.filter(function(c) { return c && c.id && !inactiveCardIds[String(c.id)]; });
 
-    // 優先採納最新推送裝置的設定值 (支援加點、扣點、重設、歸零)
-    var finalPoints = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
-    var finalLifetime = (iSt.lifetimePoints !== undefined && iSt.lifetimePoints !== null) ? Number(iSt.lifetimePoints) : (Number(bSt.lifetimePoints) || 0);
-    if (finalLifetime <= 0 && finalPoints > 0) {
-      finalLifetime = finalPoints;
-    }
-    var finalPets = (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets;
-    var finalSecondPet = iSt.secondPetType !== undefined ? iSt.secondPetType : (bSt.secondPetType || null);
-    var finalSecondExp = (iSt.secondPetExp !== undefined && iSt.secondPetExp !== null) ? Number(iSt.secondPetExp) : (Number(bSt.secondPetExp) || 0);
+    var sSeat = Number(bSt.seatNo);
+    var gender = (sSeat >= 1 && sSeat <= 13) ? 'M' : ((sSeat >= 14 && sSeat <= 27) ? 'F' : (iSt.gender || bSt.gender || 'M'));
+    var pts = (iSt.points !== undefined && iSt.points !== null) ? Number(iSt.points) : (Number(bSt.points) || 0);
+    var life = (iSt.lifetimePoints !== undefined && iSt.lifetimePoints !== null) ? Number(iSt.lifetimePoints) : (Number(bSt.lifetimePoints) || 0);
+    if (life <= 0 && pts > 0) life = pts;
 
-    // 卡牌抽屜同步與已註銷清洗
-    var rawCards = (iSt.redeemedCards && Array.isArray(iSt.redeemedCards))
-      ? iSt.redeemedCards
-      : ((bSt.redeemedCards && Array.isArray(bSt.redeemedCards)) ? bSt.redeemedCards : []);
-    var cleanCards = [];
-    for (var c = 0; c < rawCards.length; c++) {
-      if (rawCards[c] && rawCards[c].id && !inactiveCardIds[String(rawCards[c].id)]) {
-        cleanCards.push(rawCards[c]);
-      }
-    }
-
-    var sSeat2 = Number(bSt.seatNo);
-    var g2 = (sSeat2 >= 1 && sSeat2 <= 13) ? 'M' : ((sSeat2 >= 14 && sSeat2 <= 27) ? 'F' : (iSt.gender || bSt.gender || 'M'));
     return {
-      id: bSt.id,
-      seatNo: bSt.seatNo,
-      name: iSt.name || bSt.name,
-      gender: g2,
-      title: iSt.title || bSt.title,
-      birthday: iSt.birthday || bSt.birthday,
-      points: finalPoints,
-      lifetimePoints: finalLifetime,
-      petExp: finalLifetime,
-      animalType: iSt.animalType || bSt.animalType || 'dog',
-      petType: iSt.petType || bSt.petType || 'dog',
-      secondPetType: finalSecondPet,
-      secondPetExp: finalSecondExp,
-      pets: finalPets,
+      id: bSt.id, seatNo: bSt.seatNo, name: iSt.name || bSt.name, gender: gender,
+      title: iSt.title || bSt.title, birthday: iSt.birthday || bSt.birthday,
+      points: pts, lifetimePoints: life, petExp: life,
+      animalType: iSt.animalType || bSt.animalType || 'dog', petType: iSt.petType || bSt.petType || 'dog',
+      secondPetType: iSt.secondPetType !== undefined ? iSt.secondPetType : (bSt.secondPetType || null),
+      secondPetExp: (iSt.secondPetExp !== undefined && iSt.secondPetExp !== null) ? Number(iSt.secondPetExp) : (Number(bSt.secondPetExp) || 0),
+      pets: (iSt.pets && iSt.pets.length > 0) ? iSt.pets : bSt.pets,
       redeemedCards: cleanCards
     };
   });
 
-  // 核心修復：若手機/平板新增了大臣 (例如第28位或新座號)，自動完整併入名冊，絕不遺漏！
-  var incomingList = incoming.students || [];
-  for (var k = 0; k < incomingList.length; k++) {
-    var cand = incomingList[k];
-    if (!cand) continue;
-    var exists = false;
-    for (var m = 0; m < mergedStudents.length; m++) {
-      if (mergedStudents[m].seatNo === cand.seatNo || mergedStudents[m].id === cand.id) {
-        exists = true;
-        break;
-      }
-    }
+  // 補齊新加入的大臣
+  (incoming.students || []).forEach(function(cand) {
+    if (!cand) return;
+    var exists = mergedStudents.some(function(s) { return s.seatNo === cand.seatNo || s.id === cand.id; });
     if (!exists) {
-      if (!cand.redeemedCards) cand.redeemedCards = [];
-      var cleanCandCards = [];
-      for (var cc = 0; cc < cand.redeemedCards.length; cc++) {
-        if (cand.redeemedCards[cc] && cand.redeemedCards[cc].id && !inactiveCardIds[String(cand.redeemedCards[cc].id)]) {
-          cleanCandCards.push(cand.redeemedCards[cc]);
-        }
-      }
-      cand.redeemedCards = cleanCandCards;
-      mergedStudents.push(cand);
+      var cCards = (cand.redeemedCards || []).filter(function(c) { return c && c.id && !inactiveCardIds[String(c.id)]; });
+      mergedStudents.push(Object.assign({}, cand, { redeemedCards: cCards }));
     }
-  }
+  });
   mergedStudents.sort(function(a, b) { return (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0); });
 
-  // 3. 簽到表按日按座號雙向合併 (多裝置打卡自動合併，不漏任何學生)
-  var mergedAttendance = {};
-  var bAtt = base.attendance || {};
+  // 4. 簽到表按日雙向合併
+  var mergedAttendance = Object.assign({}, base.attendance || {});
   var iAtt = incoming.attendance || {};
-
-  for (var d in bAtt) {
-    mergedAttendance[d] = {};
-    for (var s in bAtt[d]) {
-      mergedAttendance[d][s] = bAtt[d][s];
-    }
-  }
-
-  for (var iday in iAtt) {
-    if (!mergedAttendance[iday]) {
-      mergedAttendance[iday] = iAtt[iday];
-    } else {
-      for (var seat in iAtt[iday]) {
-        var rec = iAtt[iday][seat];
-        if (!mergedAttendance[iday][seat] || mergedAttendance[iday][seat].status === 'pending') {
-          mergedAttendance[iday][seat] = rec;
-        } else if (rec && rec.status !== 'pending') {
-          mergedAttendance[iday][seat] = rec;
-        }
+  for (var day in iAtt) {
+    mergedAttendance[day] = Object.assign({}, mergedAttendance[day] || {});
+    for (var seat in iAtt[day]) {
+      var rec = iAtt[day][seat];
+      if (!mergedAttendance[day][seat] || mergedAttendance[day][seat].status === 'pending' || (rec && rec.status !== 'pending')) {
+        mergedAttendance[day][seat] = rec;
       }
     }
   }
 
-  // 4. 作業按 ID 雙向合併 + 刪除墓碑 (deletedHomeworkIds) 徹底封殺已刪除與舊示範假作業
-  var deletedHwMap = {};
-  var bDel = base.deletedHomeworkIds || [];
-  var iDel = incoming.deletedHomeworkIds || [];
-  for (var d1 = 0; d1 < bDel.length; d1++) deletedHwMap[String(bDel[d1])] = true;
-  for (var d2 = 0; d2 < iDel.length; d2++) deletedHwMap[String(iDel[d2])] = true;
-  deletedHwMap["1"] = true;
-  deletedHwMap["2"] = true;
-  deletedHwMap["3"] = true;
+  // 5. 作業合併與示範作業永久墓碑
+  var delMap = { "1": true, "2": true, "3": true };
+  (base.deletedHomeworkIds || []).concat(incoming.deletedHomeworkIds || []).forEach(function(d) { delMap[String(d)] = true; });
 
-  function isDemoOrDeletedHw(hw) {
-    if (!hw) return true;
-    var sid = String(hw.id || '');
-    if (deletedHwMap[sid]) return true;
-    if (sid === "1" || sid === "2" || sid === "3") return true;
+  function isDeleted(hw) {
+    if (!hw || !hw.id) return true;
+    var sid = String(hw.id);
+    if (delMap[sid] || sid === "1" || sid === "2" || sid === "3") return true;
     if (hw.date === "2026-11-16" || hw.dueDate === "2026-11-16") return true;
-    var t = String(hw.title || '').replace(/\s+/g, '');
-    var p = String(hw.presetName || '').replace(/\s+/g, '');
+    var t = String(hw.title || '').replace(/\s+/g, ''), p = String(hw.presetName || '').replace(/\s+/g, '');
     if (t.indexOf("國語習作第八課") !== -1 || t.indexOf("生字造詞隨堂筆記") !== -1 || t.indexOf("數學習作P.62") !== -1 || t.indexOf("數學習作P62") !== -1) return true;
     if (t === "國語習作完成" || t === "國習完成") return true;
-    if (t === "國習" && (!hw.dueDate || hw.date <= "2026-11-24" || hw.dueDate <= "2026-11-24")) return true;
-    if (p === "國習" && (!hw.dueDate || hw.date <= "2026-11-24" || hw.dueDate <= "2026-11-24")) return true;
+    if ((t === "國習" || p === "國習") && (!hw.dueDate || hw.date <= "2026-11-24" || hw.dueDate <= "2026-11-24")) return true;
     return false;
   }
 
   var hwMap = {};
-  var bHw = base.homework || [];
-  for (var h = 0; h < bHw.length; h++) {
-    var bhItem = bHw[h];
-    if (bhItem && bhItem.id && !isDemoOrDeletedHw(bhItem)) {
-      hwMap[String(bhItem.id)] = bhItem;
-    }
-  }
-  var iHw = incoming.homework || [];
-  for (var ih = 0; ih < iHw.length; ih++) {
-    var item = iHw[ih];
-    if (!item || !item.id || isDemoOrDeletedHw(item)) continue;
-    var hidStr = String(item.id);
-    if (!hwMap[hidStr]) {
-      hwMap[hidStr] = item;
+  (base.homework || []).concat(incoming.homework || []).forEach(function(item) {
+    if (!item || isDeleted(item)) return;
+    var hid = String(item.id);
+    if (!hwMap[hid]) {
+      hwMap[hid] = item;
     } else {
-      var existHw = hwMap[hidStr];
-      var combinedRecords = {};
-      var r1 = existHw.records || {};
-      var r2 = item.records || {};
-      for (var k1 in r1) combinedRecords[k1] = r1[k1];
-      for (var k2 in r2) {
-        var baseStat = combinedRecords[k2];
-        var inStat = r2[k2];
-        // 核心防倒灌：若雲端或本地已完成 (submitted / excellent)，絕不被舊的 pending 或 revision 逆轉倒退！
-        if ((baseStat === 'submitted' || baseStat === 'excellent') && (inStat === 'pending' || inStat === 'revision')) {
-          // 保留已完成狀態
-        } else {
-          combinedRecords[k2] = inStat;
+      var comb = Object.assign({}, hwMap[hid].records || {}, item.records || {});
+      // 已完成防倒灌
+      var rBase = hwMap[hid].records || {}, rIn = item.records || {};
+      for (var k in comb) {
+        if ((rBase[k] === 'submitted' || rBase[k] === 'excellent') && (rIn[k] === 'pending' || rIn[k] === 'revision')) {
+          comb[k] = rBase[k];
         }
       }
-      item.records = combinedRecords;
-      hwMap[hidStr] = item;
+      hwMap[hid] = Object.assign({}, hwMap[hid], item, { records: comb });
     }
-  }
-  var mergedHomework = [];
-  for (var hid in hwMap) {
-    mergedHomework.push(hwMap[hid]);
-  }
-  var mergedDeletedHwList = [];
-  for (var did in deletedHwMap) {
-    mergedDeletedHwList.push(did);
-  }
-  if (mergedDeletedHwList.length > 200) {
-    mergedDeletedHwList = mergedDeletedHwList.slice(-200);
-  }
+  });
+  var mergedHomework = Object.keys(hwMap).map(function(k) { return hwMap[k]; });
+  var mergedDelList = Object.keys(delMap).slice(-200);
 
-  // 5. 聯絡簿智慧融合 (取更新時間較新或內容完整者)
+  // 6. 聯絡簿智慧融合
   var mergedContactBook = incoming.contactBook;
   if (base.contactBook && incoming.contactBook) {
-    var bTime = Number(base.contactBook.updatedAt) || 0;
-    var iTime = Number(incoming.contactBook.updatedAt) || 0;
+    var bTime = Number(base.contactBook.updatedAt) || 0, iTime = Number(incoming.contactBook.updatedAt) || 0;
     if (bTime > iTime) mergedContactBook = base.contactBook;
   } else if (base.contactBook) {
     mergedContactBook = base.contactBook;
   }
+  var mergedCbHistory = Object.assign({}, base.contactBookHistory || {}, incoming.contactBookHistory || {});
 
-  // 6. 聯絡簿歷史紀錄
-  var mergedCbHistory = {};
-  var bHist = base.contactBookHistory || {};
-  var iHist = incoming.contactBookHistory || {};
-  for (var bh in bHist) mergedCbHistory[bh] = bHist[bh];
-  for (var ihist in iHist) mergedCbHistory[ihist] = iHist[ihist];
-
-  // 7. 歷程日誌融合 (依 ID 去重)
+  // 7. 歷程日誌 (去重取前50筆)
   var logMap = {};
-  var bLogs = base.pointLogs || [];
-  for (var bl = 0; bl < bLogs.length; bl++) {
-    if (bLogs[bl] && bLogs[bl].id) logMap[bLogs[bl].id] = bLogs[bl];
-  }
-  var iLogs = incoming.pointLogs || [];
-  for (var il = 0; il < iLogs.length; il++) {
-    if (iLogs[il] && iLogs[il].id) logMap[iLogs[il].id] = iLogs[il];
-  }
-  var mergedLogs = [];
-  for (var lid in logMap) {
-    mergedLogs.push(logMap[lid]);
-  }
-  mergedLogs.sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
-  if (mergedLogs.length > 50) mergedLogs = mergedLogs.slice(0, 50);
+  (base.pointLogs || []).concat(incoming.pointLogs || []).forEach(function(l) { if (l && l.id) logMap[l.id] = l; });
+  var mergedLogs = Object.keys(logMap).map(function(k) { return logMap[k]; })
+    .sort(function(a, b) { return (b.id || 0) - (a.id || 0); }).slice(0, 50);
 
-  // 8. 行為卡牌與常規提醒單智能雙向融合 (reminderSlips, reflectionReasons, serviceReasons)
+  // 8. 行為卡牌與常規提醒單融合
   var mergedBehaviorCards = {};
-  var bBc = base.behaviorCards || {};
-  var iBc = incoming.behaviorCards || {};
-  var bcKeys = {};
-  for (var k in bBc) bcKeys[k] = true;
-  for (var k in iBc) bcKeys[k] = true;
+  var allStKeys = {};
+  Object.keys(base.behaviorCards || {}).concat(Object.keys(incoming.behaviorCards || {})).forEach(function(k) { allStKeys[k] = true; });
 
-  for (var stId in bcKeys) {
-    var bCard = bBc[stId] || {};
-    var iCard = iBc[stId] || {};
-
-    // 合併提醒單 (依 slip.id 去重保留完成狀態)
+  for (var stId in allStKeys) {
+    var bC = (base.behaviorCards && base.behaviorCards[stId]) || {};
+    var iC = (incoming.behaviorCards && incoming.behaviorCards[stId]) || {};
     var slipMap = {};
-    var bSlips = bCard.reminderSlips || [];
-    for (var s1 = 0; s1 < bSlips.length; s1++) {
-      if (bSlips[s1] && bSlips[s1].id) slipMap[bSlips[s1].id] = bSlips[s1];
-    }
-    var iSlips = iCard.reminderSlips || [];
-    for (var s2 = 0; s2 < iSlips.length; s2++) {
-      var islip = iSlips[s2];
-      if (!islip || !islip.id) continue;
-      if (!slipMap[islip.id]) {
-        slipMap[islip.id] = islip;
-      } else {
-        if (islip.status === 'completed' || slipMap[islip.id].status === 'completed') {
-          slipMap[islip.id].status = 'completed';
-        }
-      }
-    }
-    var combinedSlips = [];
-    for (var sid in slipMap) combinedSlips.push(slipMap[sid]);
+    (bC.reminderSlips || []).concat(iC.reminderSlips || []).forEach(function(s) {
+      if (!s || !s.id) return;
+      if (!slipMap[s.id] || s.status === 'completed') slipMap[s.id] = s;
+    });
+    var combinedSlips = Object.keys(slipMap).map(function(k) { return slipMap[k]; });
 
-    // 合併自省卡理由 (依 text、isAutoHw、hwId 去重)
-    var combinedRef = [];
-    var bRef = bCard.reflectionReasons || [];
-    var iRef = iCard.reflectionReasons || [];
-    for (var r1 = 0; r1 < bRef.length; r1++) combinedRef.push(bRef[r1]);
-    for (var r2 = 0; r2 < iRef.length; r2++) {
-      var ir = iRef[r2];
-      var dup = false;
-      for (var cr = 0; cr < combinedRef.length; cr++) {
-        if (combinedRef[cr].text === ir.text && combinedRef[cr].isAutoHw === ir.isAutoHw && combinedRef[cr].hwId === ir.hwId) {
-          dup = true; break;
-        }
-      }
-      if (!dup) combinedRef.push(ir);
-    }
+    var refMap = {};
+    var refSource = (inTime >= baseTime)
+      ? (iC.reflectionReasons || []).concat((bC.reflectionReasons || []).filter(function(r) { return !r.isAutoHw; }))
+      : (bC.reflectionReasons || []).concat((iC.reflectionReasons || []).filter(function(r) { return !r.isAutoHw; }));
+    refSource.forEach(function(r) {
+      if (r && r.text) refMap[r.text + '_' + (r.hwId || '')] = r;
+    });
+    var combinedRef = Object.keys(refMap).map(function(k) { return refMap[k]; });
 
-    // 合併愛班卡理由 (依 text 去重)
-    var combinedSrv = [];
-    var bSrv = bCard.serviceReasons || [];
-    var iSrv = iCard.serviceReasons || [];
-    for (var v1 = 0; v1 < bSrv.length; v1++) combinedSrv.push(bSrv[v1]);
-    for (var v2 = 0; v2 < iSrv.length; v2++) {
-      var isv = iSrv[v2];
-      var dupSrv = false;
-      for (var cs = 0; cs < combinedSrv.length; cs++) {
-        if (combinedSrv[cs].text === isv.text) {
-          dupSrv = true; break;
-        }
-      }
-      if (!dupSrv) combinedSrv.push(isv);
-    }
+    var srvMap = {};
+    (bC.serviceReasons || []).concat(iC.serviceReasons || []).forEach(function(s) {
+      if (s && s.text) srvMap[s.text] = s;
+    });
+    var combinedSrv = Object.keys(srvMap).map(function(k) { return srvMap[k]; });
 
-    var baseObj = (iCard && iCard.reflectionCount !== undefined) ? iCard : bCard;
-    var mergedCardObj = {};
-    for (var propKey in baseObj) mergedCardObj[propKey] = baseObj[propKey];
-    mergedCardObj.reminderSlips = combinedSlips;
-    var pendingSlipCount = 0;
-    for (var sc = 0; sc < combinedSlips.length; sc++) {
-      if (combinedSlips[sc] && combinedSlips[sc].status === 'pending') pendingSlipCount++;
-    }
-    mergedCardObj.reminderCount = pendingSlipCount;
-    mergedCardObj.reflectionReasons = combinedRef;
-    mergedCardObj.reflectionCount = combinedRef.length;
-    mergedCardObj.reflectionCard = combinedRef.length > 0;
-    var refTexts = [];
-    for (var t1 = 0; t1 < combinedRef.length; t1++) refTexts.push(combinedRef[t1].text);
-    mergedCardObj.reflectionReason = refTexts.join('、');
-    
-    mergedCardObj.serviceReasons = combinedSrv;
-    mergedCardObj.serviceCount = combinedSrv.length;
-    mergedCardObj.serviceCard = combinedSrv.length > 0;
-    var srvTexts = [];
-    for (var t2 = 0; t2 < combinedSrv.length; t2++) srvTexts.push(combinedSrv[t2].text);
-    mergedCardObj.serviceReason = srvTexts.join('、');
-
-    mergedBehaviorCards[stId] = mergedCardObj;
+    var baseObj = (iC.reflectionCount !== undefined) ? iC : bC;
+    var pendingCount = combinedSlips.filter(function(s) { return s.status === 'pending'; }).length;
+    mergedBehaviorCards[stId] = Object.assign({}, baseObj, {
+      reminderSlips: combinedSlips, reminderCount: pendingCount,
+      reflectionReasons: combinedRef, reflectionCount: combinedRef.length, reflectionCard: combinedRef.length > 0,
+      reflectionReason: combinedRef.map(function(r) { return r.text; }).join('、'),
+      serviceReasons: combinedSrv, serviceCount: combinedSrv.length, serviceCard: combinedSrv.length > 0,
+      serviceReason: combinedSrv.map(function(s) { return s.text; }).join('、')
+    });
   }
-
-  var nowTime = new Date().getTime();
 
   return {
     queenPassword: finalPassword,
     lateThreshold: incoming.lateThreshold || base.lateThreshold || "07:40",
-    students: mergedStudents,
-    attendance: mergedAttendance,
-    homework: mergedHomework,
-    deletedHomeworkIds: mergedDeletedHwList,
-    contactBook: mergedContactBook,
-    contactBookHistory: mergedCbHistory,
+    students: mergedStudents, attendance: mergedAttendance,
+    homework: mergedHomework, deletedHomeworkIds: mergedDelList,
+    contactBook: mergedContactBook, contactBookHistory: mergedCbHistory,
     pointLogs: mergedLogs,
     pointPresets: incoming.pointPresets || base.pointPresets,
     homeworkPresets: incoming.homeworkPresets || base.homeworkPresets,
     behaviorReasons: incoming.behaviorReasons || base.behaviorReasons,
     alarmPresets: incoming.alarmPresets || base.alarmPresets,
     timerPresets: incoming.timerPresets || base.timerPresets,
+    bellSchedule: incoming.bellSchedule || base.bellSchedule,
     announcements: (incoming.announcements !== undefined && incoming.announcements !== null) ? incoming.announcements : (base.announcements || []),
     rewardCards: incoming.rewardCards || base.rewardCards,
     rewardRedemptions: mergedRedemptions,
@@ -599,13 +339,13 @@ function mergeDatasets(base, incoming) {
     seatingLayout: incoming.seatingLayout || base.seatingLayout,
     seatingChart: incoming.seatingChart || base.seatingChart,
     cloudRevision: incoming.cloudRevision || base.cloudRevision || 1,
-    lastModified: nowTime,
+    lastModified: new Date().getTime(),
     realRosterV20261119: true
   };
 }
 
 // -------------------------------------------------------------
-// 資料分塊儲存核心 (突破單一屬性 9KB 限制，支援多達 500KB 班級資料，雙向相容雙鍵名)
+// 資料分塊儲存核心 (支援多達 500KB 班級資料，雙向相容雙鍵名)
 // -------------------------------------------------------------
 function saveData(prop, account, str) {
   if (!str) return;
@@ -615,19 +355,15 @@ function saveData(prop, account, str) {
   var oldTotal2 = parseInt(prop.getProperty('data_sync_chunk_count_' + account) || '0', 10);
   var oldTotal = Math.max(oldTotal1, oldTotal2);
 
-  // 清除舊的多餘分塊
   for (var i = totalChunks; i < oldTotal; i++) {
     prop.deleteProperty('data_' + account + '_' + i);
     prop.deleteProperty('data_sync_chunk_' + account + '_' + i);
   }
-
-  // 寫入新分塊 (雙向鍵名同步寫入，確保所有版本拉取皆能完美解鎖)
   for (var i = 0; i < totalChunks; i++) {
     var chunkStr = str.substr(i * CHUNK_SIZE, CHUNK_SIZE);
     prop.setProperty('data_' + account + '_' + i, chunkStr);
     prop.setProperty('data_sync_chunk_' + account + '_' + i, chunkStr);
   }
-
   prop.setProperty('chunk_cnt_' + account, String(totalChunks));
   prop.setProperty('data_sync_chunk_count_' + account, String(totalChunks));
   prop.setProperty('time_' + account, String(new Date().getTime()));
@@ -640,8 +376,7 @@ function loadData(prop, account) {
   }
   var parts = [];
   for (var i = 0; i < count; i++) {
-    var chunk = prop.getProperty('data_' + account + '_' + i) || prop.getProperty('data_sync_chunk_' + account + '_' + i) || '';
-    parts.push(chunk);
+    parts.push(prop.getProperty('data_' + account + '_' + i) || prop.getProperty('data_sync_chunk_' + account + '_' + i) || '');
   }
   return parts.join('');
 }
