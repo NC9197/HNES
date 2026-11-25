@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261124_v26">
+  <link rel="stylesheet" href="styles.css?v=20261125_v30">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -256,10 +256,79 @@
         </div>
       </div>
 
-      <!-- ★ 核心 3 : 7 比例版面 (左側 30% 時鐘與打卡座號網格，右側 70% 聯絡簿，組成工整對齊矩形) ★ -->
+      <!-- 📜 聯絡簿看板控制橫幅 (選取日期、模式、格式以全寬橫幅顯示) -->
+      <div class="bg-gradient-to-r from-amber-100 via-amber-200 to-yellow-100 border-2 border-amber-400 p-2.5 sm:p-3 sm:px-4 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-2.5 w-full">
+        <!-- 左側/中段：標籤、模式、格式、快捷切換與選取日期 -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="bg-amber-950 text-amber-200 text-xs px-2.5 py-1 rounded-full font-black tracking-wider flex items-center space-x-1 shrink-0">
+            <span>📜</span>
+            <span>聯絡簿看板</span>
+          </span>
+
+          <!-- 雙天並排 vs 單天六行模式切換 -->
+          <div class="flex items-center space-x-1 bg-amber-300/80 p-0.5 sm:p-1 rounded-xl border border-amber-400 shadow-2xs">
+            <button type="button" id="btnMorningMode2Days" onclick="setMorningContactDaysMode('2days')" class="btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition" title="一次顯示兩天（第一欄今天、第二欄明天各完整六行）">
+              📅 雙天並排模式
+            </button>
+            <button type="button" id="btnMorningMode1Day" onclick="setMorningContactDaysMode('1day')" class="bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition" title="單天作業六行">
+              📄 單天模式
+            </button>
+          </div>
+
+          <!-- 📜 配合學生聯絡簿格式：直式 (由右至左 / 由左至右) 與橫式卡片切換 -->
+          <div class="flex items-center space-x-1 bg-amber-300/80 p-0.5 sm:p-1 rounded-xl border border-amber-400 shadow-2xs">
+            <button type="button" id="btnContactFormatVerticalRtl" onclick="setMorningContactFormat('vertical-rtl')" class="btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition" title="配合學生真實聯絡簿格式（由右至左 1~6 直行，完全對照學生手邊聯絡簿）">
+              📜 直式 (右至左)
+            </button>
+            <button type="button" id="btnContactFormatVerticalLtr" onclick="setMorningContactFormat('vertical-ltr')" class="bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition" title="直式聯絡簿格式（由左至右 1~6 直行）">
+              📜 直式 (左至右)
+            </button>
+            <button type="button" id="btnContactFormatHorizontal" onclick="setMorningContactFormat('horizontal')" class="bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition" title="橫向長條卡片模式">
+              📄 橫式卡片
+            </button>
+          </div>
+
+          <!-- 雙天模式快捷組合 -->
+          <div id="morningPresetsGroup" class="flex items-center space-x-1">
+            <button type="button" onclick="setMorningContactPreset('today_tomorrow')" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition" title="快捷切換：今日與明日兩天作業">
+              👑 今日 ＆ 明日
+            </button>
+            <button type="button" onclick="setMorningContactPreset('yesterday_today')" class="px-2.5 py-1 rounded-xl bg-white/90 hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition" title="快捷切換：昨日與今日兩天作業">
+              📜 昨日 ＆ 今日
+            </button>
+          </div>
+
+          <!-- 單天模式專用日期選擇器 -->
+          <div id="morningSingleDatePickerGroup" class="hidden flex items-center space-x-1 bg-white/90 p-0.5 rounded-xl border border-amber-300 shadow-sm text-xs font-bold">
+            <button type="button" onclick="changeContactDateDelta(-1)" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="前一天">⬅ 前一天</button>
+            <input type="date" id="contactBookDatePicker" onchange="handleContactDatePickerChange(this.value)" class="px-2 py-0.5 text-xs bg-amber-50 border border-amber-200 rounded-lg text-amber-900 font-bold cursor-pointer">
+            <button type="button" onclick="changeContactDateToToday()" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="回到今日">今日</button>
+            <button type="button" onclick="changeContactDateDelta(1)" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="後一天">後一天 ➡</button>
+          </div>
+
+          <!-- 📅 顯示日期標籤 -->
+          <span class="text-xs font-black bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-300 shadow-xs flex items-center space-x-1 shrink-0">
+            <span>📅 顯示日期：</span>
+            <span id="contactBookDateDisplay"></span>
+          </span>
+        </div>
+
+        <!-- 右側操作按鈕：編輯聯絡簿項目 與 大屏投影 -->
+        <div class="flex items-center space-x-2 shrink-0">
+          <button type="button" onclick="openContactProjectionModal()" class="btn-royal-gold px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-sm transform hover:scale-105 active:scale-95 transition" title="全螢幕大屏投影聯絡簿（保留到校打卡功能）">
+            <span>🖥️ 大屏投影</span>
+          </button>
+          <button type="button" onclick="openEditContactModal()" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border-2 border-amber-400 font-black text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 transition">
+            <i data-lucide="edit-3" class="w-4 h-4 text-amber-700"></i>
+            <span>✏️ 編輯聯絡簿項目</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ★ 核心 3 : 7 比例版面 (左側 30% 時鐘與打卡座號網格，右側 70% 聯絡簿內容雙欄，組成工整對齊矩形) ★ -->
       <div class="grid grid-cols-1 lg:grid-cols-10 gap-4 sm:gap-6 items-stretch">
         
-        <!-- 【左側 30%】：即時時鐘 ＋ 大臣到校打卡區 (時鐘置頂於打卡上方，與右方聯絡簿等高矩形) -->
+        <!-- 【左側 30%】：即時時鐘 ＋ 大臣到校打卡區 (時鐘置頂於打卡上方，與右方聯絡簿內容雙欄等高矩形) -->
         <div class="lg:col-span-3 flex flex-col space-y-4">
           
           <!-- ⏰ 晨間朝會大時鐘看板 (在打卡功能的上方) -->
@@ -335,86 +404,18 @@
           </div>
         </div>
 
-        <!-- 【右側剩下的部分全部都是聯絡簿】：7 欄寬 (約 70% 寬度，超大字體看板，與左側組成完美矩形) -->
+        <!-- 【右側剩下的部分全部都是聯絡簿內容雙欄】：7 欄寬 (約 70% 寬度，超大字體看板，頂部與左側時鐘切齊，組成完美矩形) -->
         <div id="contactBoardContainer" class="lg:col-span-7 contact-book-board p-4 sm:p-7 space-y-5 shadow-xl flex flex-col justify-between">
           
-          <!-- 聯絡簿頂部資訊與編輯按鈕 -->
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b-2 border-amber-400">
-            <div>
-              <div class="flex items-center space-x-2">
-                <span class="bg-amber-950 text-amber-200 text-xs px-3 py-1 rounded-full font-black tracking-wider">
-                  📜 每日回家奏章
-                </span>
-              </div>
-              <h3 class="text-2xl sm:text-3xl font-black text-amber-950 mt-1 tracking-wide">
-                西寧小小兵王國 ‧ 聯絡簿看板
-              </h3>
-              <!-- 朝會日期與模式切換工具列 -->
-              <div class="mt-2 flex flex-wrap items-center gap-2">
-                <!-- 雙天並排 vs 單天六行模式切換 -->
-                <div class="flex items-center space-x-1 bg-amber-200/90 p-1 rounded-xl border border-amber-300 shadow-2xs">
-                  <button type="button" id="btnMorningMode2Days" onclick="setMorningContactDaysMode('2days')" class="btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition" title="一次顯示兩天（第一欄今天、第二欄明天各完整六行）">
-                    📅 雙天並排模式
-                  </button>
-                  <button type="button" id="btnMorningMode1Day" onclick="setMorningContactDaysMode('1day')" class="bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition" title="單天作業六行">
-                    📄 單天模式
-                  </button>
-                </div>
-
-                <!-- 📜 配合學生聯絡簿格式：直式 (由右至左 / 由左至右) 與橫式卡片切換 -->
-                <div class="flex items-center space-x-1 bg-amber-200/90 p-1 rounded-xl border border-amber-300 shadow-2xs">
-                  <button type="button" id="btnContactFormatVerticalRtl" onclick="setMorningContactFormat('vertical-rtl')" class="btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition" title="配合學生真實聯絡簿格式（由右至左 1~6 直行，完全對照學生手邊聯絡簿）">
-                    📜 直式 (右至左)
-                  </button>
-                  <button type="button" id="btnContactFormatVerticalLtr" onclick="setMorningContactFormat('vertical-ltr')" class="bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition" title="直式聯絡簿格式（由左至右 1~6 直行）">
-                    📜 直式 (左至右)
-                  </button>
-                  <button type="button" id="btnContactFormatHorizontal" onclick="setMorningContactFormat('horizontal')" class="bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition" title="橫向長條卡片模式">
-                    📄 橫式卡片
-                  </button>
-                </div>
-
-                <!-- 雙天模式快捷組合 -->
-                <div id="morningPresetsGroup" class="flex items-center space-x-1">
-                  <button type="button" onclick="setMorningContactPreset('today_tomorrow')" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-black border border-amber-300 shadow-2xs transition" title="快捷切換：今日與明日兩天作業">
-                    👑 今日 ＆ 明日
-                  </button>
-                  <button type="button" onclick="setMorningContactPreset('yesterday_today')" class="px-2.5 py-1 rounded-xl bg-white/90 hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition" title="快捷切換：昨日與今日兩天作業">
-                    📜 昨日 ＆ 今日
-                  </button>
-                </div>
-
-                <!-- 單天模式專用日期選擇器 -->
-                <div id="morningSingleDatePickerGroup" class="hidden flex items-center space-x-1 bg-white/90 p-0.5 rounded-xl border border-amber-300 shadow-sm text-xs font-bold">
-                  <button type="button" onclick="changeContactDateDelta(-1)" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="前一天">⬅ 前一天</button>
-                  <input type="date" id="contactBookDatePicker" onchange="handleContactDatePickerChange(this.value)" class="px-2 py-0.5 text-xs bg-amber-50 border border-amber-200 rounded-lg text-amber-900 font-bold cursor-pointer">
-                  <button type="button" onclick="changeContactDateToToday()" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="回到今日">今日</button>
-                  <button type="button" onclick="changeContactDateDelta(1)" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="後一天">後一天 ➡</button>
-                </div>
-
-                <span class="text-xs font-black bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-300 shadow-xs">
-                  📅 顯示日期：<span id="contactBookDateDisplay"></span>
-                </span>
-              </div>
-            </div>
-            
-            <div class="flex items-center space-x-2">
-              <button type="button" onclick="openContactProjectionModal()" class="btn-royal-gold px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-sm transform hover:scale-105 active:scale-95 transition" title="全螢幕大屏投影聯絡簿（保留到校打卡功能）">
-                <span>🖥️ 大屏投影</span>
-              </button>
-              <button onclick="openEditContactModal()" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border-2 border-amber-400 font-black text-xs sm:text-sm shadow-sm flex items-center space-x-1.5 transition">
-                <i data-lucide="edit-3" class="w-4 h-4 text-amber-700"></i>
-                <span>✏️ 編輯聯絡簿項目</span>
-              </button>
-            </div>
-          </div>
-
           <!-- 聯絡簿條目 (左右二欄 ‧ 超大字號 text-xl ~ text-3xl，後排學生看得清清楚楚) -->
           <div class="space-y-3">
-            <div class="flex items-center space-x-2">
-              <span class="text-base sm:text-xl font-black text-amber-900 bg-amber-200 px-3 py-1 rounded-xl border border-amber-400 flex items-center space-x-1">
+            <div class="flex items-center justify-between pb-2 border-b-2 border-amber-400">
+              <span class="text-base sm:text-xl font-black text-amber-900 bg-amber-200 px-3 py-1 rounded-xl border border-amber-400 flex items-center space-x-1 shadow-xs">
                 <span>✍️ 聯絡簿作業抄寫項目</span>
                 <span class="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-1">第一欄與第二欄獨立六行大字排版</span>
+              </span>
+              <span class="text-xs font-black text-amber-800 bg-amber-100/90 px-2.5 py-1 rounded-lg border border-amber-300 hidden sm:inline">
+                📜 照手邊聯絡簿認真抄寫
               </span>
             </div>
 
@@ -613,7 +614,10 @@
               <button type="button" onclick="setManualTrafficCountdown(10, '10分鐘下課')" class="px-2.5 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition whitespace-nowrap active:scale-95" title="快捷倒數 10 分鐘下課">⏱️ 10分</button>
               <button type="button" onclick="setManualTrafficCountdown(20, '20分鐘大下課')" class="px-2.5 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition whitespace-nowrap active:scale-95" title="快捷倒數 20 分鐘大下課">🌟 20分</button>
               <button type="button" onclick="setManualTrafficCountdown(5, '5分鐘短下課')" class="px-2.5 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 text-xs font-bold transition whitespace-nowrap active:scale-95" title="快捷倒數 5 分鐘">⏱️ 5分</button>
-              <button type="button" id="btnTrafficResetSchedule" onclick="resetTrafficToSchedule()" class="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black transition hidden whitespace-nowrap active:scale-95" title="恢復西寧國小課表自動作息">🔄 恢復作息</button>
+              <button type="button" id="btnTrafficResetSchedule" onclick="resetTrafficToSchedule()" class="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black transition hidden whitespace-nowrap active:scale-95" title="恢復學校課表自動作息">🔄 恢復作息</button>
+              <button type="button" onclick="openManageBellScheduleModal()" class="px-2.5 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/40 text-amber-200 border border-amber-400/50 text-xs font-black transition flex items-center space-x-1 whitespace-nowrap active:scale-95 shadow-2xs" title="因應每間學校不同，自訂調整各節課堂與下課作息時間">
+                <span>⚙️ 編輯作息</span>
+              </button>
             </div>
             <!-- 下課鐘聲與全螢幕 -->
             <div class="flex items-center space-x-1.5 shrink-0">
@@ -3778,18 +3782,32 @@
         <input type="hidden" id="editBehaviorReasonId" value="">
         <div>
           <label class="block font-bold text-amber-950 mb-1">歸屬卡牌類型：</label>
-          <select id="reasonCardType" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
+          <select id="reasonCardType" onchange="toggleReasonTargetCountField()" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
             <option value="reflection">🪑 座位自省卡 (紅燈・禁止下課)</option>
             <option value="service">🧹 愛班服務卡 (課間愛班勞動)</option>
+            <option value="reminder">📝 常規提醒單 (自我提醒書寫)</option>
           </select>
         </div>
         <div>
           <label class="block font-bold text-amber-950 mb-1">快捷標籤名稱 (顯示於快捷列)：</label>
-          <input type="text" id="reasonLabel" required placeholder="例如：作業未交、遲到、分心聊天" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
+          <input type="text" id="reasonLabel" required placeholder="例如：聽寫記得簽名、作業未交、遲到" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
         </div>
         <div>
-          <label class="block font-bold text-amber-950 mb-1">完整事由文字：</label>
-          <input type="text" id="reasonText" required placeholder="例如：作業未交留座反省、遲到" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-medium">
+          <label class="block font-bold text-amber-950 mb-1">完整事由文字 (學生書寫提醒或反省句子)：</label>
+          <input type="text" id="reasonText" required placeholder="例如：聽寫要記得簽名、作業未交留座反省" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-medium">
+        </div>
+        <div id="reasonTargetCountGroup" class="hidden p-2.5 bg-yellow-50 rounded-xl border border-yellow-300 space-y-1.5">
+          <label class="block font-bold text-amber-950">✍️ 預設提醒書寫次數：</label>
+          <div class="flex items-center space-x-2">
+            <input type="number" id="reasonTargetCount" min="1" max="500" value="50" class="w-20 px-2.5 py-1.5 rounded-lg border border-amber-400 bg-white font-black text-center text-amber-950 text-sm">
+            <span class="font-bold text-amber-950">次</span>
+            <div class="flex flex-wrap items-center gap-1">
+              <button type="button" onclick="document.getElementById('reasonTargetCount').value=20" class="px-2 py-0.5 rounded bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold border border-amber-400">20次</button>
+              <button type="button" onclick="document.getElementById('reasonTargetCount').value=30" class="px-2 py-0.5 rounded bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold border border-amber-400">30次</button>
+              <button type="button" onclick="document.getElementById('reasonTargetCount').value=50" class="px-2 py-0.5 rounded bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold border border-amber-400">50次</button>
+              <button type="button" onclick="document.getElementById('reasonTargetCount').value=100" class="px-2 py-0.5 rounded bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold border border-amber-400">100次</button>
+            </div>
+          </div>
         </div>
 
         <div class="flex items-center justify-between pt-2 border-t border-amber-200">
@@ -4803,6 +4821,101 @@
   </div>
 
   <!-- =============================================================== -->
+  <!-- MODAL: 下課紅綠燈課堂作息時程編輯 (Bell Schedule Manager) -->
+  <!-- =============================================================== -->
+  <div id="manageBellScheduleModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-xl w-full p-5 sm:p-6 space-y-4 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-3">
+        <div>
+          <h3 class="text-base sm:text-lg font-black text-amber-950 flex items-center space-x-2">
+            <span>⚙️ 學校課堂作息時程表設定</span>
+          </h3>
+          <p class="text-xs text-amber-800 font-bold mt-0.5">
+            各校作息時間不同，可在此自由調整每節上課、下課、大下課與午休時段，紅綠燈倒數將自動連動。
+          </p>
+        </div>
+        <button onclick="closeManageBellScheduleModal()" class="text-slate-500 hover:text-slate-800 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 現有時程清單 -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-amber-950">各節作息時段清單 (按時間自動排序)：</span>
+          <span id="bellScheduleCountBadge" class="text-xs font-bold text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded-full border border-amber-300">17 個時段</span>
+        </div>
+        <div id="bellScheduleManageList" class="space-y-1.5 max-h-56 overflow-y-auto p-2 bg-white rounded-xl border border-amber-300 text-xs font-bold">
+          <!-- 動態渲染作息列表 -->
+        </div>
+      </div>
+
+      <!-- 新增 / 編輯作息時段表單 -->
+      <form id="bellScheduleForm" onsubmit="submitBellScheduleForm(event)" class="space-y-3 pt-3 border-t border-amber-200 text-xs font-bold">
+        <div class="flex items-center justify-between">
+          <span id="bellScheduleFormTitle" class="text-xs font-black text-amber-950">➕ 新增作息時段：</span>
+          <button type="button" id="btnCancelEditBellSchedule" onclick="cancelEditBellSchedule()" class="hidden text-xs text-slate-500 hover:text-slate-700 underline font-bold">
+            取消編輯
+          </button>
+        </div>
+        <input type="hidden" id="editBellScheduleId" value="">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div class="sm:col-span-1">
+            <label class="block text-slate-700 mb-1">開始時間：</label>
+            <input type="time" id="bellScheduleStart" required class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold text-center font-digital text-base">
+          </div>
+          <div class="sm:col-span-1">
+            <label class="block text-slate-700 mb-1">結束時間：</label>
+            <input type="time" id="bellScheduleEnd" required class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold text-center font-digital text-base">
+          </div>
+          <div class="sm:col-span-1">
+            <label class="block text-slate-700 mb-1">時段類型：</label>
+            <select id="bellScheduleType" onchange="handleBellScheduleTypeChange()" class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold text-xs">
+              <option value="class">📖 課堂進行中 (上課)</option>
+              <option value="break">🏃 一般下課時間 (下課)</option>
+              <option value="bigBreak">🌟 大下課時間 (20分大下課)</option>
+              <option value="morning">🌅 晨光早自習 (晨會活動)</option>
+              <option value="lunch">🍱 午餐御膳時間 (午餐)</option>
+              <option value="nap">💤 午休靜心休養 (午休)</option>
+              <option value="dismissal">🎒 放學整理準備 (放學)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-700 mb-1">時段名稱 (顯示於紅綠燈看板)：</label>
+            <input type="text" id="bellScheduleLabel" required placeholder="例如：第一節 課堂進行中、大下課時間" class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold">
+          </div>
+          <div>
+            <label class="block text-slate-700 mb-1">倒數目標說明 (倒數時顯示之目標)：</label>
+            <input type="text" id="bellScheduleTargetLabel" placeholder="例如：第一節下課、第二節上課 (留空自動設定)" class="w-full px-2.5 py-1.5 border border-amber-300 rounded-lg bg-white font-bold">
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-1">
+          <button type="submit" id="btnSaveBellSchedule" class="flex-1 btn-royal-gold py-2 rounded-xl font-black text-xs shadow-sm flex items-center justify-center space-x-1 cursor-pointer">
+            <span id="btnSaveBellScheduleIcon">➕</span>
+            <span id="btnSaveBellScheduleText">儲存作息時段</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- 底部快捷操作：一鍵恢復預設作息 -->
+      <div class="pt-2 border-t border-amber-200 flex items-center justify-between text-xs">
+        <button type="button" onclick="confirmResetBellScheduleToDefault()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold flex items-center space-x-1 transition cursor-pointer" title="恢復國小預設作息表">
+          <span>🔄</span>
+          <span>恢復國小預設作息表</span>
+        </button>
+        <button type="button" onclick="closeManageBellScheduleModal()" class="px-4 py-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 border border-amber-400 font-black transition cursor-pointer">
+          完成關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
   <!-- MODAL: 課堂作息鬧鐘快捷管理 (Alarm Presets Manager) -->
   <!-- =============================================================== -->
   <div id="manageAlarmPresetsModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -4905,8 +5018,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261124_v26"></script>
-  <script src="ui.js?v=20261124_v26"></script>
+  <script src="app.js?v=20261125_v30"></script>
+  <script src="ui.js?v=20261125_v30"></script>
 
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>

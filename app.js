@@ -64,7 +64,7 @@ const DEFAULT_HOMEWORK_PRESETS = [
   { id: 'hw_pre_8', subject: '綜合', name: '聯絡簿', fullName: '家長簽名聯絡簿' }
 ];
 
-// 預設行為登記原因庫 (支援自省卡與愛班卡快捷，導師可自由新增、編輯、刪除)
+// 預設行為登記原因庫 (支援自省卡、愛班卡與常規提醒單快捷，導師可自由新增、編輯、刪除)
 const DEFAULT_BEHAVIOR_REASONS = [
   { id: 'br_ref_1', type: 'reflection', label: '作業未交', text: '作業未交留座反省' },
   { id: 'br_ref_2', type: 'reflection', label: '上課分心聊私事', text: '上課分心聊私事' },
@@ -76,12 +76,13 @@ const DEFAULT_BEHAVIOR_REASONS = [
   { id: 'br_srv_3', type: 'service', label: '打掃責任區未落實', text: '打掃責任區未落實' },
   { id: 'br_srv_4', type: 'service', label: '忘記清空抽屜置物櫃', text: '忘記抽屜與置物櫃清空' },
   { id: 'br_srv_5', type: 'service', label: '公物使用後未歸位', text: '公物使用後未歸位' },
-  // 常規提醒單快捷 (自我提醒書寫)
-  { id: 'br_rem_1', type: 'reminder', label: '聽寫記得簽名', text: '聽寫要記得簽名' },
-  { id: 'br_rem_2', type: 'reminder', label: '作業記得帶到校', text: '作業記得帶到學校' },
-  { id: 'br_rem_3', type: 'reminder', label: '上課專心不插嘴', text: '上課專心不隨意插嘴' },
-  { id: 'br_rem_4', type: 'reminder', label: '走廊慢行不奔跑', text: '走廊常規慢行不奔跑' },
-  { id: 'br_rem_5', type: 'reminder', label: '聯絡簿每日簽名', text: '聯絡簿每日確實簽名' }
+  // 常規提醒單快捷 (自我提醒書寫，支援指定書寫目標次數)
+  { id: 'br_rem_1', type: 'reminder', label: '聽寫記得簽名', text: '聽寫要記得簽名', targetCount: 50 },
+  { id: 'br_rem_2', type: 'reminder', label: '聯絡簿未簽名', text: '聯絡簿要記得請家長簽名', targetCount: 30 },
+  { id: 'br_rem_3', type: 'reminder', label: '學用品記得帶', text: '每天出門前檢查書包學用品', targetCount: 30 },
+  { id: 'br_rem_4', type: 'reminder', label: '走廊慢行不奔跑', text: '走廊常規慢行不奔跑', targetCount: 50 },
+  { id: 'br_rem_5', type: 'reminder', label: '課堂專心不聊天', text: '上課專心聽講不說話', targetCount: 30 },
+  { id: 'br_rem_6', type: 'reminder', label: '座位周遭保持整潔', text: '隨手撿垃圾保持座位整潔', targetCount: 30 }
 ];
 
 // 預設課堂作息鐘聲快捷項目庫 (導師可自由新增、修改、刪除、恢復預設)
@@ -104,6 +105,27 @@ const DEFAULT_TIMER_PRESETS = [
   { id: 'tm_3', label: '隨堂練習測驗', btnText: '✏️ 課堂測驗 (15分)', seconds: 900 },
   { id: 'tm_4', label: '晨間寧靜閱讀', btnText: '📖 晨讀專注 (20分)', seconds: 1200 },
   { id: 'tm_5', label: '課間下課倒數', btnText: '🔔 下課倒數 (10分)', seconds: 600 }
+];
+
+// 預設下課紅綠燈課堂作息時程表 (各校作息時間可由導師自訂編輯、新增、刪除、恢復預設)
+const DEFAULT_BELL_SCHEDULE = [
+  { id: 'sch_1', label: "早自習・晨會活動", start: "07:40", end: "08:40", type: "morning", targetLabel: "第一節上課", targetTime: "08:40", isBreak: true },
+  { id: 'sch_2', label: "第一節 課堂進行中", start: "08:40", end: "09:20", type: "class", period: 1, targetLabel: "第一節下課", targetTime: "09:20", isBreak: false },
+  { id: 'sch_3', label: "第一節 下課時間", start: "09:20", end: "09:30", type: "break", duration: 10, targetLabel: "第二節上課", targetTime: "09:30", isBreak: true },
+  { id: 'sch_4', label: "第二節 課堂進行中", start: "09:30", end: "10:10", type: "class", period: 2, targetLabel: "第二節大下課", targetTime: "10:10", isBreak: false },
+  { id: 'sch_5', label: "第二節 大下課時間 🌟", start: "10:10", end: "10:30", type: "break", isBigBreak: true, duration: 20, targetLabel: "第三節上課", targetTime: "10:30", isBreak: true },
+  { id: 'sch_6', label: "第三節 課堂進行中", start: "10:30", end: "11:10", type: "class", period: 3, targetLabel: "第三節下課", targetTime: "11:10", isBreak: false },
+  { id: 'sch_7', label: "第三節 下課時間", start: "11:10", end: "11:20", type: "break", duration: 10, targetLabel: "第四節上課", targetTime: "11:20", isBreak: true },
+  { id: 'sch_8', label: "第四節 課堂進行中", start: "11:20", end: "12:00", type: "class", period: 4, targetLabel: "午餐時間", targetTime: "12:00", isBreak: false },
+  { id: 'sch_9', label: "午餐御膳時間 🍱", start: "12:00", end: "12:40", type: "lunch", targetLabel: "午休開始", targetTime: "12:40", isBreak: true },
+  { id: 'sch_10', label: "午休靜心休養 💤", start: "12:40", end: "13:20", type: "nap", targetLabel: "午休起床", targetTime: "13:20", isBreak: false },
+  { id: 'sch_11', label: "午休起床預備 🌤️", start: "13:20", end: "13:30", type: "break", duration: 10, targetLabel: "第五節上課", targetTime: "13:30", isBreak: true },
+  { id: 'sch_12', label: "第五節 課堂進行中", start: "13:30", end: "14:10", type: "class", period: 5, targetLabel: "第五節下課", targetTime: "14:10", isBreak: false },
+  { id: 'sch_13', label: "第五節 下課時間", start: "14:10", end: "14:20", type: "break", duration: 10, targetLabel: "第六節上課", targetTime: "14:20", isBreak: true },
+  { id: 'sch_14', label: "第六節 課堂進行中", start: "14:20", end: "15:00", type: "class", period: 6, targetLabel: "第六節下課", targetTime: "15:00", isBreak: false },
+  { id: 'sch_15', label: "第六節 下課時間", start: "15:00", end: "15:10", type: "break", duration: 10, targetLabel: "第七節上課", targetTime: "15:10", isBreak: true },
+  { id: 'sch_16', label: "第七節 課堂進行中", start: "15:10", end: "15:50", type: "class", period: 7, targetLabel: "放學整理", targetTime: "15:50", isBreak: false },
+  { id: 'sch_17', label: "放學整理準備 🎒", start: "15:50", end: "15:55", type: "dismissal", targetLabel: "放學鐘聲", targetTime: "15:55", isBreak: true }
 ];
 
 // 預設教室座位表 (5行 x 6列 = 30格)
@@ -642,11 +664,13 @@ class KingdomStore {
       });
       const mergedSlips = Array.from(slipMap.values());
 
-      // 合併自省卡 (根據理由去重)
-      const refReasons = [...(r.reflectionReasons || [])];
-      (l.reflectionReasons || []).forEach(lr => {
-        if (!refReasons.some(rr => rr.text === lr.text && rr.isAutoHw === lr.isAutoHw && rr.hwId === lr.hwId)) {
-          refReasons.push(lr);
+      // 合併自省卡 (保留手動自省卡，自動作業自省卡以較新一端為準，避免請假撤銷後被舊資料倒灌復活)
+      const primaryRef = isRemoteNewer ? (r.reflectionReasons || []) : (l.reflectionReasons || []);
+      const secondaryRef = isRemoteNewer ? (l.reflectionReasons || []).filter(lr => !lr.isAutoHw) : (r.reflectionReasons || []).filter(rr => !rr.isAutoHw);
+      const refReasons = [...primaryRef];
+      secondaryRef.forEach(sr => {
+        if (!refReasons.some(rr => rr.text === sr.text && rr.isAutoHw === sr.isAutoHw && rr.hwId === sr.hwId)) {
+          refReasons.push(sr);
         }
       });
 
@@ -730,6 +754,13 @@ class KingdomStore {
       const hasRem = parsed.behaviorReasons.some(r => r && r.type === 'reminder');
       if (!hasRem) {
         DEFAULT_BEHAVIOR_REASONS.filter(r => r.type === 'reminder').forEach(r => parsed.behaviorReasons.push(JSON.parse(JSON.stringify(r))));
+      } else {
+        parsed.behaviorReasons.forEach(r => {
+          if (r && r.type === 'reminder' && (!r.targetCount || isNaN(r.targetCount))) {
+            const def = DEFAULT_BEHAVIOR_REASONS.find(d => d.id === r.id);
+            r.targetCount = def ? def.targetCount : 50;
+          }
+        });
       }
     }
     if (!parsed.alarmPresets || !Array.isArray(parsed.alarmPresets) || parsed.alarmPresets.length === 0) {
@@ -737,6 +768,9 @@ class KingdomStore {
     }
     if (!parsed.timerPresets || !Array.isArray(parsed.timerPresets) || parsed.timerPresets.length === 0) {
       parsed.timerPresets = JSON.parse(JSON.stringify(DEFAULT_TIMER_PRESETS));
+    }
+    if (!parsed.bellSchedule || !Array.isArray(parsed.bellSchedule) || parsed.bellSchedule.length === 0) {
+      parsed.bellSchedule = JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE));
     }
 
     // --- 聯絡簿純淨全手動模式 (絕不自動生成假作業) ---
@@ -1110,6 +1144,7 @@ class KingdomStore {
       behaviorReasons: JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS)),
       alarmPresets: JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS)),
       timerPresets: JSON.parse(JSON.stringify(DEFAULT_TIMER_PRESETS)),
+      bellSchedule: JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE)),
       contactBook: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)),
       contactBookHistory: {},
       attendance: {},
@@ -2112,6 +2147,67 @@ class KingdomStore {
     return this.data.alarmPresets;
   }
 
+  // --- 課堂作息時程管理 (下課紅綠燈倒數時程，可編輯、新增、刪除、恢復預設) ---
+  getBellSchedule() {
+    if (!this.data.bellSchedule || !Array.isArray(this.data.bellSchedule) || this.data.bellSchedule.length === 0) {
+      this.data.bellSchedule = JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE));
+    }
+    return this.data.bellSchedule.slice().sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+  }
+
+  addBellScheduleItem({ label, start, end, isBreak = false, targetLabel = '', isBigBreak = false, type = 'class' }) {
+    if (!label || !start || !end) return null;
+    if (!this.data.bellSchedule) this.data.bellSchedule = [];
+    const resolvedIsBreak = Boolean(isBreak);
+    const newItem = {
+      id: 'sch_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      label: String(label).trim(),
+      start: String(start).trim(),
+      end: String(end).trim(),
+      isBreak: resolvedIsBreak,
+      targetLabel: String(targetLabel || (resolvedIsBreak ? '上課' : '下課')).trim(),
+      targetTime: String(end).trim(),
+      isBigBreak: Boolean(isBigBreak),
+      type: String(type || (resolvedIsBreak ? 'break' : 'class')).trim()
+    };
+    this.data.bellSchedule.push(newItem);
+    this.save('新增課堂作息時段: ' + newItem.label);
+    return newItem;
+  }
+
+  updateBellScheduleItem(id, { label, start, end, isBreak, targetLabel, isBigBreak, type }) {
+    if (!this.data.bellSchedule) return false;
+    const item = this.data.bellSchedule.find(p => p.id === id);
+    if (!item) return false;
+    if (label !== undefined) item.label = String(label).trim();
+    if (start !== undefined) item.start = String(start).trim();
+    if (end !== undefined) {
+      item.end = String(end).trim();
+      item.targetTime = item.end;
+    }
+    if (isBreak !== undefined) item.isBreak = Boolean(isBreak);
+    if (targetLabel !== undefined) item.targetLabel = String(targetLabel).trim();
+    if (isBigBreak !== undefined) item.isBigBreak = Boolean(isBigBreak);
+    if (type !== undefined) item.type = String(type).trim();
+    this.save('修改課堂作息時段: ' + item.label);
+    return true;
+  }
+
+  deleteBellScheduleItem(id) {
+    if (!this.data.bellSchedule) return false;
+    const found = this.data.bellSchedule.find(p => p.id === id);
+    const name = found ? found.label : id;
+    this.data.bellSchedule = this.data.bellSchedule.filter(p => p.id !== id);
+    this.save('刪除課堂作息時段: ' + name);
+    return true;
+  }
+
+  resetBellSchedule() {
+    this.data.bellSchedule = JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE));
+    this.save('恢復預設課堂作息時程表');
+    return this.data.bellSchedule;
+  }
+
   // --- 課堂活動倒數計時情境快捷 ---
   getTimerPresets() {
     if (!this.data.timerPresets || !Array.isArray(this.data.timerPresets) || this.data.timerPresets.length === 0) {
@@ -2206,15 +2302,21 @@ class KingdomStore {
   }
 
   // --- 常規事由快捷管理 (新增、編輯、刪除、恢復預設) ---
-  addBehaviorReason({ type = "reflection", label, text }) {
+  addBehaviorReason({ type = "reflection", label, text, targetCount }) {
     if (!label) return null;
     if (!this.data.behaviorReasons) this.data.behaviorReasons = JSON.parse(JSON.stringify(DEFAULT_BEHAVIOR_REASONS));
+    const resolvedType = type === "service" ? "service" : (type === "reminder" ? "reminder" : "reflection");
     const newReason = {
       id: "br_" + Date.now(),
-      type: type === "service" ? "service" : (type === "reminder" ? "reminder" : "reflection"),
+      type: resolvedType,
       label: label.trim(),
       text: (text || label).trim()
     };
+    if (resolvedType === 'reminder') {
+      newReason.targetCount = parseInt(targetCount, 10) || 50;
+    } else if (targetCount !== undefined && targetCount !== null) {
+      newReason.targetCount = parseInt(targetCount, 10) || undefined;
+    }
     this.data.behaviorReasons.push(newReason);
     this.save('新增常規事由快捷: ' + newReason.label);
     return newReason;
@@ -2229,13 +2331,16 @@ class KingdomStore {
     return true;
   }
 
-  updateBehaviorReason(reasonId, { type, label, text }) {
+  updateBehaviorReason(reasonId, { type, label, text, targetCount }) {
     if (!this.data.behaviorReasons) return false;
     const found = this.data.behaviorReasons.find(p => p.id === reasonId);
     if (!found) return false;
-    if (type) found.type = type === "service" ? "service" : "reflection";
+    if (type) found.type = type === "service" ? "service" : (type === "reminder" ? "reminder" : "reflection");
     if (label) found.label = label.trim();
     if (text !== undefined) found.text = (text || label).trim();
+    if (targetCount !== undefined) {
+      found.targetCount = parseInt(targetCount, 10) || (found.type === 'reminder' ? 50 : undefined);
+    }
     this.save('修改常規事由快捷: ' + found.label);
     return true;
   }
@@ -2672,7 +2777,23 @@ class KingdomStore {
     this.save('刪除常規提醒單');
   }
 
-  // --- 作業未交自動派發座位自省卡同步 (一項未交自動新增一張自省卡，標示哪項作業；導師全手動移除，系統無須自動移除) ---
+  // --- 判斷特定學生在某日是否為請假狀態 (支援 student 物件或 ID/座號、多種出缺席鍵名與請假格式) ---
+  isStudentOnLeaveOnDate(studentOrId, dateStr) {
+    if (!studentOrId || !dateStr || !this.data.attendance) return false;
+    const student = typeof studentOrId === 'object'
+      ? studentOrId
+      : (this.data.students || []).find(s => s.id === studentOrId || s.seatNo === studentOrId);
+    if (!student) return false;
+    const dayRec = this.data.attendance[dateStr];
+    if (!dayRec || typeof dayRec !== 'object') return false;
+    const rec = dayRec[student.id] !== undefined ? dayRec[student.id] :
+                (dayRec[student.seatNo] !== undefined ? dayRec[student.seatNo] :
+                (dayRec[String(student.id)] !== undefined ? dayRec[String(student.id)] : dayRec[String(student.seatNo)]));
+    if (!rec) return false;
+    return rec.status === 'leave' || rec.status === '請假' || Boolean(rec.leaveType);
+  }
+
+  // --- 作業未交自動派發座位自省卡同步 (一項未交自動新增一張自省卡，標示哪項作業；導師手動移除；若學生請假則免自動派發) ---
   syncHomeworkReflectionCards(studentId) {
     if (!this.data.behaviorCards) this.data.behaviorCards = {};
     if (!this.data.behaviorCards[studentId]) {
@@ -2695,29 +2816,55 @@ class KingdomStore {
     const student = (this.data.students || []).find(s => s.id === studentId || s.seatNo === studentId);
     if (!student) return;
 
+    const today = getTodayDateString();
+
     // 找出該學生目前所有未交作業 (pending 或 missing)
     const missingHws = (this.data.homework || []).filter(hw => {
       const rec = (hw.records && (hw.records[student.id] !== undefined ? hw.records[student.id] : hw.records[student.seatNo])) || 'pending';
       return rec === 'pending' || rec === 'missing';
     });
 
-    // 依使用者指示：自動派發的自省卡由導師手動移除，系統無須自動移除！
-    // 因此絕不自動刪除已補交作業的自省卡，完整保留待導師手動核銷。
-    // 僅為尚未派發且未被導師手動消除的未交作業派發新自省卡：
+    // 依使用者指示：
+    // 若系統偵測到當日沒有交作業的學生是請假的，就不需自動派發自省卡！
+    // 檢查條件：作業應交日 (dueDate)、頒布日 (date) 或 今日，該生是否處於請假狀態。
     missingHws.forEach(hw => {
       const hwIdStr = String(hw.id);
-      const exists = b.reflectionReasons.some(r => r.isAutoHw && String(r.hwId) === hwIdStr);
-      const dismissed = b.dismissedHwCards && b.dismissedHwCards[hwIdStr];
-      if (!exists && !dismissed) {
-        const hwName = hw.title || hw.presetName || '日常作業';
-        b.reflectionReasons.push({
-          text: `作業未交（${hwName}）`,
-          hwId: hwIdStr,
-          isAutoHw: true,
-          date: getTodayDateString(),
-          time: new Date().toTimeString().slice(0, 5)
-        });
+      const hwDate = hw.dueDate || hw.date || today;
+      const isOnLeave = this.isStudentOnLeaveOnDate(student, hwDate) ||
+                        this.isStudentOnLeaveOnDate(student, hw.date) ||
+                        this.isStudentOnLeaveOnDate(student, hw.dueDate) ||
+                        this.isStudentOnLeaveOnDate(student, today);
+
+      if (isOnLeave) {
+        // 請假學生：嚴格豁免！不需自動派發自省卡；若先前已有系統自動產生的該作業自省卡，亦自動予以撤除
+        b.reflectionReasons = b.reflectionReasons.filter(r => !(r.isAutoHw && String(r.hwId) === hwIdStr));
+      } else {
+        const exists = b.reflectionReasons.some(r => r.isAutoHw && String(r.hwId) === hwIdStr);
+        const dismissed = b.dismissedHwCards && b.dismissedHwCards[hwIdStr];
+        if (!exists && !dismissed) {
+          const hwName = hw.title || hw.presetName || '日常作業';
+          b.reflectionReasons.push({
+            text: `作業未交（${hwName}）`,
+            hwId: hwIdStr,
+            isAutoHw: true,
+            date: today,
+            time: new Date().toTimeString().slice(0, 5)
+          });
+        }
       }
+    });
+
+    // 額外保險清理：所有自動作業自省卡中，若其作業應交日或今日該生登記為請假，自動清除
+    b.reflectionReasons = b.reflectionReasons.filter(r => {
+      if (!r.isAutoHw || !r.hwId) return true;
+      const targetHw = (this.data.homework || []).find(h => String(h.id) === String(r.hwId));
+      if (!targetHw) return true;
+      const hwDate = targetHw.dueDate || targetHw.date || today;
+      const isOnLeave = this.isStudentOnLeaveOnDate(student, hwDate) ||
+                        this.isStudentOnLeaveOnDate(student, targetHw.date) ||
+                        this.isStudentOnLeaveOnDate(student, targetHw.dueDate) ||
+                        this.isStudentOnLeaveOnDate(student, today);
+      return !isOnLeave;
     });
 
     // 重新計算累計自省卡數量與事由摘要
@@ -2945,8 +3092,8 @@ class KingdomStore {
     const today = getTodayDateString();
     const att = (this.data.attendance[today] && (this.data.attendance[today][sId] || this.data.attendance[today][seatNo])) || null;
 
-    // 1. 若今日請假：定為請假，則嚴格豁免！絕不頒發愛班卡
-    if (att && att.status === 'leave') {
+    // 1. 若今日請假：定為請假，則嚴格豁免！絕不頒發愛班卡與自省卡
+    if (att && (att.status === 'leave' || att.status === '請假' || Boolean(att.leaveType))) {
       return {
         student,
         light: 'leave',
@@ -2969,7 +3116,7 @@ class KingdomStore {
     }
 
     // 2. 自省卡與愛班服務累計判定
-    // 自省卡：作業未交自動新增（一項未交自動新增1張，標示哪項作業）＋ 導師手動控制
+    // 自省卡：作業未交自動新增（一項未交自動新增1張，標示哪項作業；當日請假嚴格豁免）＋ 導師手動控制
     const bCard = (this.data.behaviorCards && (this.data.behaviorCards[sId] || this.data.behaviorCards[seatNo])) || {};
     const reflectionCount = this.getReflectionCount(sId);
     const hasReflection = reflectionCount > 0;
@@ -2987,7 +3134,7 @@ class KingdomStore {
     const hasReminder = reminderCount > 0;
     const reminderReason = pendingSlips.map(s => `${s.content || s.reason}*${s.targetCount}次`).join('、');
 
-    // 3. 檢查今日各項作業繳交情形 (支援 submitted, late, revision, pending)
+    // 3. 檢查今日各項作業繳交情形 (支援 submitted, late, revision, pending；若作業當日學生請假則豁免不計入未交)
     const missingList = [];
     const revisionList = [];
     const lateList = [];
@@ -2995,7 +3142,13 @@ class KingdomStore {
     (this.data.homework || []).forEach(hw => {
       const rec = (hw.records && (hw.records[seatNo] !== undefined ? hw.records[seatNo] : hw.records[sId])) || 'pending';
       if (rec === 'pending' || rec === 'missing') {
-        missingList.push(hw);
+        const hwDate = hw.dueDate || hw.date || today;
+        const isOnLeave = this.isStudentOnLeaveOnDate(student, hwDate) ||
+                          this.isStudentOnLeaveOnDate(student, hw.date) ||
+                          this.isStudentOnLeaveOnDate(student, hw.dueDate);
+        if (!isOnLeave) {
+          missingList.push(hw);
+        }
       } else if (rec === 'revision') {
         revisionList.push(hw);
       } else if (rec === 'late') {

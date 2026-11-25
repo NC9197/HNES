@@ -1161,6 +1161,7 @@ function handleMorningSeatCheckIn(studentId, seatNo) {
       note: isLate ? `晨檢遲到 (${timeStr})` : '晨檢準時'
     };
 
+    window.KingdomApp.store.syncHomeworkReflectionCards(studentId);
     window.KingdomApp.store.save();
     window.KingdomApp.sound.playCoin();
 
@@ -1289,6 +1290,7 @@ function changeMorningAttendanceStatus(targetStatus) {
     showToast(`⏱️ 【${student.name}】已重新以當前時間 (${timeStr}) 完成打卡！`);
   }
 
+  window.KingdomApp.store.syncHomeworkReflectionCards(studentId);
   window.KingdomApp.store.save();
   window.KingdomApp.sound.playCoin();
   closeMorningCheckInChangeModal();
@@ -1916,6 +1918,7 @@ function markAllPresent() {
     window.KingdomApp.store.data.attendance[date][st.id] = { status: 'present', checkInTime: timeStr, note: '導師一鍵全班補簽到' };
   });
 
+  window.KingdomApp.store.syncAllHomeworkReflectionCards();
   window.KingdomApp.store.save();
   window.KingdomApp.sound.playCoin();
   showToast("👑 全體 27 位大臣已全數手動簽到出席！");
@@ -1962,6 +1965,7 @@ function setStudentAttendance(studentId, status, customNote) {
     note: customNote || (status === 'present' ? '在朝準時' : prev.note)
   };
 
+  window.KingdomApp.store.syncHomeworkReflectionCards(studentId);
   window.KingdomApp.store.save();
   window.KingdomApp.sound.playCoin();
   showToast("👑 皇后老師已修改出缺席權限紀錄！");
@@ -2063,6 +2067,7 @@ function saveStudentLeave(e) {
     note
   };
 
+  window.KingdomApp.store.syncHomeworkReflectionCards(activeLeaveStudentId);
   window.KingdomApp.store.save();
   showToast("🏖️ 大臣告假登記已核准！");
   closeLeaveModal();
@@ -3327,25 +3332,25 @@ function renderHomeworkSettlementTable() {
 // ===================================================================
 let trafficDisplayMode = 'seating'; // 預設為與五年二班教室空間座位表 (5列x6排) 結合模式
 
-// 西寧國小五年二班課堂作息時程表
-const XINING_BELL_SCHEDULE = [
-  { label: "早自習・晨會活動", start: "07:40", end: "08:40", type: "morning", targetLabel: "第一節上課", targetTime: "08:40", isBreak: true },
-  { label: "第一節 課堂進行中", start: "08:40", end: "09:20", type: "class", period: 1, targetLabel: "第一節下課", targetTime: "09:20", isBreak: false },
-  { label: "第一節 下課時間", start: "09:20", end: "09:30", type: "break", duration: 10, targetLabel: "第二節上課", targetTime: "09:30", isBreak: true },
-  { label: "第二節 課堂進行中", start: "09:30", end: "10:10", type: "class", period: 2, targetLabel: "第二節大下課", targetTime: "10:10", isBreak: false },
-  { label: "第二節 大下課時間 🌟", start: "10:10", end: "10:30", type: "break", isBigBreak: true, duration: 20, targetLabel: "第三節上課", targetTime: "10:30", isBreak: true },
-  { label: "第三節 課堂進行中", start: "10:30", end: "11:10", type: "class", period: 3, targetLabel: "第三節下課", targetTime: "11:10", isBreak: false },
-  { label: "第三節 下課時間", start: "11:10", end: "11:20", type: "break", duration: 10, targetLabel: "第四節上課", targetTime: "11:20", isBreak: true },
-  { label: "第四節 課堂進行中", start: "11:20", end: "12:00", type: "class", period: 4, targetLabel: "午餐時間", targetTime: "12:00", isBreak: false },
-  { label: "午餐御膳時間 🍱", start: "12:00", end: "12:40", type: "lunch", targetLabel: "午休開始", targetTime: "12:40", isBreak: true },
-  { label: "午休靜心休養 💤", start: "12:40", end: "13:20", type: "nap", targetLabel: "午休起床", targetTime: "13:20", isBreak: false },
-  { label: "午休起床預備 🌤️", start: "13:20", end: "13:30", type: "break", duration: 10, targetLabel: "第五節上課", targetTime: "13:30", isBreak: true },
-  { label: "第五節 課堂進行中", start: "13:30", end: "14:10", type: "class", period: 5, targetLabel: "第五節下課", targetTime: "14:10", isBreak: false },
-  { label: "第五節 下課時間", start: "14:10", end: "14:20", type: "break", duration: 10, targetLabel: "第六節上課", targetTime: "14:20", isBreak: true },
-  { label: "第六節 課堂進行中", start: "14:20", end: "15:00", type: "class", period: 6, targetLabel: "第六節下課", targetTime: "15:00", isBreak: false },
-  { label: "第六節 下課時間", start: "15:00", end: "15:10", type: "break", duration: 10, targetLabel: "第七節上課", targetTime: "15:10", isBreak: true },
-  { label: "第七節 課堂進行中", start: "15:10", end: "15:50", type: "class", period: 7, targetLabel: "放學整理", targetTime: "15:50", isBreak: false },
-  { label: "放學整理準備 🎒", start: "15:50", end: "15:55", type: "dismissal", targetLabel: "放學鐘聲", targetTime: "15:55", isBreak: true }
+// 預設備份課堂作息時程表 (若 store 尚未載入時之備援)
+const FALLBACK_BELL_SCHEDULE = [
+  { id: 'sch_1', label: "早自習・晨會活動", start: "07:40", end: "08:40", type: "morning", targetLabel: "第一節上課", targetTime: "08:40", isBreak: true },
+  { id: 'sch_2', label: "第一節 課堂進行中", start: "08:40", end: "09:20", type: "class", period: 1, targetLabel: "第一節下課", targetTime: "09:20", isBreak: false },
+  { id: 'sch_3', label: "第一節 下課時間", start: "09:20", end: "09:30", type: "break", duration: 10, targetLabel: "第二節上課", targetTime: "09:30", isBreak: true },
+  { id: 'sch_4', label: "第二節 課堂進行中", start: "09:30", end: "10:10", type: "class", period: 2, targetLabel: "第二節大下課", targetTime: "10:10", isBreak: false },
+  { id: 'sch_5', label: "第二節 大下課時間 🌟", start: "10:10", end: "10:30", type: "break", isBigBreak: true, duration: 20, targetLabel: "第三節上課", targetTime: "10:30", isBreak: true },
+  { id: 'sch_6', label: "第三節 課堂進行中", start: "10:30", end: "11:10", type: "class", period: 3, targetLabel: "第三節下課", targetTime: "11:10", isBreak: false },
+  { id: 'sch_7', label: "第三節 下課時間", start: "11:10", end: "11:20", type: "break", duration: 10, targetLabel: "第四節上課", targetTime: "11:20", isBreak: true },
+  { id: 'sch_8', label: "第四節 課堂進行中", start: "11:20", end: "12:00", type: "class", period: 4, targetLabel: "午餐時間", targetTime: "12:00", isBreak: false },
+  { id: 'sch_9', label: "午餐御膳時間 🍱", start: "12:00", end: "12:40", type: "lunch", targetLabel: "午休開始", targetTime: "12:40", isBreak: true },
+  { id: 'sch_10', label: "午休靜心休養 💤", start: "12:40", end: "13:20", type: "nap", targetLabel: "午休起床", targetTime: "13:20", isBreak: false },
+  { id: 'sch_11', label: "午休起床預備 🌤️", start: "13:20", end: "13:30", type: "break", duration: 10, targetLabel: "第五節上課", targetTime: "13:30", isBreak: true },
+  { id: 'sch_12', label: "第五節 課堂進行中", start: "13:30", end: "14:10", type: "class", period: 5, targetLabel: "第五節下課", targetTime: "14:10", isBreak: false },
+  { id: 'sch_13', label: "第五節 下課時間", start: "14:10", end: "14:20", type: "break", duration: 10, targetLabel: "第六節上課", targetTime: "14:20", isBreak: true },
+  { id: 'sch_14', label: "第六節 課堂進行中", start: "14:20", end: "15:00", type: "class", period: 6, targetLabel: "第六節下課", targetTime: "15:00", isBreak: false },
+  { id: 'sch_15', label: "第六節 下課時間", start: "15:00", end: "15:10", type: "break", duration: 10, targetLabel: "第七節上課", targetTime: "15:10", isBreak: true },
+  { id: 'sch_16', label: "第七節 課堂進行中", start: "15:10", end: "15:50", type: "class", period: 7, targetLabel: "放學整理", targetTime: "15:50", isBreak: false },
+  { id: 'sch_17', label: "放學整理準備 🎒", start: "15:50", end: "15:55", type: "dismissal", targetLabel: "放學鐘聲", targetTime: "15:55", isBreak: true }
 ];
 
 let manualTrafficCountdownEnd = null;
@@ -3424,24 +3429,37 @@ function updateTrafficCountdownClock() {
 
   if (resetBtn) resetBtn.classList.add("hidden");
 
-  // 2. 西寧國小課表自動作息判定
+  // 2. 學校課表自動作息判定 (支援導師自訂編輯每所學校之作息時段)
   const curSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
   const toSec = (t) => {
+    if (!t) return 0;
     const [hh, mm] = t.split(':').map(Number);
     return hh * 3600 + mm * 60;
   };
 
-  if (curSec < toSec('07:40')) {
-    const diff = toSec('07:40') - curSec;
+  const schedule = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getBellSchedule === 'function')
+    ? window.KingdomApp.store.getBellSchedule()
+    : FALLBACK_BELL_SCHEDULE;
+
+  if (!schedule || schedule.length === 0) return;
+
+  const firstItem = schedule[0];
+  const lastItem = schedule[schedule.length - 1];
+  const firstSec = toSec(firstItem.start);
+  const lastSec = toSec(lastItem.end);
+
+  // 清晨/晨光早自習前
+  if (curSec < firstSec) {
+    const diff = firstSec - curSec;
     const min = Math.floor(diff / 60);
     const sec = diff % 60;
     if (iconEl) iconEl.textContent = "🌅";
     if (badgeEl) {
-      badgeEl.textContent = "清晨晨光時段";
+      badgeEl.textContent = "晨光時段";
       badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-400 text-blue-950 shadow-xs";
     }
-    if (targetEl) targetEl.textContent = "目標：早自習 (07:40)";
-    if (titleEl) titleEl.textContent = "距早自習：";
+    if (targetEl) targetEl.textContent = `目標：${firstItem.label} (${firstItem.start})`;
+    if (titleEl) titleEl.textContent = `距${firstItem.label.slice(0, 4)}：`;
     if (digitsEl) {
       digitsEl.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
       digitsEl.classList.remove("countdown-urgent");
@@ -3450,7 +3468,8 @@ function updateTrafficCountdownClock() {
     return;
   }
 
-  if (curSec >= toSec('15:55')) {
+  // 放學課程結束後
+  if (curSec >= lastSec) {
     if (iconEl) iconEl.textContent = "🎒";
     if (badgeEl) {
       badgeEl.textContent = "放學休息時段";
@@ -3466,8 +3485,9 @@ function updateTrafficCountdownClock() {
     return;
   }
 
+  // 尋找當前進行中的時段
   let activeItem = null;
-  for (const item of XINING_BELL_SCHEDULE) {
+  for (const item of schedule) {
     const sSec = toSec(item.start);
     const eSec = toSec(item.end);
     if (curSec >= sSec && curSec < eSec) {
@@ -3476,7 +3496,23 @@ function updateTrafficCountdownClock() {
     }
   }
 
-  if (!activeItem) return;
+  // 若導師編輯時段間留有空隙，自動尋找下一個即將開始之時段，判定為課間下課休息
+  if (!activeItem) {
+    const nextItem = schedule.find(item => toSec(item.start) > curSec);
+    if (nextItem) {
+      activeItem = {
+        label: "課間休息時間",
+        start: "--:--",
+        end: nextItem.start,
+        isBreak: true,
+        targetLabel: (nextItem.label.slice(0, 4) || '下節') + '上課',
+        targetTime: nextItem.start,
+        type: "break"
+      };
+    } else {
+      return;
+    }
+  }
 
   const diffSec = toSec(activeItem.end) - curSec;
   const min = Math.floor(diffSec / 60);
@@ -3484,15 +3520,17 @@ function updateTrafficCountdownClock() {
   const timeStr = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 
   if (activeItem.isBreak) {
-    // 下課或午餐休息時段
-    if (iconEl) iconEl.textContent = activeItem.isBigBreak ? "🌟" : (activeItem.type === 'lunch' ? "🍱" : "🏃");
+    // 下課、大下課或午餐休息時段 (上課倒數)
+    if (iconEl) iconEl.textContent = (activeItem.isBigBreak || activeItem.type === 'bigBreak') ? "🌟" : (activeItem.type === 'lunch' ? "🍱" : "🏃");
     if (badgeEl) {
       badgeEl.textContent = activeItem.label;
-      badgeEl.className = activeItem.isBigBreak 
+      badgeEl.className = (activeItem.isBigBreak || activeItem.type === 'bigBreak')
         ? "px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-300 text-amber-950 shadow-xs animate-bounce"
         : "px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-400 text-emerald-950 shadow-xs";
     }
-    if (targetEl) targetEl.textContent = `目標：${activeItem.targetLabel} (${activeItem.targetTime})`;
+    const tgtLbl = activeItem.targetLabel || '上課';
+    const tgtTm = activeItem.targetTime || activeItem.end;
+    if (targetEl) targetEl.textContent = `目標：${tgtLbl} (${tgtTm})`;
     if (titleEl) titleEl.textContent = "上課倒數：";
     if (digitsEl) {
       digitsEl.textContent = timeStr;
@@ -3506,17 +3544,19 @@ function updateTrafficCountdownClock() {
       if (diffSec <= 120) {
         subEl.textContent = "🔔 快回教室喝水、上廁所、就座！";
       } else {
-        subEl.textContent = activeItem.isBigBreak ? "大下課盡情活動！" : "自由活動時間";
+        subEl.textContent = (activeItem.isBigBreak || activeItem.type === 'bigBreak') ? "大下課盡情活動！" : "自由活動時間";
       }
     }
   } else {
-    // 課堂進行中或午休
+    // 課堂進行中或午休 (下課倒數)
     if (iconEl) iconEl.textContent = activeItem.type === 'nap' ? "💤" : "📖";
     if (badgeEl) {
       badgeEl.textContent = activeItem.label;
       badgeEl.className = "px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-300 text-blue-950 shadow-xs";
     }
-    if (targetEl) targetEl.textContent = `目標：${activeItem.targetLabel} (${activeItem.targetTime})`;
+    const tgtLbl = activeItem.targetLabel || '下課';
+    const tgtTm = activeItem.targetTime || activeItem.end;
+    if (targetEl) targetEl.textContent = `目標：${tgtLbl} (${tgtTm})`;
     if (titleEl) titleEl.textContent = "下課倒數：";
     if (digitsEl) {
       digitsEl.textContent = timeStr;
@@ -3537,7 +3577,291 @@ function resetTrafficToSchedule() {
   manualTrafficCountdownEnd = null;
   manualTrafficCountdownLabel = '';
   updateTrafficCountdownClock();
-  showToast("🔄 已恢復西寧國小課表自動作息連動！", "🔄");
+  showToast("🔄 已恢復學校課表自動作息連動！", "🔄");
+}
+
+// ===================================================================
+// 下課紅綠燈課堂作息時程管理 (Bell Schedule Manager)
+// 因應不同學校作息時間，提供導師自訂編輯、新增、刪除、恢復預設
+// ===================================================================
+
+function openManageBellScheduleModal() {
+  if (!checkTeacherAuth("設定學校作息時程表")) return;
+  cancelEditBellSchedule();
+  renderBellScheduleManageList();
+  document.getElementById("manageBellScheduleModal").classList.remove("hidden");
+  initLucideIcons();
+}
+
+function closeManageBellScheduleModal() {
+  document.getElementById("manageBellScheduleModal").classList.add("hidden");
+  updateTrafficCountdownClock();
+}
+
+function renderBellScheduleManageList() {
+  const list = document.getElementById("bellScheduleManageList");
+  const countBadge = document.getElementById("bellScheduleCountBadge");
+  if (!list) return;
+
+  const schedule = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getBellSchedule === 'function')
+    ? window.KingdomApp.store.getBellSchedule()
+    : [];
+
+  if (countBadge) {
+    countBadge.textContent = `${schedule.length} 個時段`;
+  }
+
+  if (schedule.length === 0) {
+    list.innerHTML = `<div class="p-3 text-center text-slate-400 font-bold">目前無作息時段設定，請點下方新增或點「恢復預設」</div>`;
+    return;
+  }
+
+  const toSec = (t) => {
+    if (!t) return 0;
+    const [hh, mm] = t.split(':').map(Number);
+    return hh * 3600 + mm * 60;
+  };
+
+  list.innerHTML = schedule.map((item, idx) => {
+    const sSec = toSec(item.start);
+    const eSec = toSec(item.end);
+    const durationMin = Math.max(0, Math.round((eSec - sSec) / 60));
+    
+    let badgeClass = 'bg-blue-100 text-blue-900 border-blue-300';
+    let typeIcon = '📖';
+    let typeName = '上課';
+
+    if (item.isBigBreak || item.type === 'bigBreak') {
+      badgeClass = 'bg-amber-200 text-amber-950 border-amber-400';
+      typeIcon = '🌟';
+      typeName = '大下課';
+    } else if (item.type === 'lunch') {
+      badgeClass = 'bg-orange-100 text-orange-950 border-orange-300';
+      typeIcon = '🍱';
+      typeName = '午餐';
+    } else if (item.type === 'nap') {
+      badgeClass = 'bg-indigo-100 text-indigo-950 border-indigo-300';
+      typeIcon = '💤';
+      typeName = '午休';
+    } else if (item.type === 'morning') {
+      badgeClass = 'bg-sky-100 text-sky-950 border-sky-300';
+      typeIcon = '🌅';
+      typeName = '晨光';
+    } else if (item.type === 'dismissal') {
+      badgeClass = 'bg-purple-100 text-purple-950 border-purple-300';
+      typeIcon = '🎒';
+      typeName = '放學';
+    } else if (item.isBreak) {
+      badgeClass = 'bg-emerald-100 text-emerald-950 border-emerald-300';
+      typeIcon = '🏃';
+      typeName = '下課';
+    }
+
+    return `
+      <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50/50 border border-amber-200 transition">
+        <div class="flex items-center space-x-2 min-w-0 mr-2">
+          <span class="font-mono text-xs bg-slate-200/80 text-slate-700 px-1.5 py-0.5 rounded font-black shrink-0">${idx + 1}</span>
+          <span class="font-digital text-sm font-black text-amber-950 bg-amber-100/80 px-2 py-0.5 rounded-lg border border-amber-300/80 shrink-0">
+            ${item.start} ~ ${item.end}
+          </span>
+          <span class="px-2 py-0.5 rounded-md text-[11px] font-black border ${badgeClass} shrink-0">
+            ${typeIcon} ${typeName} (${durationMin}分)
+          </span>
+          <div class="truncate">
+            <span class="font-black text-slate-900 text-xs">${item.label}</span>
+            ${item.targetLabel ? `<span class="text-[11px] text-slate-500 ml-1">➜ ${item.targetLabel}</span>` : ''}
+          </div>
+        </div>
+        <div class="flex items-center space-x-1 shrink-0">
+          <button type="button" onclick="editBellScheduleInline('${item.id}')"
+            class="px-2 py-1 text-xs font-bold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 transition" title="編輯此時段">
+            ✏️ 編輯
+          </button>
+          <button type="button" onclick="deleteBellSchedulePrompt('${item.id}')"
+            class="px-2 py-1 text-xs font-bold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition" title="刪除此時段">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function editBellScheduleInline(id) {
+  const schedule = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getBellSchedule === 'function')
+    ? window.KingdomApp.store.getBellSchedule()
+    : [];
+  const item = schedule.find(p => p.id === id);
+  if (!item) return;
+
+  const idInput = document.getElementById("editBellScheduleId");
+  const startInput = document.getElementById("bellScheduleStart");
+  const endInput = document.getElementById("bellScheduleEnd");
+  const typeSelect = document.getElementById("bellScheduleType");
+  const labelInput = document.getElementById("bellScheduleLabel");
+  const targetLabelInput = document.getElementById("bellScheduleTargetLabel");
+
+  const formTitle = document.getElementById("bellScheduleFormTitle");
+  const btnCancel = document.getElementById("btnCancelEditBellSchedule");
+  const btnSaveText = document.getElementById("btnSaveBellScheduleText");
+  const btnSaveIcon = document.getElementById("btnSaveBellScheduleIcon");
+
+  if (idInput) idInput.value = item.id;
+  if (startInput) startInput.value = item.start;
+  if (endInput) endInput.value = item.end;
+  if (labelInput) labelInput.value = item.label;
+  if (targetLabelInput) targetLabelInput.value = item.targetLabel || "";
+
+  if (typeSelect) {
+    if (item.isBigBreak || item.type === 'bigBreak') {
+      typeSelect.value = 'bigBreak';
+    } else if (item.type) {
+      typeSelect.value = item.type;
+    } else if (item.isBreak) {
+      typeSelect.value = 'break';
+    } else {
+      typeSelect.value = 'class';
+    }
+  }
+
+  if (formTitle) formTitle.textContent = `✏️ 正在編輯：【${item.label}】(${item.start}~${item.end})`;
+  if (btnCancel) btnCancel.classList.remove("hidden");
+  if (btnSaveText) btnSaveText.textContent = "更新時段設定";
+  if (btnSaveIcon) btnSaveIcon.textContent = "💾";
+
+  const form = document.getElementById("bellScheduleForm");
+  if (form) form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function cancelEditBellSchedule() {
+  const idInput = document.getElementById("editBellScheduleId");
+  const startInput = document.getElementById("bellScheduleStart");
+  const endInput = document.getElementById("bellScheduleEnd");
+  const typeSelect = document.getElementById("bellScheduleType");
+  const labelInput = document.getElementById("bellScheduleLabel");
+  const targetLabelInput = document.getElementById("bellScheduleTargetLabel");
+
+  const formTitle = document.getElementById("bellScheduleFormTitle");
+  const btnCancel = document.getElementById("btnCancelEditBellSchedule");
+  const btnSaveText = document.getElementById("btnSaveBellScheduleText");
+  const btnSaveIcon = document.getElementById("btnSaveBellScheduleIcon");
+
+  if (idInput) idInput.value = "";
+  if (startInput) startInput.value = "";
+  if (endInput) endInput.value = "";
+  if (labelInput) labelInput.value = "";
+  if (targetLabelInput) targetLabelInput.value = "";
+  if (typeSelect) typeSelect.value = "class";
+
+  if (formTitle) formTitle.textContent = "➕ 新增作息時段：";
+  if (btnCancel) btnCancel.classList.add("hidden");
+  if (btnSaveText) btnSaveText.textContent = "儲存作息時段";
+  if (btnSaveIcon) btnSaveIcon.textContent = "➕";
+}
+
+function handleBellScheduleTypeChange() {
+  const typeSelect = document.getElementById("bellScheduleType");
+  const labelInput = document.getElementById("bellScheduleLabel");
+  const targetLabelInput = document.getElementById("bellScheduleTargetLabel");
+  if (!typeSelect || !labelInput) return;
+
+  const type = typeSelect.value;
+  if (!labelInput.value.trim()) {
+    if (type === 'class') {
+      labelInput.value = "新課堂進行中";
+      if (targetLabelInput) targetLabelInput.value = "下課鐘聲";
+    } else if (type === 'break') {
+      labelInput.value = "課間下課時間";
+      if (targetLabelInput) targetLabelInput.value = "準備上課";
+    } else if (type === 'bigBreak') {
+      labelInput.value = "大下課時間 🌟";
+      if (targetLabelInput) targetLabelInput.value = "上課鐘響";
+    } else if (type === 'morning') {
+      labelInput.value = "早自習・晨會活動";
+      if (targetLabelInput) targetLabelInput.value = "第一節上課";
+    } else if (type === 'lunch') {
+      labelInput.value = "午餐御膳時間 🍱";
+      if (targetLabelInput) targetLabelInput.value = "午休開始";
+    } else if (type === 'nap') {
+      labelInput.value = "午休靜心休養 💤";
+      if (targetLabelInput) targetLabelInput.value = "午休起床";
+    } else if (type === 'dismissal') {
+      labelInput.value = "放學整理準備 🎒";
+      if (targetLabelInput) targetLabelInput.value = "放學鐘聲";
+    }
+  }
+}
+
+function submitBellScheduleForm(e) {
+  e.preventDefault();
+  if (!checkTeacherAuth("編輯學校作息")) return;
+
+  const id = (document.getElementById("editBellScheduleId")?.value || "").trim();
+  const start = (document.getElementById("bellScheduleStart")?.value || "").trim();
+  const end = (document.getElementById("bellScheduleEnd")?.value || "").trim();
+  const type = document.getElementById("bellScheduleType")?.value || "class";
+  const label = (document.getElementById("bellScheduleLabel")?.value || "").trim();
+  let targetLabel = (document.getElementById("bellScheduleTargetLabel")?.value || "").trim();
+
+  if (!start || !end || !label) {
+    alert("請填寫完整的開始時間、結束時間與時段名稱！");
+    return;
+  }
+
+  if (start >= end) {
+    alert("結束時間必須晚於開始時間！");
+    return;
+  }
+
+  const isBreak = (type === 'break' || type === 'bigBreak' || type === 'lunch' || type === 'morning' || type === 'dismissal');
+  const isBigBreak = (type === 'bigBreak');
+
+  if (!targetLabel) {
+    targetLabel = isBreak ? '上課' : '下課';
+  }
+
+  if (id) {
+    window.KingdomApp.store.updateBellScheduleItem(id, { label, start, end, isBreak, targetLabel, isBigBreak, type });
+    showToast(`✅ 已更新作息時段【${label}】！`, "⏰");
+  } else {
+    window.KingdomApp.store.addBellScheduleItem({ label, start, end, isBreak, targetLabel, isBigBreak, type });
+    showToast(`✅ 已新增作息時段【${label}】！`, "⏰");
+  }
+
+  cancelEditBellSchedule();
+  renderBellScheduleManageList();
+  updateTrafficCountdownClock();
+}
+
+function deleteBellSchedulePrompt(id) {
+  if (!checkTeacherAuth("刪除學校作息時段")) return;
+  const schedule = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getBellSchedule === 'function')
+    ? window.KingdomApp.store.getBellSchedule()
+    : [];
+  const found = schedule.find(p => p.id === id);
+  if (!found) return;
+
+  if (!confirm(`確定要刪除作息時段【${found.label} (${found.start}~${found.end})】嗎？`)) return;
+
+  window.KingdomApp.store.deleteBellScheduleItem(id);
+  showToast(`🗑️ 已刪除作息時段【${found.label}】`, "✨");
+
+  cancelEditBellSchedule();
+  renderBellScheduleManageList();
+  updateTrafficCountdownClock();
+}
+
+function confirmResetBellScheduleToDefault() {
+  if (!checkTeacherAuth("恢復預設作息時程表")) return;
+  if (!confirm("確定要將課堂作息時程表恢復為系統預設作息（晨光、各節課堂、大下課、午餐、午休、放學）嗎？自訂的時段將會被重設。")) return;
+
+  window.KingdomApp.store.resetBellSchedule();
+  showToast("🔄 已成功恢復預設課堂作息時程表！", "🔔");
+
+  cancelEditBellSchedule();
+  renderBellScheduleManageList();
+  updateTrafficCountdownClock();
+}
 }
 
 function toggleTrafficDrawer() {
@@ -4351,9 +4675,10 @@ function renderBehaviorReasonShortcuts() {
   container.innerHTML = filtered.map(r => `
     <div class="inline-flex items-center rounded-lg border ${borderClass} font-bold shadow-2xs overflow-hidden">
       <button type="button" onclick="applyBehaviorReason('${r.id}')"
-        class="px-2 py-1 text-xs hover:bg-black/5 transition flex items-center space-x-1" title="點擊套用事由：${r.text}">
+        class="px-2 py-1 text-xs hover:bg-black/5 transition flex items-center space-x-1" title="點擊套用事由：${r.text}${r.targetCount ? ` (${r.targetCount}次)` : ''}">
         <span>${icon}</span>
         <span>${r.label}</span>
+        ${r.type === 'reminder' ? `<span class="text-[10px] text-amber-800 font-mono ml-0.5">(*${r.targetCount || 50}次)</span>` : ''}
       </button>
       <button type="button" onclick="event.stopPropagation(); openEditBehaviorReasonModal('${r.id}')"
         class="px-1.5 py-1 text-[11px] text-slate-500 hover:text-amber-800 hover:bg-black/10 transition border-l ${dividerClass}" title="編輯此快捷事由">
@@ -4376,7 +4701,27 @@ function applyBehaviorReason(reasonId) {
   if (input) {
     input.value = reason.text;
   }
+  if (reason.type === 'reminder' && reason.targetCount) {
+    const timesInput = document.getElementById("behaviorReminderTimesInput");
+    if (timesInput) {
+      timesInput.value = reason.targetCount;
+      if (typeof renderReminderTimesShortcuts === 'function') {
+        renderReminderTimesShortcuts();
+      }
+    }
+  }
   window.KingdomApp.sound.playCoin();
+}
+
+function toggleReasonTargetCountField() {
+  const sel = document.getElementById("reasonCardType");
+  const grp = document.getElementById("reasonTargetCountGroup");
+  if (!sel || !grp) return;
+  if (sel.value === 'reminder') {
+    grp.classList.remove("hidden");
+  } else {
+    grp.classList.add("hidden");
+  }
 }
 
 function openAddBehaviorReasonModal(defaultType = null) {
@@ -4388,6 +4733,8 @@ function openAddBehaviorReasonModal(defaultType = null) {
       sel.value = defaultType;
     } else if (currentTypeRadio) {
       sel.value = currentTypeRadio.value;
+    } else {
+      sel.value = "reflection";
     }
   }
 
@@ -4402,6 +4749,11 @@ function openAddBehaviorReasonModal(defaultType = null) {
   if (labelInput) labelInput.value = "";
   const textInput = document.getElementById("reasonText");
   if (textInput) textInput.value = "";
+
+  const targetCountInput = document.getElementById("reasonTargetCount");
+  if (targetCountInput) targetCountInput.value = 50;
+
+  toggleReasonTargetCountField();
 
   document.getElementById("addBehaviorReasonModal").classList.remove("hidden");
   initLucideIcons();
@@ -4430,6 +4782,13 @@ function openEditBehaviorReasonModal(reasonId) {
 
   const textInput = document.getElementById("reasonText");
   if (textInput) textInput.value = reason.text || "";
+
+  const targetCountInput = document.getElementById("reasonTargetCount");
+  if (targetCountInput) {
+    targetCountInput.value = reason.targetCount || 50;
+  }
+
+  toggleReasonTargetCountField();
 
   document.getElementById("addBehaviorReasonModal").classList.remove("hidden");
   initLucideIcons();
@@ -4462,6 +4821,7 @@ function submitNewBehaviorReason(e) {
   const type = document.getElementById("reasonCardType").value;
   const label = document.getElementById("reasonLabel").value.trim();
   const text = document.getElementById("reasonText").value.trim();
+  const targetCount = parseInt(document.getElementById("reasonTargetCount")?.value, 10) || 50;
 
   if (!label || !text) {
     alert("請填寫快捷標籤與完整事由文字！");
@@ -4469,12 +4829,19 @@ function submitNewBehaviorReason(e) {
   }
 
   if (editId) {
-    window.KingdomApp.store.updateBehaviorReason(editId, { type, label, text });
+    window.KingdomApp.store.updateBehaviorReason(editId, { type, label, text, targetCount });
     showToast(`✅ 已更新事由快捷【${label}】！`, "✨");
   } else {
-    window.KingdomApp.store.addBehaviorReason({ type, label, text });
+    window.KingdomApp.store.addBehaviorReason({ type, label, text, targetCount });
     showToast(`✅ 已新增事由快捷【${label}】！`, "✨");
   }
+
+  closeAddBehaviorReasonModal();
+  renderBehaviorReasonShortcuts();
+  if (typeof activeTrafficStudentId !== 'undefined' && activeTrafficStudentId) {
+    openTrafficDetailModal(activeTrafficStudentId);
+  }
+}
 
   closeAddBehaviorReasonModal();
   renderBehaviorReasonShortcuts();
@@ -4998,30 +5365,27 @@ function openTrafficDetailModal(studentId) {
           `}
         </div>
 
-        <!-- 常見提醒單快捷核發按鈕列 -->
+        <!-- 提醒單快捷核發按鈕列 (支援導師自訂新增、編輯、刪除快捷事由與書寫次數) -->
         <div class="pt-2.5 border-t border-yellow-300 space-y-1.5">
-          <div class="text-xs sm:text-sm font-black text-amber-950">
-            ⚡ 常見提醒單範本（點擊一鍵核發）：
+          <div class="flex items-center justify-between text-xs sm:text-sm font-black text-amber-950">
+            <span>⚡ 提醒單事由快捷（點擊一鍵核發）：</span>
+            <button type="button" onclick="openAddBehaviorReasonModal('reminder')" class="text-amber-800 hover:underline text-xs font-bold">+ 新增快捷</button>
           </div>
           <div class="flex flex-wrap gap-1.5">
-            <button type="button" onclick="quickAddReminderSlip(${st.id}, '聽寫簽名未交', '聽寫要記得簽名', 50)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：聽寫要記得簽名*50次">
-              📝 聽寫簽名未交 (*50次)
-            </button>
-            <button type="button" onclick="quickAddReminderSlip(${st.id}, '聯絡簿未簽名', '聯絡簿要記得請家長簽名', 30)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：聯絡簿要記得請家長簽名*30次">
-              📝 聯絡簿未簽 (*30次)
-            </button>
-            <button type="button" onclick="quickAddReminderSlip(${st.id}, '學用品未帶', '每天出門前檢查書包學用品', 30)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：每天出門前檢查書包學用品*30次">
-              📝 學用品未帶 (*30次)
-            </button>
-            <button type="button" onclick="quickAddReminderSlip(${st.id}, '走廊奔跑追逐', '走廊慢慢走不奔跑', 50)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：走廊慢慢走不奔跑*50次">
-              📝 走廊奔跑追逐 (*50次)
-            </button>
-            <button type="button" onclick="quickAddReminderSlip(${st.id}, '課堂分心聊天', '上課專心聽講不說話', 30)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：上課專心聽講不說話*30次">
-              📝 課堂分心聊天 (*30次)
-            </button>
-            <button type="button" onclick="quickAddReminderSlip(${st.id}, '座位周遭髒亂', '隨手撿垃圾保持座位整潔', 30)" class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs transition shadow-2xs" title="核發：隨手撿垃圾保持座位整潔*30次">
-              📝 座位周遭髒亂 (*30次)
-            </button>
+            ${(window.KingdomApp.store.data.behaviorReasons || window.KingdomApp.DEFAULT_BEHAVIOR_REASONS || []).filter(r => r.type === 'reminder').map(r => {
+              const count = r.targetCount || 50;
+              const safeLabel = (r.label || '').replace(/'/g, "\\'");
+              const safeText = (r.text || r.label || '').replace(/'/g, "\\'");
+              return `
+                <div class="inline-flex items-center rounded-xl bg-amber-100 border border-amber-300 text-amber-950 font-black shadow-2xs overflow-hidden">
+                  <button type="button" onclick="quickAddReminderSlip(${st.id}, '${safeLabel}', '${safeText}', ${count})" class="px-2.5 py-1 text-xs hover:bg-amber-200 transition" title="立即核發：${safeText} * ${count}次">
+                    📝 ${r.label} (*${count}次)
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); openEditBehaviorReasonModal('${r.id}')" class="px-1.5 py-1 text-xs text-slate-500 hover:text-amber-900 hover:bg-amber-200 border-l border-amber-200" title="編輯此提醒快捷與次數">✏️</button>
+                  <button type="button" onclick="event.stopPropagation(); deleteBehaviorReasonPrompt('${r.id}')" class="px-1.5 py-1 text-xs text-slate-400 hover:text-rose-700 hover:bg-amber-200 border-l border-amber-200" title="刪除此提醒快捷">🗑️</button>
+                </div>
+              `;
+            }).join('') || '<span class="text-xs text-slate-400">暫無提醒單快捷，可點右上角自訂新增</span>'}
           </div>
         </div>
       </div>
@@ -12702,6 +13066,7 @@ if (typeof window !== 'undefined') {
   window.deleteBehaviorReasonPrompt = deleteBehaviorReasonPrompt;
   window.closeAddBehaviorReasonModal = closeAddBehaviorReasonModal;
   window.submitNewBehaviorReason = submitNewBehaviorReason;
+  window.toggleReasonTargetCountField = toggleReasonTargetCountField;
   window.applyBehaviorReason = applyBehaviorReason;
   window.renderBehaviorReasonShortcuts = renderBehaviorReasonShortcuts;
   window.addCustomReflectionCardToStudent = addCustomReflectionCardToStudent;
@@ -12897,6 +13262,17 @@ if (typeof window !== 'undefined') {
   } catch (e) {
     window.contactProjDaysMode = contactProjDaysMode;
   }
+
+  // 課堂作息時程表管理 (下課紅綠燈倒數時程，各校作息自訂)
+  window.openManageBellScheduleModal = openManageBellScheduleModal;
+  window.closeManageBellScheduleModal = closeManageBellScheduleModal;
+  window.renderBellScheduleManageList = renderBellScheduleManageList;
+  window.editBellScheduleInline = editBellScheduleInline;
+  window.cancelEditBellSchedule = cancelEditBellSchedule;
+  window.handleBellScheduleTypeChange = handleBellScheduleTypeChange;
+  window.submitBellScheduleForm = submitBellScheduleForm;
+  window.deleteBellSchedulePrompt = deleteBellSchedulePrompt;
+  window.confirmResetBellScheduleToDefault = confirmResetBellScheduleToDefault;
 
   // 課堂作息鬧鐘快捷管理
   window.renderAlarmPresets = renderAlarmPresets;
