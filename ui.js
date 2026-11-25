@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 西寧國小五年二班 ‧ 西寧小小兵王國 班級經營系統
  * 介面互動控制器 (UI Controller) - 晨間大螢幕 3:7 ＆ 作業總看板 ＆ 批次名冊升級版
  */
@@ -462,6 +462,12 @@ function startMorningClock() {
     const clockEl = document.getElementById("morningClockDisplay");
     if (clockEl) clockEl.textContent = timeStr;
 
+    const clockEl3Days = document.getElementById("morningClockDisplay3Days");
+    if (clockEl3Days) clockEl3Days.textContent = timeStr;
+
+    const projClockEl3Days = document.getElementById("contactProjClockDisplay3Days");
+    if (projClockEl3Days) projClockEl3Days.textContent = timeStr;
+
     const clockDateText = document.getElementById("morningClockDateText");
     if (clockDateText) {
       const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : '';
@@ -472,13 +478,17 @@ function startMorningClock() {
     const clockNotice = document.getElementById("morningCountdownNotice");
     if (clockNotice) {
       const lateThreshold = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.lateThreshold) || "07:40";
-      if (timeHM < lateThreshold) {
-        const [thH, thM] = lateThreshold.split(':').map(Number);
-        const [curH, curM] = [Number(h), Number(m)];
-        const diffM = (thH * 60 + thM) - (curH * 60 + curM);
-        clockNotice.innerHTML = `⏱️ 距晨檢截止剩 <b class="text-amber-950 font-black">${diffM}</b> 分鐘`;
-      } else {
-        clockNotice.innerHTML = `📖 早自習抄寫聯絡簿中`;
+      const targetHtml = (timeHM < lateThreshold)
+        ? (() => {
+            const [thH, thM] = lateThreshold.split(':').map(Number);
+            const [curH, curM] = [Number(h), Number(m)];
+            const diffM = (thH * 60 + thM) - (curH * 60 + curM);
+            return `⏱️ 距晨檢截止剩 <b class="text-amber-950 font-black">${diffM}</b> 分鐘`;
+          })()
+        : `📖 早自習抄寫聯絡簿中`;
+      if (clockNotice._lastHtml !== targetHtml) {
+        clockNotice._lastHtml = targetHtml;
+        clockNotice.innerHTML = targetHtml;
       }
     }
 
@@ -531,9 +541,10 @@ function startMorningClock() {
 }
 
 let currentContactDate = window.KingdomApp.getTodayDateString();
-let morningContactDaysMode = '2days'; // '2days' (預設雙天並排模式) | '1day' (單天六行模式)
+let morningContactDaysMode = '2days'; // '2days' (雙天並排模式) | '3days' (三天並排上下兩欄模式) | '1day' (單天六行模式)
 let morningContactDateCol1 = null; // 第 1 欄日期 (預設今日)
 let morningContactDateCol2 = null; // 第 2 欄日期 (預設明日)
+let morningContactDateCol3 = null; // 第 3 欄日期 (預設後天)
 
 let morningContactFormat = (typeof localStorage !== 'undefined' && localStorage.getItem('xining_contact_format')) || 'vertical-rtl'; // 'vertical-rtl' (直式由右至左) | 'vertical-ltr' (直式由左至右) | 'horizontal' (橫式卡片)
 
@@ -647,9 +658,9 @@ function formatVerticalContactText(rawText) {
 function renderVerticalContactGrid(items, format = 'vertical-rtl', isProjection = false) {
   const isRtl = format === 'vertical-rtl';
   const gridClass = isRtl ? 'contact-vertical-grid-rtl' : 'contact-vertical-grid-ltr';
-  const colMinHeight = isProjection ? 'min-h-[460px] sm:min-h-[520px]' : 'h-[395px] min-h-[395px] max-h-[395px]';
-  const numSize = isProjection ? 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl' : 'w-8 h-8 sm:w-9 sm:h-9 text-base sm:text-lg';
-  const textSize = isProjection ? 'text-xl sm:text-2xl lg:text-3xl' : 'text-xl sm:text-2xl lg:text-3xl';
+  const colMinHeight = isProjection ? 'min-h-[460px] sm:min-h-[520px]' : 'h-[255px] min-h-[255px] max-h-[255px]';
+  const numSize = isProjection ? 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl' : 'w-7 h-7 sm:w-8 sm:h-8 text-sm sm:text-base';
+  const textSize = isProjection ? 'text-xl sm:text-2xl lg:text-3xl' : 'text-lg sm:text-xl lg:text-2xl';
 
   const colsHtml = [1, 2, 3, 4, 5, 6].map(slotIdx => {
     const text = items[slotIdx - 1] || '';
@@ -696,6 +707,9 @@ function initMorningContactDates() {
   if (!morningContactDateCol2) {
     morningContactDateCol2 = getDeltaDateString(morningContactDateCol1, 1);
   }
+  if (!morningContactDateCol3) {
+    morningContactDateCol3 = getDeltaDateString(morningContactDateCol1, 2);
+  }
 }
 
 function setMorningContactDaysMode(mode) {
@@ -706,15 +720,23 @@ function setMorningContactDaysMode(mode) {
 
 function setMorningContactPreset(preset) {
   const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
-  if (preset === 'today_tomorrow') {
+  if (preset === 'three_days') {
+    morningContactDaysMode = '3days';
+    morningContactDateCol1 = today;
+    morningContactDateCol2 = getDeltaDateString(today, 1);
+    morningContactDateCol3 = getDeltaDateString(today, 2);
+    currentContactDate = today;
+  } else if (preset === 'today_tomorrow') {
     morningContactDaysMode = '2days';
     morningContactDateCol1 = today;
     morningContactDateCol2 = getDeltaDateString(today, 1);
+    morningContactDateCol3 = getDeltaDateString(today, 2);
     currentContactDate = today;
   } else if (preset === 'yesterday_today') {
     morningContactDaysMode = '2days';
     morningContactDateCol1 = getDeltaDateString(today, -1);
     morningContactDateCol2 = today;
+    morningContactDateCol3 = getDeltaDateString(today, 1);
     currentContactDate = morningContactDateCol1;
   } else if (preset === 'single_day') {
     morningContactDaysMode = '1day';
@@ -731,6 +753,8 @@ function changeMorningContactColDate(colIndex, dateVal) {
     currentContactDate = dateVal;
   } else if (colIndex === 2) {
     morningContactDateCol2 = dateVal;
+  } else if (colIndex === 3) {
+    morningContactDateCol3 = dateVal;
   }
   renderMorningBoard();
 }
@@ -742,13 +766,20 @@ function adjustMorningContactColDate(colIndex, delta) {
     currentContactDate = morningContactDateCol1;
   } else if (colIndex === 2) {
     morningContactDateCol2 = getDeltaDateString(morningContactDateCol2, delta);
+  } else if (colIndex === 3) {
+    morningContactDateCol3 = getDeltaDateString(morningContactDateCol3, delta);
   }
   renderMorningBoard();
 }
 
 function changeContactDateDelta(delta) {
   initMorningContactDates();
-  if (morningContactDaysMode === '2days') {
+  if (morningContactDaysMode === '3days') {
+    morningContactDateCol1 = getDeltaDateString(morningContactDateCol1, delta);
+    morningContactDateCol2 = getDeltaDateString(morningContactDateCol2, delta);
+    morningContactDateCol3 = getDeltaDateString(morningContactDateCol3, delta);
+    currentContactDate = morningContactDateCol1;
+  } else if (morningContactDaysMode === '2days') {
     morningContactDateCol1 = getDeltaDateString(morningContactDateCol1, delta);
     morningContactDateCol2 = getDeltaDateString(morningContactDateCol2, delta);
     currentContactDate = morningContactDateCol1;
@@ -764,6 +795,7 @@ function changeContactDateToToday() {
   currentContactDate = today;
   morningContactDateCol1 = today;
   morningContactDateCol2 = getDeltaDateString(today, 1);
+  morningContactDateCol3 = getDeltaDateString(today, 2);
   renderMorningBoard();
 }
 
@@ -772,12 +804,13 @@ function handleContactDatePickerChange(val) {
     currentContactDate = val;
     morningContactDateCol1 = val;
     morningContactDateCol2 = getDeltaDateString(val, 1);
+    morningContactDateCol3 = getDeltaDateString(val, 2);
     renderMorningBoard();
   }
 }
 
 function renderMorningContactDayColumn(colIndex, dateStr) {
-  const colName = colIndex === 1 ? '第一欄' : '第二欄';
+  const colName = colIndex === 1 ? '第一欄' : (colIndex === 2 ? '第二欄' : '第三欄');
   const book = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook) 
     ? window.KingdomApp.store.getContactBook(dateStr) 
     : { homeworkItems: [], reminders: [], queenMotto: '' };
@@ -790,22 +823,22 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
     const isFilled = Boolean(text && String(text).trim());
     if (isFilled) {
       return `
-        <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[3.35rem]">
-          <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-lg sm:text-xl font-black shrink-0 shadow-2xs border border-amber-500/40">
+        <div class="flex items-center space-x-2 py-1.5 px-2.5 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[2.5rem]">
+          <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-base sm:text-lg font-black shrink-0 shadow-2xs border border-amber-500/40">
             ${slotIdx}
           </span>
-          <span class="text-lg sm:text-xl lg:text-2xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+          <span class="text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
             ${escapeContactHtml(text)}
           </span>
         </div>
       `;
     } else {
       return `
-        <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[3.35rem]">
-          <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-lg sm:text-xl font-black shrink-0">
+        <div class="flex items-center space-x-2 py-1.5 px-2.5 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[2.5rem]">
+          <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-base sm:text-lg font-black shrink-0">
             ${slotIdx}
           </span>
-          <span class="text-base sm:text-lg font-bold text-amber-900/35 italic">
+          <span class="text-sm sm:text-base font-bold text-amber-900/35 italic">
             （留白）
           </span>
         </div>
@@ -896,69 +929,107 @@ function renderMorningBoard() {
   const checkInGrid = document.getElementById("checkInGrid");
   let checkedCount = 0;
 
-  if (checkInGrid) {
-    checkInGrid.innerHTML = students.map(st => {
-      const rec = attendanceData[st.id] || null;
-      let statusClass = "seat-uncheck";
-      let statusBadge = "🔴 未到";
-      let timeText = "";
+  const renderSeatBtn = (st, isCompact) => {
+    const rec = attendanceData[st.id] || null;
+    let statusClass = "seat-uncheck";
+    let statusBadge = "🔴 未到";
+    let timeText = "";
 
-      if (rec) {
-        if (rec.status === 'present') {
-          checkedCount++;
-          statusClass = "seat-present";
-          statusBadge = "🟢 準時";
-          timeText = rec.checkInTime || "準時";
-        } else if (rec.status === 'late') {
-          checkedCount++;
-          statusClass = "seat-late";
-          statusBadge = "🟡 遲到";
-          timeText = rec.checkInTime || "遲到";
-        } else if (rec.status === 'leave') {
-          statusClass = "seat-leave";
-          statusBadge = "🏖️ 請假";
-          timeText = "告假";
-        }
+    if (rec) {
+      if (rec.status === 'present') {
+        if (!isCompact) checkedCount++;
+        statusClass = "seat-present";
+        statusBadge = "🟢 準時";
+        timeText = rec.checkInTime || "準時";
+      } else if (rec.status === 'late') {
+        if (!isCompact) checkedCount++;
+        statusClass = "seat-late";
+        statusBadge = "🟡 遲到";
+        timeText = rec.checkInTime || "遲到";
+      } else if (rec.status === 'leave') {
+        statusClass = "seat-leave";
+        statusBadge = "🏖️ 請假";
+        timeText = "告假";
       }
+    }
 
-      return `
-        <button onclick="handleMorningSeatCheckIn(${st.id}, ${st.seatNo})" 
-          class="checkin-seat-btn ${statusClass} h-11 w-full rounded-xl text-center flex items-center justify-center border-2 transition shadow-xs hover:scale-105 active:scale-95"
-          title="${st.seatNo}號 ${st.name} | ${statusBadge} ${timeText ? '(' + timeText + ')' : ''}（點擊打卡 / 更改狀態）">
-          <span class="font-mono text-lg sm:text-xl font-black tracking-wider">${String(st.seatNo).padStart(2, '0')}</span>
-        </button>
-      `;
-    }).join('');
+    const hClass = isCompact ? "h-8 sm:h-9" : "h-11";
+    const textClass = isCompact ? "text-sm sm:text-base font-black tracking-wider leading-none" : "text-lg sm:text-xl font-black tracking-wider";
+    const roundedClass = isCompact ? "rounded-lg" : "rounded-xl";
+
+    return `
+      <button onclick="handleMorningSeatCheckIn(${st.id}, ${st.seatNo})" 
+        class="checkin-seat-btn ${statusClass} ${hClass} w-full ${roundedClass} text-center flex items-center justify-center border-2 transition shadow-xs hover:scale-105 active:scale-95"
+        title="${st.seatNo}號 ${st.name} | ${statusBadge} ${timeText ? '(' + timeText + ')' : ''}（點擊打卡 / 更改狀態）">
+        <span class="font-mono ${textClass}">${String(st.seatNo).padStart(2, '0')}</span>
+      </button>
+    `;
+  };
+
+  if (checkInGrid) {
+    checkInGrid.innerHTML = students.map(st => renderSeatBtn(st, false)).join('');
   }
 
-  // 更新到校人數
+  // 同步渲染三天並排模式下欄專屬 3x9 打卡網格
+  const checkInGrid3Days = document.getElementById("checkInGrid3Days");
+  if (checkInGrid3Days) {
+    checkInGrid3Days.innerHTML = students.map(st => renderSeatBtn(st, true)).join('');
+  }
+
+  // 更新到校人數與截止時間徽章
   const countBadge = document.getElementById("morningCheckedCount");
   if (countBadge) {
     countBadge.textContent = `${checkedCount} / ${students.length} 人`;
   }
+  const countBadge3Days = document.getElementById("morningCheckedCount3Days");
+  if (countBadge3Days) {
+    countBadge3Days.textContent = `${checkedCount} / ${students.length} 人`;
+  }
+  const badge3Days = document.getElementById("morningClockBadge3Days");
+  if (badge3Days) {
+    badge3Days.textContent = `${lateThreshold} 晨檢截止`;
+  }
 
-  // 2. 渲染右側 70% 聯絡簿看板 (支援雙天並排六行 ＆ 單天模式切換)
+  // 2. 渲染右側聯絡簿看板 (支援雙天並排六行、三天並排上下兩欄全覽 ＆ 單天模式切換)
   initMorningContactDates();
+  const contactBook = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+    ? window.KingdomApp.store.getContactBook(currentContactDate)
+    : { homeworkItems: [], reminders: [], queenMotto: '' };
 
   // 更新頂部模式按鈕外觀狀態與直式/橫式格式按鈕
   updateContactFormatButtons();
+  const btnMode3Days = document.getElementById("btnMorningMode3Days");
   const btnMode2Days = document.getElementById("btnMorningMode2Days");
   const btnMode1Day = document.getElementById("btnMorningMode1Day");
+  const board2Days = document.getElementById("morningBoard2DaysContainer");
+  const board3Days = document.getElementById("morningBoard3DaysContainer");
   const presetsGroup = document.getElementById("morningPresetsGroup");
   const singlePickerGroup = document.getElementById("morningSingleDatePickerGroup");
 
-  if (btnMode2Days && btnMode1Day) {
-    if (morningContactDaysMode === '2days') {
-      btnMode2Days.className = "btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition";
-      btnMode1Day.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
-      if (presetsGroup) presetsGroup.classList.remove("hidden");
-      if (singlePickerGroup) singlePickerGroup.classList.add("hidden");
-    } else {
-      btnMode2Days.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
-      btnMode1Day.className = "btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition";
-      if (presetsGroup) presetsGroup.classList.add("hidden");
-      if (singlePickerGroup) singlePickerGroup.classList.remove("hidden");
-    }
+  if (morningContactDaysMode === '3days') {
+    if (board2Days) board2Days.classList.add("hidden");
+    if (board3Days) board3Days.classList.remove("hidden");
+    if (btnMode3Days) btnMode3Days.className = "btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition";
+    if (btnMode2Days) btnMode2Days.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
+    if (btnMode1Day) btnMode1Day.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
+    if (presetsGroup) presetsGroup.classList.remove("hidden");
+    if (singlePickerGroup) singlePickerGroup.classList.add("hidden");
+  } else if (morningContactDaysMode === '2days') {
+    if (board2Days) board2Days.classList.remove("hidden");
+    if (board3Days) board3Days.classList.add("hidden");
+    if (btnMode3Days) btnMode3Days.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
+    if (btnMode2Days) btnMode2Days.className = "btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition";
+    if (btnMode1Day) btnMode1Day.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
+    if (presetsGroup) presetsGroup.classList.remove("hidden");
+    if (singlePickerGroup) singlePickerGroup.classList.add("hidden");
+  } else {
+    if (board2Days) board2Days.classList.remove("hidden");
+    if (board3Days) board3Days.classList.add("hidden");
+    if (btnMode3Days) btnMode3Days.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
+    if (btnMode2Days) btnMode2Days.className = "bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition";
+    if (btnMode1Day) btnMode1Day.className = "btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition";
+    if (presetsGroup) presetsGroup.classList.add("hidden");
+    if (singlePickerGroup) singlePickerGroup.classList.remove("hidden");
   }
 
   const dateDisplay = document.getElementById("contactBookDateDisplay");
@@ -974,6 +1045,57 @@ function renderMorningBoard() {
     datePicker.value = currentContactDate;
   }
 
+  // 渲染三天並排模式專屬【上欄】100% 全寬作業看板 (Col 1, Col 2, Col 3 並排，高度 255px 免滾輪)
+  const hwList3Days = document.getElementById("contactHomeworkList3Days");
+  if (hwList3Days && morningContactDaysMode === '3days') {
+    const col1Html = renderMorningContactDayColumn(1, morningContactDateCol1);
+    const col2Html = renderMorningContactDayColumn(2, morningContactDateCol2);
+    const col3Html = renderMorningContactDayColumn(3, morningContactDateCol3);
+    hwList3Days.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3.5 items-stretch">
+        ${col1Html}
+        ${col2Html}
+        ${col3Html}
+      </div>
+    `;
+  }
+
+  // 渲染三天並排模式專屬【下欄】右側三天重點匯總提醒與聖諭
+  const reminderList3Days = document.getElementById("contactReminderList3Days");
+  if (reminderList3Days && morningContactDaysMode === '3days') {
+    const cb1 = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+      ? window.KingdomApp.store.getContactBook(morningContactDateCol1) : null;
+    const cb2 = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+      ? window.KingdomApp.store.getContactBook(morningContactDateCol2) : null;
+    const cb3 = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+      ? window.KingdomApp.store.getContactBook(morningContactDateCol3) : null;
+    const r1 = (cb1 && cb1.reminders) ? cb1.reminders.map(r => `【${morningContactDateCol1}】${r}`) : [];
+    const r2 = (cb2 && cb2.reminders) ? cb2.reminders.map(r => `【${morningContactDateCol2}】${r}`) : [];
+    const r3 = (cb3 && cb3.reminders) ? cb3.reminders.map(r => `【${morningContactDateCol3}】${r}`) : [];
+    const all3Reminders = [...r1, ...r2, ...r3];
+
+    if (all3Reminders.length === 0) {
+      reminderList3Days.innerHTML = `
+        <li class="text-amber-900/70 text-xs sm:text-sm font-bold list-none py-1 flex items-center space-x-1.5">
+          <span>✨</span>
+          <span>今日早自修各司其職，無特殊附加提醒，請全班保持專注靜心自習！</span>
+        </li>
+      `;
+    } else {
+      reminderList3Days.innerHTML = all3Reminders.map(item => `
+        <li class="leading-snug py-0.5 text-xs sm:text-sm lg:text-base flex items-start space-x-1.5 text-amber-950 font-black">
+          <span class="text-amber-600 mt-0.5 shrink-0 text-sm">📌</span>
+          <span class="flex-1 break-words">${escapeContactHtml(item)}</span>
+        </li>
+      `).join('');
+    }
+
+    const mottoEl3Days = document.getElementById("contactQueenMotto3Days");
+    if (mottoEl3Days) {
+      mottoEl3Days.textContent = contactBook.queenMotto || "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！";
+    }
+  }
+
   const hwList = document.getElementById("contactHomeworkList");
   if (hwList) {
     if (morningContactDaysMode === '2days') {
@@ -987,7 +1109,6 @@ function renderMorningBoard() {
       `;
     } else {
       // 單天六行模式 (支援直式 1~6 行直書與橫式卡片)
-      const contactBook = window.KingdomApp.store.getContactBook(currentContactDate);
       const items = (contactBook && contactBook.homeworkItems) ? contactBook.homeworkItems : [];
 
       if (morningContactFormat === 'vertical-rtl' || morningContactFormat === 'vertical-ltr') {
@@ -1026,22 +1147,22 @@ function renderMorningBoard() {
           const isFilled = Boolean(text && text.trim());
           if (isFilled) {
             return `
-              <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[3.35rem]">
-                <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-lg sm:text-xl font-black shrink-0 shadow-2xs border border-amber-500/40">
+              <div class="flex items-center space-x-2 py-1.5 px-2.5 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[2.5rem]">
+                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-base sm:text-lg font-black shrink-0 shadow-2xs border border-amber-500/40">
                   ${slotIdx}
                 </span>
-                <span class="text-lg sm:text-xl lg:text-2xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+                <span class="text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
                   ${escapeContactHtml(text)}
                 </span>
               </div>
             `;
           } else {
             return `
-              <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[3.35rem]">
-                <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-lg sm:text-xl font-black shrink-0">
+              <div class="flex items-center space-x-2 py-1.5 px-2.5 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[2.5rem]">
+                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-base sm:text-lg font-black shrink-0">
                   ${slotIdx}
                 </span>
-                <span class="text-base sm:text-lg font-bold text-amber-900/35 italic">
+                <span class="text-sm sm:text-base font-bold text-amber-900/35 italic">
                   （留白）
                 </span>
               </div>
@@ -1098,14 +1219,32 @@ function renderMorningBoard() {
 
   const reminderList = document.getElementById("contactReminderList");
   if (reminderList) {
-    const reminders = (contactBook && contactBook.reminders) ? contactBook.reminders : [];
+    let reminders = [];
+    if (morningContactDaysMode === '2days') {
+      const cb1 = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+        ? window.KingdomApp.store.getContactBook(morningContactDateCol1) : null;
+      const cb2 = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+        ? window.KingdomApp.store.getContactBook(morningContactDateCol2) : null;
+      const r1 = (cb1 && cb1.reminders) ? cb1.reminders.map(r => `【${morningContactDateCol1}】${r}`) : [];
+      const r2 = (cb2 && cb2.reminders) ? cb2.reminders.map(r => `【${morningContactDateCol2}】${r}`) : [];
+      reminders = [...r1, ...r2];
+    } else {
+      reminders = (contactBook && contactBook.reminders) ? contactBook.reminders : [];
+    }
+
     if (reminders.length === 0) {
       reminderList.innerHTML = `
-        <li class="text-amber-900/70 text-xs sm:text-sm font-bold list-none">（今日無特殊早自修或重要提醒）</li>
+        <li class="text-amber-900/70 text-sm sm:text-base font-bold list-none py-1.5 flex items-center space-x-2">
+          <span class="text-base sm:text-lg">✨</span>
+          <span>今日早自修各司其職，無特殊附加提醒，請全班保持專注靜心自習！</span>
+        </li>
       `;
     } else {
       reminderList.innerHTML = reminders.map(item => `
-        <li class="leading-snug py-0.5 text-xs sm:text-sm lg:text-base">${escapeContactHtml(item)}</li>
+        <li class="leading-relaxed py-1 text-sm sm:text-base lg:text-lg flex items-start space-x-2 text-amber-950 font-black">
+          <span class="text-amber-600 mt-0.5 shrink-0 text-base">📌</span>
+          <span class="flex-1 break-words">${escapeContactHtml(item)}</span>
+        </li>
       `).join('');
     }
   }
@@ -8360,64 +8499,154 @@ function renderContactProjectionView() {
     }
   }
 
-  // 3. 渲染多天對照聯絡簿作業看板
-  const projHwList = document.getElementById("contactProjHomeworkList");
-  if (projHwList) {
-    if (contactProjDaysMode === '3days') {
-      projHwList.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 items-stretch">
+  // 3. 匯總顯示所選日期的早自修與重要提醒
+  const activeCols = [];
+  if (contactProjDaysMode === '3days') {
+    activeCols.push({ colName: '第一欄', date: contactProjDateCol1 });
+    activeCols.push({ colName: '第二欄', date: contactProjDateCol2 });
+    activeCols.push({ colName: '第三欄', date: contactProjDateCol3 });
+  } else if (contactProjDaysMode === '1day') {
+    activeCols.push({ colName: '今日', date: contactProjDateCol1 });
+  } else {
+    activeCols.push({ colName: '第一欄', date: contactProjDateCol1 });
+    activeCols.push({ colName: '第二欄', date: contactProjDateCol2 });
+  }
+
+  const allReminders = [];
+  activeCols.forEach(({ colName, date }) => {
+    const book = window.KingdomApp.store.getContactBook(date);
+    if (book && Array.isArray(book.reminders) && book.reminders.length > 0) {
+      book.reminders.forEach(rem => {
+        allReminders.push({
+          date: date,
+          colName: colName,
+          weekday: getWeekdayText(date),
+          text: rem
+        });
+      });
+    }
+  });
+
+  const projBoard2Days = document.getElementById("contactProj2DaysContainer");
+  const projBoard3Days = document.getElementById("contactProj3DaysContainer");
+
+  if (contactProjDaysMode === '3days') {
+    if (projBoard2Days) projBoard2Days.classList.add("hidden");
+    if (projBoard3Days) projBoard3Days.classList.remove("hidden");
+
+    // 【上欄】：渲染 100% 全寬三天並排作業大屏看板
+    const projHwList3Days = document.getElementById("contactProjHomeworkList3Days");
+    if (projHwList3Days) {
+      projHwList3Days.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-stretch">
           ${renderDayColumn(1, contactProjDateCol1, 3)}
           ${renderDayColumn(2, contactProjDateCol2, 3)}
           ${renderDayColumn(3, contactProjDateCol3, 3)}
         </div>
       `;
-    } else if (contactProjDaysMode === '1day') {
-      projHwList.innerHTML = `
-        <div class="max-w-4xl mx-auto space-y-4">
-          ${renderDayColumn(1, contactProjDateCol1, 1)}
-        </div>
-      `;
-    } else {
-      // 預設雙天對照 (第一欄與第二欄)
-      projHwList.innerHTML = `
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 items-stretch">
-          ${renderDayColumn(1, contactProjDateCol1, 2)}
-          ${renderDayColumn(2, contactProjDateCol2, 2)}
-        </div>
-      `;
+    }
+
+    // 【下欄】：左側 3x9 打卡與朝會時鐘
+    const projClockDisplay3Days = document.getElementById("contactProjClockDisplay3Days");
+    const liveClockEl = document.getElementById("contactProjectionLiveClock");
+    if (projClockDisplay3Days && liveClockEl) {
+      projClockDisplay3Days.textContent = liveClockEl.textContent;
+    }
+    const projCountBadge3Days = document.getElementById("contactProjCheckedCount3Days");
+    if (projCountBadge3Days) {
+      projCountBadge3Days.textContent = `${checkedCount} / ${students.length} 人`;
+    }
+    const projClockBadge3Days = document.getElementById("contactProjClockBadge3Days");
+    if (projClockBadge3Days) {
+      const lateThreshold = (window.KingdomApp.store.data && window.KingdomApp.store.data.lateThreshold) || "07:40";
+      projClockBadge3Days.textContent = `${lateThreshold} 晨檢截止`;
+    }
+
+    const projCheckInGrid3Days = document.getElementById("contactProjCheckInGrid3Days");
+    if (projCheckInGrid3Days) {
+      projCheckInGrid3Days.innerHTML = students.map(st => {
+        const rec = attendanceData[st.id] || null;
+        let statusClass = "seat-uncheck";
+        let statusBadge = "🔴 未到";
+        let timeText = "";
+
+        if (rec) {
+          if (rec.status === 'present') {
+            statusClass = "seat-present";
+            statusBadge = "🟢 準時";
+            timeText = rec.checkInTime || "準時";
+          } else if (rec.status === 'late') {
+            statusClass = "seat-late";
+            statusBadge = "🟡 遲到";
+            timeText = rec.checkInTime || "遲到";
+          } else if (rec.status === 'leave') {
+            statusClass = "seat-leave";
+            statusBadge = "🏖️ 請假";
+            timeText = "告假";
+          }
+        }
+
+        return `
+          <button onclick="handleMorningSeatCheckIn(${st.id}, ${st.seatNo})" 
+            class="checkin-seat-btn ${statusClass} h-9 sm:h-10 w-full rounded-xl text-center flex items-center justify-center border transition shadow-xs hover:scale-105 active:scale-95"
+            title="${st.seatNo}號 ${st.name} | ${statusBadge} ${timeText ? '(' + timeText + ')' : ''}（點擊打卡 / 更改狀態）">
+            <span class="font-mono text-base sm:text-lg font-black tracking-wider leading-none">${String(st.seatNo).padStart(2, '0')}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    // 【下欄】：右側三天匯總提醒與聖諭
+    const projReminderList3Days = document.getElementById("contactProjReminderList3Days");
+    if (projReminderList3Days) {
+      if (allReminders.length === 0) {
+        projReminderList3Days.innerHTML = `
+          <li class="text-amber-900/60 text-sm sm:text-base font-bold list-none">（目前所選日期無特殊早自修或重要提醒）</li>
+        `;
+      } else {
+        projReminderList3Days.innerHTML = allReminders.map(item => `
+          <li class="leading-relaxed py-0.5">
+            <span class="font-black text-amber-950 bg-amber-200/80 px-2 py-0.5 rounded-lg border border-amber-300 text-xs sm:text-sm mr-1">
+              ${item.date} (${item.weekday}) ‧ ${item.colName}
+            </span>
+            <span>${escapeContactHtml(item.text)}</span>
+          </li>
+        `).join('');
+      }
+    }
+
+    const projMottoEl3Days = document.getElementById("contactProjQueenMotto3Days");
+    if (projMottoEl3Days) {
+      const primaryBook = window.KingdomApp.store.getContactBook(contactProjDateCol1);
+      projMottoEl3Days.textContent = (primaryBook && primaryBook.queenMotto) ? primaryBook.queenMotto : "👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！";
+    }
+  } else {
+    if (projBoard2Days) projBoard2Days.classList.remove("hidden");
+    if (projBoard3Days) projBoard3Days.classList.add("hidden");
+
+    // 渲染雙天或單天模式作業看板
+    const projHwList = document.getElementById("contactProjHomeworkList");
+    if (projHwList) {
+      if (contactProjDaysMode === '1day') {
+        projHwList.innerHTML = `
+          <div class="max-w-4xl mx-auto space-y-4">
+            ${renderDayColumn(1, contactProjDateCol1, 1)}
+          </div>
+        `;
+      } else {
+        projHwList.innerHTML = `
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 items-stretch">
+            ${renderDayColumn(1, contactProjDateCol1, 2)}
+            ${renderDayColumn(2, contactProjDateCol2, 2)}
+          </div>
+        `;
+      }
     }
   }
 
-  // 4. 匯總顯示所選日期的早自修與重要提醒
+  // 4. 匯總顯示雙天/單天模式之早自修與重要提醒
   const projReminderList = document.getElementById("contactProjReminderList");
-  if (projReminderList) {
-    const activeCols = [];
-    if (contactProjDaysMode === '3days') {
-      activeCols.push({ colName: '第一欄', date: contactProjDateCol1 });
-      activeCols.push({ colName: '第二欄', date: contactProjDateCol2 });
-      activeCols.push({ colName: '第三欄', date: contactProjDateCol3 });
-    } else if (contactProjDaysMode === '1day') {
-      activeCols.push({ colName: '今日', date: contactProjDateCol1 });
-    } else {
-      activeCols.push({ colName: '第一欄', date: contactProjDateCol1 });
-      activeCols.push({ colName: '第二欄', date: contactProjDateCol2 });
-    }
-
-    const allReminders = [];
-    activeCols.forEach(({ colName, date }) => {
-      const book = window.KingdomApp.store.getContactBook(date);
-      if (book && Array.isArray(book.reminders) && book.reminders.length > 0) {
-        book.reminders.forEach(rem => {
-          allReminders.push({
-            date: date,
-            colName: colName,
-            weekday: getWeekdayText(date),
-            text: rem
-          });
-        });
-      }
-    });
-
+  if (projReminderList && contactProjDaysMode !== '3days') {
     if (allReminders.length === 0) {
       projReminderList.innerHTML = `
         <li class="text-amber-900/60 text-base sm:text-xl font-bold list-none">（目前所選日期無特殊早自修或重要提醒）</li>
@@ -13372,6 +13601,11 @@ if (typeof window !== 'undefined') {
     Object.defineProperty(window, 'morningContactDateCol2', {
       get() { return morningContactDateCol2; },
       set(v) { morningContactDateCol2 = v; },
+      configurable: true
+    });
+    Object.defineProperty(window, 'morningContactDateCol3', {
+      get() { return morningContactDateCol3; },
+      set(v) { morningContactDateCol3 = v; },
       configurable: true
     });
     window.setMorningContactFormat = setMorningContactFormat;

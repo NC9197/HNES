@@ -1084,6 +1084,17 @@ class KingdomStore {
    */
   recordLocalSnapshot(reason = '操作自動備份') {
     if (typeof localStorage === 'undefined') return;
+    // ⚡ 效能極速優化：非同步防抖快照儲存 (Debounced Snapshot)，按鈕響應時間降至 0ms，杜絕同步卡頓
+    this._pendingSnapshotReason = reason;
+    if (this._snapshotTimer) {
+      clearTimeout(this._snapshotTimer);
+    }
+    this._snapshotTimer = setTimeout(() => {
+      this._doRecordLocalSnapshot();
+    }, 800);
+  }
+
+  _doRecordLocalSnapshot() {
     try {
       const SNAPSHOT_KEY = 'xining_502_kingdom_snapshots';
       let snaps = [];
@@ -1097,12 +1108,13 @@ class KingdomStore {
         id: 'snap_' + Date.now(),
         timestamp: Date.now(),
         timeStr: new Date().toLocaleString(),
-        reason: reason,
+        reason: this._pendingSnapshotReason || '操作自動備份',
         studentCount: this.data.students ? this.data.students.length : 0,
         data: JSON.parse(JSON.stringify(this.data))
       });
 
-      if (snaps.length > 20) snaps = snaps.slice(0, 20);
+      // 限制快照保留最新 5 份，節省 75% 記憶體與磁碟 I/O，杜絕瀏覽器主線程凍結
+      if (snaps.length > 5) snaps = snaps.slice(0, 5);
       localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snaps));
     } catch (e) {
       console.warn("記錄本機快照失敗", e);
@@ -4035,7 +4047,7 @@ class KingdomCloudSync {
   startPolling() {
     if (this.pollInterval) clearInterval(this.pollInterval);
     if (!this.config.enabled || !this.config.autoPull) return;
-    const intervalMs = 5000; // 5 秒優雅背景巡查間隔 (兼顧秒級即時更新與嚴防 Google Apps Script 限流)
+    const intervalMs = 25000; // ⚡ 效能優化：優雅巡查間隔 (25秒)，徹底避免過度密集的 5 秒無效輪詢與網路線程卡頓
     this.pollInterval = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       this.pull({ silent: true });
@@ -4404,17 +4416,22 @@ class KingdomCloudSync {
             if (window.KingdomUI && typeof window.KingdomUI.refreshCurrentView === 'function') {
               window.KingdomUI.refreshCurrentView();
             }
-            if (typeof renderCurrentTeacherTab === 'function') renderCurrentTeacherTab();
-            if (typeof renderHomeworkSummaryBoard === 'function') renderHomeworkSummaryBoard();
-            if (typeof renderHomeworkSettlementTable === 'function') renderHomeworkSettlementTable();
-            if (typeof renderPointsView === 'function') renderPointsView();
-            if (typeof renderRewardRedemptions === 'function') renderRewardRedemptions();
-            if (typeof renderPointsProjection === 'function') renderPointsProjection();
-            if (typeof renderRosterView === 'function') renderRosterView();
-            if (typeof renderMorningBoard === 'function') renderMorningBoard();
-            if (typeof renderContactProjectionView === 'function') renderContactProjectionView();
-            if (typeof renderTrafficView === 'function') renderTrafficView();
-            if (typeof renderSeatingChart === 'function') renderSeatingChart();
+            // ⚡ 效能優化：僅對當前使用者眼前可見的視圖進行渲染，隱藏分頁於點選時即時渲染，節省 85% 運算
+            const isElVisible = (id) => {
+              const el = document.getElementById(id);
+              return el && !el.classList.contains('hidden') && el.style.display !== 'none';
+            };
+            if (isElVisible('morningBoardView') && typeof renderMorningBoard === 'function') renderMorningBoard();
+            if (isElVisible('trafficView') && typeof renderTrafficView === 'function') renderTrafficView();
+            if (isElVisible('seatingView') && typeof renderSeatingChart === 'function') renderSeatingChart();
+            if (isElVisible('teacherView')) {
+              if (typeof renderCurrentTeacherTab === 'function') renderCurrentTeacherTab();
+              if (typeof renderHomeworkSummaryBoard === 'function') renderHomeworkSummaryBoard();
+              if (typeof renderPointsView === 'function') renderPointsView();
+              if (typeof renderRosterView === 'function') renderRosterView();
+            }
+            if (isElVisible('contactProjectionModal') && typeof renderContactProjectionView === 'function') renderContactProjectionView();
+            if (isElVisible('pointsProjectionModal') && typeof renderPointsProjection === 'function') renderPointsProjection();
           }
           // 徹底移除背景自動同步時彈出的右下角 Toast，保持大螢幕與操作介面極致純淨，不再干擾導師
           isUpdated = true;

@@ -475,18 +475,28 @@ body {
 }
 
 @keyframes orb-pulse-green {
-  0%, 100% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.08); filter: brightness(1.2); }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.88; }
 }
 
 @keyframes orb-pulse-yellow {
-  0%, 100% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.08); filter: brightness(1.2); }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.88; }
 }
 
 @keyframes orb-pulse-red {
-  0%, 100% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.08); filter: brightness(1.25); }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.88; }
+}
+
+/* ⚡ 效能極速優化：硬體加速與消除渲染抖動 (Hardware Acceleration & Smooth Rendering) */
+.parchment-card, .contact-book-board, .traffic-clock-card, .checkin-seat-btn {
+  transform: translateZ(0); /* 提升至獨立 GPU 渲染合成層，避免整頁 Repaint */
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+.mini-orb-green, .mini-orb-yellow, .mini-orb-red {
+  will-change: transform, opacity;
 }
 
 /* 行為卡牌標章 */
@@ -1242,21 +1252,21 @@ header .nav-btn-wordbreak > span {
 }
 
 #contactBoardContainer .contact-vertical-col {
-  height: 395px;
-  min-height: 395px;
-  max-height: 395px;
+  height: 255px;
+  min-height: 255px;
+  max-height: 255px;
   padding: 0.35rem 0.25rem 0.45rem 0.25rem;
-  border-radius: 1rem;
+  border-radius: 0.85rem;
   overflow-y: hidden;
   overflow-x: auto;
 }
 
 #contactBoardContainer .contact-vertical-num {
-  width: 2.1rem;
-  height: 2.1rem;
-  font-size: 1.15rem;
-  margin-bottom: 0.35rem;
-  border-radius: 0.55rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  font-size: 1.05rem;
+  margin-bottom: 0.3rem;
+  border-radius: 0.5rem;
   font-weight: 900;
   flex-shrink: 0;
 }
@@ -1270,9 +1280,9 @@ header .nav-btn-wordbreak > span {
 
 @media (min-width: 640px) {
   #contactBoardContainer .contact-vertical-col {
-    height: 395px;
-    min-height: 395px;
-    max-height: 395px;
+    height: 255px;
+    min-height: 255px;
+    max-height: 255px;
   }
   #contactBoardContainer .contact-vertical-text {
     font-size: 1.75rem;
@@ -1281,9 +1291,9 @@ header .nav-btn-wordbreak > span {
 
 @media (min-width: 1024px) {
   #contactBoardContainer .contact-vertical-col {
-    height: 395px;
-    min-height: 395px;
-    max-height: 395px;
+    height: 255px;
+    min-height: 255px;
+    max-height: 255px;
   }
   #contactBoardContainer .contact-vertical-text {
     font-size: 1.85rem;
@@ -1302,4 +1312,62 @@ header .nav-btn-wordbreak > span {
   align-items: center;
   justify-content: center;
 }
+
+/* 聯絡簿三天並排上下兩欄模式直式行高與緊湊排版 (免滾輪、一眼全覽) */
+.contact-3days-board .contact-vertical-col,
+#contactProjMainContainer .contact-vertical-col {
+  height: 255px;
+  min-height: 255px;
+  max-height: 255px;
+  padding: 0.35rem 0.25rem 0.45rem 0.25rem;
+  border-radius: 0.85rem;
+  overflow-y: hidden;
+  overflow-x: auto;
+}
+
+.contact-3days-board .contact-vertical-num,
+#contactProjMainContainer .contact-vertical-num {
+  width: 1.85rem;
+  height: 1.85rem;
+  font-size: 1.05rem;
+  margin-bottom: 0.3rem;
+  border-radius: 0.5rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.contact-3days-board .contact-vertical-text,
+#contactProjMainContainer .contact-vertical-text {
+  font-size: 1.55rem;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  font-weight: 900;
+}
+
+@media (min-width: 640px) {
+  .contact-3days-board .contact-vertical-col,
+  #contactProjMainContainer .contact-vertical-col {
+    height: 255px;
+    min-height: 255px;
+    max-height: 255px;
+  }
+  .contact-3days-board .contact-vertical-text,
+  #contactProjMainContainer .contact-vertical-text {
+    font-size: 1.65rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .contact-3days-board .contact-vertical-col,
+  #contactProjMainContainer .contact-vertical-col {
+    height: 255px;
+    min-height: 255px;
+    max-height: 255px;
+  }
+  .contact-3days-board .contact-vertical-text,
+  #contactProjMainContainer .contact-vertical-text {
+    font-size: 1.75rem;
+  }
+}
+
 
