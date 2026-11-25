@@ -37,7 +37,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261125_v31">
+  <link rel="stylesheet" href="styles.css?v=20261125_v32">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
 
@@ -405,39 +405,39 @@
         </div>
 
         <!-- 【右側剩下的部分全部都是聯絡簿內容雙欄】：7 欄寬 (約 70% 寬度，超大字體看板，頂部與左側時鐘切齊，組成完美矩形) -->
-        <div id="contactBoardContainer" class="lg:col-span-7 contact-book-board p-4 sm:p-7 space-y-5 shadow-xl flex flex-col justify-between">
+        <div id="contactBoardContainer" class="lg:col-span-7 contact-book-board p-3 sm:p-5 space-y-3.5 shadow-xl flex flex-col justify-between">
           
-          <!-- 聯絡簿條目 (左右二欄 ‧ 超大字號 text-xl ~ text-3xl，後排學生看得清清楚楚) -->
-          <div class="space-y-3">
-            <div class="flex items-center justify-between pb-2 border-b-2 border-amber-400">
-              <span class="text-base sm:text-xl font-black text-amber-900 bg-amber-200 px-3 py-1 rounded-xl border border-amber-400 flex items-center space-x-1 shadow-xs">
+          <!-- 聯絡簿條目 (左右二欄 ‧ 內容高度緊湊縮減約 1/4，使早自修提醒精準切齊左側 26-28 號打卡底部) -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between pb-1.5 border-b-2 border-amber-400">
+              <span class="text-sm sm:text-lg font-black text-amber-900 bg-amber-200 px-2.5 py-0.5 sm:py-1 rounded-xl border border-amber-400 flex items-center space-x-1 shadow-xs">
                 <span>✍️ 聯絡簿作業抄寫項目</span>
-                <span class="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-1">第一欄與第二欄獨立六行大字排版</span>
+                <span class="text-[11px] sm:text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 ml-1">第一欄與第二欄獨立六行大字排版</span>
               </span>
-              <span class="text-xs font-black text-amber-800 bg-amber-100/90 px-2.5 py-1 rounded-lg border border-amber-300 hidden sm:inline">
+              <span class="text-xs font-black text-amber-800 bg-amber-100/90 px-2.5 py-0.5 rounded-lg border border-amber-300 hidden sm:inline">
                 📜 照手邊聯絡簿認真抄寫
               </span>
             </div>
 
             <!-- 左右二欄作業抄寫網格 (由 JavaScript 動態渲染) -->
-            <div id="contactHomeworkList" class="space-y-3">
+            <div id="contactHomeworkList" class="space-y-2">
               <!-- 動態由 JavaScript 渲染左欄 1~4 行與右欄 5~8 行 -->
             </div>
           </div>
 
-          <!-- 早自修與重要提醒醒目金黃色卡 -->
-          <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-4 sm:p-5 rounded-2xl space-y-2 shadow-sm">
-            <div class="flex items-center space-x-2 text-amber-950 font-black text-base sm:text-xl">
+          <!-- 早自修與重要提醒醒目金黃色卡 (位置往上移，底部切齊左側 26-28 號打卡按鈕底端) -->
+          <div class="bg-gradient-to-r from-amber-100 to-yellow-100 border-2 border-amber-400 p-2.5 sm:p-3.5 rounded-2xl space-y-1 shadow-sm">
+            <div class="flex items-center space-x-2 text-amber-950 font-black text-sm sm:text-base">
               <span>🔔 早自修和重要提醒：</span>
             </div>
-            <ul id="contactReminderList" class="space-y-1 text-base sm:text-xl font-bold text-amber-900 list-disc list-inside">
+            <ul id="contactReminderList" class="space-y-0.5 text-xs sm:text-sm lg:text-base font-bold text-amber-900 list-disc list-inside">
               <!-- 動態渲染提醒項目 -->
             </ul>
           </div>
 
-          <!-- 皇后聖諭 / 靜思格言 -->
-          <div class="bg-white/80 border-2 border-amber-300 p-3 rounded-xl text-center">
-            <p id="contactQueenMotto" class="text-sm sm:text-base font-black text-amber-950 italic">
+          <!-- 皇后聖諭 / 靜思格言 (精緻緊湊排版，與左側打卡狀態說明列完美同高呼應) -->
+          <div class="bg-white/80 border-2 border-amber-300 py-1.5 px-3 rounded-xl text-center">
+            <p id="contactQueenMotto" class="text-xs sm:text-sm font-black text-amber-950 italic">
               👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！
             </p>
           </div>
@@ -5018,8 +5018,8 @@
   </div>
 
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261125_v31"></script>
-  <script src="ui.js?v=20261125_v31"></script>
+  <script src="app.js?v=20261125_v32"></script>
+  <script src="ui.js?v=20261125_v32"></script>
 
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>

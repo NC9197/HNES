@@ -647,9 +647,9 @@ function formatVerticalContactText(rawText) {
 function renderVerticalContactGrid(items, format = 'vertical-rtl', isProjection = false) {
   const isRtl = format === 'vertical-rtl';
   const gridClass = isRtl ? 'contact-vertical-grid-rtl' : 'contact-vertical-grid-ltr';
-  const colMinHeight = isProjection ? 'min-h-[460px] sm:min-h-[520px]' : 'min-h-[420px] sm:min-h-[460px]';
-  const numSize = isProjection ? 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl' : 'w-8 h-8 sm:w-9 sm:h-9 text-base sm:text-lg';
-  const textSize = isProjection ? 'text-lg sm:text-2xl lg:text-3xl' : 'text-base sm:text-lg lg:text-xl';
+  const colMinHeight = isProjection ? 'min-h-[460px] sm:min-h-[520px]' : 'min-h-[330px] sm:min-h-[360px]';
+  const numSize = isProjection ? 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl' : 'w-7 h-7 sm:w-8 sm:h-8 text-sm sm:text-base';
+  const textSize = isProjection ? 'text-lg sm:text-2xl lg:text-3xl' : 'text-sm sm:text-base lg:text-lg';
 
   const colsHtml = [1, 2, 3, 4, 5, 6].map(slotIdx => {
     const text = items[slotIdx - 1] || '';
@@ -790,22 +790,22 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
     const isFilled = Boolean(text && String(text).trim());
     if (isFilled) {
       return `
-        <div class="flex items-center space-x-3 p-2.5 sm:p-3 rounded-2xl bg-white/95 border-2 border-amber-300 shadow-sm transition hover:border-amber-500 min-h-[4.2rem]">
-          <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-xs border border-amber-500/40">
+        <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[3.15rem]">
+          <span class="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-base sm:text-lg font-black shrink-0 shadow-2xs border border-amber-500/40">
             ${slotIdx}
           </span>
-          <span class="text-lg sm:text-xl lg:text-2xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+          <span class="text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
             ${escapeContactHtml(text)}
           </span>
         </div>
       `;
     } else {
       return `
-        <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[4.2rem]">
-          <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
+        <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[3.15rem]">
+          <span class="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-base sm:text-lg font-black shrink-0">
             ${slotIdx}
           </span>
-          <span class="text-base sm:text-lg font-bold text-amber-900/35 italic">
+          <span class="text-sm sm:text-base font-bold text-amber-900/35 italic">
             （留白）
           </span>
         </div>
@@ -820,9 +820,9 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
   if (items.length > 6) {
     const extraItems = items.slice(6);
     extraRowsHtml = `
-      <div class="pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
+      <div class="pt-2 border-t-2 border-dashed border-amber-300 space-y-1.5">
         <span class="text-xs font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
-        <div class="space-y-2">
+        <div class="space-y-1.5">
           ${extraItems.map((item, idx) => renderCardItem(7 + idx, item)).join('')}
         </div>
       </div>
@@ -832,7 +832,7 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
   let dayReminderNoticeHtml = '';
   if (reminders.length > 0) {
     dayReminderNoticeHtml = `
-      <div class="mt-2.5 p-2 rounded-xl bg-amber-100/80 border border-amber-300 text-xs font-bold text-amber-950 space-y-0.5">
+      <div class="mt-2 p-2 rounded-xl bg-amber-100/80 border border-amber-300 text-xs font-bold text-amber-950 space-y-0.5">
         <div class="font-black text-amber-900 flex items-center space-x-1">
           <span>🔔 此日提醒：</span>
         </div>
@@ -844,10 +844,10 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
   }
 
   return `
-    <div class="space-y-3 bg-gradient-to-b from-amber-100/50 via-white/80 to-yellow-50/30 p-3 sm:p-4 rounded-3xl border-2 border-amber-400 shadow-md flex flex-col justify-between">
+    <div class="space-y-2 bg-gradient-to-b from-amber-100/50 via-white/80 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-400 shadow-md flex flex-col justify-between">
       <div>
         <!-- 頂部欄位控制與操作按鈕 -->
-        <div class="flex items-center justify-between pb-2 border-b border-amber-300/70 text-xs font-black text-amber-950 gap-1.5 flex-wrap">
+        <div class="flex items-center justify-between pb-1.5 border-b border-amber-300/70 text-xs font-black text-amber-950 gap-1.5 flex-wrap">
           <div class="flex items-center space-x-1.5 shrink-0">
             <span class="text-xs sm:text-sm font-black text-amber-950 bg-amber-300/90 px-2.5 py-0.5 rounded-lg border border-amber-400 shadow-2xs">
               📌 ${colName}
@@ -867,22 +867,22 @@ function renderMorningContactDayColumn(colIndex, dateStr) {
         </div>
 
         <!-- ★ 聯絡簿日期顯示在上方第一欄、第二欄位置，字體加粗放大 ★ -->
-        <div class="pt-2 pb-2.5 border-b-2 border-amber-400/80 flex items-center justify-between gap-2">
+        <div class="pt-1 pb-1.5 border-b-2 border-amber-400/80 flex items-center justify-between gap-2">
           <div class="flex items-center space-x-2 flex-wrap">
-            <span class="text-xl sm:text-2xl lg:text-3xl font-black text-amber-950 tracking-wide">
+            <span class="text-lg sm:text-xl lg:text-2xl font-black text-amber-950 tracking-wide">
               📅 ${dateStr}
             </span>
-            <span class="text-base sm:text-lg font-black text-amber-800 bg-amber-200/90 px-2.5 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
+            <span class="text-xs sm:text-sm font-black text-amber-800 bg-amber-200/90 px-2 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
               （${weekday}）
             </span>
           </div>
         </div>
 
         <!-- 作業標準六行大字 (支援直式 1~6 行直書與橫式卡片切換) -->
-        <div class="mt-3">
+        <div class="mt-2">
           ${(morningContactFormat === 'vertical-rtl' || morningContactFormat === 'vertical-ltr')
             ? renderVerticalContactGrid(items, morningContactFormat, false)
-            : `<div class="space-y-2.5">${rowsHtml}</div>`}
+            : `<div class="space-y-1.5 sm:space-y-2">${rowsHtml}</div>`}
         </div>
 
         ${extraRowsHtml}
@@ -1032,22 +1032,22 @@ function renderMorningBoard() {
           const isFilled = Boolean(text && text.trim());
           if (isFilled) {
             return `
-              <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/95 border-2 border-amber-300 shadow-sm transition hover:border-amber-500 min-h-[4.5rem]">
-                <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-xs border border-amber-500/40">
+              <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[3.25rem]">
+                <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-base sm:text-lg font-black shrink-0 shadow-2xs border border-amber-500/40">
                   ${slotIdx}
                 </span>
-                <span class="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
-                  ${text}
+                <span class="text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">
+                  ${escapeContactHtml(text)}
                 </span>
               </div>
             `;
           } else {
             return `
-              <div class="flex items-center space-x-3 p-2.5 rounded-2xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[4.5rem]">
-                <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-xl sm:text-2xl font-black shrink-0">
+              <div class="flex items-center space-x-2.5 p-2 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[3.25rem]">
+                <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amber-100/60 text-amber-800/40 flex items-center justify-center text-base sm:text-lg font-black shrink-0">
                   ${slotIdx}
                 </span>
-                <span class="text-lg sm:text-xl font-bold text-amber-900/35 italic">
+                <span class="text-sm sm:text-base font-bold text-amber-900/35 italic">
                   （留白）
                 </span>
               </div>
@@ -1062,9 +1062,9 @@ function renderMorningBoard() {
         if (items.length > 6) {
           const extraItems = items.slice(6);
           extraRowsHtml = `
-            <div class="col-span-1 md:col-span-2 pt-2 border-t-2 border-dashed border-amber-300 space-y-2">
+            <div class="col-span-1 md:col-span-2 pt-1.5 border-t-2 border-dashed border-amber-300 space-y-1.5">
               <span class="text-xs font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                 ${extraItems.map((item, idx) => renderCardItem(7 + idx, item)).join('')}
               </div>
             </div>
@@ -1072,25 +1072,25 @@ function renderMorningBoard() {
         }
 
         hwList.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 items-stretch">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3.5 items-stretch">
             <!-- 左欄 (第 1 ~ 3 行) -->
-            <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
+            <div class="space-y-1.5 sm:space-y-2 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2 sm:p-2.5 rounded-xl border border-amber-300/80 shadow-2xs">
               <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
                 <span class="flex items-center space-x-1"><span>📌 第一欄</span><span class="text-[10px] text-amber-800 font-bold">(第 1 ~ 3 項)</span></span>
                 <span class="text-[11px] text-amber-800 font-mono">1 - 3</span>
               </div>
-              <div class="space-y-2.5">
+              <div class="space-y-1.5">
                 ${leftColHtml}
               </div>
             </div>
 
             <!-- 右欄 (第 4 ~ 6 行) -->
-            <div class="space-y-2.5 sm:space-y-3 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border border-amber-300/80 shadow-2xs">
+            <div class="space-y-1.5 sm:space-y-2 bg-gradient-to-b from-amber-100/40 to-yellow-50/30 p-2 sm:p-2.5 rounded-xl border border-amber-300/80 shadow-2xs">
               <div class="flex items-center justify-between pb-1 px-1 border-b border-amber-300/60 text-xs font-black text-amber-950">
                 <span class="flex items-center space-x-1"><span>📌 第二欄</span><span class="text-[10px] text-amber-800 font-bold">(第 4 ~ 6 項)</span></span>
                 <span class="text-[11px] text-amber-800 font-mono">4 - 6</span>
               </div>
-              <div class="space-y-2.5">
+              <div class="space-y-1.5">
                 ${rightColHtml}
               </div>
             </div>
@@ -1107,11 +1107,11 @@ function renderMorningBoard() {
     const reminders = (contactBook && contactBook.reminders) ? contactBook.reminders : [];
     if (reminders.length === 0) {
       reminderList.innerHTML = `
-        <li class="text-amber-900/70 text-base sm:text-lg font-bold list-none">（今日無特殊早自修或重要提醒）</li>
+        <li class="text-amber-900/70 text-xs sm:text-sm font-bold list-none">（今日無特殊早自修或重要提醒）</li>
       `;
     } else {
       reminderList.innerHTML = reminders.map(item => `
-        <li class="leading-relaxed py-0.5">${item}</li>
+        <li class="leading-snug py-0.5 text-xs sm:text-sm lg:text-base">${escapeContactHtml(item)}</li>
       `).join('');
     }
   }

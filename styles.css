@@ -1236,6 +1236,49 @@ header .nav-btn-wordbreak > span {
   }
 }
 
+/* 聯絡簿看板（常規看板）內容高度縮減約 1/4，讓早自修提醒往上移切齊左側 26-28 號打卡底部 */
+#contactBoardContainer .contact-vertical-board {
+  padding: 0.25rem 0.35rem;
+}
+
+#contactBoardContainer .contact-vertical-col {
+  min-height: 330px;
+  padding: 0.35rem 0.2rem 0.45rem 0.2rem;
+  border-radius: 0.85rem;
+}
+
+#contactBoardContainer .contact-vertical-num {
+  width: 1.85rem;
+  height: 1.85rem;
+  font-size: 1rem;
+  margin-bottom: 0.35rem;
+  border-radius: 0.5rem;
+}
+
+#contactBoardContainer .contact-vertical-text {
+  font-size: 1.25rem;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+}
+
+@media (min-width: 640px) {
+  #contactBoardContainer .contact-vertical-col {
+    min-height: 350px;
+  }
+  #contactBoardContainer .contact-vertical-text {
+    font-size: 1.35rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  #contactBoardContainer .contact-vertical-col {
+    min-height: 365px;
+  }
+  #contactBoardContainer .contact-vertical-text {
+    font-size: 1.45rem;
+  }
+}
+
 .contact-vertical-empty-label {
   writing-mode: vertical-rl;
   font-size: 1.15rem;
