@@ -1,0 +1,1014 @@
+﻿<!DOCTYPE html><html><head><script>window.onerror=function(m,u,l){console.error("SCRIPT_4_ERR:" + m + ":" + l);};</script><script>
+    (function() {
+      function safeEscape(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function safeWeekday(dateStr) {
+        if (!dateStr) return '';
+        var d = new Date(dateStr + 'T00:00:00');
+        var days = ['日', '一', '二', '三', '四', '五', '六'];
+        return '星期' + (days[d.getDay()] || '');
+      }
+
+      // 1. 早自修與重要提醒獨立編輯邏輯
+      window.currentRemindersEditDate = window.currentRemindersEditDate || null;
+
+      var DEFAULT_REMINDER_PRESETS = [
+        { id: 'rem_pre_1', label: '📖 專注靜心自修', text: '早自修：全班保持專注靜心自修' },
+        { id: 'rem_pre_2', label: '✍️ 國語生字練習', text: '早自修：國語生字造詞隨堂練習' },
+        { id: 'rem_pre_3', label: '➗ 數學隨堂演練', text: '早自修：數學隨堂演練計算題' },
+        { id: 'rem_pre_4', label: '📚 閱讀班書日誌', text: '早自修：閱讀班書並記錄閱讀日誌' },
+        { id: 'rem_pre_5', label: '🏃 明穿運動服鞋', text: '重要提醒：明日有體育課，請穿著西寧王國運動服與運動鞋' },
+        { id: 'rem_pre_6', label: '📝 聯絡簿簽名', text: '重要提醒：請檢查家長聯絡簿簽名並繳交' },
+        { id: 'rem_pre_7', label: '🎨 攜帶美勞用具', text: '重要提醒：攜帶美勞課所需用具與剪刀色紙' },
+        { id: 'rem_pre_8', label: '🪥 餐後潔牙整理', text: '生活提醒：用餐完畢徹底潔牙並整理桌面' }
+      ];
+
+      function getActiveReminderPresets() {
+        if (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getReminderPresets === 'function') {
+          return window.KingdomApp.store.getReminderPresets();
+        }
+        try {
+          var saved = localStorage.getItem('xining_reminder_presets');
+          if (saved) return JSON.parse(saved);
+        } catch (_) {}
+        return DEFAULT_REMINDER_PRESETS;
+      }
+
+      function saveActiveReminderPresets(presets) {
+        if (window.KingdomApp && window.KingdomApp.store) {
+          window.KingdomApp.store.data.reminderPresets = presets;
+          window.KingdomApp.store.save('自訂早自修快捷');
+        }
+        try {
+          localStorage.setItem('xining_reminder_presets', JSON.stringify(presets));
+        } catch (_) {}
+      }
+
+      window.renderReminderPresetButtons = function() {
+        var container = document.getElementById("remindersPresetButtonsBar");
+        if (!container) return;
+        var presets = getActiveReminderPresets();
+        if (!presets || presets.length === 0) {
+          container.innerHTML = '<span class="text-xs text-slate-400">目前無快捷範本，可點右上角自訂新增</span>';
+          return;
+        }
+        container.innerHTML = presets.map(function(p) {
+          return '<div class="inline-flex items-center rounded-lg bg-white border border-amber-300 shadow-2xs overflow-hidden group hover:border-amber-400">' +
+            '<button type="button" onclick="appendReminderPresetText(' + safeEscape(JSON.stringify(p.text)) + ')" ' +
+            'class="px-2.5 py-1 text-amber-950 font-black text-xs hover:bg-amber-100 flex items-center space-x-1 transition" ' +
+            'title="點擊帶入：' + safeEscape(p.text) + '">' +
+            '<span>' + safeEscape(p.label) + '</span>' +
+            '</button>' +
+            '<div class="flex items-center border-l border-amber-200 bg-amber-50">' +
+            '<button type="button" onclick="openEditReminderPresetModal(\'' + p.id + '\')" ' +
+            'class="p-1 text-amber-700/70 hover:text-amber-900 hover:bg-amber-100 transition" title="編輯此快捷">✏️</button>' +
+            '<button type="button" onclick="deleteReminderPresetItem(\'' + p.id + '\')" ' +
+            'class="p-1 text-rose-500/70 hover:text-rose-700 hover:bg-rose-50 transition" title="刪除此快捷">🗑️</button>' +
+            '</div>' +
+            '</div>';
+        }).join('');
+      };
+
+      window.openEditRemindersModal = function(dateStr) {
+        if (typeof checkTeacherAuth === 'function' && !checkTeacherAuth("編輯早自修與重要提醒")) return;
+        var targetDate = dateStr || (typeof currentContactDate !== 'undefined' ? currentContactDate : null) || (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
+        window.currentRemindersEditDate = targetDate;
+
+        var titleEl = document.getElementById("editRemindersModalDateTitle");
+        if (titleEl) titleEl.textContent = "獨立編輯早自修與重要提醒 (" + targetDate + ")";
+
+        var badgeEl = document.getElementById("editRemindersCurrentDateBadge");
+        if (badgeEl) badgeEl.textContent = targetDate;
+
+        var pickerEl = document.getElementById("editRemindersDatePicker");
+        if (pickerEl) pickerEl.value = targetDate;
+
+        var cb = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook)
+          ? window.KingdomApp.store.getContactBook(targetDate)
+          : null;
+
+        var textEl = document.getElementById("editRemindersText");
+        var mottoEl = document.getElementById("editRemindersMotto");
+
+        if (textEl) {
+          var remList = (cb && cb.reminders && Array.isArray(cb.reminders)) ? cb.reminders : [];
+          textEl.value = remList.join('\n');
+        }
+        if (mottoEl) {
+          mottoEl.value = (cb && cb.motto) ? cb.motto : "";
+        }
+
+        var modal = document.getElementById("editRemindersModal");
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.style.setProperty("display", "flex", "important");
+          modal.style.setProperty("z-index", "99999", "important");
+        }
+
+        if (typeof window.renderReminderPresetButtons === 'function') {
+          window.renderReminderPresetButtons();
+        }
+      };
+
+      window.closeEditRemindersModal = function() {
+        var modal = document.getElementById("editRemindersModal");
+        if (modal) {
+          modal.classList.add("hidden");
+          modal.style.removeProperty("display");
+          modal.style.removeProperty("z-index");
+        }
+      };
+
+      window.handleRemindersDatePickerChange = function(newDate) {
+        if (!newDate) return;
+        window.openEditRemindersModal(newDate);
+      };
+
+      window.appendReminderPreset = function(text) {
+        var textEl = document.getElementById("editRemindersText");
+        if (!textEl) return;
+        var cur = textEl.value.trim();
+        textEl.value = cur ? (cur + '\n' + text) : text;
+        textEl.focus();
+      };
+      window.appendReminderPresetText = window.appendReminderPreset;
+
+      window.openAddReminderPresetModal = function() {
+        var editIdInput = document.getElementById("editReminderPresetId");
+        if (editIdInput) editIdInput.value = "";
+        var title = document.getElementById("manageReminderPresetModalTitle");
+        if (title) title.innerHTML = '<span>➕ 新增早自修與提醒快捷</span>';
+        var labelInput = document.getElementById("reminderPresetLabel");
+        if (labelInput) labelInput.value = "";
+        var textInput = document.getElementById("reminderPresetText");
+        if (textInput) textInput.value = "";
+        var modal = document.getElementById("manageReminderPresetModal");
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.style.setProperty("display", "flex", "important");
+          modal.style.setProperty("z-index", "100000", "important");
+        }
+      };
+
+      window.openEditReminderPresetModal = function(presetId) {
+        var presets = getActiveReminderPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset) return;
+        var editIdInput = document.getElementById("editReminderPresetId");
+        if (editIdInput) editIdInput.value = preset.id;
+        var title = document.getElementById("manageReminderPresetModalTitle");
+        if (title) title.innerHTML = '<span>✏️ 編輯早自修與提醒快捷</span>';
+        var labelInput = document.getElementById("reminderPresetLabel");
+        if (labelInput) labelInput.value = preset.label;
+        var textInput = document.getElementById("reminderPresetText");
+        if (textInput) textInput.value = preset.text;
+        var modal = document.getElementById("manageReminderPresetModal");
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.style.setProperty("display", "flex", "important");
+          modal.style.setProperty("z-index", "100000", "important");
+        }
+      };
+
+      window.closeManageReminderPresetModal = function() {
+        var modal = document.getElementById("manageReminderPresetModal");
+        if (modal) {
+          modal.classList.add("hidden");
+          modal.style.removeProperty("display");
+          modal.style.removeProperty("z-index");
+        }
+      };
+
+      window.submitReminderPresetForm = function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        var editId = (document.getElementById("editReminderPresetId") ? document.getElementById("editReminderPresetId").value : "").trim();
+        var label = (document.getElementById("reminderPresetLabel") ? document.getElementById("reminderPresetLabel").value : "").trim();
+        var text = (document.getElementById("reminderPresetText") ? document.getElementById("reminderPresetText").value : "").trim();
+
+        if (!label || !text) {
+          alert("請填寫快捷標籤名稱與完整內容！");
+          return;
+        }
+
+        var presets = getActiveReminderPresets();
+        if (editId) {
+          var target = presets.find(function(p) { return p.id === editId; });
+          if (target) {
+            target.label = label;
+            target.text = text;
+          }
+          if (typeof showToast === 'function') showToast("✅ 已更新早自修快捷【" + label + "】！", "✨");
+        } else {
+          presets.push({
+            id: 'rem_pre_' + Date.now(),
+            label: label,
+            text: text
+          });
+          if (typeof showToast === 'function') showToast("✅ 已新增早自修快捷【" + label + "】！", "✨");
+        }
+        saveActiveReminderPresets(presets);
+        window.closeManageReminderPresetModal();
+        window.renderReminderPresetButtons();
+      };
+
+      window.deleteReminderPresetItem = function(presetId) {
+        var presets = getActiveReminderPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        var name = preset ? preset.label : "此快捷";
+        if (!confirm("確定要刪除快捷【" + name + "】嗎？")) return;
+        var idx = presets.findIndex(function(p) { return p.id === presetId; });
+        if (idx !== -1) {
+          presets.splice(idx, 1);
+          saveActiveReminderPresets(presets);
+        }
+        if (typeof showToast === 'function') showToast("🗑️ 已刪除早自修快捷【" + name + "】", "✨");
+        window.renderReminderPresetButtons();
+      };
+
+      window.confirmResetReminderPresetsToDefault = function() {
+        if (!confirm("確定要將早自修與提醒快捷恢復為系統預設 8 項範本嗎？自訂的項目將被重置。")) return;
+        var presets = JSON.parse(JSON.stringify(DEFAULT_REMINDER_PRESETS));
+        saveActiveReminderPresets(presets);
+        if (typeof showToast === 'function') showToast("🔄 已成功恢復預設早自修與提醒快捷！", "🔔");
+        window.renderReminderPresetButtons();
+      };
+
+      window.saveRemindersData = function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        var targetDate = window.currentRemindersEditDate || (typeof currentContactDate !== 'undefined' ? currentContactDate : null) || (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
+        var textEl = document.getElementById("editRemindersText");
+        var mottoEl = document.getElementById("editRemindersMotto");
+
+        var reminders = [];
+        if (textEl) {
+          reminders = textEl.value.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+        }
+        var motto = mottoEl ? mottoEl.value.trim() : "";
+
+        if (window.KingdomApp && window.KingdomApp.store) {
+          var existing = window.KingdomApp.store.getContactBook(targetDate);
+          var hw = (existing && existing.homework && Array.isArray(existing.homework)) ? existing.homework : [];
+          window.KingdomApp.store.saveContactBook(targetDate, hw, reminders, motto);
+        }
+
+        window.closeEditRemindersModal();
+        if (typeof showToast === 'function') {
+          showToast("早自修與重要提醒已儲存！", "success");
+        }
+        if (typeof renderMorningBoard === 'function') {
+          renderMorningBoard();
+        }
+        if (typeof renderContactProjectionView === 'function') {
+          renderContactProjectionView();
+        }
+      };
+
+      // 2. 聯絡簿渲染防呆升級：日期放大、刪除第幾欄與今天明天標籤
+      window.renderMorningContactDayColumn = function(colIndex, dateStr) {
+        var book = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook) 
+          ? window.KingdomApp.store.getContactBook(dateStr) 
+          : { homeworkItems: [], reminders: [], queenMotto: '' };
+        var items = (book && book.homeworkItems) ? book.homeworkItems : [];
+        var reminders = (book && book.reminders) ? book.reminders : [];
+        var weekday = (typeof getWeekdayText === 'function') ? getWeekdayText(dateStr) : safeWeekday(dateStr);
+
+        var renderCardItem = function(slotIdx, text) {
+          var isFilled = Boolean(text && String(text).trim());
+          if (isFilled) {
+            return '<div class="flex items-center space-x-2 py-1.5 px-2.5 rounded-xl bg-white/95 border-2 border-amber-300 shadow-2xs transition hover:border-amber-500 min-h-[2.5rem]">' +
+              '<span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center text-base sm:text-lg font-black shrink-0 shadow-2xs border border-amber-500/40">' + slotIdx + '</span>' +
+              '<span class="text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-tight break-words flex-1">' + safeEscape(text) + '</span>' +
+              '</div>';
+          } else {
+            return '<div class="flex items-center space-x-2 py-1.5 px-2.5 rounded-xl bg-amber-50/50 border-2 border-dashed border-amber-200/80 min-h-[2.5rem]">' +
+              '<span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-200/40 text-amber-800/40 flex items-center justify-center text-base sm:text-lg font-black shrink-0">' + slotIdx + '</span>' +
+              '<span class="text-sm sm:text-base font-bold text-amber-900/35 italic">（留白）</span>' +
+              '</div>';
+          }
+        };
+
+        var rowsHtml = [1, 2, 3, 4, 5, 6].map(function(slotIdx) { return renderCardItem(slotIdx, items[slotIdx - 1] || ''); }).join('');
+
+        var extraRowsHtml = '';
+        if (items.length > 6) {
+          var extraItems = items.slice(6);
+          extraRowsHtml = '<div class="pt-2 border-t-2 border-dashed border-amber-300 space-y-1.5">' +
+            '<span class="text-xs font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>' +
+            '<div class="space-y-1.5">' +
+            extraItems.map(function(item, idx) { return renderCardItem(7 + idx, item); }).join('') +
+            '</div></div>';
+        }
+
+        var dayReminderNoticeHtml = '';
+        if (reminders.length > 0) {
+          dayReminderNoticeHtml = '<div class="mt-2 p-2 rounded-xl bg-amber-100/80 border border-amber-300 text-xs font-bold text-amber-950 space-y-0.5">' +
+            '<div class="font-black text-amber-900 flex items-center space-x-1"><span>🔔 此日提醒：</span></div>' +
+            '<ul class="list-disc list-inside space-y-0.5">' +
+            reminders.map(function(r) { return '<li>' + safeEscape(r) + '</li>'; }).join('') +
+            '</ul></div>';
+        }
+
+        var curFormat = (typeof morningContactFormat !== 'undefined') ? morningContactFormat : 'vertical-rtl';
+        var mainBodyHtml = (curFormat === 'vertical-rtl' || curFormat === 'vertical-ltr') && (typeof renderVerticalContactGrid === 'function')
+          ? renderVerticalContactGrid(items, curFormat, false)
+          : '<div class="space-y-1.5 sm:space-y-2">' + rowsHtml + '</div>';
+
+        return '<div class="space-y-2 bg-gradient-to-b from-amber-100/50 via-white/80 to-yellow-50/30 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-400 shadow-md flex flex-col justify-between">' +
+          '<div>' +
+          '<div class="flex items-center justify-between pb-1.5 border-b-2 border-amber-400/80 text-xs font-black text-amber-950 gap-1.5 flex-wrap">' +
+          '<div class="flex items-center space-x-2 shrink-0">' +
+          '<span class="text-lg sm:text-xl lg:text-2xl font-black text-amber-950 tracking-wider">📅 ' + dateStr + '</span>' +
+          '<span class="text-sm sm:text-base font-black text-amber-900 bg-amber-200/90 px-2.5 py-0.5 rounded-xl border border-amber-300 shadow-2xs">' + weekday + '</span>' +
+          '</div>' +
+          '<div class="flex items-center space-x-1 shrink-0">' +
+          '<button type="button" onclick="adjustMorningContactColDate(' + colIndex + ', -1)" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="前一天">◀</button>' +
+          '<input type="date" value="' + dateStr + '" onchange="changeMorningContactColDate(' + colIndex + ', this.value)" class="px-1.5 py-0.5 text-xs bg-white border-2 border-amber-400 rounded-lg text-amber-950 font-black cursor-pointer shadow-2xs max-w-[120px] sm:max-w-[135px]" title="手動指定此欄日期">' +
+          '<button type="button" onclick="adjustMorningContactColDate(' + colIndex + ', 1)" class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="後一天">▶</button>' +
+          '<button type="button" onclick="openEditContactModalForDate(\'' + dateStr + '\')" class="px-2 py-0.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-0.5 transition hover:scale-105 active:scale-95" title="編輯【' + dateStr + '】聯絡簿"><span>✏️</span><span class="hidden sm:inline">編輯</span></button>' +
+          '</div>' +
+          '</div>' +
+          '<div class="mt-2">' + mainBodyHtml + '</div>' +
+          extraRowsHtml +
+          dayReminderNoticeHtml +
+          '</div>' +
+          '</div>';
+      };
+
+      // 3. 大屏投影聯絡簿渲染防呆升級：超大日期、無第幾欄、無今天明天
+      window.renderDayColumn = function(colIndex, dateStr, totalCols) {
+        var book = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.getContactBook) 
+          ? window.KingdomApp.store.getContactBook(dateStr) 
+          : { homeworkItems: [], reminders: [], queenMotto: '' };
+        var items = (book && book.homeworkItems) ? book.homeworkItems : [];
+        var reminders = (book && book.reminders) ? book.reminders : [];
+        var weekday = (typeof getWeekdayText === 'function') ? getWeekdayText(dateStr) : safeWeekday(dateStr);
+
+        var isThreeCols = totalCols === 3;
+        var isSingleCol = totalCols === 1;
+
+        var cardPad = isThreeCols ? 'p-2 sm:p-2.5' : 'p-2.5 sm:p-3.5';
+        var minHeight = isThreeCols ? 'min-h-[3.8rem]' : (isSingleCol ? 'min-h-[4.5rem]' : 'min-h-[4.2rem]');
+        var numBadgeSize = isThreeCols ? 'w-9 h-9 sm:w-10 sm:h-10 text-lg sm:text-xl' : (isSingleCol ? 'w-11 h-11 sm:w-13 sm:h-13 text-2xl sm:text-3xl' : 'w-10 h-10 sm:w-12 sm:h-12 text-xl sm:text-2xl');
+        var textClass = isThreeCols ? 'text-base sm:text-lg lg:text-xl font-black text-slate-900 tracking-wide leading-snug break-words flex-1' : (isSingleCol ? 'text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-wide leading-snug break-words flex-1' : 'text-lg sm:text-xl lg:text-2xl font-black text-slate-900 tracking-wide leading-snug break-words flex-1');
+        var dateTextSize = isThreeCols ? 'text-2xl sm:text-3xl lg:text-4xl font-black text-amber-950 tracking-wider' : (isSingleCol ? 'text-3xl sm:text-4xl lg:text-5xl font-black text-amber-950 tracking-wider' : 'text-2xl sm:text-3xl lg:text-4xl font-black text-amber-950 tracking-wider');
+
+        var renderCardItem = function(slotIdx, text) {
+          var isFilled = Boolean(text && String(text).trim());
+          if (isFilled) {
+            return '<div class="flex items-center space-x-3 ' + cardPad + ' rounded-2xl bg-white border-2 border-amber-300 shadow-md transition hover:border-amber-500 ' + minHeight + '">' +
+              '<span class="' + numBadgeSize + ' rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-amber-950 flex items-center justify-center font-black shrink-0 shadow-xs border border-amber-500/50">' + slotIdx + '</span>' +
+              '<span class="' + textClass + '">' + safeEscape(text) + '</span>' +
+              '</div>';
+          } else {
+            return '<div class="flex items-center space-x-3 ' + cardPad + ' rounded-2xl bg-amber-50/60 border-2 border-dashed border-amber-300/70 ' + minHeight + '">' +
+              '<span class="' + numBadgeSize + ' rounded-2xl bg-amber-200/50 text-amber-800/40 flex items-center justify-center font-black shrink-0">' + slotIdx + '</span>' +
+              '<span class="text-base sm:text-lg font-bold text-amber-900/35 italic">（留白）</span>' +
+              '</div>';
+          }
+        };
+
+        var rowsHtml = [1, 2, 3, 4, 5, 6].map(function(slotIdx) { return renderCardItem(slotIdx, items[slotIdx - 1] || ''); }).join('');
+
+        var extraRowsHtml = '';
+        if (items.length > 6) {
+          var extraItems = items.slice(6);
+          extraRowsHtml = '<div class="pt-2 border-t-2 border-dashed border-amber-300/80 space-y-2">' +
+            '<span class="text-xs font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-md">追加項目 (超過 6 行)：</span>' +
+            '<div class="space-y-2">' +
+            extraItems.map(function(item, idx) { return renderCardItem(7 + idx, item); }).join('') +
+            '</div></div>';
+        }
+
+        var dayReminderNoticeHtml = '';
+        if (reminders.length > 0) {
+          dayReminderNoticeHtml = '<div class="mt-2.5 p-2.5 rounded-2xl bg-amber-100/90 border border-amber-300 text-xs sm:text-sm font-bold text-amber-950 space-y-1 shadow-2xs">' +
+            '<div class="font-black text-amber-900 flex items-center space-x-1"><span>🔔 此日提醒：</span></div>' +
+            '<ul class="list-disc list-inside space-y-0.5">' +
+            reminders.map(function(r) { return '<li>' + safeEscape(r) + '</li>'; }).join('') +
+            '</ul></div>';
+        }
+
+        var curFormat = (typeof morningContactFormat !== 'undefined') ? morningContactFormat : 'vertical-rtl';
+        var mainBodyHtml = (curFormat === 'vertical-rtl' || curFormat === 'vertical-ltr') && (typeof renderVerticalContactGrid === 'function')
+          ? renderVerticalContactGrid(items, curFormat, true)
+          : '<div class="space-y-2 sm:space-y-2.5">' + rowsHtml + '</div>';
+
+        return '<div class="space-y-3 bg-gradient-to-b from-amber-100/50 via-white/80 to-amber-50/50 p-3 sm:p-4 rounded-3xl border-2 border-amber-400 shadow-md flex flex-col justify-between">' +
+          '<div>' +
+          '<div class="flex items-center justify-between pb-2 border-b-2 border-amber-400/80 gap-2 flex-wrap">' +
+          '<div class="flex items-center space-x-2.5 flex-wrap">' +
+          '<span class="' + dateTextSize + '">📅 ' + dateStr + '</span>' +
+          '<span class="text-base sm:text-lg lg:text-xl font-black px-3 py-1 rounded-xl bg-amber-300 text-amber-950 border border-amber-500/60 shadow-2xs">' + weekday + '</span>' +
+          '</div>' +
+          '<div class="flex items-center space-x-1.5 shrink-0">' +
+          '<button type="button" onclick="adjustContactProjColDate(' + colIndex + ', -1)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="前一天">◀</button>' +
+          '<input type="date" value="' + dateStr + '" onchange="changeContactProjColDate(' + colIndex + ', this.value)" class="px-2 py-1 text-xs sm:text-sm bg-white border-2 border-amber-400 rounded-xl text-amber-950 font-black cursor-pointer shadow-2xs max-w-[130px] sm:max-w-[150px]" title="手動指定此欄日期">' +
+          '<button type="button" onclick="adjustContactProjColDate(' + colIndex + ', 1)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="後一天">▶</button>' +
+          '<button type="button" onclick="openEditContactModalForDate(\'' + dateStr + '\')" class="px-2.5 sm:px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs sm:text-sm font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition hover:scale-105 active:scale-95" title="編輯【' + dateStr + '】聯絡簿"><span>✏️</span><span class="hidden sm:inline">編輯</span></button>' +
+          '</div>' +
+          '</div>' +
+          '<div class="pt-2.5">' + mainBodyHtml + extraRowsHtml + '</div>' +
+          '</div>' +
+          dayReminderNoticeHtml +
+          '</div>';
+      };
+
+      // 4. 作業看板下拉抽屜檢視 (免滾動滑鼠，支援下拉選單與折疊抽屜)
+      window.openHomeworkDrawerIds = window.openHomeworkDrawerIds || new Set();
+
+      window.selectSingleHomeworkTab = function(hwId) {
+        if (typeof currentHwFilterId !== 'undefined') {
+          currentHwFilterId = hwId;
+        } else {
+          window.currentHwFilterId = hwId;
+        }
+        if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+        window.openHomeworkDrawerIds.clear();
+        if (hwId === 'ALL') {
+          var allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
+          var fDate = (typeof currentHwFilterDate !== 'undefined') ? currentHwFilterDate : (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
+          var dayHomeworkList = allHwList.filter(function(h) { return h.date === fDate || h.dueDate === fDate; });
+          dayHomeworkList.forEach(function(h) { window.openHomeworkDrawerIds.add(String(h.id)); });
+        } else {
+          window.openHomeworkDrawerIds.add(String(hwId));
+        }
+        if (typeof renderHomeworkSummaryBoard === 'function') {
+          renderHomeworkSummaryBoard();
+        }
+      };
+
+      window.toggleHomeworkDrawer = function(hwId, event) {
+        if (event && event.stopPropagation) event.stopPropagation();
+        if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+        var idStr = String(hwId);
+        if (window.openHomeworkDrawerIds.has(idStr)) {
+          window.openHomeworkDrawerIds.delete(idStr);
+        } else {
+          window.openHomeworkDrawerIds.add(idStr);
+          if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = idStr;
+        }
+        if (typeof renderHomeworkSummaryBoard === 'function') {
+          renderHomeworkSummaryBoard();
+        }
+      };
+
+      window.toggleAllHomeworkDrawers = function() {
+        if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+        var allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
+        var fDate = (typeof currentHwFilterDate !== 'undefined') ? currentHwFilterDate : (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
+        var dayHomeworkList = allHwList.filter(function(h) { return h.date === fDate || h.dueDate === fDate; });
+        var curId = (typeof currentHwFilterId !== 'undefined') ? currentHwFilterId : 'ALL';
+        if (curId === 'ALL') {
+          if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = dayHomeworkList.length > 0 ? String(dayHomeworkList[0].id) : 'ALL';
+          window.openHomeworkDrawerIds.clear();
+          if (dayHomeworkList.length > 0) window.openHomeworkDrawerIds.add(String(dayHomeworkList[0].id));
+        } else {
+          if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = 'ALL';
+          dayHomeworkList.forEach(function(h) { window.openHomeworkDrawerIds.add(String(h.id)); });
+        }
+        if (typeof renderHomeworkSummaryBoard === 'function') {
+          renderHomeworkSummaryBoard();
+        }
+      };
+
+      // 4.1 作業看板核心渲染函數 (自包含覆寫，確保單獨複製貼上 index.html 即 100% 生效)
+      window.renderHomeworkSummaryBoard = function() {
+        var container = document.getElementById("homeworkSummaryBoardContainer");
+        if (!container) return;
+
+        var allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
+        var students = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.students) || [];
+
+        if (typeof initHomeworkFilterDate === 'function') {
+          initHomeworkFilterDate();
+        } else {
+          if (typeof currentHwFilterDate === 'undefined' || !currentHwFilterDate || currentHwFilterDate === 'ALL') {
+            window.currentHwFilterDate = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+          }
+        }
+        var filterDate = (typeof currentHwFilterDate !== 'undefined') ? currentHwFilterDate : ((window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
+        var todayStr = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+
+        var picker = document.getElementById("hwHistoryDatePicker");
+        if (picker && picker.value !== filterDate) {
+          picker.value = filterDate;
+        }
+        var dateBadge = document.getElementById("hwCurrentDateBadge");
+        if (dateBadge) {
+          var weekday = (typeof getWeekdayText === 'function') ? getWeekdayText(filterDate) : '';
+          var isToday = filterDate === todayStr;
+          dateBadge.textContent = '📅 ' + filterDate + (weekday ? ' (' + weekday + ')' : '') + (isToday ? ' 【今日】' : '');
+        }
+
+        var dayHomeworkList = allHwList.filter(function(h) { return h.date === filterDate || h.dueDate === filterDate; });
+
+        if (dayHomeworkList.length === 0) {
+          var weekdayNoHw = (typeof getWeekdayText === 'function') ? getWeekdayText(filterDate) : '';
+          var isTodayNoHw = filterDate === todayStr;
+          container.innerHTML = 
+            '<div class="parchment-card p-6 sm:p-8 text-center text-slate-700 font-bold space-y-3.5 rounded-2xl border-2 border-dashed border-amber-300 shadow-2xs">' +
+              '<div class="text-4xl sm:text-5xl drop-shadow-xs">📜</div>' +
+              '<div class="space-y-1">' +
+                '<h3 class="text-base sm:text-lg font-black text-amber-950">' +
+                  filterDate + (weekdayNoHw ? ' (' + weekdayNoHw + ')' : '') + (isTodayNoHw ? ' 【今日】' : '') + ' 尚無登記的作業奏章' +
+                '</h3>' +
+                '<p class="text-xs text-amber-900/70 max-w-md mx-auto">' +
+                  '此日尚未頒布任何回家作業或課堂習作。版面僅專注展示單日內容，避免下拉過長。' +
+                '</p>' +
+              '</div>' +
+              '<div class="flex flex-wrap items-center justify-center gap-2 pt-1">' +
+                '<button onclick="openNewHomeworkModal(\'' + filterDate + '\')" class="btn-royal-gold px-4 py-2 rounded-xl text-xs sm:text-sm font-black shadow flex items-center space-x-1.5 transition active:scale-95">' +
+                  '<span>➕</span>' +
+                  '<span>為【' + filterDate + '】新增作業</span>' +
+                '</button>' +
+                '<button onclick="adjustHomeworkFilterDate(-1)" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95">' +
+                  '◀ 前一天' +
+                '</button>' +
+                '<button onclick="adjustHomeworkFilterDate(1)" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95">' +
+                  '後一天 ▶' +
+                '</button>' +
+                (!isTodayNoHw ? '<button onclick="goToTodayHomework()" class="px-3.5 py-2 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-black shadow-2xs transition active:scale-95">🚩 回到今天</button>' : '') +
+              '</div>' +
+            '</div>';
+          if (typeof renderHomeworkSettlementTable === 'function') renderHomeworkSettlementTable();
+          if (typeof renderContactBookHistoryList === 'function') renderContactBookHistoryList();
+          return;
+        }
+
+        var curHwId = (typeof currentHwFilterId !== 'undefined') ? currentHwFilterId : (window.currentHwFilterId || null);
+        if (dayHomeworkList.length > 0) {
+          if (!curHwId || (curHwId !== 'ALL' && !dayHomeworkList.some(function(h) { return String(h.id) === String(curHwId); }))) {
+            curHwId = String(dayHomeworkList[0].id);
+            if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = curHwId;
+            window.currentHwFilterId = curHwId;
+          }
+        }
+
+        if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+        if (curHwId === 'ALL') {
+          dayHomeworkList.forEach(function(h) { window.openHomeworkDrawerIds.add(String(h.id)); });
+        } else if (curHwId) {
+          if (window.openHomeworkDrawerIds.size === 0) {
+            window.openHomeworkDrawerIds.add(String(curHwId));
+          }
+        }
+
+        var tabsBarHtml = '';
+        if (dayHomeworkList.length > 0) {
+          var optionsHtml = dayHomeworkList.map(function(h) {
+            var pendingCount = 0;
+            var revisionCount = 0;
+            students.forEach(function(st) {
+              var status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
+              if (status === 'pending') pendingCount++;
+              else if (status === 'revision') revisionCount++;
+            });
+            var statusText = pendingCount > 0 ? ('未交 ' + pendingCount + '人') : (revisionCount > 0 ? ('訂正 ' + revisionCount + '人') : '已全齊 ✅');
+            var isSel = String(curHwId) === String(h.id);
+            return '<option value="' + h.id + '" ' + (isSel ? 'selected' : '') + '>[' + (h.subject || '作業') + '] ' + h.title + '（' + statusText + '）</option>';
+          }).join('');
+
+          tabsBarHtml = 
+            '<div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-300 flex items-center justify-between gap-3 flex-wrap shadow-xs">' +
+              '<div class="flex items-center space-x-2 flex-1 min-w-[240px]">' +
+                '<label for="homeworkDrawerSelect" class="text-xs sm:text-sm font-black text-amber-950 whitespace-nowrap flex items-center space-x-1">' +
+                  '<span>📋</span>' +
+                  '<span>檢視作業抽屜：</span>' +
+                '</label>' +
+                '<select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="flex-1 max-w-md px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs sm:text-sm border-2 border-amber-600 shadow-sm cursor-pointer transition truncate">' +
+                  optionsHtml +
+                  '<option value="ALL" ' + (curHwId === 'ALL' ? 'selected' : '') + '>📑 展開全部作業抽屜 (' + dayHomeworkList.length + '項)</option>' +
+                '</select>' +
+              '</div>' +
+              '<div class="flex items-center space-x-2">' +
+                '<button type="button" onclick="toggleAllHomeworkDrawers()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 text-xs font-bold shadow-2xs transition">' +
+                  (curHwId === 'ALL' ? '▲ 抽屜收合為單項' : '▼ 全部抽屜展開') +
+                '</button>' +
+                '<button onclick="openNewHomeworkModal(\'' + filterDate + '\')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">' +
+                  '<span>➕</span>' +
+                  '<span>新增此日作業</span>' +
+                '</button>' +
+              '</div>' +
+            '</div>';
+        }
+
+        var cardsHtml = dayHomeworkList.map(function(hw) {
+          var isDrawerOpen = (curHwId === 'ALL') || (window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.has(String(hw.id)));
+
+          var submittedList = [];
+          var lateList = [];
+          var revisionList = [];
+          var pendingList = [];
+
+          students.forEach(function(st) {
+            var status = (hw.records && (hw.records[st.id] !== undefined ? hw.records[st.id] : hw.records[st.seatNo])) || 'pending';
+            if (status === 'revision') revisionList.push(st);
+            else if (status === 'late') lateList.push(st);
+            else if (status === 'submitted' || status === 'excellent') submittedList.push(st);
+            else pendingList.push(st);
+          });
+
+          var columns = [
+            { id: 'submitted', title: '準時已繳交', icon: '✅', colorText: 'text-emerald-950', bgClass: 'bg-emerald-50/70 border-emerald-300', badgeClass: 'bg-emerald-600 text-white', chipBorder: 'border-emerald-300 hover:border-emerald-500 bg-white text-emerald-950', list: submittedList },
+            { id: 'late', title: '遲交已補', icon: '⏰', colorText: 'text-amber-950', bgClass: 'bg-amber-50/70 border-amber-300', badgeClass: 'bg-amber-600 text-white', chipBorder: 'border-amber-300 hover:border-amber-500 bg-white text-amber-950', list: lateList },
+            { id: 'revision', title: '需訂正', icon: '⚠️', colorText: 'text-purple-950', bgClass: 'bg-purple-50/70 border-purple-300', badgeClass: 'bg-purple-600 text-white', chipBorder: 'border-purple-300 hover:border-purple-500 bg-white text-purple-950', list: revisionList },
+            { id: 'pending', title: '未繳交', icon: '❌', colorText: 'text-rose-950', bgClass: 'bg-rose-50/70 border-rose-300', badgeClass: 'bg-rose-600 text-white', chipBorder: 'border-rose-300 hover:border-rose-500 bg-white text-rose-950', list: pendingList }
+          ];
+
+          var colsHtml = columns.map(function(col) {
+            var chips = col.list.length === 0 
+              ? '<div class="h-28 flex flex-col items-center justify-center text-slate-400 text-[11px] pointer-events-none select-none"><span>✋ 拖曳大臣名牌至此</span></div>'
+              : col.list.map(function(s) {
+                  var seatStr = String(s.seatNo).padStart(2, '0') + '.' + s.name;
+                  var btnSub = col.id !== 'submitted' ? '<button type="button" onclick="setStudentHomeworkStatus(\'' + hw.id + '\', ' + s.id + ', \'submitted\')" title="移動至【準時已繳交】" class="w-5 h-5 rounded hover:bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">✅</button>' : '';
+                  var btnLate = col.id !== 'late' ? '<button type="button" onclick="setStudentHomeworkStatus(\'' + hw.id + '\', ' + s.id + ', \'late\')" title="移動至【遲交已補】" class="w-5 h-5 rounded hover:bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-bold">⏰</button>' : '';
+                  var btnRev = col.id !== 'revision' ? '<button type="button" onclick="setStudentHomeworkStatus(\'' + hw.id + '\', ' + s.id + ', \'revision\')" title="移動至【需訂正】" class="w-5 h-5 rounded hover:bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold">⚠️</button>' : '';
+                  var btnPen = col.id !== 'pending' ? '<button type="button" onclick="setStudentHomeworkStatus(\'' + hw.id + '\', ' + s.id + ', \'pending\')" title="移動至【未繳交】" class="w-5 h-5 rounded hover:bg-rose-100 text-rose-700 flex items-center justify-center text-[10px] font-bold">❌</button>' : '';
+                  return '<div class="hw-student-chip p-1.5 rounded-lg border ' + col.chipBorder + ' shadow-2xs flex items-center justify-between gap-1 cursor-grab active:cursor-grabbing hover:shadow-md transition-all select-none" draggable="true" ondragstart="handleHwStudentDragStart(event, \'' + hw.id + '\', \'' + s.id + '\')" ondragend="handleHwStudentDragEnd(event)" title="【拖曳移動】至其他欄位，或點擊右側按鈕快速變更">' +
+                    '<div class="flex items-center space-x-1 min-w-0"><span class="text-slate-400 text-[10px] font-bold">⋮⋮</span><span class="font-black truncate text-[11px]">' + seatStr + '</span></div>' +
+                    '<div class="flex items-center space-x-0.5 shrink-0">' + btnSub + btnLate + btnRev + btnPen + '</div>' +
+                    '</div>';
+                }).join('');
+
+            return '<div class="rounded-xl border-2 ' + col.bgClass + ' p-3 flex flex-col space-y-2">' +
+              '<div class="flex items-center justify-between pb-1 border-b border-amber-200/60 font-black">' +
+                '<span class="flex items-center space-x-1.5 ' + col.colorText + '"><span>' + col.icon + '</span><span>' + col.title + '</span></span>' +
+                '<span class="px-2 py-0.5 rounded-full text-xs font-black ' + col.badgeClass + ' shadow-2xs">' + col.list.length + ' 人</span>' +
+              '</div>' +
+              '<div class="hw-dropzone flex-1 min-h-[140px] max-h-72 overflow-y-auto space-y-1.5 p-1.5 rounded-lg border-2 border-dashed border-slate-300/80 transition-all" data-hw-id="' + hw.id + '" data-status="' + col.id + '" ondragover="handleHwDropZoneOver(event)" ondragleave="handleHwDropZoneLeave(event)" ondrop="handleHwDropZoneDrop(event, \'' + hw.id + '\', \'' + col.id + '\')">' +
+                chips +
+              '</div>' +
+            '</div>';
+          }).join('');
+
+          var drawerContent = isDrawerOpen ? (
+            '<div class="p-4 sm:p-5 pt-3 space-y-3">' +
+              (hw.desc ? ('<p class="text-xs text-slate-600">' + hw.desc + '</p>') : '') +
+              '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">' +
+                colsHtml +
+              '</div>' +
+            '</div>'
+          ) : '';
+
+          var statusBadge = pendingList.length > 0
+            ? '<span class="text-xs px-2 py-0.5 rounded-full font-black bg-rose-500 text-white shrink-0">未交 ' + pendingList.length + '人</span>'
+            : (revisionList.length > 0
+                ? '<span class="text-xs px-2 py-0.5 rounded-full font-black bg-purple-500 text-white shrink-0">需訂正 ' + revisionList.length + '人</span>'
+                : '<span class="text-xs px-2 py-0.5 rounded-full font-black bg-emerald-600 text-white shrink-0">全齊 ✅</span>');
+
+          return '<div class="bg-white rounded-2xl border-2 ' + (isDrawerOpen ? 'border-amber-400 shadow-sm' : 'border-amber-200 shadow-2xs hover:border-amber-300') + ' transition-all overflow-hidden" data-hw-card-id="' + hw.id + '">' +
+            '<div class="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 ' + (isDrawerOpen ? 'border-b border-amber-200 bg-amber-50/60' : 'cursor-pointer hover:bg-amber-50/70') + '" onclick="toggleHomeworkDrawer(\'' + hw.id + '\', event)">' +
+              '<div class="flex items-center space-x-2.5 min-w-0 flex-1">' +
+                '<button type="button" class="w-7 h-7 rounded-lg ' + (isDrawerOpen ? 'bg-amber-500 text-amber-950' : 'bg-slate-100 text-slate-500') + ' font-black text-xs flex items-center justify-center transition shrink-0">' + (isDrawerOpen ? '▲' : '▼') + '</button>' +
+                '<span class="bg-amber-200 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-md shrink-0">' + (hw.subject || '作業') + '</span>' +
+                '<h3 class="text-base sm:text-lg font-black text-amber-950 truncate">' + hw.title + '</h3>' +
+                statusBadge +
+                '<span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold shrink-0">📅 ' + (hw.date || '今日') + '</span>' +
+              '</div>' +
+              '<div class="flex flex-wrap items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">' +
+                '<button onclick="openSetRevisionModal(\'' + hw.id + '\', \'pending\')" class="px-2.5 py-1 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 font-black text-xs shadow-2xs flex items-center space-x-1" title="鍵盤打座號或點選登記未繳交名冊"><span>❌</span><span>批次未交</span></button>' +
+                '<button onclick="openSetRevisionModal(\'' + hw.id + '\', \'revision\')" class="px-2.5 py-1 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-xs shadow-2xs flex items-center space-x-1" title="鍵盤打座號或點選登記需訂正名冊"><span>⚠️</span><span>批次需訂正</span></button>' +
+                '<button onclick="batchMarkAllHwSubmitted(\'' + hw.id + '\')" class="px-2.5 py-1 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 font-black text-xs shadow-2xs flex items-center space-x-1"><span>✅</span><span>全齊</span></button>' +
+                '<button onclick="openEditHomeworkModal(\'' + hw.id + '\')" class="px-2 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs shadow-2xs" title="修改此作業">✏️</button>' +
+                '<button onclick="deleteHomework(\'' + hw.id + '\')" class="px-2 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold text-xs" title="刪除作業">🗑️</button>' +
+              '</div>' +
+            '</div>' +
+            drawerContent +
+          '</div>';
+        }).join('');
+
+        container.innerHTML = tabsBarHtml + cardsHtml;
+
+        if (typeof renderHomeworkSettlementTable === 'function') renderHomeworkSettlementTable();
+        if (typeof renderContactBookHistoryList === 'function') renderContactBookHistoryList();
+      };
+
+      // 4.2 大臣名冊渲染函數 (自包含覆寫：移除投餵按鈕，單排 4 按鈕結束，不占用兩排)
+      window.renderRosterView = function() {
+        var tbody = document.getElementById("studentRosterTableBody");
+        if (!tbody) return;
+
+        if (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.syncAllStudentsPets === 'function') {
+          window.KingdomApp.store.syncAllStudentsPets();
+        }
+
+        var students = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.students) || [];
+
+        tbody.innerHTML = students.map(function(st) {
+          var seatPad = String(st.seatNo).padStart(2, '0');
+          var bdayPad = (st.birthday || '0101').replace(/[^0-9]/g, '').padStart(4, '0');
+          var passCode = seatPad + bdayPad;
+          var defaultPet = (st.animalType || st.petType || 'lion').toLowerCase();
+          if (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.syncStudentPets === 'function') {
+            window.KingdomApp.store.syncStudentPets(st);
+          }
+          var currentPts = Math.max(0, parseInt(st.points, 10) || 0);
+          var lifetime = parseInt(st.lifetimePoints, 10);
+          if (isNaN(lifetime) || lifetime < 0 || (lifetime <= 0 && currentPts > 0)) {
+            lifetime = currentPts;
+            st.lifetimePoints = currentPts;
+          }
+          var effectivePts = lifetime;
+          var maxAllowed = 1 + Math.floor(lifetime / 500);
+          var validPets = (st.pets || [{ type: defaultPet }]).slice(0, maxAllowed);
+          st.pets = validPets;
+
+          var activeIdx = validPets.length - 1;
+          if (window.rosterActivePetIndex && window.rosterActivePetIndex[st.id] !== undefined) {
+            var savedIdx = window.rosterActivePetIndex[st.id];
+            if (savedIdx >= 0 && savedIdx < validPets.length) {
+              activeIdx = savedIdx;
+            }
+          }
+
+          var curPet = validPets[activeIdx] || validPets[0];
+          var curType = curPet.type.toLowerCase();
+          var curExp = activeIdx === 0 ? effectivePts : Math.max(0, effectivePts - activeIdx * 500);
+          var curStatus = (window.KingdomApp && window.KingdomApp.getAnimalStatus) ? window.KingdomApp.getAnimalStatus(curType, curExp) : { animalName: '獅子', stageTitle: '幼年', progressPct: 50 };
+          var curSvg = (window.KingdomApp && window.KingdomApp.renderAnimalSVG) ? window.KingdomApp.renderAnimalSVG(curType, curStatus.stageIndex) : '🦁';
+
+          var isDrawerOpen = window.rosterOpenPetDrawers && window.rosterOpenPetDrawers.has(st.id);
+          var reqPtsForNext = validPets.length * 500;
+
+          var petSectionHtml = 
+            '<div class="inline-flex flex-col items-center justify-center w-full min-w-[250px] max-w-[320px]">' +
+              '<div class="flex items-center justify-center space-x-2">' +
+                '<div class="w-10 h-10 flex-shrink-0 bg-white rounded-xl p-0.5 border-2 border-amber-300 shadow-xs cursor-pointer hover:border-amber-500 hover:scale-105 transition" onclick="openChangeAnimalModal(' + st.id + ', ' + activeIdx + ')" title="點擊更換此萌寵種類">' +
+                  curSvg +
+                '</div>' +
+                '<div class="text-left">' +
+                  '<div class="flex items-center space-x-1">' +
+                    '<span class="font-black text-amber-950 text-xs sm:text-sm">' + curStatus.animalName + '</span>' +
+                    '<span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ' + (curStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black border border-amber-400' : 'bg-amber-100 text-amber-900') + '">' + curStatus.stageTitle + '</span>' +
+                    '<button type="button" onclick="openChangeAnimalModal(' + st.id + ', ' + activeIdx + ')" class="text-[11px] text-amber-700 hover:text-amber-950 font-bold ml-0.5" title="更換此萌寵">[換]</button>' +
+                  '</div>' +
+                  '<div class="w-20 bg-slate-200 h-1.5 rounded-full overflow-hidden mt-1">' +
+                    '<div class="h-full bg-gradient-to-r from-emerald-400 to-amber-500 rounded-full" style="width: ' + curStatus.progressPct + '%"></div>' +
+                  '</div>' +
+                '</div>' +
+              '</div>';
+
+          if (validPets.length > 1) {
+            var optionsPets = validPets.map(function(p, pIdx) {
+              var sType = p.type.toLowerCase();
+              var sExp = pIdx === 0 ? effectivePts : Math.max(0, effectivePts - pIdx * 500);
+              var sStatus = (window.KingdomApp && window.KingdomApp.getAnimalStatus) ? window.KingdomApp.getAnimalStatus(sType, sExp) : { animalName: '萌寵', stageTitle: '' };
+              var isLatest = pIdx === validPets.length - 1;
+              return '<option value="' + pIdx + '" ' + (pIdx === activeIdx ? 'selected' : '') + '>' + (isLatest ? '🌟 ' : '🐾 ') + '第' + (pIdx + 1) + '隻: ' + sStatus.animalName + ' (' + sStatus.stageTitle + ')</option>';
+            }).join('');
+
+            petSectionHtml += 
+              '<div class="mt-2 flex flex-col items-center space-y-1.5 w-full">' +
+                '<div class="flex items-center justify-center space-x-1.5 w-full">' +
+                  '<span class="text-xs text-purple-950 font-black shrink-0">顯示：</span>' +
+                  '<select onchange="changeRosterActivePet(' + st.id + ', this.value)" class="text-xs font-black bg-purple-50 text-purple-950 border-2 border-purple-300 rounded-xl px-2.5 py-1 shadow-2xs cursor-pointer w-auto max-w-[210px] truncate" title="切換當前想在大臣名冊顯示的寵物">' +
+                    optionsPets +
+                  '</select>' +
+                '</div>' +
+                '<button type="button" onclick="toggleRosterPetDrawer(' + st.id + ')" class="text-xs font-black text-purple-950 bg-gradient-to-r from-purple-100 via-indigo-50 to-purple-100 hover:from-purple-200 hover:to-indigo-100 px-3.5 py-1.5 rounded-xl border-2 border-purple-400 transition shadow-2xs cursor-pointer whitespace-nowrap flex items-center justify-center space-x-1.5 w-auto min-w-[200px] active:scale-95">' +
+                  '<span class="text-sm">📂</span>' +
+                  '<span class="tracking-wide">' + (isDrawerOpen ? '收合其餘萌寵 ▲' : ('收藏抽屜 (' + validPets.length + '隻萌寵) ▼')) + '</span>' +
+                '</button>' +
+              '</div>';
+
+            if (isDrawerOpen) {
+              var drawerItems = validPets.map(function(p, pIdx) {
+                var sType = p.type.toLowerCase();
+                var sExp = pIdx === 0 ? effectivePts : Math.max(0, effectivePts - pIdx * 500);
+                var sStatus = (window.KingdomApp && window.KingdomApp.getAnimalStatus) ? window.KingdomApp.getAnimalStatus(sType, sExp) : { animalName: '萌寵', stageTitle: '' };
+                var sSvg = (window.KingdomApp && window.KingdomApp.renderAnimalSVG) ? window.KingdomApp.renderAnimalSVG(sType, sStatus.stageIndex) : '🐾';
+                var isLatest = pIdx === validPets.length - 1;
+                var isCurrent = pIdx === activeIdx;
+                return '<div class="flex items-center justify-between p-2 bg-white rounded-xl border-2 ' + (isCurrent ? 'border-purple-500 ring-2 ring-purple-300 bg-purple-50/70 shadow-2xs' : 'border-purple-200 hover:border-purple-300') + ' transition gap-2">' +
+                  '<div class="flex items-center space-x-2 min-w-0">' +
+                    '<div class="w-8 h-8 flex-shrink-0 bg-purple-50 rounded-lg p-0.5 border border-purple-300 shadow-2xs">' + sSvg + '</div>' +
+                    '<div class="min-w-0">' +
+                      '<div class="flex items-center space-x-1 flex-wrap">' +
+                        '<span class="text-xs font-black text-purple-950 whitespace-nowrap">' + (isLatest ? '🌟 ' : '') + sStatus.animalName + '</span>' +
+                        '<span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full ' + (sStatus.isGolden ? 'bg-amber-300 text-amber-950 font-black' : 'bg-purple-100 text-purple-900') + ' whitespace-nowrap">' + sStatus.stageTitle + '</span>' +
+                      '</div>' +
+                      '<div class="text-[10px] text-slate-500 font-mono mt-0.5">成長經驗: ' + sExp + ' 🍎</div>' +
+                    '</div>' +
+                  '</div>' +
+                  '<div class="flex items-center space-x-1 shrink-0">' +
+                    '<button type="button" onclick="changeRosterActivePet(' + st.id + ', ' + pIdx + ')" class="text-xs px-2.5 py-1 rounded-lg ' + (isCurrent ? 'bg-purple-700 text-white font-black shadow-2xs' : 'bg-purple-100 hover:bg-purple-200 text-purple-950 font-bold border border-purple-300') + ' transition cursor-pointer">' + (isCurrent ? '✓ 顯示中' : '切換') + '</button>' +
+                    '<button type="button" onclick="openChangeAnimalModal(' + st.id + ', ' + pIdx + ')" class="text-xs text-purple-700 hover:text-purple-950 hover:bg-purple-100 px-2 py-1 rounded-lg border border-purple-200 font-bold transition cursor-pointer" title="更換此隻萌寵品種">換</button>' +
+                  '</div>' +
+                '</div>';
+              }).join('');
+
+              petSectionHtml += 
+                '<div class="mt-2.5 p-3 bg-gradient-to-br from-purple-50 via-white to-purple-50 rounded-2xl border-2 border-purple-400 w-full min-w-[250px] max-w-[300px] space-y-2 text-left shadow-md animate-fadeIn">' +
+                  '<div class="flex items-center justify-between border-b border-purple-200 pb-1.5">' +
+                    '<span class="text-xs font-black text-purple-950 flex items-center space-x-1"><span>🐾</span><span>已認養寵物收藏庫 (' + validPets.length + '隻)</span></span>' +
+                    '<span class="text-[10px] text-purple-700 font-bold bg-purple-100 px-1.5 py-0.5 rounded">先認養後隨選</span>' +
+                  '</div>' +
+                  '<div class="space-y-2">' + drawerItems + '</div>' +
+                '</div>';
+            }
+          }
+
+          if (validPets.length < maxAllowed && effectivePts >= reqPtsForNext) {
+            petSectionHtml += 
+              '<div class="mt-1.5">' +
+                '<button type="button" onclick="openChangeAnimalModal(' + st.id + ', ' + validPets.length + ')" class="text-xs font-black text-amber-950 bg-gradient-to-r from-amber-300 to-yellow-300 hover:from-amber-400 hover:to-yellow-400 px-3 py-1.5 rounded-xl border-2 border-amber-500 shadow-2xs transition active:scale-95 whitespace-nowrap">' +
+                  '🐣 認養第' + (validPets.length + 1) + '隻萌寵！' +
+                '</button>' +
+              '</div>';
+          }
+
+          petSectionHtml += '</div>';
+
+          return '<tr class="hover:bg-amber-100/60 transition text-center">' +
+            '<td class="py-3 px-3 text-center whitespace-nowrap"><span class="font-mono font-black text-amber-950 text-base sm:text-lg bg-amber-200/90 border border-amber-300 px-2.5 py-1 rounded-xl shadow-2xs inline-block">' + seatPad + '</span></td>' +
+            '<td class="py-3 px-3 text-center whitespace-nowrap font-cute font-black text-slate-900 text-base sm:text-lg tracking-wide">' + st.name + '</td>' +
+            '<td class="py-3 px-3 text-center whitespace-nowrap"><span class="bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1 rounded-xl font-bold text-xs sm:text-sm inline-block shadow-2xs">' + st.title + '</span></td>' +
+            '<td class="py-3 px-3 text-center whitespace-nowrap text-xs sm:text-sm bg-amber-50/70 rounded-xl"><span class="font-mono font-bold text-slate-800">' + st.birthday + '</span><span class="block text-[11px] text-amber-900 font-mono font-black mt-0.5">密碼: ' + passCode + '</span></td>' +
+            '<td class="py-3 px-3 text-center whitespace-nowrap"><span class="font-mono font-black text-amber-900 text-base sm:text-lg bg-amber-100/90 border border-amber-300 px-3 py-1 rounded-xl shadow-2xs inline-block">' + effectivePts + ' 🍎</span><span class="block text-[10px] text-amber-800 font-bold mt-0.5">總累計獲得</span></td>' +
+            '<td class="py-3 px-3 text-center whitespace-nowrap"><span class="font-mono font-black text-rose-600 text-base sm:text-lg bg-rose-50 border border-rose-200 px-3 py-1 rounded-xl shadow-2xs inline-block">' + currentPts + ' 🍎</span><span class="block text-[10px] text-rose-700 font-bold mt-0.5">可用存量</span></td>' +
+            '<td class="py-3 px-3 text-center whitespace-nowrap">' + petSectionHtml + '</td>' +
+            '<!-- 8. ⚙️ 大臣操作區 (居中對齊，單排結束不占用兩排版面) -->' +
+            '<td class="py-2.5 px-3 text-center whitespace-nowrap">' +
+              '<div class="inline-flex items-center justify-center space-x-1.5 whitespace-nowrap">' +
+                '<button type="button" onclick="openEditStudentPointsModal(' + st.id + ')" class="px-2.5 py-1 bg-gradient-to-r from-rose-100 to-amber-100 hover:from-rose-200 hover:to-amber-200 text-rose-950 rounded-lg text-xs font-black border border-rose-300 shadow-2xs transition" title="更改此大臣紅蘋果數量">✏️ 改蘋果</button>' +
+                '<button type="button" onclick="copyParentLink(' + st.seatNo + ')" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg text-xs font-black border border-amber-300 shadow-2xs transition" title="複製家長查閱專用訊息">📋 家長連結</button>' +
+                '<button type="button" onclick="openEditStudentModal(' + st.id + ')" class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition">修改</button>' +
+                '<button type="button" onclick="deleteStudent(' + st.id + ')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold shadow-2xs transition">除名</button>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+
+        if (typeof initLucideIcons === 'function') initLucideIcons();
+      };
+      
+      
+
+      // 5. 集點獎勵鍵盤手動輸入號碼快速加扣點
+      function parseSeatTokensInternal(text) {
+        if (!text) return [];
+        var tokens = String(text).split(/[\s,，;；、]+/);
+        var seatNumbers = [];
+        var seen = {};
+        tokens.forEach(function(token) {
+          token = token.trim();
+          if (!token) return;
+          var rangeMatch = token.match(/^(\d+)[\-~至](\d+)$/);
+          if (rangeMatch) {
+            var start = parseInt(rangeMatch[1], 10);
+            var end = parseInt(rangeMatch[2], 10);
+            if (!isNaN(start) && !isNaN(end)) {
+              var min = Math.min(start, end);
+              var max = Math.max(start, end);
+              for (var s = min; s <= max; s++) {
+                if (s >= 1 && s <= 35 && !seen[s]) {
+                  seen[s] = true;
+                  seatNumbers.push(s);
+                }
+              }
+            }
+            return;
+          }
+          var num = parseInt(token, 10);
+          if (!isNaN(num) && num >= 1 && num <= 35 && !seen[num]) {
+            seen[num] = true;
+            seatNumbers.push(num);
+          }
+        });
+        return seatNumbers.sort(function(a, b) { return a - b; });
+      }
+
+      window.handleQuickPointSeatInput = function(text) {
+        var seatNumbers = parseSeatTokensInternal(text);
+        var students = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.students) || [];
+        if (typeof selectedStudentIdsForPoints !== 'undefined') {
+          selectedStudentIdsForPoints.clear();
+          seatNumbers.forEach(function(num) {
+            var st = students.find(function(s) { return Number(s.seatNo) === num || Number(s.id) === num; });
+            if (st) selectedStudentIdsForPoints.add(st.id);
+          });
+        }
+        if (typeof updatePointsMultiSelectUI === 'function') {
+          updatePointsMultiSelectUI(false);
+        }
+        var badge = document.getElementById("quickPointTargetSummaryBadge");
+        if (badge) {
+          if (seatNumbers.length === 0) {
+            badge.textContent = "目前選取：0 位大臣";
+          } else {
+            badge.textContent = "目前選取：" + seatNumbers.length + " 位大臣 (" + seatNumbers.join(', ') + "號)";
+          }
+        }
+      };
+
+      window.clearQuickPointSeats = function() {
+        if (typeof selectedStudentIdsForPoints !== 'undefined') {
+          selectedStudentIdsForPoints.clear();
+        }
+        var input = document.getElementById("quickPointSeatInput");
+        if (input) input.value = "";
+        if (typeof updatePointsMultiSelectUI === 'function') {
+          updatePointsMultiSelectUI(false);
+        }
+        var badge = document.getElementById("quickPointTargetSummaryBadge");
+        if (badge) badge.textContent = "目前選取：0 位大臣";
+      };
+
+      window.applyQuickPoints = function(points, customReason) {
+        var count = (typeof selectedStudentIdsForPoints !== 'undefined') ? selectedStudentIdsForPoints.size : 0;
+        if (count === 0) {
+          if (typeof showToast === 'function') {
+            showToast("⚠️ 請先在輸入框打座號（如: 1 3 5 或 1-5）或勾選大臣！", "⚠️");
+          } else {
+            alert("請先輸入座號或勾選大臣！");
+          }
+          var input = document.getElementById("quickPointSeatInput");
+          if (input) input.focus();
+          return;
+        }
+
+        var ids = Array.from(selectedStudentIdsForPoints);
+        var defaultReason = points > 0 ? "課堂表現優異 (+" + points + " 🍎)" : "課堂常規提醒 (" + points + " 🍎)";
+        var finalReason = customReason || defaultReason;
+
+        if (window.KingdomApp && window.KingdomApp.store) {
+          window.KingdomApp.store.batchAwardMultipleStudents(ids, points, finalReason);
+        }
+
+        if (points > 0) {
+          if (window.KingdomApp && window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+            try { window.KingdomApp.sound.playFanfare(); } catch (_) {}
+          }
+          if (window.KingdomApp && window.KingdomApp.triggerConfetti) {
+            try { window.KingdomApp.triggerConfetti(); } catch (_) {}
+          }
+          if (typeof showToast === 'function') {
+            showToast("🎉 成功為 " + ids.length + " 位大臣各賞賜 " + (points > 0 ? ("+" + points) : points) + " 顆紅蘋果！", "🍎");
+          }
+        } else {
+          if (window.KingdomApp && window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+            try { window.KingdomApp.sound.playCoin(); } catch (_) {}
+          }
+          if (typeof showToast === 'function') {
+            showToast("⚠️ 已對 " + ids.length + " 位大臣扣除 " + Math.abs(points) + " 顆紅蘋果。", "⚠️");
+          }
+        }
+
+        if (typeof showUndoNotificationBanner === 'function') showUndoNotificationBanner();
+        if (typeof renderPointsView === 'function') renderPointsView();
+
+        var inputEl = document.getElementById("quickPointSeatInput");
+        if (inputEl && inputEl.value) {
+          var seats = parseSeatTokensInternal(inputEl.value);
+          var badgeEl = document.getElementById("quickPointTargetSummaryBadge");
+          if (badgeEl && seats.length > 0) {
+            badgeEl.textContent = "目前選取：" + seats.length + " 位大臣 (" + seats.join(', ') + "號)";
+          }
+        }
+      };
+
+      window.handleBatchPointSeatInput = function(text) {
+        var seatNumbers = parseSeatTokensInternal(text);
+        var students = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.students) || [];
+        var checkboxes = document.querySelectorAll('input[name="targetStudentCheck"]');
+        checkboxes.forEach(function(cb) {
+          var sId = parseInt(cb.value, 10);
+          var st = students.find(function(s) { return s.id === sId; });
+          if (st && seatNumbers.includes(Number(st.seatNo))) {
+            cb.checked = true;
+          } else {
+            cb.checked = false;
+          }
+        });
+      };
+
+      window.syncBatchPointSeatInputFromCheckboxes = function() {
+        var input = document.getElementById("batchPointSeatInput");
+        if (!input) return;
+        var students = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.students) || [];
+        var checkedIds = Array.from(document.querySelectorAll('input[name="targetStudentCheck"]:checked')).map(function(cb) { return parseInt(cb.value, 10); });
+        var checkedSeats = students
+          .filter(function(s) { return checkedIds.includes(s.id); })
+          .map(function(s) { return s.seatNo; })
+          .sort(function(a, b) { return a - b; });
+        input.value = checkedSeats.join(' ');
+      };
+
+      // 6. 當 DOM 與依賴腳本就緒後，若當前處於晨間朝會，主動觸發一次重新繪製
+      document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+          if (typeof renderMorningBoard === 'function') {
+            renderMorningBoard();
+          }
+        }, 100);
+      });
+    })();
+  </script></head><body></body></html>

@@ -1,6 +1,14 @@
 ﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+  <script>
+    window.__PAGE_ERRORS__ = [];
+    window.onerror = function(msg, url, line, col, err) {
+      var errInfo = 'ERROR: ' + msg + ' (line ' + line + ' in ' + url + ')';
+      window.__PAGE_ERRORS__.push(errInfo);
+      console.error('FATAL_JS_ERROR:', errInfo);
+    };
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -10,22 +18,24 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            royal: {
-              yellow: '#facc15',
-              gold: '#f59e0b',
-              goldLight: '#fef08a',
-              goldDark: '#b45309',
-              amber: '#d97706',
-              cream: '#fffbeb',
-              parchment: '#fffdf2'
+    if (typeof tailwind !== 'undefined') {
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              royal: {
+                yellow: '#facc15',
+                gold: '#f59e0b',
+                goldLight: '#fef08a',
+                goldDark: '#b45309',
+                amber: '#d97706',
+                cream: '#fffbeb',
+                parchment: '#fffdf2'
+              }
             }
           }
         }
-      }
+      };
     }
   </script>
   <!-- Canvas Confetti -->
@@ -5906,6 +5916,35 @@
             renderMorningBoard();
           }
         }, 100);
+      });
+
+      // 7. 守護監聽：若 ui.js 載入失敗或未及時響應，啟動備援時鐘並提示
+      window.addEventListener("load", function() {
+        setTimeout(function() {
+          var clockEl = document.getElementById("morningClockDisplay");
+          if (clockEl && (clockEl.textContent.trim() === "--:--:--" || clockEl.textContent.trim() === "")) {
+            function tickEmergencyClock() {
+              var d = new Date();
+              var h = String(d.getHours()).padStart(2, '0');
+              var m = String(d.getMinutes()).padStart(2, '0');
+              var s = String(d.getSeconds()).padStart(2, '0');
+              var tStr = h + ':' + m + ':' + s;
+              if (clockEl) clockEl.textContent = tStr;
+              var c3 = document.getElementById("morningClockDisplay3Days");
+              if (c3) c3.textContent = tStr;
+            }
+            tickEmergencyClock();
+            setInterval(tickEmergencyClock, 1000);
+          }
+
+          if (typeof window.switchMainView !== 'function') {
+            var banner = document.createElement("div");
+            banner.id = "uiLoadFailBanner";
+            banner.className = "fixed top-0 left-0 w-full z-[999999] bg-rose-600 text-white font-black text-center p-3 text-sm sm:text-base shadow-2xl flex items-center justify-center space-x-2";
+            banner.innerHTML = "<span>⚠️ 系統核心腳本 ui.js 尚未同步更新！請至 GitHub 將本機的 ui.js 檔案同步複製更新貼上，即可完全恢復！</span><button onclick='this.parentElement.remove()' class='ml-3 bg-white text-rose-900 px-2 py-0.5 rounded text-xs'>我知道了 ✕</button>";
+            document.body.prepend(banner);
+          }
+        }, 300);
       });
     })();
   </script>
