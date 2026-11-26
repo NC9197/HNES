@@ -33,7 +33,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261126_v38">
+  <link rel="stylesheet" href="styles.css?v=20261126_v39">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
   <!-- 頂部明亮黃金導航列 (Bright Royal Golden Navbar) -->
@@ -238,7 +238,7 @@
           </span>
           <!-- 雙天並排 vs 三天並排 vs 單天六行模式切換 -->
           <div class="flex items-center space-x-1 bg-amber-300/80 p-0.5 sm:p-1 rounded-xl border border-amber-400 shadow-2xs">
-            <button type="button" id="btnMorningMode2Days" onclick="setMorningContactDaysMode('2days')" class="btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition" title="一次顯示兩天（第一欄今天、第二欄明天各完整六行）">
+            <button type="button" id="btnMorningMode2Days" onclick="setMorningContactDaysMode('2days')" class="btn-royal-gold px-2.5 py-1 rounded-lg text-xs font-black shadow-2xs transition" title="一次顯示兩天（各完整六行對照）">
               📅 雙天並排
             </button>
             <button type="button" id="btnMorningMode3Days" onclick="setMorningContactDaysMode('3days')" class="bg-white/80 hover:bg-white text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition" title="三天並排模式（分成上下兩欄，上欄三天作業全寬，下欄打卡時鐘與提醒，一眼全覽免滾輪）">
@@ -279,10 +279,10 @@
             <button type="button" onclick="changeContactDateToToday()" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="回到今日">今日</button>
             <button type="button" onclick="changeContactDateDelta(1)" class="px-2 py-1 hover:bg-amber-100 rounded-lg text-amber-900 transition" title="後一天">後一天 ➡</button>
           </div>
-          <!-- 📅 顯示日期標籤 -->
-          <span class="text-xs font-black bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-300 shadow-xs flex items-center space-x-1 shrink-0">
+          <!-- 📅 顯示日期標籤 (字體放大加粗) -->
+          <span class="text-sm sm:text-base font-black bg-amber-200 text-amber-950 px-3 py-1 rounded-xl border border-amber-300 shadow-xs flex items-center space-x-1.5 shrink-0">
             <span>📅 顯示日期：</span>
-            <span id="contactBookDateDisplay"></span>
+            <span id="contactBookDateDisplay" class="font-mono tracking-wide"></span>
           </span>
         </div>
         <!-- 右側操作按鈕：獨立編輯早自修提醒、編輯聯絡簿作業 與 大屏投影 -->
@@ -2699,8 +2699,8 @@
         <span class="text-xs font-black text-amber-300 flex items-center space-x-1">
           <span>🖥️ 顯示模式：</span>
         </span>
-        <button type="button" id="btnProjMode2Days" onclick="setContactProjDaysMode('2days')" class="px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-amber-500 text-amber-950 border-2 border-amber-600" title="第一欄與第二欄對照兩天份聯絡簿（例如今日＋明日）">
-          👥 雙天對照 (第一欄/第二欄)
+        <button type="button" id="btnProjMode2Days" onclick="setContactProjDaysMode('2days')" class="px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-amber-500 text-amber-950 border-2 border-amber-600" title="對照兩天份聯絡簿（各完整六行大字）">
+          👥 雙天對照
         </button>
         <button type="button" id="btnProjMode3Days" onclick="setContactProjDaysMode('3days')" class="px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm shadow-xs transition bg-white/95 text-amber-950 hover:bg-amber-100 border border-amber-300" title="三欄並排顯示三天聯絡簿（例如昨日＋今日＋明日）">
           📅 三天並排
@@ -4792,8 +4792,8 @@
     </div>
   </div>
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261126_v38"></script>
-  <script src="ui.js?v=20261126_v38"></script>
+  <script src="app.js?v=20261126_v39"></script>
+  <script src="ui.js?v=20261126_v39"></script>
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>
     (function() {

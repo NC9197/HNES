@@ -8495,39 +8495,26 @@ function renderDayColumn(colIndex, dateStr, totalCols) {
   return `
     <div class="space-y-3 bg-gradient-to-b from-amber-100/50 via-white/80 to-amber-50/50 p-3 sm:p-4 rounded-3xl border-2 border-amber-400 shadow-md flex flex-col justify-between">
       <div>
-        <!-- 欄位控制與相對日徽章 -->
-        <div class="flex items-center justify-between pb-1.5 px-0.5 border-b border-amber-300/70 text-xs font-black text-amber-950 gap-1.5 flex-wrap">
-          <div class="flex items-center space-x-1.5 shrink-0">
-            <span class="text-xs sm:text-sm font-black text-amber-950 bg-amber-300/80 px-2.5 py-0.5 rounded-lg border border-amber-400/80 shadow-2xs">
-              📌 ${colName}
+        <!-- 頂部日期與導師控制橫列 (已刪除第幾欄與今天明天，日期字體超大加粗) -->
+        <div class="flex items-center justify-between pb-2 border-b-2 border-amber-400/80 gap-2 flex-wrap">
+          <div class="flex items-center space-x-2.5 flex-wrap">
+            <span class="${dateTextSize}">
+              📅 ${dateStr}
             </span>
-            ${relBadge}
+            <span class="text-base sm:text-lg lg:text-xl font-black px-3 py-1 rounded-xl bg-amber-300 text-amber-950 border border-amber-500/60 shadow-2xs">
+              ${weekday}
+            </span>
           </div>
           <!-- 導師手動挑選日期與前後天微調 + 快速編輯 -->
-          <div class="flex items-center space-x-1 shrink-0">
-            <button type="button" onclick="adjustContactProjColDate(${colIndex}, -1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="前一天">◀</button>
-            <input type="date" value="${dateStr}" onchange="changeContactProjColDate(${colIndex}, this.value)" class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs sm:text-sm bg-white border-2 border-amber-400 rounded-xl text-amber-950 font-black cursor-pointer shadow-2xs max-w-[125px] sm:max-w-[145px]" title="手動指定此欄日期">
-            <button type="button" onclick="adjustContactProjColDate(${colIndex}, 1)" class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="後一天">▶</button>
-            <button type="button" onclick="openEditContactModalForDate('${dateStr}')" class="px-2 sm:px-2.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-0.5 transition hover:scale-105 active:scale-95" title="編輯【${dateStr}】聯絡簿">
+          <div class="flex items-center space-x-1.5 shrink-0">
+            <button type="button" onclick="adjustContactProjColDate(${colIndex}, -1)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="前一天">◀</button>
+            <input type="date" value="${dateStr}" onchange="changeContactProjColDate(${colIndex}, this.value)" class="px-2 py-1 text-xs sm:text-sm bg-white border-2 border-amber-400 rounded-xl text-amber-950 font-black cursor-pointer shadow-2xs max-w-[130px] sm:max-w-[150px]" title="手動指定此欄日期">
+            <button type="button" onclick="adjustContactProjColDate(${colIndex}, 1)" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/95 hover:bg-amber-100 text-amber-950 font-black border border-amber-300 shadow-2xs flex items-center justify-center transition active:scale-95" title="後一天">▶</button>
+            <button type="button" onclick="openEditContactModalForDate('${dateStr}')" class="px-2.5 sm:px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs sm:text-sm font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition hover:scale-105 active:scale-95" title="編輯【${dateStr}】聯絡簿">
               <span>✏️</span>
               <span class="hidden sm:inline">編輯</span>
             </button>
           </div>
-        </div>
-
-        <!-- ★ 聯絡簿日期顯示在上方第一欄、第二欄位置，字體加粗放大 ★ -->
-        <div class="pt-2 pb-2 border-b-2 border-amber-400/80 flex items-center justify-between gap-2">
-          <div class="flex items-center space-x-2 flex-wrap">
-            <span class="${dateTextSize}">
-              📅 ${dateStr}
-            </span>
-            <span class="text-sm sm:text-base font-black px-2.5 py-0.5 rounded-xl bg-amber-300 text-amber-950 border border-amber-500/60 shadow-2xs">
-              ${weekday}
-            </span>
-          </div>
-          <span class="text-[11px] sm:text-xs font-black text-amber-900 bg-amber-200/90 px-2 py-0.5 rounded-lg border border-amber-300/80 shrink-0">
-            作業固定 6 行
-          </span>
         </div>
 
         <!-- 6 行標準大字作業抄寫項目 (支援直式 1~6 行直書與橫式卡片切換) -->
