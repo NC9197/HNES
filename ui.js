@@ -2866,11 +2866,6 @@ function renderHomeworkSummaryBoard() {
       </div>
     `;
   }).join('');
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }).join('');
 
   container.innerHTML = tabsBarHtml + cardsHtml;
 
