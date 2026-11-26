@@ -2636,63 +2636,97 @@ function renderHomeworkSummaryBoard() {
     return;
   }
 
-  // 預設選中第一項作業抽屜（避免當日多項作業時一次全部展開撐過長）
-  if (dayHomeworkList.length > 0) {
-    if (!currentHwFilterId || (currentHwFilterId !== 'ALL' && !dayHomeworkList.some(h => String(h.id) === String(currentHwFilterId)))) {
-      currentHwFilterId = String(dayHomeworkList[0].id);
+  // 抽屜展開/上收狀態管理：切換日期時做一次預設初始化
+  if (!window.openHomeworkDrawerIds) {
+    window.openHomeworkDrawerIds = new Set();
+    if (dayHomeworkList.length > 0) {
+      window.openHomeworkDrawerIds.add(String(dayHomeworkList[0].id));
+    }
+  }
+  if (window._lastHwFilterDateTracked !== currentHwFilterDate) {
+    window._lastHwFilterDateTracked = currentHwFilterDate;
+    window.openHomeworkDrawerIds.clear();
+    if (dayHomeworkList.length > 0) {
+      window.openHomeworkDrawerIds.add(String(dayHomeworkList[0].id));
     }
   }
 
-  if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
-  if (currentHwFilterId === 'ALL') {
-    dayHomeworkList.forEach(h => window.openHomeworkDrawerIds.add(String(h.id)));
-  } else if (currentHwFilterId) {
-    if (window.openHomeworkDrawerIds.size === 0) {
-      window.openHomeworkDrawerIds.add(String(currentHwFilterId));
-    }
-  }
+  const isAnyDrawerOpen = window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.size > 0;
 
-  // 產生「當日作業下拉抽屜選單與快速導航列」 (下拉選單 + 折疊抽屜，免滾動滑鼠！)
+  // 產生「當日作業概況與抽屜導航列」 (保留並排顯示各項作業未交人數 + 支援四欄看板上收/下拉顯示)
   let tabsBarHtml = '';
   if (dayHomeworkList.length > 0) {
     tabsBarHtml = `
-      <div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-300 flex items-center justify-between gap-3 flex-wrap shadow-xs">
-        <div class="flex items-center space-x-2 flex-1 min-w-[240px]">
-          <label for="homeworkDrawerSelect" class="text-xs sm:text-sm font-black text-amber-950 whitespace-nowrap flex items-center space-x-1">
-            <span>📋</span>
-            <span>檢視作業抽屜：</span>
-          </label>
-          <select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="flex-1 max-w-md px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs sm:text-sm border-2 border-amber-600 shadow-sm cursor-pointer transition truncate">
-            ${dayHomeworkList.map(h => {
-              let pendingCount = 0;
-              let revisionCount = 0;
-              students.forEach(st => {
-                const status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
-                if (status === 'pending') pendingCount++;
-                else if (status === 'revision') revisionCount++;
-              });
-              const statusText = pendingCount > 0 ? `未交 ${pendingCount}人` : (revisionCount > 0 ? `訂正 ${revisionCount}人` : '已全齊 ✅');
-              const isSel = String(currentHwFilterId) === String(h.id);
-              return `<option value="${h.id}" ${isSel ? 'selected' : ''}>[${h.subject || '作業'}] ${h.title}（${statusText}）</option>`;
-            }).join('')}
-            <option value="ALL" ${currentHwFilterId === 'ALL' ? 'selected' : ''}>📑 展開全部作業抽屜 (${dayHomeworkList.length}項)</option>
-          </select>
+      <div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-3 rounded-2xl border-2 border-amber-300 space-y-2.5 shadow-xs">
+        <div class="flex items-center justify-between gap-2.5 flex-wrap">
+          <div class="flex items-center space-x-2 flex-wrap">
+            <span class="text-xs sm:text-sm font-black text-amber-950 flex items-center space-x-1">
+              <span>📋</span>
+              <span>當日各項作業抽屜：</span>
+            </span>
+            <button type="button" onclick="toggleAllHomeworkDrawers()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95 flex items-center space-x-1" title="一鍵切換下方所有作業的四欄名牌看板">
+              <span>${isAnyDrawerOpen ? '📁 一鍵全部上收' : '📑 一鍵全部下拉'}</span>
+            </button>
+          </div>
+          <div class="flex items-center space-x-2">
+            <label for="homeworkDrawerSelect" class="sr-only">選擇作業抽屜</label>
+            <select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs border border-amber-600 shadow-2xs cursor-pointer transition max-w-[200px] truncate" title="快速定位或展開指定作業">
+              <option value="">🎯 快速定位作業...</option>
+              ${dayHomeworkList.map(h => {
+                let pendingCount = 0;
+                let revisionCount = 0;
+                students.forEach(st => {
+                  const status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
+                  if (status === 'pending') pendingCount++;
+                  else if (status === 'revision') revisionCount++;
+                });
+                const statusText = pendingCount > 0 ? `未交 ${pendingCount}人` : (revisionCount > 0 ? `需訂正 ${revisionCount}人` : '全齊 ✅');
+                return `<option value="${h.id}">[${h.subject || '作業'}] ${h.title}（${statusText}）</option>`;
+              }).join('')}
+              <option value="ALL">📑 全部下拉展開</option>
+              <option value="NONE">📁 全部上收折疊</option>
+            </select>
+            <button onclick="openNewHomeworkModal('${currentHwFilterDate}')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">
+              <span>➕</span>
+              <span>新增作業</span>
+            </button>
+          </div>
         </div>
-        <div class="flex items-center space-x-2">
-          <button type="button" onclick="toggleAllHomeworkDrawers()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 text-xs font-bold shadow-2xs transition">
-            ${currentHwFilterId === 'ALL' ? '▲ 抽屜收合為單項' : '▼ 全部抽屜展開'}
-          </button>
-          <button onclick="openNewHomeworkModal('${currentHwFilterDate}')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">
-            <span>➕</span>
-            <span>新增此日作業</span>
-          </button>
+
+        <!-- 🌟 原本各項作業未交人數按鈕列（並排展示，完整保留即時顯示各項未交人數！） 🌟 -->
+        <div class="flex items-center gap-1.5 flex-wrap pt-2 border-t border-amber-200/80">
+          <span class="text-xs font-black text-amber-900/90 mr-1 flex items-center space-x-1 shrink-0">
+            <span>各項未交統計：</span>
+          </span>
+          ${dayHomeworkList.map(h => {
+            const isOpen = window.openHomeworkDrawerIds.has(String(h.id));
+            let pendingCount = 0;
+            let revisionCount = 0;
+            students.forEach(st => {
+              const status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
+              if (status === 'pending') pendingCount++;
+              else if (status === 'revision') revisionCount++;
+            });
+            const badgeHtml = pendingCount > 0 
+              ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-500 text-white shadow-2xs">❌ 未交 ${pendingCount}人</span>`
+              : (revisionCount > 0 
+                ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-purple-500 text-white shadow-2xs">⚠️ 訂正 ${revisionCount}人</span>`
+                : `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-600 text-white shadow-2xs">✅ 全齊</span>`);
+            return `
+              <button type="button" onclick="toggleHomeworkDrawer('${h.id}', event)" class="px-2.5 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 border shadow-2xs cursor-pointer active:scale-95 ${isOpen ? 'bg-amber-400 text-amber-950 border-amber-500 ring-2 ring-amber-500/50 shadow-xs' : 'bg-white hover:bg-amber-50 text-slate-800 border-amber-300'}" title="點擊切換下方四欄名牌看板（上收/下拉）">
+                <span>${isOpen ? '▲' : '▼'}</span>
+                <span class="truncate max-w-[130px]">[${h.subject || '作業'}] ${h.title}</span>
+                ${badgeHtml}
+              </button>
+            `;
+          }).join('')}
         </div>
       </div>
     `;
   }
 
   const cardsHtml = dayHomeworkList.map(hw => {
-    const isDrawerOpen = (currentHwFilterId === 'ALL') || window.openHomeworkDrawerIds.has(String(hw.id));
+    const isDrawerOpen = window.openHomeworkDrawerIds.has(String(hw.id));
 
     const submittedList = [];
     const lateList = [];
@@ -2757,11 +2791,12 @@ function renderHomeworkSummaryBoard() {
 
     return `
       <div class="bg-white rounded-2xl border-2 ${isDrawerOpen ? 'border-amber-400 shadow-sm' : 'border-amber-200 shadow-2xs hover:border-amber-300'} transition-all overflow-hidden" data-hw-card-id="${hw.id}">
-        <!-- 抽屜頂部標題列 (點擊開關抽屜，免滾動滑鼠) -->
-        <div class="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 ${isDrawerOpen ? 'border-b border-amber-200 bg-amber-50/60' : 'cursor-pointer hover:bg-amber-50/70'}" onclick="toggleHomeworkDrawer('${hw.id}', event)">
+        <!-- 抽屜頂部標題列 (點擊切換下方四欄名牌看板的上收或下拉展開，免滾動滑鼠) -->
+        <div class="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 cursor-pointer select-none ${isDrawerOpen ? 'border-b border-amber-200 bg-amber-50/70' : 'hover:bg-amber-50/50'}" onclick="toggleHomeworkDrawer('${hw.id}', event)">
           <div class="flex items-center space-x-2.5 min-w-0 flex-1">
-            <button type="button" class="w-7 h-7 rounded-lg ${isDrawerOpen ? 'bg-amber-500 text-amber-950' : 'bg-slate-100 text-slate-500'} font-black text-xs flex items-center justify-center transition shrink-0">
-              ${isDrawerOpen ? '▲' : '▼'}
+            <button type="button" class="px-2 py-1 rounded-lg ${isDrawerOpen ? 'bg-amber-500 text-amber-950 font-black' : 'bg-slate-100 hover:bg-amber-200 text-slate-700 hover:text-amber-950 font-black border border-slate-300'} text-xs flex items-center space-x-1 transition shrink-0" title="${isDrawerOpen ? '點擊上收下方看板' : '點擊下拉展開看板'}">
+              <span>${isDrawerOpen ? '▲' : '▼'}</span>
+              <span>${isDrawerOpen ? '上收看板' : '下拉看板'}</span>
             </button>
             <span class="bg-amber-200 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-md shrink-0">
               ${hw.subject || '作業'}
@@ -13701,42 +13736,47 @@ function goToTodayHomework() {
 }
 
 function selectSingleHomeworkTab(hwId) {
-  currentHwFilterId = hwId;
+  if (!hwId) return;
   if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
-  window.openHomeworkDrawerIds.clear();
+  const allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
+  const dayList = allHwList.filter(h => h.date === currentHwFilterDate || h.dueDate === currentHwFilterDate);
+
   if (hwId === 'ALL') {
-    const allHwList = window.KingdomApp.store.data.homework || [];
-    const dayHomeworkList = allHwList.filter(h => h.date === currentHwFilterDate || h.dueDate === currentHwFilterDate);
-    dayHomeworkList.forEach(h => window.openHomeworkDrawerIds.add(String(h.id)));
+    dayList.forEach(h => window.openHomeworkDrawerIds.add(String(h.id)));
+  } else if (hwId === 'NONE') {
+    window.openHomeworkDrawerIds.clear();
   } else {
     window.openHomeworkDrawerIds.add(String(hwId));
+    renderHomeworkSummaryBoard();
+    setTimeout(() => {
+      const el = document.querySelector(`[data-hw-card-id="${hwId}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 60);
+    return;
   }
   renderHomeworkSummaryBoard();
 }
 
 function toggleHomeworkDrawer(hwId, event) {
-  if (event) event.stopPropagation();
+  if (event && event.stopPropagation) event.stopPropagation();
   if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
   const idStr = String(hwId);
   if (window.openHomeworkDrawerIds.has(idStr)) {
-    window.openHomeworkDrawerIds.delete(idStr);
+    window.openHomeworkDrawerIds.delete(idStr); // 真正上收折疊！
   } else {
-    window.openHomeworkDrawerIds.add(idStr);
-    currentHwFilterId = idStr;
+    window.openHomeworkDrawerIds.add(idStr); // 真正下拉展開！
   }
   renderHomeworkSummaryBoard();
 }
 
 function toggleAllHomeworkDrawers() {
   if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
-  const allHwList = window.KingdomApp.store.data.homework || [];
+  const allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
   const dayHomeworkList = allHwList.filter(h => h.date === currentHwFilterDate || h.dueDate === currentHwFilterDate);
-  if (currentHwFilterId === 'ALL') {
-    currentHwFilterId = dayHomeworkList.length > 0 ? String(dayHomeworkList[0].id) : 'ALL';
+  // 若目前已有任何看板展開，一律全部上收；若全已上收，則全部下拉展開
+  if (window.openHomeworkDrawerIds.size > 0) {
     window.openHomeworkDrawerIds.clear();
-    if (dayHomeworkList.length > 0) window.openHomeworkDrawerIds.add(String(dayHomeworkList[0].id));
   } else {
-    currentHwFilterId = 'ALL';
     dayHomeworkList.forEach(h => window.openHomeworkDrawerIds.add(String(h.id)));
   }
   renderHomeworkSummaryBoard();

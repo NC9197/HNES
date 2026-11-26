@@ -5332,20 +5332,24 @@
       window.openHomeworkDrawerIds = window.openHomeworkDrawerIds || new Set();
 
       window.selectSingleHomeworkTab = function(hwId) {
-        if (typeof currentHwFilterId !== 'undefined') {
-          currentHwFilterId = hwId;
-        } else {
-          window.currentHwFilterId = hwId;
-        }
+        if (!hwId) return;
         if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
-        window.openHomeworkDrawerIds.clear();
+        var allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
+        var fDate = (typeof currentHwFilterDate !== 'undefined') ? currentHwFilterDate : (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
+        var dayHomeworkList = allHwList.filter(function(h) { return h.date === fDate || h.dueDate === fDate; });
+
         if (hwId === 'ALL') {
-          var allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
-          var fDate = (typeof currentHwFilterDate !== 'undefined') ? currentHwFilterDate : (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
-          var dayHomeworkList = allHwList.filter(function(h) { return h.date === fDate || h.dueDate === fDate; });
           dayHomeworkList.forEach(function(h) { window.openHomeworkDrawerIds.add(String(h.id)); });
+        } else if (hwId === 'NONE') {
+          window.openHomeworkDrawerIds.clear();
         } else {
           window.openHomeworkDrawerIds.add(String(hwId));
+          if (typeof renderHomeworkSummaryBoard === 'function') renderHomeworkSummaryBoard();
+          setTimeout(function() {
+            var el = document.querySelector('[data-hw-card-id="' + hwId + '"]');
+            if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 60);
+          return;
         }
         if (typeof renderHomeworkSummaryBoard === 'function') {
           renderHomeworkSummaryBoard();
@@ -5357,10 +5361,9 @@
         if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
         var idStr = String(hwId);
         if (window.openHomeworkDrawerIds.has(idStr)) {
-          window.openHomeworkDrawerIds.delete(idStr);
+          window.openHomeworkDrawerIds.delete(idStr); // 真正上收折疊！
         } else {
-          window.openHomeworkDrawerIds.add(idStr);
-          if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = idStr;
+          window.openHomeworkDrawerIds.add(idStr); // 真正下拉展開！
         }
         if (typeof renderHomeworkSummaryBoard === 'function') {
           renderHomeworkSummaryBoard();
@@ -5372,13 +5375,9 @@
         var allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
         var fDate = (typeof currentHwFilterDate !== 'undefined') ? currentHwFilterDate : (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
         var dayHomeworkList = allHwList.filter(function(h) { return h.date === fDate || h.dueDate === fDate; });
-        var curId = (typeof currentHwFilterId !== 'undefined') ? currentHwFilterId : 'ALL';
-        if (curId === 'ALL') {
-          if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = dayHomeworkList.length > 0 ? String(dayHomeworkList[0].id) : 'ALL';
+        if (window.openHomeworkDrawerIds.size > 0) {
           window.openHomeworkDrawerIds.clear();
-          if (dayHomeworkList.length > 0) window.openHomeworkDrawerIds.add(String(dayHomeworkList[0].id));
         } else {
-          if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = 'ALL';
           dayHomeworkList.forEach(function(h) { window.openHomeworkDrawerIds.add(String(h.id)); });
         }
         if (typeof renderHomeworkSummaryBoard === 'function') {
@@ -5450,23 +5449,22 @@
           return;
         }
 
-        var curHwId = (typeof currentHwFilterId !== 'undefined') ? currentHwFilterId : (window.currentHwFilterId || null);
-        if (dayHomeworkList.length > 0) {
-          if (!curHwId || (curHwId !== 'ALL' && !dayHomeworkList.some(function(h) { return String(h.id) === String(curHwId); }))) {
-            curHwId = String(dayHomeworkList[0].id);
-            if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = curHwId;
-            window.currentHwFilterId = curHwId;
+        // 抽屜展開/上收狀態管理：切換日期時做一次預設初始化
+        if (!window.openHomeworkDrawerIds) {
+          window.openHomeworkDrawerIds = new Set();
+          if (dayHomeworkList.length > 0) {
+            window.openHomeworkDrawerIds.add(String(dayHomeworkList[0].id));
+          }
+        }
+        if (window._lastHwFilterDateTracked !== filterDate) {
+          window._lastHwFilterDateTracked = filterDate;
+          window.openHomeworkDrawerIds.clear();
+          if (dayHomeworkList.length > 0) {
+            window.openHomeworkDrawerIds.add(String(dayHomeworkList[0].id));
           }
         }
 
-        if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
-        if (curHwId === 'ALL') {
-          dayHomeworkList.forEach(function(h) { window.openHomeworkDrawerIds.add(String(h.id)); });
-        } else if (curHwId) {
-          if (window.openHomeworkDrawerIds.size === 0) {
-            window.openHomeworkDrawerIds.add(String(curHwId));
-          }
-        }
+        var isAnyDrawerOpen = window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.size > 0;
 
         var tabsBarHtml = '';
         if (dayHomeworkList.length > 0) {
@@ -5478,37 +5476,68 @@
               if (status === 'pending') pendingCount++;
               else if (status === 'revision') revisionCount++;
             });
-            var statusText = pendingCount > 0 ? ('未交 ' + pendingCount + '人') : (revisionCount > 0 ? ('訂正 ' + revisionCount + '人') : '已全齊 ✅');
-            var isSel = String(curHwId) === String(h.id);
-            return '<option value="' + h.id + '" ' + (isSel ? 'selected' : '') + '>[' + (h.subject || '作業') + '] ' + h.title + '（' + statusText + '）</option>';
+            var statusText = pendingCount > 0 ? ('未交 ' + pendingCount + '人') : (revisionCount > 0 ? ('需訂正 ' + revisionCount + '人') : '已全齊 ✅');
+            return '<option value="' + h.id + '">[' + (h.subject || '作業') + '] ' + h.title + '（' + statusText + '）</option>';
+          }).join('');
+
+          var overviewButtonsHtml = dayHomeworkList.map(function(h) {
+            var isOpen = window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.has(String(h.id));
+            var pendingCount = 0;
+            var revisionCount = 0;
+            students.forEach(function(st) {
+              var status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
+              if (status === 'pending') pendingCount++;
+              else if (status === 'revision') revisionCount++;
+            });
+            var badgeHtml = pendingCount > 0
+              ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-500 text-white shadow-2xs">❌ 未交 ' + pendingCount + '人</span>'
+              : (revisionCount > 0
+                  ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-purple-500 text-white shadow-2xs">⚠️ 訂正 ' + revisionCount + '人</span>'
+                  : '<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-600 text-white shadow-2xs">✅ 全齊</span>');
+            return '<button type="button" onclick="toggleHomeworkDrawer(\'' + h.id + '\', event)" class="px-2.5 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 border shadow-2xs cursor-pointer active:scale-95 ' + (isOpen ? 'bg-amber-400 text-amber-950 border-amber-500 ring-2 ring-amber-500/50 shadow-xs' : 'bg-white hover:bg-amber-50 text-slate-800 border-amber-300') + '" title="點擊切換下方四欄名牌看板（上收/下拉）">' +
+              '<span>' + (isOpen ? '▲' : '▼') + '</span>' +
+              '<span class="truncate max-w-[130px]">[' + (h.subject || '作業') + '] ' + h.title + '</span>' +
+              badgeHtml +
+            '</button>';
           }).join('');
 
           tabsBarHtml = 
-            '<div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-300 flex items-center justify-between gap-3 flex-wrap shadow-xs">' +
-              '<div class="flex items-center space-x-2 flex-1 min-w-[240px]">' +
-                '<label for="homeworkDrawerSelect" class="text-xs sm:text-sm font-black text-amber-950 whitespace-nowrap flex items-center space-x-1">' +
-                  '<span>📋</span>' +
-                  '<span>檢視作業抽屜：</span>' +
-                '</label>' +
-                '<select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="flex-1 max-w-md px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs sm:text-sm border-2 border-amber-600 shadow-sm cursor-pointer transition truncate">' +
-                  optionsHtml +
-                  '<option value="ALL" ' + (curHwId === 'ALL' ? 'selected' : '') + '>📑 展開全部作業抽屜 (' + dayHomeworkList.length + '項)</option>' +
-                '</select>' +
+            '<div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-3 rounded-2xl border-2 border-amber-300 space-y-2.5 shadow-xs">' +
+              '<div class="flex items-center justify-between gap-2.5 flex-wrap">' +
+                '<div class="flex items-center space-x-2 flex-wrap">' +
+                  '<span class="text-xs sm:text-sm font-black text-amber-950 flex items-center space-x-1">' +
+                    '<span>📋</span>' +
+                    '<span>當日各項作業抽屜：</span>' +
+                  '</span>' +
+                  '<button type="button" onclick="toggleAllHomeworkDrawers()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95 flex items-center space-x-1" title="一鍵切換下方所有作業的四欄名牌看板">' +
+                    '<span>' + (isAnyDrawerOpen ? '📁 一鍵全部上收' : '📑 一鍵全部下拉') + '</span>' +
+                  '</button>' +
+                '</div>' +
+                '<div class="flex items-center space-x-2">' +
+                  '<label for="homeworkDrawerSelect" class="sr-only">選擇作業抽屜</label>' +
+                  '<select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs border border-amber-600 shadow-2xs cursor-pointer transition max-w-[200px] truncate" title="快速定位或展開指定作業">' +
+                    '<option value="">🎯 快速定位作業...</option>' +
+                    optionsHtml +
+                    '<option value="ALL">📑 全部下拉展開</option>' +
+                    '<option value="NONE">📁 全部上收折疊</option>' +
+                  '</select>' +
+                  '<button onclick="openNewHomeworkModal(\'' + filterDate + '\')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">' +
+                    '<span>➕</span>' +
+                    '<span>新增作業</span>' +
+                  '</button>' +
+                '</div>' +
               '</div>' +
-              '<div class="flex items-center space-x-2">' +
-                '<button type="button" onclick="toggleAllHomeworkDrawers()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 text-xs font-bold shadow-2xs transition">' +
-                  (curHwId === 'ALL' ? '▲ 抽屜收合為單項' : '▼ 全部抽屜展開') +
-                '</button>' +
-                '<button onclick="openNewHomeworkModal(\'' + filterDate + '\')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">' +
-                  '<span>➕</span>' +
-                  '<span>新增此日作業</span>' +
-                '</button>' +
+              '<div class="flex items-center gap-1.5 flex-wrap pt-2 border-t border-amber-200/80">' +
+                '<span class="text-xs font-black text-amber-900/90 mr-1 flex items-center space-x-1 shrink-0">' +
+                  '<span>各項未交統計：</span>' +
+                '</span>' +
+                overviewButtonsHtml +
               '</div>' +
             '</div>';
         }
 
         var cardsHtml = dayHomeworkList.map(function(hw) {
-          var isDrawerOpen = (curHwId === 'ALL') || (window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.has(String(hw.id)));
+          var isDrawerOpen = window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.has(String(hw.id));
 
           var submittedList = [];
           var lateList = [];
@@ -5572,9 +5601,11 @@
                 : '<span class="text-xs px-2 py-0.5 rounded-full font-black bg-emerald-600 text-white shrink-0">全齊 ✅</span>');
 
           return '<div class="bg-white rounded-2xl border-2 ' + (isDrawerOpen ? 'border-amber-400 shadow-sm' : 'border-amber-200 shadow-2xs hover:border-amber-300') + ' transition-all overflow-hidden" data-hw-card-id="' + hw.id + '">' +
-            '<div class="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 ' + (isDrawerOpen ? 'border-b border-amber-200 bg-amber-50/60' : 'cursor-pointer hover:bg-amber-50/70') + '" onclick="toggleHomeworkDrawer(\'' + hw.id + '\', event)">' +
+            '<div class="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 cursor-pointer select-none ' + (isDrawerOpen ? 'border-b border-amber-200 bg-amber-50/70' : 'hover:bg-amber-50/50') + '" onclick="toggleHomeworkDrawer(\'' + hw.id + '\', event)">' +
               '<div class="flex items-center space-x-2.5 min-w-0 flex-1">' +
-                '<button type="button" class="w-7 h-7 rounded-lg ' + (isDrawerOpen ? 'bg-amber-500 text-amber-950' : 'bg-slate-100 text-slate-500') + ' font-black text-xs flex items-center justify-center transition shrink-0">' + (isDrawerOpen ? '▲' : '▼') + '</button>' +
+                '<button type="button" class="px-2 py-1 rounded-lg ' + (isDrawerOpen ? 'bg-amber-500 text-amber-950 font-black' : 'bg-slate-100 hover:bg-amber-200 text-slate-700 hover:text-amber-950 font-black border border-slate-300') + ' text-xs flex items-center space-x-1 transition shrink-0" title="' + (isDrawerOpen ? '點擊上收下方看板' : '點擊下拉展開看板') + '">' +
+                  '<span>' + (isDrawerOpen ? '▲' : '▼') + '</span><span>' + (isDrawerOpen ? '上收看板' : '下拉看板') + '</span>' +
+                '</button>' +
                 '<span class="bg-amber-200 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-md shrink-0">' + (hw.subject || '作業') + '</span>' +
                 '<h3 class="text-base sm:text-lg font-black text-amber-950 truncate">' + hw.title + '</h3>' +
                 statusBadge +
