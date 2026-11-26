@@ -85,6 +85,18 @@ const DEFAULT_BEHAVIOR_REASONS = [
   { id: 'br_rem_6', type: 'reminder', label: '座位周遭保持整潔', text: '隨手撿垃圾保持座位整潔', targetCount: 30 }
 ];
 
+// 預設早自修與重要提醒快捷項目庫 (導師可自由新增、修改、刪除、恢復預設)
+const DEFAULT_REMINDER_PRESETS = [
+  { id: 'rem_pre_1', label: '📖 專注靜心自修', text: '早自修：全班保持專注靜心自修' },
+  { id: 'rem_pre_2', label: '✍️ 國語生字練習', text: '早自修：國語生字造詞隨堂練習' },
+  { id: 'rem_pre_3', label: '➗ 數學隨堂演練', text: '早自修：數學隨堂演練計算題' },
+  { id: 'rem_pre_4', label: '📚 閱讀班書日誌', text: '早自修：閱讀班書並記錄閱讀日誌' },
+  { id: 'rem_pre_5', label: '🏃 明穿運動服鞋', text: '重要提醒：明日有體育課，請穿著西寧王國運動服與運動鞋' },
+  { id: 'rem_pre_6', label: '📝 聯絡簿簽名', text: '重要提醒：請檢查家長聯絡簿簽名並繳交' },
+  { id: 'rem_pre_7', label: '🎨 攜帶美勞用具', text: '重要提醒：攜帶美勞課所需用具與剪刀色紙' },
+  { id: 'rem_pre_8', label: '🪥 餐後潔牙整理', text: '生活提醒：用餐完畢徹底潔牙並整理桌面' }
+];
+
 // 預設課堂作息鐘聲快捷項目庫 (導師可自由新增、修改、刪除、恢復預設)
 const DEFAULT_ALARM_PRESETS = [
   { id: 'alarm_pre_1', time: '08:40', btnText: '08:40 一上', label: '第一節上課', highlight: false },
@@ -772,6 +784,9 @@ class KingdomStore {
     if (!parsed.bellSchedule || !Array.isArray(parsed.bellSchedule) || parsed.bellSchedule.length === 0) {
       parsed.bellSchedule = JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE));
     }
+    if (!parsed.reminderPresets || !Array.isArray(parsed.reminderPresets) || parsed.reminderPresets.length === 0) {
+      parsed.reminderPresets = JSON.parse(JSON.stringify(DEFAULT_REMINDER_PRESETS));
+    }
 
     // --- 聯絡簿純淨全手動模式 (絕不自動生成假作業) ---
     const todayStr = getTodayDateString();
@@ -1157,6 +1172,7 @@ class KingdomStore {
       alarmPresets: JSON.parse(JSON.stringify(DEFAULT_ALARM_PRESETS)),
       timerPresets: JSON.parse(JSON.stringify(DEFAULT_TIMER_PRESETS)),
       bellSchedule: JSON.parse(JSON.stringify(DEFAULT_BELL_SCHEDULE)),
+      reminderPresets: JSON.parse(JSON.stringify(DEFAULT_REMINDER_PRESETS)),
       contactBook: JSON.parse(JSON.stringify(DEFAULT_CONTACT_BOOK)),
       contactBookHistory: {},
       attendance: {},
@@ -2311,6 +2327,52 @@ class KingdomStore {
     this.data.homeworkPresets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
     this.save('恢復預設作業快捷範本');
     return this.data.homeworkPresets;
+  }
+
+  // --- 早自修與重要提醒快捷管理 (新增、編輯、刪除、恢復預設) ---
+  getReminderPresets() {
+    if (!this.data.reminderPresets || !Array.isArray(this.data.reminderPresets) || this.data.reminderPresets.length === 0) {
+      this.data.reminderPresets = JSON.parse(JSON.stringify(DEFAULT_REMINDER_PRESETS));
+    }
+    return this.data.reminderPresets;
+  }
+
+  addReminderPreset({ label, text }) {
+    if (!label) return null;
+    const presets = this.getReminderPresets();
+    const newPreset = {
+      id: "rem_pre_" + Date.now(),
+      label: String(label).trim(),
+      text: String(text || label).trim()
+    };
+    presets.push(newPreset);
+    this.save('新增早自修與提醒快捷: ' + newPreset.label);
+    return newPreset;
+  }
+
+  updateReminderPreset(id, { label, text }) {
+    const presets = this.getReminderPresets();
+    const target = presets.find(p => p.id === id);
+    if (!target) return false;
+    if (label) target.label = String(label).trim();
+    if (text !== undefined) target.text = String(text).trim();
+    this.save('更新早自修與提醒快捷: ' + target.label);
+    return true;
+  }
+
+  deleteReminderPreset(id) {
+    const presets = this.getReminderPresets();
+    const idx = presets.findIndex(p => p.id === id);
+    if (idx === -1) return false;
+    const removed = presets.splice(idx, 1)[0];
+    this.save('刪除早自修與提醒快捷: ' + (removed ? removed.label : id));
+    return true;
+  }
+
+  resetReminderPresets() {
+    this.data.reminderPresets = JSON.parse(JSON.stringify(DEFAULT_REMINDER_PRESETS));
+    this.save('恢復預設早自修與提醒快捷');
+    return this.data.reminderPresets;
   }
 
   // --- 常規事由快捷管理 (新增、編輯、刪除、恢復預設) ---
@@ -4813,6 +4875,7 @@ if (typeof window !== 'undefined') {
     DEFAULT_HOMEWORK_PRESETS,
     DEFAULT_BEHAVIOR_REASONS,
     DEFAULT_ALARM_PRESETS,
+    DEFAULT_REMINDER_PRESETS,
     DEFAULT_SEATING_CHART
   };
 }
@@ -4833,6 +4896,7 @@ if (typeof module !== 'undefined' && module.exports) {
     DEFAULT_CONTACT_BOOK,
     DEFAULT_HOMEWORK_PRESETS,
     DEFAULT_BEHAVIOR_REASONS,
-    DEFAULT_ALARM_PRESETS
+    DEFAULT_ALARM_PRESETS,
+    DEFAULT_REMINDER_PRESETS
   };
 }

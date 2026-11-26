@@ -1568,6 +1568,7 @@ function openEditRemindersModal(dateStr) {
   if (modal) {
     modal.classList.remove("hidden");
   }
+  renderReminderPresetButtons();
   initLucideIcons();
 
   setTimeout(() => {
@@ -1654,6 +1655,131 @@ function saveRemindersData(e) {
   if (typeof renderContactProjectionView === 'function') {
     renderContactProjectionView();
   }
+}
+
+// --- 早自修與重要提醒快捷範本動態渲染與自訂管理 ---
+function renderReminderPresetButtons() {
+  const container = document.getElementById("remindersPresetButtonsBar");
+  if (!container) return;
+  const presets = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getReminderPresets === 'function')
+    ? window.KingdomApp.store.getReminderPresets()
+    : (window.DEFAULT_REMINDER_PRESETS || []);
+
+  if (presets.length === 0) {
+    container.innerHTML = '<span class="text-xs text-slate-400">目前無快捷範本，可點右上角自訂新增</span>';
+    return;
+  }
+
+  container.innerHTML = presets.map(p => `
+    <div class="inline-flex items-center rounded-lg bg-white border border-amber-300 shadow-2xs overflow-hidden group hover:border-amber-400">
+      <button type="button" onclick="appendReminderPresetText(${escapeContactHtml(JSON.stringify(p.text))})"
+        class="px-2 py-1 text-amber-950 font-black text-xs hover:bg-amber-100 flex items-center space-x-1 transition"
+        title="點擊帶入：${escapeContactHtml(p.text)}">
+        <span>${escapeContactHtml(p.label)}</span>
+      </button>
+      <div class="flex items-center border-l border-amber-200 bg-amber-50">
+        <button type="button" onclick="openEditReminderPresetModal('${p.id}')"
+          class="p-1 text-amber-700/70 hover:text-amber-900 hover:bg-amber-100 transition" title="編輯此快捷">
+          ✏️
+        </button>
+        <button type="button" onclick="deleteReminderPresetItem('${p.id}')"
+          class="p-1 text-rose-500/70 hover:text-rose-700 hover:bg-rose-50 transition" title="刪除此快捷">
+          🗑️
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function appendReminderPresetText(text) {
+  appendReminderPreset(text);
+}
+
+function openAddReminderPresetModal() {
+  const editIdInput = document.getElementById("editReminderPresetId");
+  if (editIdInput) editIdInput.value = "";
+  const title = document.getElementById("manageReminderPresetModalTitle");
+  if (title) title.innerHTML = `<span>➕ 新增早自修與提醒快捷</span>`;
+  const labelInput = document.getElementById("reminderPresetLabel");
+  if (labelInput) labelInput.value = "";
+  const textInput = document.getElementById("reminderPresetText");
+  if (textInput) textInput.value = "";
+  const modal = document.getElementById("manageReminderPresetModal");
+  if (modal) modal.classList.remove("hidden");
+}
+
+function openEditReminderPresetModal(presetId) {
+  const presets = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getReminderPresets === 'function')
+    ? window.KingdomApp.store.getReminderPresets()
+    : [];
+  const preset = presets.find(p => p.id === presetId);
+  if (!preset) return;
+
+  const editIdInput = document.getElementById("editReminderPresetId");
+  if (editIdInput) editIdInput.value = preset.id;
+  const title = document.getElementById("manageReminderPresetModalTitle");
+  if (title) title.innerHTML = `<span>✏️ 編輯早自修與提醒快捷</span>`;
+  const labelInput = document.getElementById("reminderPresetLabel");
+  if (labelInput) labelInput.value = preset.label;
+  const textInput = document.getElementById("reminderPresetText");
+  if (textInput) textInput.value = preset.text;
+  const modal = document.getElementById("manageReminderPresetModal");
+  if (modal) modal.classList.remove("hidden");
+}
+
+function closeManageReminderPresetModal() {
+  const modal = document.getElementById("manageReminderPresetModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function submitReminderPresetForm(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const editId = (document.getElementById("editReminderPresetId")?.value || "").trim();
+  const label = (document.getElementById("reminderPresetLabel")?.value || "").trim();
+  const text = (document.getElementById("reminderPresetText")?.value || "").trim();
+
+  if (!label || !text) {
+    alert("請填寫快捷標籤名稱與完整內容！");
+    return;
+  }
+
+  if (window.KingdomApp && window.KingdomApp.store) {
+    if (editId) {
+      window.KingdomApp.store.updateReminderPreset(editId, { label, text });
+      showToast(`✅ 已更新早自修快捷【${label}】！`, "✨");
+    } else {
+      window.KingdomApp.store.addReminderPreset({ label, text });
+      showToast(`✅ 已新增早自修快捷【${label}】！`, "✨");
+    }
+  }
+
+  closeManageReminderPresetModal();
+  renderReminderPresetButtons();
+}
+
+function deleteReminderPresetItem(presetId) {
+  const presets = (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getReminderPresets === 'function')
+    ? window.KingdomApp.store.getReminderPresets()
+    : [];
+  const preset = presets.find(p => p.id === presetId);
+  const name = preset ? preset.label : "此快捷";
+
+  if (!confirm(`確定要刪除快捷【${name}】嗎？`)) return;
+
+  if (window.KingdomApp && window.KingdomApp.store) {
+    window.KingdomApp.store.deleteReminderPreset(presetId);
+  }
+  showToast(`🗑️ 已刪除早自修快捷【${name}】`, "✨");
+  renderReminderPresetButtons();
+}
+
+function confirmResetReminderPresetsToDefault() {
+  if (!confirm("確定要將早自修與提醒快捷恢復為系統預設 8 項範本嗎？自訂的項目將被重置。")) return;
+  if (window.KingdomApp && window.KingdomApp.store) {
+    window.KingdomApp.store.resetReminderPresets();
+  }
+  showToast("🔄 已成功恢復預設早自修與提醒快捷！", "🔔");
+  renderReminderPresetButtons();
 }
 
 function getSelectedAttendanceDate() {
@@ -2510,57 +2636,64 @@ function renderHomeworkSummaryBoard() {
     return;
   }
 
-  // 驗證目前聚焦作業是否仍存在於當日清單中
-  if (currentHwFilterId !== 'ALL' && !dayHomeworkList.some(h => String(h.id) === String(currentHwFilterId))) {
-    currentHwFilterId = 'ALL';
+  // 預設選中第一項作業抽屜（避免當日多項作業時一次全部展開撐過長）
+  if (dayHomeworkList.length > 0) {
+    if (!currentHwFilterId || (currentHwFilterId !== 'ALL' && !dayHomeworkList.some(h => String(h.id) === String(currentHwFilterId)))) {
+      currentHwFilterId = String(dayHomeworkList[0].id);
+    }
   }
 
-  const displayedHwList = (currentHwFilterId !== 'ALL')
-    ? dayHomeworkList.filter(h => String(h.id) === String(currentHwFilterId))
-    : dayHomeworkList;
+  if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+  if (currentHwFilterId === 'ALL') {
+    dayHomeworkList.forEach(h => window.openHomeworkDrawerIds.add(String(h.id)));
+  } else if (currentHwFilterId) {
+    if (window.openHomeworkDrawerIds.size === 0) {
+      window.openHomeworkDrawerIds.add(String(currentHwFilterId));
+    }
+  }
 
-  // 產生「當日作業快捷標籤列」 (若當日有多項作業，可單鍵切換要編輯的作業，徹底免滾動！)
+  // 產生「當日作業下拉抽屜選單與快速導航列」 (下拉選單 + 折疊抽屜，免滾動滑鼠！)
   let tabsBarHtml = '';
-  if (dayHomeworkList.length > 1) {
-    const isAllActive = currentHwFilterId === 'ALL';
+  if (dayHomeworkList.length > 0) {
     tabsBarHtml = `
-      <div class="bg-gradient-to-r from-amber-100/90 to-yellow-100/90 p-2 sm:p-2.5 rounded-2xl border-2 border-amber-300 flex items-center justify-between gap-2 flex-wrap shadow-2xs">
-        <div class="flex items-center space-x-1.5 flex-wrap gap-y-1.5">
-          <span class="text-xs font-black text-amber-950 mr-1 flex items-center space-x-1">
-            <span>🎯</span>
-            <span>選擇當日作業：</span>
-          </span>
-          <button onclick="selectSingleHomeworkTab('ALL')" class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${isAllActive ? 'bg-amber-500 text-amber-950 shadow-xs ring-2 ring-amber-600/60' : 'bg-white hover:bg-amber-50 text-slate-700 border border-amber-300'}">
-            📑 顯示當日全部 (${dayHomeworkList.length}項)
-          </button>
-          ${dayHomeworkList.map(h => {
-            const isActive = String(currentHwFilterId) === String(h.id);
-            let pendingCount = 0;
-            let revisionCount = 0;
-            students.forEach(st => {
-              const status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
-              if (status === 'pending') pendingCount++;
-              else if (status === 'revision') revisionCount++;
-            });
-            const badgeText = pendingCount > 0 ? `未交 ${pendingCount}` : (revisionCount > 0 ? `需訂正 ${revisionCount}` : '已全齊');
-            const badgeClass = pendingCount > 0 ? 'bg-rose-500 text-white' : (revisionCount > 0 ? 'bg-purple-500 text-white' : 'bg-emerald-600 text-white');
-            return `
-              <button onclick="selectSingleHomeworkTab('${h.id}')" class="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center space-x-1.5 ${isActive ? 'bg-amber-500 text-amber-950 shadow-xs ring-2 ring-amber-600/60' : 'bg-white hover:bg-amber-50 text-slate-800 border border-amber-300'}">
-                <span>${h.subject ? `[${h.subject}]` : ''} ${escapeContactHtml(h.title)}</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded-full font-black ${badgeClass}">${badgeText}</span>
-              </button>
-            `;
-          }).join('')}
+      <div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-2.5 sm:p-3 rounded-2xl border-2 border-amber-300 flex items-center justify-between gap-3 flex-wrap shadow-xs">
+        <div class="flex items-center space-x-2 flex-1 min-w-[240px]">
+          <label for="homeworkDrawerSelect" class="text-xs sm:text-sm font-black text-amber-950 whitespace-nowrap flex items-center space-x-1">
+            <span>📋</span>
+            <span>檢視作業抽屜：</span>
+          </label>
+          <select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="flex-1 max-w-md px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs sm:text-sm border-2 border-amber-600 shadow-sm cursor-pointer transition truncate">
+            ${dayHomeworkList.map(h => {
+              let pendingCount = 0;
+              let revisionCount = 0;
+              students.forEach(st => {
+                const status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
+                if (status === 'pending') pendingCount++;
+                else if (status === 'revision') revisionCount++;
+              });
+              const statusText = pendingCount > 0 ? `未交 ${pendingCount}人` : (revisionCount > 0 ? `訂正 ${revisionCount}人` : '已全齊 ✅');
+              const isSel = String(currentHwFilterId) === String(h.id);
+              return `<option value="${h.id}" ${isSel ? 'selected' : ''}>[${h.subject || '作業'}] ${h.title}（${statusText}）</option>`;
+            }).join('')}
+            <option value="ALL" ${currentHwFilterId === 'ALL' ? 'selected' : ''}>📑 展開全部作業抽屜 (${dayHomeworkList.length}項)</option>
+          </select>
         </div>
-        <button onclick="openNewHomeworkModal('${currentHwFilterDate}')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">
-          <span>➕</span>
-          <span>新增此日作業</span>
-        </button>
+        <div class="flex items-center space-x-2">
+          <button type="button" onclick="toggleAllHomeworkDrawers()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 text-amber-950 border border-amber-300 text-xs font-bold shadow-2xs transition">
+            ${currentHwFilterId === 'ALL' ? '▲ 抽屜收合為單項' : '▼ 全部抽屜展開'}
+          </button>
+          <button onclick="openNewHomeworkModal('${currentHwFilterDate}')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">
+            <span>➕</span>
+            <span>新增此日作業</span>
+          </button>
+        </div>
       </div>
     `;
   }
 
-  const cardsHtml = displayedHwList.map(hw => {
+  const cardsHtml = dayHomeworkList.map(hw => {
+    const isDrawerOpen = (currentHwFilterId === 'ALL') || window.openHomeworkDrawerIds.has(String(hw.id));
+
     const submittedList = [];
     const lateList = [];
     const revisionList = [];
@@ -2623,105 +2756,116 @@ function renderHomeworkSummaryBoard() {
     ];
 
     return `
-      <div class="bg-white rounded-2xl border-2 border-amber-300 p-5 space-y-4 shadow-sm" data-hw-card-id="${hw.id}">
-        <!-- 頂部作業資訊與操作按鈕 -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-amber-200">
-          <div>
-            <div class="flex items-center space-x-2">
-              <span class="bg-amber-200 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-md">
-                ${hw.subject || '作業'}
-              </span>
-              <h3 class="text-lg font-black text-amber-950">
-                ${hw.title}
-              </h3>
-              <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold">
-                📅 ${hw.date || '今日'}
-              </span>
-            </div>
-            <p class="text-xs text-slate-600 mt-1">${hw.desc || '無補充說明'}</p>
+      <div class="bg-white rounded-2xl border-2 ${isDrawerOpen ? 'border-amber-400 shadow-sm' : 'border-amber-200 shadow-2xs hover:border-amber-300'} transition-all overflow-hidden" data-hw-card-id="${hw.id}">
+        <!-- 抽屜頂部標題列 (點擊開關抽屜，免滾動滑鼠) -->
+        <div class="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 ${isDrawerOpen ? 'border-b border-amber-200 bg-amber-50/60' : 'cursor-pointer hover:bg-amber-50/70'}" onclick="toggleHomeworkDrawer('${hw.id}', event)">
+          <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+            <button type="button" class="w-7 h-7 rounded-lg ${isDrawerOpen ? 'bg-amber-500 text-amber-950' : 'bg-slate-100 text-slate-500'} font-black text-xs flex items-center justify-center transition shrink-0">
+              ${isDrawerOpen ? '▲' : '▼'}
+            </button>
+            <span class="bg-amber-200 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-md shrink-0">
+              ${hw.subject || '作業'}
+            </span>
+            <h3 class="text-base sm:text-lg font-black text-amber-950 truncate">
+              ${hw.title}
+            </h3>
+            <span class="text-xs px-2 py-0.5 rounded-full font-black ${pendingList.length > 0 ? 'bg-rose-500 text-white' : (revisionList.length > 0 ? 'bg-purple-500 text-white' : 'bg-emerald-600 text-white')} shrink-0">
+              ${pendingList.length > 0 ? `未交 ${pendingList.length}人` : (revisionList.length > 0 ? `需訂正 ${revisionList.length}人` : '全齊 ✅')}
+            </span>
+            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold shrink-0">
+              📅 ${hw.date || '今日'}
+            </span>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <button onclick="openEditHomeworkModal('${hw.id}')" class="px-2.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs shadow-xs flex items-center space-x-1" title="修改此作業的科目、名稱、截止日期或說明備註">
-              <span>✏️</span>
-              <span>編輯作業</span>
-            </button>
-            <button onclick="openSetRevisionModal('${hw.id}', 'revision')" class="px-3 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-xs shadow-xs flex items-center space-x-1" title="鍵盤打座號或點選登記需訂正名冊">
-              <span>⚠️</span>
-              <span>批次需訂正</span>
-            </button>
-            <button onclick="openSetRevisionModal('${hw.id}', 'pending')" class="px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 font-black text-xs shadow-xs flex items-center space-x-1" title="鍵盤打座號或點選登記未繳交名冊">
+          <div class="flex flex-wrap items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
+            <button onclick="openSetRevisionModal('${hw.id}', 'pending')" class="px-2.5 py-1 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 font-black text-xs shadow-2xs flex items-center space-x-1" title="鍵盤打座號或點選登記未繳交名冊">
               <span>❌</span>
               <span>批次未交</span>
             </button>
-            <button onclick="batchMarkAllHwSubmitted('${hw.id}')" class="px-3 py-1.5 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 font-black text-xs shadow-xs flex items-center space-x-1">
-              <span>✅</span>
-              <span>全班全數繳齊</span>
+            <button onclick="openSetRevisionModal('${hw.id}', 'revision')" class="px-2.5 py-1 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-xs shadow-2xs flex items-center space-x-1" title="鍵盤打座號或點選登記需訂正名冊">
+              <span>⚠️</span>
+              <span>批次需訂正</span>
             </button>
-            <button onclick="deleteHomework('${hw.id}')" class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold text-xs">
-              刪除
+            <button onclick="batchMarkAllHwSubmitted('${hw.id}')" class="px-2.5 py-1 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 font-black text-xs shadow-2xs flex items-center space-x-1">
+              <span>✅</span>
+              <span>全齊</span>
+            </button>
+            <button onclick="openEditHomeworkModal('${hw.id}')" class="px-2 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-black text-xs shadow-2xs" title="修改此作業">
+              ✏️
+            </button>
+            <button onclick="deleteHomework('${hw.id}')" class="px-2 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold text-xs" title="刪除作業">
+              🗑️
             </button>
           </div>
         </div>
 
-        <!-- 🌟 四欄式拖曳移動看板 (Drag & Drop + 觸控快速切換) 🌟 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          ${columns.map(col => `
-            <div class="rounded-xl border-2 ${col.bgClass} p-3 flex flex-col space-y-2">
-              <div class="flex items-center justify-between pb-1 border-b border-amber-200/60 font-black">
-                <span class="flex items-center space-x-1.5 ${col.colorText}">
-                  <span>${col.icon}</span>
-                  <span>${col.title}</span>
-                </span>
-                <span class="px-2 py-0.5 rounded-full text-xs font-black ${col.badgeClass} shadow-2xs">
-                  ${col.list.length} 人
-                </span>
-              </div>
+        ${isDrawerOpen ? `
+          <div class="p-4 sm:p-5 pt-3 space-y-3">
+            ${hw.desc ? `<p class="text-xs text-slate-600">${hw.desc}</p>` : ''}
+            <!-- 🌟 四欄式拖曳移動看板 🌟 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              ${columns.map(col => `
+                <div class="rounded-xl border-2 ${col.bgClass} p-3 flex flex-col space-y-2">
+                  <div class="flex items-center justify-between pb-1 border-b border-amber-200/60 font-black">
+                    <span class="flex items-center space-x-1.5 ${col.colorText}">
+                      <span>${col.icon}</span>
+                      <span>${col.title}</span>
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-black ${col.badgeClass} shadow-2xs">
+                      ${col.list.length} 人
+                    </span>
+                  </div>
 
-              <!-- 可放置區域 Dropzone (支援拖曳放置) -->
-              <div 
-                class="hw-dropzone flex-1 min-h-[140px] max-h-72 overflow-y-auto space-y-1.5 p-1.5 rounded-lg border-2 border-dashed border-slate-300/80 transition-all"
-                data-hw-id="${hw.id}"
-                data-status="${col.id}"
-                ondragover="handleHwDropZoneOver(event)"
-                ondragleave="handleHwDropZoneLeave(event)"
-                ondrop="handleHwDropZoneDrop(event, '${hw.id}', '${col.id}')"
-              >
-                ${col.list.length === 0 ? `
-                  <div class="h-28 flex flex-col items-center justify-center text-slate-400 text-[11px] pointer-events-none select-none">
-                    <span>✋ 拖曳大臣名牌至此</span>
-                  </div>
-                ` : col.list.map(s => `
-                  <div
-                    class="hw-student-chip p-1.5 rounded-lg border ${col.chipBorder} shadow-2xs flex items-center justify-between gap-1 cursor-grab active:cursor-grabbing hover:shadow-md transition-all select-none"
-                    draggable="true"
-                    ondragstart="handleHwStudentDragStart(event, '${hw.id}', '${s.id}')"
-                    ondragend="handleHwStudentDragEnd(event)"
-                    title="【拖曳移動】至其他欄位，或點擊右側按鈕快速變更"
+                  <!-- 可放置區域 Dropzone (支援拖曳放置) -->
+                  <div 
+                    class="hw-dropzone flex-1 min-h-[140px] max-h-72 overflow-y-auto space-y-1.5 p-1.5 rounded-lg border-2 border-dashed border-slate-300/80 transition-all"
+                    data-hw-id="${hw.id}"
+                    data-status="${col.id}"
+                    ondragover="handleHwDropZoneOver(event)"
+                    ondragleave="handleHwDropZoneLeave(event)"
+                    ondrop="handleHwDropZoneDrop(event, '${hw.id}', '${col.id}')"
                   >
-                    <div class="flex items-center space-x-1 min-w-0">
-                      <span class="text-slate-400 text-[10px] font-bold">⋮⋮</span>
-                      <span class="font-black truncate text-[11px]">${String(s.seatNo).padStart(2, '0')}.${s.name}</span>
-                    </div>
-                    <!-- 快捷切換微型按鈕群 (支援大螢幕觸控點擊) -->
-                    <div class="flex items-center space-x-0.5 shrink-0">
-                      ${col.id !== 'submitted' ? `
-                        <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'submitted')" title="移動至【準時已繳交】" class="w-5 h-5 rounded hover:bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">✅</button>
-                      ` : ''}
-                      ${col.id !== 'late' ? `
-                        <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'late')" title="移動至【遲交已補】" class="w-5 h-5 rounded hover:bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-bold">⏰</button>
-                      ` : ''}
-                      ${col.id !== 'revision' ? `
-                        <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'revision')" title="移動至【需訂正】" class="w-5 h-5 rounded hover:bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold">⚠️</button>
-                      ` : ''}
-                      ${col.id !== 'pending' ? `
-                        <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'pending')" title="移動至【未繳交】" class="w-5 h-5 rounded hover:bg-rose-100 text-rose-700 flex items-center justify-center text-[10px] font-bold">❌</button>
-                      ` : ''}
-                    </div>
+                    ${col.list.length === 0 ? `
+                      <div class="h-28 flex flex-col items-center justify-center text-slate-400 text-[11px] pointer-events-none select-none">
+                        <span>✋ 拖曳大臣名牌至此</span>
+                      </div>
+                    ` : col.list.map(s => `
+                      <div
+                        class="hw-student-chip p-1.5 rounded-lg border ${col.chipBorder} shadow-2xs flex items-center justify-between gap-1 cursor-grab active:cursor-grabbing hover:shadow-md transition-all select-none"
+                        draggable="true"
+                        ondragstart="handleHwStudentDragStart(event, '${hw.id}', '${s.id}')"
+                        ondragend="handleHwStudentDragEnd(event)"
+                        title="【拖曳移動】至其他欄位，或點擊右側按鈕快速變更"
+                      >
+                        <div class="flex items-center space-x-1 min-w-0">
+                          <span class="text-slate-400 text-[10px] font-bold">⋮⋮</span>
+                          <span class="font-black truncate text-[11px]">${String(s.seatNo).padStart(2, '0')}.${s.name}</span>
+                        </div>
+                        <div class="flex items-center space-x-0.5 shrink-0">
+                          ${col.id !== 'submitted' ? `
+                            <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'submitted')" title="移動至【準時已繳交】" class="w-5 h-5 rounded hover:bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">✅</button>
+                          ` : ''}
+                          ${col.id !== 'late' ? `
+                            <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'late')" title="移動至【遲交已補】" class="w-5 h-5 rounded hover:bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-bold">⏰</button>
+                          ` : ''}
+                          ${col.id !== 'revision' ? `
+                            <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'revision')" title="移動至【需訂正】" class="w-5 h-5 rounded hover:bg-purple-100 text-purple-700 flex items-center justify-center text-[10px] font-bold">⚠️</button>
+                          ` : ''}
+                          ${col.id !== 'pending' ? `
+                            <button type="button" onclick="setStudentHomeworkStatus('${hw.id}', ${s.id}, 'pending')" title="移動至【未繳交】" class="w-5 h-5 rounded hover:bg-rose-100 text-rose-700 flex items-center justify-center text-[10px] font-bold">❌</button>
+                          ` : ''}
+                        </div>
+                      </div>
+                    `).join('')}
                   </div>
-                `).join('')}
-              </div>
+                </div>
+              `).join('')}
             </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
           `).join('')}
         </div>
       </div>
@@ -6305,7 +6449,7 @@ function toggleStudentPointSelection(studentId) {
   } else {
     selectedStudentIdsForPoints.add(studentId);
   }
-  updatePointsMultiSelectUI();
+  updatePointsMultiSelectUI(true);
 }
 
 function selectAllStudentsPoints(selectAll) {
@@ -6315,7 +6459,7 @@ function selectAllStudentsPoints(selectAll) {
   } else {
     selectedStudentIdsForPoints.clear();
   }
-  updatePointsMultiSelectUI();
+  updatePointsMultiSelectUI(true);
 }
 
 function invertStudentPointsSelection() {
@@ -6325,10 +6469,10 @@ function invertStudentPointsSelection() {
     if (!selectedStudentIdsForPoints.has(s.id)) nextSet.add(s.id);
   });
   selectedStudentIdsForPoints = nextSet;
-  updatePointsMultiSelectUI();
+  updatePointsMultiSelectUI(true);
 }
 
-function updatePointsMultiSelectUI() {
+function updatePointsMultiSelectUI(syncInput = true) {
   const badge = document.getElementById("multiSelectedCountBadge");
   if (badge) {
     badge.textContent = `已選取 ${selectedStudentIdsForPoints.size} 位`;
@@ -6346,6 +6490,96 @@ function updatePointsMultiSelectUI() {
       }
     }
   });
+
+  if (syncInput) {
+    syncQuickPointSeatInputFromSelection();
+  }
+}
+
+// --- 紅蘋果集點榜：鍵盤手動輸入號碼快速加扣點控制器 ---
+function handleQuickPointSeatInput(text) {
+  const seatNumbers = parseSeatInputTokens(text);
+  const students = window.KingdomApp.store.data.students || [];
+
+  selectedStudentIdsForPoints.clear();
+  seatNumbers.forEach(num => {
+    const st = students.find(s => Number(s.seatNo) === num || Number(s.id) === num);
+    if (st) selectedStudentIdsForPoints.add(st.id);
+  });
+
+  updatePointsMultiSelectUI(false);
+  updateQuickPointSelectionSummary(seatNumbers);
+}
+
+function updateQuickPointSelectionSummary(seatNumbers) {
+  const badge = document.getElementById("quickPointTargetSummaryBadge");
+  if (!badge) return;
+  const count = selectedStudentIdsForPoints.size;
+  if (count === 0) {
+    badge.textContent = "目前選取：0 位大臣";
+  } else {
+    const listStr = seatNumbers && seatNumbers.length > 0 ? ` (${seatNumbers.join(', ')}號)` : '';
+    badge.textContent = `目前選取：${count} 位大臣${listStr}`;
+  }
+}
+
+function clearQuickPointSeats() {
+  selectedStudentIdsForPoints.clear();
+  const input = document.getElementById("quickPointSeatInput");
+  if (input) input.value = "";
+  updatePointsMultiSelectUI(false);
+  updateQuickPointSelectionSummary([]);
+}
+
+function applyQuickPoints(points, customReason = '') {
+  if (selectedStudentIdsForPoints.size === 0) {
+    showToast("⚠️ 請先在輸入框打座號（如: 1 3 5 或 1-5）或勾選大臣！", "⚠️");
+    const input = document.getElementById("quickPointSeatInput");
+    if (input) input.focus();
+    return;
+  }
+
+  const ids = Array.from(selectedStudentIdsForPoints);
+  const defaultReason = points > 0 ? `課堂表現優異 (+${points} 🍎)` : `課堂常規提醒 (${points} 🍎)`;
+  const finalReason = customReason || defaultReason;
+
+  window.KingdomApp.store.batchAwardMultipleStudents(ids, points, finalReason);
+
+  if (points > 0) {
+    if (window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+      try { window.KingdomApp.sound.playFanfare(); } catch(e){}
+    }
+    if (window.KingdomApp.triggerConfetti) {
+      try { window.KingdomApp.triggerConfetti(); } catch(e){}
+    }
+    showToast(`🎉 成功為 ${ids.length} 位大臣各賞賜 ${points > 0 ? `+${points}` : points} 顆紅蘋果！`, "🍎");
+  } else {
+    if (window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+      try { window.KingdomApp.sound.playCoin(); } catch(e){}
+    }
+    showToast(`⚠️ 已對 ${ids.length} 位大臣扣除 ${Math.abs(points)} 顆紅蘋果。`, "⚠️");
+  }
+
+  showUndoNotificationBanner();
+  renderPointsView();
+
+  const input = document.getElementById("quickPointSeatInput");
+  if (input && input.value) {
+    const seatNumbers = parseSeatInputTokens(input.value);
+    updateQuickPointSelectionSummary(seatNumbers);
+  }
+}
+
+function syncQuickPointSeatInputFromSelection() {
+  const input = document.getElementById("quickPointSeatInput");
+  if (!input) return;
+  const students = window.KingdomApp.store.data.students || [];
+  const selectedSeats = students
+    .filter(s => selectedStudentIdsForPoints.has(s.id))
+    .map(s => s.seatNo)
+    .sort((a, b) => a - b);
+  input.value = selectedSeats.join(' ');
+  updateQuickPointSelectionSummary(selectedSeats);
 }
 
 function awardSelectedStudents(points, defaultReason) {
@@ -7233,23 +7467,61 @@ function selectPointTarget(mode) {
   const btnAll = document.getElementById("btnPointTargetAll");
   const btnSelect = document.getElementById("btnPointTargetSelect");
   const box = document.getElementById("pointStudentSelectorBox");
+  const seatInputWrapper = document.getElementById("batchPointSeatInputWrapper");
 
   if (mode === 'all') {
     btnAll.className = "px-3 py-1.5 rounded-lg border font-bold bg-amber-950 text-amber-300 shadow";
     btnSelect.className = "px-3 py-1.5 rounded-lg border font-bold bg-white text-slate-700 border-amber-300";
-    box.classList.add("hidden");
+    if (box) box.classList.add("hidden");
+    if (seatInputWrapper) seatInputWrapper.classList.add("hidden");
   } else {
     btnSelect.className = "px-3 py-1.5 rounded-lg border font-bold bg-amber-950 text-amber-300 shadow";
     btnAll.className = "px-3 py-1.5 rounded-lg border font-bold bg-white text-slate-700 border-amber-300";
-    box.classList.remove("hidden");
+    if (box) box.classList.remove("hidden");
+    if (seatInputWrapper) {
+      seatInputWrapper.classList.remove("hidden");
+      setTimeout(() => {
+        const input = document.getElementById("batchPointSeatInput");
+        if (input) input.focus();
+      }, 50);
+    }
 
-    box.innerHTML = window.KingdomApp.store.data.students.map(st => `
-      <label class="flex items-center space-x-1 p-1 rounded hover:bg-amber-100 cursor-pointer text-xs">
-        <input type="checkbox" name="targetStudentCheck" value="${st.id}" class="rounded text-amber-600 focus:ring-amber-500">
-        <span>${String(st.seatNo).padStart(2, '0')}.${st.name}</span>
-      </label>
-    `).join('');
+    if (box) {
+      box.innerHTML = window.KingdomApp.store.data.students.map(st => `
+        <label class="flex items-center space-x-1 p-1 rounded hover:bg-amber-100 cursor-pointer text-xs">
+          <input type="checkbox" name="targetStudentCheck" value="${st.id}" onchange="syncBatchPointSeatInputFromCheckboxes()" class="rounded text-amber-600 focus:ring-amber-500">
+          <span>${String(st.seatNo).padStart(2, '0')}.${st.name}</span>
+        </label>
+      `).join('');
+    }
   }
+}
+
+function handleBatchPointSeatInput(text) {
+  const seatNumbers = parseSeatInputTokens(text);
+  const students = window.KingdomApp.store.data.students || [];
+  const checkboxes = document.querySelectorAll('input[name="targetStudentCheck"]');
+  checkboxes.forEach(cb => {
+    const sId = parseInt(cb.value, 10);
+    const st = students.find(s => s.id === sId);
+    if (st && seatNumbers.includes(Number(st.seatNo))) {
+      cb.checked = true;
+    } else {
+      cb.checked = false;
+    }
+  });
+}
+
+function syncBatchPointSeatInputFromCheckboxes() {
+  const input = document.getElementById("batchPointSeatInput");
+  if (!input) return;
+  const students = window.KingdomApp.store.data.students || [];
+  const checkedIds = Array.from(document.querySelectorAll('input[name="targetStudentCheck"]:checked')).map(cb => parseInt(cb.value, 10));
+  const checkedSeats = students
+    .filter(s => checkedIds.includes(s.id))
+    .map(s => s.seatNo)
+    .sort((a, b) => a - b);
+  input.value = checkedSeats.join(' ');
 }
 
 function submitBatchPoints(e) {
@@ -7424,12 +7696,20 @@ if (typeof window !== 'undefined') {
   window.changeRosterActivePet = changeRosterActivePet;
   window.toggleRosterPetDrawer = toggleRosterPetDrawer;
 
-  // 早自修與重要提醒獨立編輯
+  // 早自修與重要提醒獨立編輯與快捷管理
   window.openEditRemindersModal = openEditRemindersModal;
   window.closeEditRemindersModal = closeEditRemindersModal;
   window.handleRemindersDatePickerChange = handleRemindersDatePickerChange;
   window.appendReminderPreset = appendReminderPreset;
+  window.appendReminderPresetText = appendReminderPresetText;
   window.saveRemindersData = saveRemindersData;
+  window.renderReminderPresetButtons = renderReminderPresetButtons;
+  window.openAddReminderPresetModal = openAddReminderPresetModal;
+  window.openEditReminderPresetModal = openEditReminderPresetModal;
+  window.closeManageReminderPresetModal = closeManageReminderPresetModal;
+  window.submitReminderPresetForm = submitReminderPresetForm;
+  window.deleteReminderPresetItem = deleteReminderPresetItem;
+  window.confirmResetReminderPresetsToDefault = confirmResetReminderPresetsToDefault;
 }
 
 function renderRosterView() {
@@ -7631,22 +7911,19 @@ function renderRosterView() {
           </div>
         </td>
 
-        <!-- 8. ⚙️ 投餵與操作區 (居中對齊) -->
-        <td class="py-3 px-3 text-center whitespace-nowrap">
-          <div class="flex items-center justify-center space-x-1 flex-wrap gap-y-1">
-            <button onclick="openZooFeedModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-xs font-black shadow-xs transform active:scale-95 transition" title="投餵蘋果讓寵物長大！">
-              🍎 投餵
-            </button>
-            <button onclick="openEditStudentPointsModal(${st.id})" class="px-2 py-1 bg-gradient-to-r from-rose-200 to-amber-200 hover:from-rose-300 hover:to-amber-300 text-rose-950 rounded-lg text-xs font-black border border-rose-300 shadow-xs transform active:scale-95 transition" title="更改此大臣蘋果數量">
+        <!-- 8. ⚙️ 大臣操作區 (居中對齊，單排結束不占用兩排版面) -->
+        <td class="py-2.5 px-3 text-center whitespace-nowrap">
+          <div class="inline-flex items-center justify-center space-x-1.5 whitespace-nowrap">
+            <button type="button" onclick="openEditStudentPointsModal(${st.id})" class="px-2.5 py-1 bg-gradient-to-r from-rose-100 to-amber-100 hover:from-rose-200 hover:to-amber-200 text-rose-950 rounded-lg text-xs font-black border border-rose-300 shadow-2xs transition" title="更改此大臣紅蘋果數量">
               ✏️ 改蘋果
             </button>
-            <button onclick="copyParentLink(${st.seatNo})" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg text-xs font-black border border-amber-300 shadow-xs" title="複製家長查閱專用訊息">
+            <button type="button" onclick="copyParentLink(${st.seatNo})" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg text-xs font-black border border-amber-300 shadow-2xs transition" title="複製家長查閱專用訊息">
               📋 家長連結
             </button>
-            <button onclick="openEditStudentModal(${st.id})" class="px-1.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold">
+            <button type="button" onclick="openEditStudentModal(${st.id})" class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold shadow-2xs transition">
               修改
             </button>
-            <button onclick="deleteStudent(${st.id})" class="px-1.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-xs font-bold">
+            <button type="button" onclick="deleteStudent(${st.id})" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold shadow-2xs transition">
               除名
             </button>
           </div>
@@ -13430,6 +13707,43 @@ function goToTodayHomework() {
 
 function selectSingleHomeworkTab(hwId) {
   currentHwFilterId = hwId;
+  if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+  window.openHomeworkDrawerIds.clear();
+  if (hwId === 'ALL') {
+    const allHwList = window.KingdomApp.store.data.homework || [];
+    const dayHomeworkList = allHwList.filter(h => h.date === currentHwFilterDate || h.dueDate === currentHwFilterDate);
+    dayHomeworkList.forEach(h => window.openHomeworkDrawerIds.add(String(h.id)));
+  } else {
+    window.openHomeworkDrawerIds.add(String(hwId));
+  }
+  renderHomeworkSummaryBoard();
+}
+
+function toggleHomeworkDrawer(hwId, event) {
+  if (event) event.stopPropagation();
+  if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+  const idStr = String(hwId);
+  if (window.openHomeworkDrawerIds.has(idStr)) {
+    window.openHomeworkDrawerIds.delete(idStr);
+  } else {
+    window.openHomeworkDrawerIds.add(idStr);
+    currentHwFilterId = idStr;
+  }
+  renderHomeworkSummaryBoard();
+}
+
+function toggleAllHomeworkDrawers() {
+  if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+  const allHwList = window.KingdomApp.store.data.homework || [];
+  const dayHomeworkList = allHwList.filter(h => h.date === currentHwFilterDate || h.dueDate === currentHwFilterDate);
+  if (currentHwFilterId === 'ALL') {
+    currentHwFilterId = dayHomeworkList.length > 0 ? String(dayHomeworkList[0].id) : 'ALL';
+    window.openHomeworkDrawerIds.clear();
+    if (dayHomeworkList.length > 0) window.openHomeworkDrawerIds.add(String(dayHomeworkList[0].id));
+  } else {
+    currentHwFilterId = 'ALL';
+    dayHomeworkList.forEach(h => window.openHomeworkDrawerIds.add(String(h.id)));
+  }
   renderHomeworkSummaryBoard();
 }
 
@@ -13492,6 +13806,13 @@ if (typeof window !== 'undefined') {
   window.adjustHomeworkFilterDate = adjustHomeworkFilterDate;
   window.goToTodayHomework = goToTodayHomework;
   window.selectSingleHomeworkTab = selectSingleHomeworkTab;
+  window.toggleHomeworkDrawer = toggleHomeworkDrawer;
+  window.toggleAllHomeworkDrawers = toggleAllHomeworkDrawers;
+  window.handleQuickPointSeatInput = handleQuickPointSeatInput;
+  window.clearQuickPointSeats = clearQuickPointSeats;
+  window.applyQuickPoints = applyQuickPoints;
+  window.handleBatchPointSeatInput = handleBatchPointSeatInput;
+  window.syncBatchPointSeatInputFromCheckboxes = syncBatchPointSeatInputFromCheckboxes;
   window.showAllHomeworkHistory = showAllHomeworkHistory;
   window.openZooFeedModal = openZooFeedModal;
   window.closeZooFeedModal = closeZooFeedModal;
@@ -13838,12 +14159,20 @@ if (typeof window !== 'undefined') {
   window.changeRosterActivePet = changeRosterActivePet;
   window.toggleRosterPetDrawer = toggleRosterPetDrawer;
 
-  // 早自修與重要提醒獨立編輯
+  // 早自修與重要提醒獨立編輯與快捷管理
   window.openEditRemindersModal = openEditRemindersModal;
   window.closeEditRemindersModal = closeEditRemindersModal;
   window.handleRemindersDatePickerChange = handleRemindersDatePickerChange;
   window.appendReminderPreset = appendReminderPreset;
+  window.appendReminderPresetText = appendReminderPresetText;
   window.saveRemindersData = saveRemindersData;
+  window.renderReminderPresetButtons = renderReminderPresetButtons;
+  window.openAddReminderPresetModal = openAddReminderPresetModal;
+  window.openEditReminderPresetModal = openEditReminderPresetModal;
+  window.closeManageReminderPresetModal = closeManageReminderPresetModal;
+  window.submitReminderPresetForm = submitReminderPresetForm;
+  window.deleteReminderPresetItem = deleteReminderPresetItem;
+  window.confirmResetReminderPresetsToDefault = confirmResetReminderPresetsToDefault;
 }
 
 // 全域鍵盤與投影事件監聽 (支援 Esc 鍵一鍵關閉並退出全螢幕)

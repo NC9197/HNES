@@ -33,7 +33,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261126_v39">
+  <link rel="stylesheet" href="styles.css?v=20261126_v41">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
   <!-- 頂部明亮黃金導航列 (Bright Royal Golden Navbar) -->
@@ -1300,7 +1300,7 @@
           <!-- 自訂加分常用項目區 -->
           <div class="space-y-2">
             <span class="text-xs font-black text-emerald-800 flex items-center space-x-1">
-              <span>🌟 皇家加分項目 (點擊直接獎勵全班或自選)：</span>
+              <span>🌟 皇家加分項目：</span>
             </span>
             <div id="presetPlusContainer" class="flex flex-wrap gap-2">
               <!-- 動態渲染加分按鈕 -->
@@ -1309,7 +1309,7 @@
           <!-- 自訂扣分常用項目區 -->
           <div class="space-y-2 pt-2 border-t border-amber-200">
             <span class="text-xs font-black text-rose-800 flex items-center space-x-1">
-              <span>⚠️ 皇家扣分/提醒項目 (點擊可快速紀律提醒)：</span>
+              <span>⚠️ 皇家扣分/提醒項目：</span>
             </span>
             <div id="presetMinusContainer" class="flex flex-wrap gap-2">
               <!-- 動態渲染扣分按鈕 -->
@@ -1396,6 +1396,36 @@
               </button>
             </div>
           </div>
+          <!-- ⌨️ 鍵盤手動輸入號碼快速加扣點橫幅 (如同作業未交登記，支援 1 3 5 或 1-5 快速加扣點) -->
+          <div class="p-3 bg-gradient-to-r from-amber-100/90 via-yellow-100/90 to-amber-100/90 rounded-2xl border-2 border-amber-300 shadow-2xs space-y-2">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+              <div class="flex items-center space-x-2 flex-1">
+                <span class="text-xs sm:text-sm font-black text-amber-950 whitespace-nowrap flex items-center space-x-1">
+                  <span>⌨️</span>
+                  <span>手動輸入座號加扣點：</span>
+                </span>
+                <input type="text" id="quickPointSeatInput" 
+                  placeholder="直接打座號，例如: 1 3 5 或 1-5 或 8~12" 
+                  oninput="handleQuickPointSeatInput(this.value)" 
+                  class="flex-1 px-3 py-1.5 rounded-xl border-2 border-amber-400 bg-white font-mono font-bold text-xs sm:text-sm text-slate-900 focus:ring-2 focus:ring-amber-500 shadow-inner">
+                <button type="button" onclick="clearQuickPointSeats()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-300 shadow-2xs transition" title="清空輸入框與選取">清空</button>
+              </div>
+              <div class="flex items-center space-x-1.5 flex-wrap">
+                <span class="text-xs font-black text-amber-950">點數：</span>
+                <button type="button" onclick="applyQuickPoints(1)" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-2xs transition" title="為輸入座號各加 1 顆蘋果">+1 🍎</button>
+                <button type="button" onclick="applyQuickPoints(2)" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-2xs transition" title="為輸入座號各加 2 顆蘋果">+2 🍎</button>
+                <button type="button" onclick="applyQuickPoints(3)" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-2xs transition" title="為輸入座號各加 3 顆蘋果">+3 🍎</button>
+                <button type="button" onclick="applyQuickPoints(5)" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-2xs transition" title="為輸入座號各加 5 顆蘋果">+5 🍎</button>
+                <button type="button" onclick="applyQuickPoints(-1)" class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs shadow-2xs transition" title="為輸入座號各扣 1 顆蘋果">-1 ⚠️</button>
+                <button type="button" onclick="applyQuickPoints(-2)" class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs shadow-2xs transition" title="為輸入座號各扣 2 顆蘋果">-2 ⚠️</button>
+                <button type="button" onclick="openBatchPointModal()" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 text-amber-950 font-black text-xs shadow-2xs transition">自訂事由 ⚙️</button>
+              </div>
+            </div>
+            <div class="text-[11px] font-bold text-amber-900/80 flex items-center justify-between flex-wrap gap-1">
+              <span>💡 支援空格、逗號、波浪號連續範圍（例如輸入 <code>1 3 5-8</code> 即時全選）</span>
+              <span id="quickPointTargetSummaryBadge" class="text-xs font-black text-amber-950 bg-amber-200/90 px-2 py-0.5 rounded-md border border-amber-300">目前選取：0 位大臣</span>
+            </div>
+          </div>
           <!-- 27 位大臣榮譽蘋果網格 (固定 5*5+2 版面排版) -->
           <div id="pointsGrid" class="points-grid-5x5 gap-3.5">
             <!-- 動態渲染 -->
@@ -1405,7 +1435,7 @@
         <div class="parchment-card p-5 space-y-3">
           <h3 class="text-base font-black text-amber-950 flex items-center space-x-2">
             <i data-lucide="history" class="w-4 h-4 text-amber-700"></i>
-            <span>近期皇家榮譽記功簿 (獎懲歷史紀錄)</span>
+            <span>近期皇家榮譽記功簿</span>
           </h3>
           <div id="pointLogsList" class="space-y-2 max-h-60 overflow-y-auto pr-2 text-xs">
             <!-- 動態填入 -->
@@ -1521,7 +1551,7 @@
                   <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">🌱 累計獲得蘋果</th>
                   <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">🍎 目前可用</th>
                   <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base min-w-[260px]">🐾 認養萌寵</th>
-                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">⚙️ 投餵與操作</th>
+                  <th class="py-3 px-3 whitespace-nowrap text-center text-sm sm:text-base">⚙️ 大臣操作</th>
                 </tr>
               </thead>
               <tbody id="studentRosterTableBody" class="divide-y divide-amber-200/80 bg-white/70 text-center">
@@ -1538,7 +1568,7 @@
         <div class="parchment-card p-5 sm:p-6 space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-amber-300">
             <h3 class="text-xl font-black text-amber-950 flex items-center space-x-2">
-              <span>📢 皇室告示欄 (發布給家長與班級的重要通知)</span>
+              <span>📢 皇室告示欄</span>
             </h3>
             <div class="flex items-center space-x-2">
               <button type="button" onclick="openAnnouncementProjectionModal()" class="btn-royal-gold px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black flex items-center space-x-1.5 shadow-md" title="將告示內容以超大字體全螢幕大屏投影給全班學生查看">
@@ -1854,36 +1884,23 @@
           <input type="date" id="editRemindersDatePicker" onchange="handleRemindersDatePickerChange(this.value)" class="px-2 py-0.5 text-xs bg-white border border-amber-300 rounded-lg text-amber-900 font-bold cursor-pointer">
         </div>
       </div>
-      <!-- 快捷常用範本按鈕群 -->
+      <!-- 快捷常用範本按鈕群 (支援自訂編輯、新增、刪除與恢復預設) -->
       <div class="space-y-1.5">
-        <span class="text-xs font-black text-amber-900 flex items-center space-x-1">
-          <span>⚡ 點擊快速插入常用範本：</span>
-        </span>
-        <div class="flex flex-wrap gap-1.5">
-          <button type="button" onclick="appendReminderPreset('早自修：全班保持專注靜心自修')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
-            📖 專注靜心自修
-          </button>
-          <button type="button" onclick="appendReminderPreset('早自修：國語生字造詞隨堂練習')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
-            ✍️ 國語生字練習
-          </button>
-          <button type="button" onclick="appendReminderPreset('早自修：數學隨堂演練計算題')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
-            ➗ 數學隨堂演練
-          </button>
-          <button type="button" onclick="appendReminderPreset('早自修：閱讀班書並記錄閱讀日誌')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
-            📚 閱讀班書日誌
-          </button>
-          <button type="button" onclick="appendReminderPreset('重要提醒：明日有體育課，請穿著西寧王國運動服與運動鞋')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
-            🏃 明穿運動服鞋
-          </button>
-          <button type="button" onclick="appendReminderPreset('重要提醒：請檢查家長聯絡簿簽名並繳交')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
-            📝 聯絡簿簽名
-          </button>
-          <button type="button" onclick="appendReminderPreset('重要提醒：攜帶美勞課所需用具與剪刀色紙')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
-            🎨 攜帶美勞用具
-          </button>
-          <button type="button" onclick="appendReminderPreset('生活提醒：用餐完畢徹底潔牙並整理桌面')" class="px-2 py-1 rounded-lg bg-white hover:bg-amber-100 text-amber-950 text-xs font-bold border border-amber-300 shadow-2xs transition">
-            🪥 餐後潔牙整理
-          </button>
+        <div class="flex items-center justify-between text-xs font-black text-amber-900 flex-wrap gap-1">
+          <span class="flex items-center space-x-1">
+            <span>⚡ 點擊快速插入常用範本：</span>
+          </span>
+          <div class="flex items-center space-x-1">
+            <button type="button" onclick="openAddReminderPresetModal()" class="px-2 py-0.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-black text-[11px] border border-amber-400 shadow-2xs flex items-center space-x-0.5 transition" title="新增自訂早自修或提醒快捷">
+              <span>➕ 新增快捷</span>
+            </button>
+            <button type="button" onclick="confirmResetReminderPresetsToDefault()" class="px-2 py-0.5 rounded-lg bg-white hover:bg-amber-100 text-amber-800 font-bold text-[11px] border border-amber-300 shadow-2xs flex items-center space-x-0.5 transition" title="恢復預設 8 項快捷">
+              <span>🔄 恢復預設</span>
+            </button>
+          </div>
+        </div>
+        <div id="remindersPresetButtonsBar" class="flex flex-wrap gap-1.5 p-1.5 bg-amber-50/70 rounded-xl border border-amber-300/80 min-h-[42px]">
+          <!-- 動態渲染每個快捷按鈕，含點擊帶入、✏️ 編輯、🗑️ 刪除 -->
         </div>
       </div>
       <form onsubmit="saveRemindersData(event)" class="space-y-3.5 text-xs">
@@ -1912,7 +1929,39 @@
       </form>
     </div>
   </div>
-  <!-- MODAL: 作業快速設置「需訂正 / 未繳交 / 遲交 / 已繳」座號鍵盤盤 -->
+  <!-- MODAL: 自訂/編輯早自修與提醒快捷範本 (Manage Reminder Preset Modal) -->
+  <div id="manageReminderPresetModal" class="hidden fixed inset-0 z-[100000] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="parchment-card max-w-sm w-full p-5 space-y-3.5 shadow-2xl border-2 border-amber-400">
+      <div class="flex items-center justify-between border-b border-amber-300 pb-2">
+        <h3 id="manageReminderPresetModalTitle" class="text-base font-black text-amber-950 flex items-center space-x-1.5">
+          <span>📝 自訂早自修與提醒快捷</span>
+        </h3>
+        <button type="button" onclick="closeManageReminderPresetModal()" class="w-7 h-7 rounded-full bg-white/80 hover:bg-rose-100 text-slate-700 hover:text-rose-700 flex items-center justify-center border border-amber-300 transition text-sm font-black">
+          ✕
+        </button>
+      </div>
+      <form id="reminderPresetForm" onsubmit="submitReminderPresetForm(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="editReminderPresetId" value="">
+        <div>
+          <label class="block font-bold text-amber-950 mb-1">快捷標籤名稱：</label>
+          <input type="text" id="reminderPresetLabel" required placeholder="例如：📖 專注靜心自修、✍️ 國語生字練習" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold text-sm text-amber-950">
+        </div>
+        <div>
+          <label class="block font-bold text-amber-950 mb-1">完整插入文字：</label>
+          <textarea id="reminderPresetText" rows="3" required placeholder="例如：早自修：全班保持專注靜心自修" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-medium text-xs text-amber-950 leading-relaxed"></textarea>
+        </div>
+        <div class="flex items-center justify-between pt-2 border-t border-amber-200">
+          <button type="button" onclick="confirmResetReminderPresetsToDefault()" class="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-[11px]" title="恢復系統預設 8 項快捷">
+            🔄 恢復預設
+          </button>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="closeManageReminderPresetModal()" class="px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-slate-700 hover:bg-slate-50">取消</button>
+            <button type="submit" class="btn-royal-gold px-4 py-1.5 rounded-lg font-black shadow">儲存快捷範本</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
   <div id="setRevisionModal" class="hidden fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
     <div class="parchment-card max-w-xl w-full p-4 sm:p-6 space-y-3.5 shadow-2xl border-2 border-amber-400">
       <!-- 頂部標題與關閉按鈕 -->
@@ -2371,7 +2420,7 @@
         <!-- 常用作業快捷範本一鍵套用區 (例如國習、造詞、生字本、數習、數練等) -->
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label class="block font-bold text-amber-950">常用作業快捷範本 (點擊套用，附帶 ✏️ 編輯、🗑️ 刪除)：</label>
+            <label class="block font-bold text-amber-950">常用作業快捷範本：</label>
             <div class="flex items-center space-x-2">
               <button type="button" onclick="confirmResetHwPresetsToDefault()" class="text-xs text-slate-500 hover:text-slate-800 font-bold hover:underline" title="恢復系統預設作業快捷">
                 🔄 恢復預設
@@ -2386,7 +2435,7 @@
           </div>
         </div>
         <div>
-          <label class="block font-bold text-amber-950 mb-1">奏章名稱 (作業名稱)：</label>
+          <label class="block font-bold text-amber-950 mb-1">作業名稱：</label>
           <input type="text" id="newHwTitle" required placeholder="例如：數學習作 P.48~50" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold text-sm">
         </div>
         <div>
@@ -2439,7 +2488,7 @@
           </div>
         </div>
         <div>
-          <label class="block font-bold text-amber-950 mb-1">奏章名稱 (作業標題)：</label>
+          <label class="block font-bold text-amber-950 mb-1">作業名稱：</label>
           <input type="text" id="editHwTitle" required placeholder="例如：數學習作 P.48~50" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold text-sm">
         </div>
         <div>
@@ -3088,13 +3137,17 @@
               手動自選大臣
             </button>
           </div>
+          <div id="batchPointSeatInputWrapper" class="hidden mb-2">
+            <label class="block font-bold text-amber-950 mb-1">手動輸入座號：</label>
+            <input type="text" id="batchPointSeatInput" placeholder="直接打座號，例如: 1 3 5 或 1-5 或 8~12" oninput="handleBatchPointSeatInput(this.value)" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-mono font-bold text-sm">
+          </div>
           <div id="pointStudentSelectorBox" class="hidden max-h-36 overflow-y-auto p-2 bg-white rounded-lg border border-amber-300 grid grid-cols-3 gap-1">
             <!-- 多選核取方塊 -->
           </div>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-amber-950 mb-1">榮譽點數 (可正可負)：</label>
+            <label class="block font-bold text-amber-950 mb-1">榮譽點數：</label>
             <input type="number" id="batchPointAmount" value="3" min="-20" max="50" required class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-black text-center text-sm">
           </div>
           <div>
@@ -3152,7 +3205,7 @@
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-amber-950 mb-1">國曆生日 (4碼)：</label>
+            <label class="block font-bold text-amber-950 mb-1">國曆生日：</label>
             <input type="text" id="editStudentBirthday" required placeholder="例如：0101 或 0520" maxlength="8" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-mono font-bold text-center">
             <span class="text-[10px] text-amber-700">家長登入密碼為：座號(2碼)+生日(4碼)，如 010101</span>
           </div>
@@ -3214,7 +3267,7 @@
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-black text-amber-950 mb-1">兌換所需蘋果 (顆數)：</label>
+            <label class="block font-black text-amber-950 mb-1">兌換所需蘋果：</label>
             <input type="number" id="rewardCardCostInput" required min="1" max="500" value="30" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-black text-center text-sm">
           </div>
           <div>
@@ -3446,7 +3499,7 @@
         </div>
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="font-black text-amber-950 text-sm">受旨大臣 (可同時勾選多位)：</label>
+            <label class="font-black text-amber-950 text-sm">受旨大臣：</label>
             <div class="flex items-center space-x-2 text-xs">
               <button type="button" onclick="toggleAllBehaviorStudents(true)" class="text-amber-800 hover:underline font-black">全選</button>
               <span class="text-slate-300">|</span>
@@ -3459,7 +3512,7 @@
         </div>
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="block font-black text-amber-950 text-sm">發放事由與提醒 (點擊快捷一鍵填入)：</label>
+            <label class="block font-black text-amber-950 text-sm">發放事由與提醒：</label>
             <button type="button" onclick="openAddBehaviorReasonModal()" class="text-xs text-amber-800 font-bold hover:underline flex items-center space-x-1">
               <span>+ 自訂事由快捷</span>
             </button>
@@ -3591,7 +3644,7 @@
           受旨對象：<span id="customMultiPointsTargetDesc" class="font-black text-amber-900">0 位大臣</span>
         </div>
         <div>
-          <label class="block font-black text-amber-950 mb-1">榮譽點數 (正數加分，負數扣分)：</label>
+          <label class="block font-black text-amber-950 mb-1">榮譽點數：</label>
           <input type="number" id="customMultiPointsInput" required min="-50" max="100" value="3" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-black text-center text-base">
         </div>
         <div>
@@ -3638,15 +3691,15 @@
           </select>
         </div>
         <div>
-          <label class="block font-bold text-amber-950 mb-1">快捷簡稱 (顯示於按鈕，如：國習、造詞)：</label>
+          <label class="block font-bold text-amber-950 mb-1">快捷簡稱：</label>
           <input type="text" id="presetName" required placeholder="例如：生字本、數練、圈詞" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
         </div>
         <div>
-          <label class="block font-bold text-amber-950 mb-1">作業完整標題 (套用至作業名稱)：</label>
+          <label class="block font-bold text-amber-950 mb-1">作業完整標題：</label>
           <input type="text" id="presetFullName" required placeholder="例如：國語生字甲本第X課完成" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-medium">
         </div>
         <div>
-          <label class="block font-bold text-amber-950 mb-1">預設說明叮嚀 (選填)：</label>
+          <label class="block font-bold text-amber-950 mb-1">預設說明叮嚀：</label>
           <input type="text" id="presetDesc" placeholder="例如：筆順部首描寫端正，完成訂正" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-medium">
         </div>
         <div class="flex items-center justify-between pt-2 border-t border-amber-200">
@@ -3683,11 +3736,11 @@
           </select>
         </div>
         <div>
-          <label class="block font-bold text-amber-950 mb-1">快捷標籤名稱 (顯示於快捷列)：</label>
+          <label class="block font-bold text-amber-950 mb-1">快捷標籤名稱：</label>
           <input type="text" id="reasonLabel" required placeholder="例如：聽寫記得簽名、作業未交、遲到" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
         </div>
         <div>
-          <label class="block font-bold text-amber-950 mb-1">完整事由文字 (學生書寫提醒或反省句子)：</label>
+          <label class="block font-bold text-amber-950 mb-1">完整事由文字：</label>
           <input type="text" id="reasonText" required placeholder="例如：聽寫要記得簽名、作業未交留座反省" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-medium">
         </div>
         <div id="reasonTargetCountGroup" class="hidden p-2.5 bg-yellow-50 rounded-xl border border-yellow-300 space-y-1.5">
@@ -3729,15 +3782,15 @@
       <form id="timerPresetForm" onsubmit="submitTimerPresetForm(event)" class="space-y-3 text-xs font-bold">
         <input type="hidden" id="editTimerPresetId" value="">
         <div>
-          <label class="block text-amber-950 mb-1">按鈕標籤文字 (顯示於快捷列)：</label>
+          <label class="block text-amber-950 mb-1">按鈕標籤文字：</label>
           <input type="text" id="timerPresetBtnText" required placeholder="例如：📜 寫聯絡簿 (5分)" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold">
         </div>
         <div>
-          <label class="block text-amber-950 mb-1">活動任務名稱 (計時器顯示文字)：</label>
+          <label class="block text-amber-950 mb-1">活動任務名稱：</label>
           <input type="text" id="timerPresetLabel" required placeholder="例如：抄寫家庭聯絡簿" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-medium">
         </div>
         <div>
-          <label class="block text-amber-950 mb-1">計時時間 (分鐘)：</label>
+          <label class="block text-amber-950 mb-1">計時時間：</label>
           <input type="number" id="timerPresetMinutes" required min="1" max="180" value="5" class="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white font-bold text-center">
         </div>
         <div class="flex items-center justify-between pt-2 border-t border-amber-200">
@@ -3777,7 +3830,7 @@
       <!-- 活動情境快捷標籤 -->
       <div>
         <div class="flex items-center justify-between mb-1.5">
-          <label class="block text-xs font-bold text-amber-900">常用活動情境快捷 (附帶 ✏️ 編輯、🗑️ 刪除)：</label>
+          <label class="block text-xs font-bold text-amber-900">常用活動情境快捷：</label>
           <div class="flex items-center space-x-1.5">
             <button type="button" onclick="confirmResetTimerPresetsToDefault()" class="text-[11px] text-slate-500 hover:text-slate-800 font-bold hover:underline" title="恢復預設情境">
               🔄 恢復預設
@@ -4792,8 +4845,8 @@
     </div>
   </div>
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261126_v39"></script>
-  <script src="ui.js?v=20261126_v39"></script>
+  <script src="app.js?v=20261126_v41"></script>
+  <script src="ui.js?v=20261126_v41"></script>
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>
     (function() {
@@ -4863,6 +4916,63 @@
       // 1. 早自修與重要提醒獨立編輯邏輯
       window.currentRemindersEditDate = window.currentRemindersEditDate || null;
 
+      var DEFAULT_REMINDER_PRESETS = [
+        { id: 'rem_pre_1', label: '📖 專注靜心自修', text: '早自修：全班保持專注靜心自修' },
+        { id: 'rem_pre_2', label: '✍️ 國語生字練習', text: '早自修：國語生字造詞隨堂練習' },
+        { id: 'rem_pre_3', label: '➗ 數學隨堂演練', text: '早自修：數學隨堂演練計算題' },
+        { id: 'rem_pre_4', label: '📚 閱讀班書日誌', text: '早自修：閱讀班書並記錄閱讀日誌' },
+        { id: 'rem_pre_5', label: '🏃 明穿運動服鞋', text: '重要提醒：明日有體育課，請穿著西寧王國運動服與運動鞋' },
+        { id: 'rem_pre_6', label: '📝 聯絡簿簽名', text: '重要提醒：請檢查家長聯絡簿簽名並繳交' },
+        { id: 'rem_pre_7', label: '🎨 攜帶美勞用具', text: '重要提醒：攜帶美勞課所需用具與剪刀色紙' },
+        { id: 'rem_pre_8', label: '🪥 餐後潔牙整理', text: '生活提醒：用餐完畢徹底潔牙並整理桌面' }
+      ];
+
+      function getActiveReminderPresets() {
+        if (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getReminderPresets === 'function') {
+          return window.KingdomApp.store.getReminderPresets();
+        }
+        try {
+          var saved = localStorage.getItem('xining_reminder_presets');
+          if (saved) return JSON.parse(saved);
+        } catch (_) {}
+        return DEFAULT_REMINDER_PRESETS;
+      }
+
+      function saveActiveReminderPresets(presets) {
+        if (window.KingdomApp && window.KingdomApp.store) {
+          window.KingdomApp.store.data.reminderPresets = presets;
+          window.KingdomApp.store.save('自訂早自修快捷');
+        }
+        try {
+          localStorage.setItem('xining_reminder_presets', JSON.stringify(presets));
+        } catch (_) {}
+      }
+
+      window.renderReminderPresetButtons = function() {
+        var container = document.getElementById("remindersPresetButtonsBar");
+        if (!container) return;
+        var presets = getActiveReminderPresets();
+        if (!presets || presets.length === 0) {
+          container.innerHTML = '<span class="text-xs text-slate-400">目前無快捷範本，可點右上角自訂新增</span>';
+          return;
+        }
+        container.innerHTML = presets.map(function(p) {
+          return '<div class="inline-flex items-center rounded-lg bg-white border border-amber-300 shadow-2xs overflow-hidden group hover:border-amber-400">' +
+            '<button type="button" onclick="appendReminderPresetText(' + safeEscape(JSON.stringify(p.text)) + ')" ' +
+            'class="px-2.5 py-1 text-amber-950 font-black text-xs hover:bg-amber-100 flex items-center space-x-1 transition" ' +
+            'title="點擊帶入：' + safeEscape(p.text) + '">' +
+            '<span>' + safeEscape(p.label) + '</span>' +
+            '</button>' +
+            '<div class="flex items-center border-l border-amber-200 bg-amber-50">' +
+            '<button type="button" onclick="openEditReminderPresetModal(\'' + p.id + '\')" ' +
+            'class="p-1 text-amber-700/70 hover:text-amber-900 hover:bg-amber-100 transition" title="編輯此快捷">✏️</button>' +
+            '<button type="button" onclick="deleteReminderPresetItem(\'' + p.id + '\')" ' +
+            'class="p-1 text-rose-500/70 hover:text-rose-700 hover:bg-rose-50 transition" title="刪除此快捷">🗑️</button>' +
+            '</div>' +
+            '</div>';
+        }).join('');
+      };
+
       window.openEditRemindersModal = function(dateStr) {
         if (typeof checkTeacherAuth === 'function' && !checkTeacherAuth("編輯早自修與重要提醒")) return;
         var targetDate = dateStr || (typeof currentContactDate !== 'undefined' ? currentContactDate : null) || (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
@@ -4898,6 +5008,10 @@
           modal.style.setProperty("display", "flex", "important");
           modal.style.setProperty("z-index", "99999", "important");
         }
+
+        if (typeof window.renderReminderPresetButtons === 'function') {
+          window.renderReminderPresetButtons();
+        }
       };
 
       window.closeEditRemindersModal = function() {
@@ -4920,6 +5034,107 @@
         var cur = textEl.value.trim();
         textEl.value = cur ? (cur + '\n' + text) : text;
         textEl.focus();
+      };
+      window.appendReminderPresetText = window.appendReminderPreset;
+
+      window.openAddReminderPresetModal = function() {
+        var editIdInput = document.getElementById("editReminderPresetId");
+        if (editIdInput) editIdInput.value = "";
+        var title = document.getElementById("manageReminderPresetModalTitle");
+        if (title) title.innerHTML = '<span>➕ 新增早自修與提醒快捷</span>';
+        var labelInput = document.getElementById("reminderPresetLabel");
+        if (labelInput) labelInput.value = "";
+        var textInput = document.getElementById("reminderPresetText");
+        if (textInput) textInput.value = "";
+        var modal = document.getElementById("manageReminderPresetModal");
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.style.setProperty("display", "flex", "important");
+          modal.style.setProperty("z-index", "100000", "important");
+        }
+      };
+
+      window.openEditReminderPresetModal = function(presetId) {
+        var presets = getActiveReminderPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset) return;
+        var editIdInput = document.getElementById("editReminderPresetId");
+        if (editIdInput) editIdInput.value = preset.id;
+        var title = document.getElementById("manageReminderPresetModalTitle");
+        if (title) title.innerHTML = '<span>✏️ 編輯早自修與提醒快捷</span>';
+        var labelInput = document.getElementById("reminderPresetLabel");
+        if (labelInput) labelInput.value = preset.label;
+        var textInput = document.getElementById("reminderPresetText");
+        if (textInput) textInput.value = preset.text;
+        var modal = document.getElementById("manageReminderPresetModal");
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.style.setProperty("display", "flex", "important");
+          modal.style.setProperty("z-index", "100000", "important");
+        }
+      };
+
+      window.closeManageReminderPresetModal = function() {
+        var modal = document.getElementById("manageReminderPresetModal");
+        if (modal) {
+          modal.classList.add("hidden");
+          modal.style.removeProperty("display");
+          modal.style.removeProperty("z-index");
+        }
+      };
+
+      window.submitReminderPresetForm = function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        var editId = (document.getElementById("editReminderPresetId") ? document.getElementById("editReminderPresetId").value : "").trim();
+        var label = (document.getElementById("reminderPresetLabel") ? document.getElementById("reminderPresetLabel").value : "").trim();
+        var text = (document.getElementById("reminderPresetText") ? document.getElementById("reminderPresetText").value : "").trim();
+
+        if (!label || !text) {
+          alert("請填寫快捷標籤名稱與完整內容！");
+          return;
+        }
+
+        var presets = getActiveReminderPresets();
+        if (editId) {
+          var target = presets.find(function(p) { return p.id === editId; });
+          if (target) {
+            target.label = label;
+            target.text = text;
+          }
+          if (typeof showToast === 'function') showToast("✅ 已更新早自修快捷【" + label + "】！", "✨");
+        } else {
+          presets.push({
+            id: 'rem_pre_' + Date.now(),
+            label: label,
+            text: text
+          });
+          if (typeof showToast === 'function') showToast("✅ 已新增早自修快捷【" + label + "】！", "✨");
+        }
+        saveActiveReminderPresets(presets);
+        window.closeManageReminderPresetModal();
+        window.renderReminderPresetButtons();
+      };
+
+      window.deleteReminderPresetItem = function(presetId) {
+        var presets = getActiveReminderPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        var name = preset ? preset.label : "此快捷";
+        if (!confirm("確定要刪除快捷【" + name + "】嗎？")) return;
+        var idx = presets.findIndex(function(p) { return p.id === presetId; });
+        if (idx !== -1) {
+          presets.splice(idx, 1);
+          saveActiveReminderPresets(presets);
+        }
+        if (typeof showToast === 'function') showToast("🗑️ 已刪除早自修快捷【" + name + "】", "✨");
+        window.renderReminderPresetButtons();
+      };
+
+      window.confirmResetReminderPresetsToDefault = function() {
+        if (!confirm("確定要將早自修與提醒快捷恢復為系統預設 8 項範本嗎？自訂的項目將被重置。")) return;
+        var presets = JSON.parse(JSON.stringify(DEFAULT_REMINDER_PRESETS));
+        saveActiveReminderPresets(presets);
+        if (typeof showToast === 'function') showToast("🔄 已成功恢復預設早自修與提醒快捷！", "🔔");
+        window.renderReminderPresetButtons();
       };
 
       window.saveRemindersData = function(e) {
@@ -5102,7 +5317,215 @@
           '</div>';
       };
 
-      // 4. 當 DOM 與依賴腳本就緒後，若當前處於晨間朝會，主動觸發一次重新繪製
+      // 4. 作業看板下拉抽屜檢視 (免滾動滑鼠，支援下拉選單與折疊抽屜)
+      window.openHomeworkDrawerIds = window.openHomeworkDrawerIds || new Set();
+
+      window.selectSingleHomeworkTab = function(hwId) {
+        if (typeof currentHwFilterId !== 'undefined') {
+          currentHwFilterId = hwId;
+        } else {
+          window.currentHwFilterId = hwId;
+        }
+        if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+        window.openHomeworkDrawerIds.clear();
+        if (hwId === 'ALL') {
+          var allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
+          var fDate = (typeof currentHwFilterDate !== 'undefined') ? currentHwFilterDate : (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
+          var dayHomeworkList = allHwList.filter(function(h) { return h.date === fDate || h.dueDate === fDate; });
+          dayHomeworkList.forEach(function(h) { window.openHomeworkDrawerIds.add(String(h.id)); });
+        } else {
+          window.openHomeworkDrawerIds.add(String(hwId));
+        }
+        if (typeof renderHomeworkSummaryBoard === 'function') {
+          renderHomeworkSummaryBoard();
+        }
+      };
+
+      window.toggleHomeworkDrawer = function(hwId, event) {
+        if (event && event.stopPropagation) event.stopPropagation();
+        if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+        var idStr = String(hwId);
+        if (window.openHomeworkDrawerIds.has(idStr)) {
+          window.openHomeworkDrawerIds.delete(idStr);
+        } else {
+          window.openHomeworkDrawerIds.add(idStr);
+          if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = idStr;
+        }
+        if (typeof renderHomeworkSummaryBoard === 'function') {
+          renderHomeworkSummaryBoard();
+        }
+      };
+
+      window.toggleAllHomeworkDrawers = function() {
+        if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+        var allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
+        var fDate = (typeof currentHwFilterDate !== 'undefined') ? currentHwFilterDate : (window.KingdomApp && window.KingdomApp.getTodayDateString ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10));
+        var dayHomeworkList = allHwList.filter(function(h) { return h.date === fDate || h.dueDate === fDate; });
+        var curId = (typeof currentHwFilterId !== 'undefined') ? currentHwFilterId : 'ALL';
+        if (curId === 'ALL') {
+          if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = dayHomeworkList.length > 0 ? String(dayHomeworkList[0].id) : 'ALL';
+          window.openHomeworkDrawerIds.clear();
+          if (dayHomeworkList.length > 0) window.openHomeworkDrawerIds.add(String(dayHomeworkList[0].id));
+        } else {
+          if (typeof currentHwFilterId !== 'undefined') currentHwFilterId = 'ALL';
+          dayHomeworkList.forEach(function(h) { window.openHomeworkDrawerIds.add(String(h.id)); });
+        }
+        if (typeof renderHomeworkSummaryBoard === 'function') {
+          renderHomeworkSummaryBoard();
+        }
+      };
+
+      // 5. 集點獎勵鍵盤手動輸入號碼快速加扣點
+      function parseSeatTokensInternal(text) {
+        if (!text) return [];
+        var tokens = String(text).split(/[\s,，;；、]+/);
+        var seatNumbers = [];
+        var seen = {};
+        tokens.forEach(function(token) {
+          token = token.trim();
+          if (!token) return;
+          var rangeMatch = token.match(/^(\d+)[\-~至](\d+)$/);
+          if (rangeMatch) {
+            var start = parseInt(rangeMatch[1], 10);
+            var end = parseInt(rangeMatch[2], 10);
+            if (!isNaN(start) && !isNaN(end)) {
+              var min = Math.min(start, end);
+              var max = Math.max(start, end);
+              for (var s = min; s <= max; s++) {
+                if (s >= 1 && s <= 35 && !seen[s]) {
+                  seen[s] = true;
+                  seatNumbers.push(s);
+                }
+              }
+            }
+            return;
+          }
+          var num = parseInt(token, 10);
+          if (!isNaN(num) && num >= 1 && num <= 35 && !seen[num]) {
+            seen[num] = true;
+            seatNumbers.push(num);
+          }
+        });
+        return seatNumbers.sort(function(a, b) { return a - b; });
+      }
+
+      window.handleQuickPointSeatInput = function(text) {
+        var seatNumbers = parseSeatTokensInternal(text);
+        var students = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.students) || [];
+        if (typeof selectedStudentIdsForPoints !== 'undefined') {
+          selectedStudentIdsForPoints.clear();
+          seatNumbers.forEach(function(num) {
+            var st = students.find(function(s) { return Number(s.seatNo) === num || Number(s.id) === num; });
+            if (st) selectedStudentIdsForPoints.add(st.id);
+          });
+        }
+        if (typeof updatePointsMultiSelectUI === 'function') {
+          updatePointsMultiSelectUI(false);
+        }
+        var badge = document.getElementById("quickPointTargetSummaryBadge");
+        if (badge) {
+          if (seatNumbers.length === 0) {
+            badge.textContent = "目前選取：0 位大臣";
+          } else {
+            badge.textContent = "目前選取：" + seatNumbers.length + " 位大臣 (" + seatNumbers.join(', ') + "號)";
+          }
+        }
+      };
+
+      window.clearQuickPointSeats = function() {
+        if (typeof selectedStudentIdsForPoints !== 'undefined') {
+          selectedStudentIdsForPoints.clear();
+        }
+        var input = document.getElementById("quickPointSeatInput");
+        if (input) input.value = "";
+        if (typeof updatePointsMultiSelectUI === 'function') {
+          updatePointsMultiSelectUI(false);
+        }
+        var badge = document.getElementById("quickPointTargetSummaryBadge");
+        if (badge) badge.textContent = "目前選取：0 位大臣";
+      };
+
+      window.applyQuickPoints = function(points, customReason) {
+        var count = (typeof selectedStudentIdsForPoints !== 'undefined') ? selectedStudentIdsForPoints.size : 0;
+        if (count === 0) {
+          if (typeof showToast === 'function') {
+            showToast("⚠️ 請先在輸入框打座號（如: 1 3 5 或 1-5）或勾選大臣！", "⚠️");
+          } else {
+            alert("請先輸入座號或勾選大臣！");
+          }
+          var input = document.getElementById("quickPointSeatInput");
+          if (input) input.focus();
+          return;
+        }
+
+        var ids = Array.from(selectedStudentIdsForPoints);
+        var defaultReason = points > 0 ? "課堂表現優異 (+" + points + " 🍎)" : "課堂常規提醒 (" + points + " 🍎)";
+        var finalReason = customReason || defaultReason;
+
+        if (window.KingdomApp && window.KingdomApp.store) {
+          window.KingdomApp.store.batchAwardMultipleStudents(ids, points, finalReason);
+        }
+
+        if (points > 0) {
+          if (window.KingdomApp && window.KingdomApp.sound && window.KingdomApp.sound.playFanfare) {
+            try { window.KingdomApp.sound.playFanfare(); } catch (_) {}
+          }
+          if (window.KingdomApp && window.KingdomApp.triggerConfetti) {
+            try { window.KingdomApp.triggerConfetti(); } catch (_) {}
+          }
+          if (typeof showToast === 'function') {
+            showToast("🎉 成功為 " + ids.length + " 位大臣各賞賜 " + (points > 0 ? ("+" + points) : points) + " 顆紅蘋果！", "🍎");
+          }
+        } else {
+          if (window.KingdomApp && window.KingdomApp.sound && window.KingdomApp.sound.playCoin) {
+            try { window.KingdomApp.sound.playCoin(); } catch (_) {}
+          }
+          if (typeof showToast === 'function') {
+            showToast("⚠️ 已對 " + ids.length + " 位大臣扣除 " + Math.abs(points) + " 顆紅蘋果。", "⚠️");
+          }
+        }
+
+        if (typeof showUndoNotificationBanner === 'function') showUndoNotificationBanner();
+        if (typeof renderPointsView === 'function') renderPointsView();
+
+        var inputEl = document.getElementById("quickPointSeatInput");
+        if (inputEl && inputEl.value) {
+          var seats = parseSeatTokensInternal(inputEl.value);
+          var badgeEl = document.getElementById("quickPointTargetSummaryBadge");
+          if (badgeEl && seats.length > 0) {
+            badgeEl.textContent = "目前選取：" + seats.length + " 位大臣 (" + seats.join(', ') + "號)";
+          }
+        }
+      };
+
+      window.handleBatchPointSeatInput = function(text) {
+        var seatNumbers = parseSeatTokensInternal(text);
+        var students = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.students) || [];
+        var checkboxes = document.querySelectorAll('input[name="targetStudentCheck"]');
+        checkboxes.forEach(function(cb) {
+          var sId = parseInt(cb.value, 10);
+          var st = students.find(function(s) { return s.id === sId; });
+          if (st && seatNumbers.includes(Number(st.seatNo))) {
+            cb.checked = true;
+          } else {
+            cb.checked = false;
+          }
+        });
+      };
+
+      window.syncBatchPointSeatInputFromCheckboxes = function() {
+        var input = document.getElementById("batchPointSeatInput");
+        if (!input) return;
+        var students = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.students) || [];
+        var checkedIds = Array.from(document.querySelectorAll('input[name="targetStudentCheck"]:checked')).map(function(cb) { return parseInt(cb.value, 10); });
+        var checkedSeats = students
+          .filter(function(s) { return checkedIds.includes(s.id); })
+          .map(function(s) { return s.seatNo; })
+          .sort(function(a, b) { return a - b; });
+        input.value = checkedSeats.join(' ');
+      };
+
+      // 6. 當 DOM 與依賴腳本就緒後，若當前處於晨間朝會，主動觸發一次重新繪製
       document.addEventListener("DOMContentLoaded", function() {
         setTimeout(function() {
           if (typeof renderMorningBoard === 'function') {
