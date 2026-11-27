@@ -351,6 +351,7 @@ function mergeDatasets(base, incoming) {
     alarmPresets: incoming.alarmPresets || base.alarmPresets,
     timerPresets: incoming.timerPresets || base.timerPresets,
     bellSchedule: incoming.bellSchedule || base.bellSchedule,
+    reminderPresets: incoming.reminderPresets || base.reminderPresets,
     announcements: (incoming.announcements !== undefined && incoming.announcements !== null) ? incoming.announcements : (base.announcements || []),
     rewardCards: incoming.rewardCards || base.rewardCards,
     rewardRedemptions: mergedRedemptions,

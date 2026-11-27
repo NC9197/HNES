@@ -382,19 +382,74 @@ class KingdomStore {
     }
   }
 
+  // 作業快捷獨立保險箱雙向持久化 (Triple-Guard 專屬防護鎖，永不隨系統更新或同步丟失)
+  _persistHomeworkPresetsVault() {
+    if (typeof localStorage === 'undefined' || !this.data) return;
+    try {
+      if (Array.isArray(this.data.homeworkPresets) && this.data.homeworkPresets.length > 0) {
+        localStorage.setItem('xining_custom_homework_presets', JSON.stringify(this.data.homeworkPresets));
+        localStorage.setItem('xining_custom_homework_presets_updated_at', String(Date.now()));
+      }
+    } catch (e) {
+      console.warn("寫入作業快捷獨立保險鎖失敗", e);
+    }
+  }
+
+  _getVaultHomeworkPresets() {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem('xining_custom_homework_presets');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  isDefaultHomeworkPresets(presets) {
+    if (!Array.isArray(presets)) return false;
+    if (presets.length !== DEFAULT_HOMEWORK_PRESETS.length && presets.length !== 5) return false;
+    const baseNames = DEFAULT_HOMEWORK_PRESETS.map(d => d.name);
+    return presets.every(p => p && baseNames.includes(p.name));
+  }
+
+  _recoverHomeworkPresetsFromSnapshots() {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem('xining_502_kingdom_snapshots') || localStorage.getItem('xining_kingdom_snapshots_v1');
+      if (!raw) return null;
+      const snaps = JSON.parse(raw);
+      if (!Array.isArray(snaps) || snaps.length === 0) return null;
+      for (let i = 0; i < snaps.length; i++) {
+        const snap = snaps[i];
+        if (snap && snap.data && Array.isArray(snap.data.homeworkPresets) && snap.data.homeworkPresets.length > 0) {
+          if (!this.isDefaultHomeworkPresets(snap.data.homeworkPresets) || snap.data.homeworkPresets.length > 5) {
+            console.log(`[Store] 🛡️ 成功自時光機快照 (${snap.reason || snap.timestamp}) 尋回自訂作業快捷！共 ${snap.data.homeworkPresets.length} 項`);
+            return snap.data.homeworkPresets;
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   applyMasterRosterBackup() {
     try {
       this.recordLocalSnapshot("載入五年二班電腦主存檔前快照");
     } catch (_) {}
+    // 保全當前議政廳所有內容（作業快捷、提醒、集點、作業、聯絡簿、公告等，絕對不可隨意覆蓋）
+    const existingData = this.data ? JSON.parse(JSON.stringify(this.data)) : {};
+
     // 密碼保護鎖：先保存導師現有的自訂密碼
-    const currentPass = (this.data && this.data.queenPassword) || 
+    const currentPass = existingData.queenPassword || 
       (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || 
       "queen";
     
     // 座位表保全：保留老師排定之座位表與格局，絕不覆蓋回初始順序
-    let currentChart = (this.data && Array.isArray(this.data.seatingChart) && !this.isDefaultSeatingChart(this.data.seatingChart)) ? this.data.seatingChart : null;
-    let currentLayout = (this.data && this.data.seatingLayout) ? this.data.seatingLayout : null;
-    let currentSeatTime = (this.data && this.data.seatingUpdatedAt) || 0;
+    let currentChart = (existingData.seatingChart && Array.isArray(existingData.seatingChart) && !this.isDefaultSeatingChart(existingData.seatingChart)) ? existingData.seatingChart : null;
+    let currentLayout = existingData.seatingLayout || null;
+    let currentSeatTime = existingData.seatingUpdatedAt || 0;
     if (typeof localStorage !== 'undefined') {
       try {
         const vChartStr = localStorage.getItem('xining_custom_seating_chart');
@@ -414,8 +469,8 @@ class KingdomStore {
 
     // 核心安全保全：保全現有名冊中超過 27 號的大臣（如導師或手機手動新增之第 28 號大臣）
     const extraStudents = [];
-    if (this.data && Array.isArray(this.data.students)) {
-      this.data.students.forEach(st => {
+    if (Array.isArray(existingData.students)) {
+      existingData.students.forEach(st => {
         if (st && (Number(st.seatNo) > 27 || (st.id && !MASTER_ROSTER_BACKUP_20261119.students.some(m => m.id === st.id || m.seatNo === st.seatNo)))) {
           extraStudents.push(JSON.parse(JSON.stringify(st)));
         }
@@ -430,13 +485,36 @@ class KingdomStore {
     });
     masterCopy.students.sort((a, b) => (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0));
 
+    // 議政廳全域保全：將現存之作業快捷、提醒快捷、集點、作業、聯絡簿完整繼承，絕不丟失！
+    const currentHwPresets = this._getVaultHomeworkPresets() || existingData.homeworkPresets || null;
+    if (currentHwPresets && Array.isArray(currentHwPresets) && currentHwPresets.length > 0) {
+      masterCopy.homeworkPresets = currentHwPresets;
+    } else if (existingData.homeworkPresets) {
+      masterCopy.homeworkPresets = existingData.homeworkPresets;
+    }
+    if (existingData.reminderPresets) masterCopy.reminderPresets = existingData.reminderPresets;
+    if (existingData.pointPresets) masterCopy.pointPresets = existingData.pointPresets;
+    if (existingData.behaviorReasons) masterCopy.behaviorReasons = existingData.behaviorReasons;
+    if (existingData.alarmPresets) masterCopy.alarmPresets = existingData.alarmPresets;
+    if (existingData.timerPresets) masterCopy.timerPresets = existingData.timerPresets;
+    if (existingData.bellSchedule) masterCopy.bellSchedule = existingData.bellSchedule;
+    if (existingData.announcements) masterCopy.announcements = existingData.announcements;
+    if (existingData.contactBook) masterCopy.contactBook = existingData.contactBook;
+    if (existingData.contactBookHistory) masterCopy.contactBookHistory = existingData.contactBookHistory;
+    if (existingData.homework) masterCopy.homework = existingData.homework;
+    if (existingData.deletedHomeworkIds) masterCopy.deletedHomeworkIds = existingData.deletedHomeworkIds;
+    if (existingData.attendance) masterCopy.attendance = existingData.attendance;
+    if (existingData.pointLogs) masterCopy.pointLogs = existingData.pointLogs;
+    if (existingData.rewardRedemptions) masterCopy.rewardRedemptions = existingData.rewardRedemptions;
+    if (existingData.behaviorCards) masterCopy.behaviorCards = existingData.behaviorCards;
+
     if (currentChart) {
       masterCopy.seatingChart = currentChart;
       if (currentLayout) masterCopy.seatingLayout = currentLayout;
       masterCopy.seatingUpdatedAt = currentSeatTime || Date.now();
     }
 
-    masterCopy.lastModified = Math.max(Date.now(), 1795096022078);
+    masterCopy.lastModified = Math.max(Date.now(), existingData.lastModified || 0, 1795096022078);
     masterCopy.realRosterV20261119 = true;
     if (currentPass && currentPass !== 'queen') {
       masterCopy.queenPassword = currentPass;
@@ -449,6 +527,7 @@ class KingdomStore {
       }
     }
     this._persistSeatingVault();
+    this._persistHomeworkPresetsVault();
     this.saveInternal({ updateTimestamp: true, triggerPush: false });
     return this.data;
   }
@@ -831,6 +910,41 @@ class KingdomStore {
       };
     });
 
+    // 10.5 常用作業快捷範本智能雙向融合 (Triple Guard 專屬保險箱與自訂防覆蓋)
+    let mergedHwPresets = local.homeworkPresets || remote.homeworkPresets || DEFAULT_HOMEWORK_PRESETS;
+    const vaultHwPresets = this._getVaultHomeworkPresets();
+    if (vaultHwPresets && Array.isArray(vaultHwPresets) && vaultHwPresets.length > 0 && !this.isDefaultHomeworkPresets(vaultHwPresets)) {
+      mergedHwPresets = vaultHwPresets;
+    } else if (local.homeworkPresets && remote.homeworkPresets) {
+      const isLocalDef = this.isDefaultHomeworkPresets(local.homeworkPresets);
+      const isRemoteDef = this.isDefaultHomeworkPresets(remote.homeworkPresets);
+      if (!isLocalDef && isRemoteDef) {
+        mergedHwPresets = local.homeworkPresets;
+      } else if (isLocalDef && !isRemoteDef) {
+        mergedHwPresets = remote.homeworkPresets;
+      } else {
+        const presetMap = new Map();
+        remote.homeworkPresets.forEach(p => { if (p && p.name) presetMap.set(p.name, p); });
+        local.homeworkPresets.forEach(p => { if (p && p.name) presetMap.set(p.name, p); });
+        mergedHwPresets = Array.from(presetMap.values());
+      }
+    } else if (local.homeworkPresets) {
+      mergedHwPresets = local.homeworkPresets;
+    }
+
+    // 10.6 早自修與重要提醒快捷智能雙向融合
+    let mergedRemPresets = local.reminderPresets || remote.reminderPresets || DEFAULT_REMINDER_PRESETS;
+    if (local.reminderPresets && remote.reminderPresets) {
+      const remMap = new Map();
+      remote.reminderPresets.forEach(r => { if (r && r.label) remMap.set(r.label, r); });
+      local.reminderPresets.forEach(r => { if (r && r.label) remMap.set(r.label, r); });
+      mergedRemPresets = Array.from(remMap.values());
+    }
+
+    // 10.7 加扣點與常規事由快捷雙向融合
+    let mergedPointPresets = local.pointPresets || remote.pointPresets || DEFAULT_POINT_PRESETS;
+    let mergedBehaviorReasons = local.behaviorReasons || remote.behaviorReasons || DEFAULT_BEHAVIOR_REASONS;
+
     const finalLastModified = Math.max(localTime, remoteTime, Date.now());
 
     const mergedData = {
@@ -847,6 +961,10 @@ class KingdomStore {
       announcements: mergedAnnouncements,
       rewardRedemptions: mergedRedemptions,
       behaviorCards: mergedBehaviorCards,
+      homeworkPresets: mergedHwPresets,
+      reminderPresets: mergedRemPresets,
+      pointPresets: mergedPointPresets,
+      behaviorReasons: mergedBehaviorReasons,
       seatingLayout: mergedSeatingLayout,
       seatingChart: mergedSeatingChart,
       seatingUpdatedAt: mergedSeatingUpdatedAt,
@@ -867,6 +985,7 @@ class KingdomStore {
         localStorage.setItem('xining_custom_seating_updated_at', String(mergedSeatingUpdatedAt || Date.now()));
       } catch (_) {}
     }
+    this._persistHomeworkPresetsVault();
 
     return this.normalizeData(mergedData);
   }
@@ -1194,8 +1313,24 @@ class KingdomStore {
             }
           } catch (_) {}
         }
+
+        // 常用作業快捷獨立保險鎖回填與時光機自癒復原 (Auto-Healing Recovery)
+        let hwPresets = this._getVaultHomeworkPresets();
+        if (!hwPresets || hwPresets.length === 0) {
+          hwPresets = this._recoverHomeworkPresetsFromSnapshots();
+        }
+        if (hwPresets && Array.isArray(hwPresets) && hwPresets.length > 0) {
+          if (!parsed.homeworkPresets || this.isDefaultHomeworkPresets(parsed.homeworkPresets) || hwPresets.length > parsed.homeworkPresets.length) {
+            parsed.homeworkPresets = hwPresets;
+          }
+        }
+
         const normalized = this.normalizeData(parsed);
-        if (normalized) return normalized;
+        if (normalized) {
+          this.data = normalized;
+          this._persistHomeworkPresetsVault();
+          return normalized;
+        }
       }
     } catch (e) {
       console.warn("讀取本機資料失敗，載入預設值", e);
@@ -1218,13 +1353,16 @@ class KingdomStore {
       } catch (_) {}
     }
 
-    return this.normalizeData({
+    let initHwPresets = this._getVaultHomeworkPresets() || this._recoverHomeworkPresetsFromSnapshots() || JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
+
+    const freshData = this.normalizeData({
       queenPassword: localSavedPass,
       lateThreshold: "07:40",
       students: JSON.parse(JSON.stringify(DEFAULT_STUDENTS_27)),
       attendance: {},
       homework: [],
       deletedHomeworkIds: ['1', '2', '3'],
+      homeworkPresets: initHwPresets,
       pointLogs: [],
       pointActionHistory: [],
       announcements: JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS)),
@@ -1234,6 +1372,9 @@ class KingdomStore {
       lastModified: 0,
       _isFreshInit: true
     });
+    this.data = freshData;
+    this._persistHomeworkPresetsVault();
+    return freshData;
   }
 
   /**
@@ -1244,6 +1385,8 @@ class KingdomStore {
       if (updateTimestamp) {
         this.data.lastModified = Date.now();
       }
+      this._persistSeatingVault();
+      this._persistHomeworkPresetsVault();
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
         if (snapshotReason) {
@@ -2472,9 +2615,30 @@ class KingdomStore {
   }
 
   // --- 作業常用快捷範本管理 (新增、編輯、刪除、恢復預設) ---
+  getHomeworkPresets() {
+    let presets = this.data && Array.isArray(this.data.homeworkPresets) && this.data.homeworkPresets.length > 0
+      ? this.data.homeworkPresets
+      : null;
+    if (!presets || (this.isDefaultHomeworkPresets(presets) && presets.length === 5)) {
+      const vault = this._getVaultHomeworkPresets();
+      if (vault && vault.length > 0) presets = vault;
+    }
+    if (!presets || presets.length === 0) {
+      presets = this._recoverHomeworkPresetsFromSnapshots();
+    }
+    if (!presets || presets.length === 0) {
+      presets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
+    }
+    if (this.data) {
+      this.data.homeworkPresets = presets;
+    }
+    this._persistHomeworkPresetsVault();
+    return presets;
+  }
+
   addHomeworkPreset({ subject = "國語", name, fullName, defaultDesc = "", defaultDate = null }) {
     if (!name) return null;
-    if (!this.data.homeworkPresets) this.data.homeworkPresets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
+    if (!this.data.homeworkPresets) this.data.homeworkPresets = this.getHomeworkPresets();
     const newPreset = {
       id: "hw_pre_" + Date.now(),
       subject: String(subject || "國語").trim(),
@@ -2484,33 +2648,37 @@ class KingdomStore {
       defaultDate
     };
     this.data.homeworkPresets.push(newPreset);
+    this._persistHomeworkPresetsVault();
     this.save('新增作業快捷範本: ' + newPreset.name);
     return newPreset;
   }
 
   updateHomeworkPreset(presetId, { subject, name, fullName, defaultDesc }) {
-    if (!this.data.homeworkPresets) return false;
+    if (!this.data.homeworkPresets) this.data.homeworkPresets = this.getHomeworkPresets();
     const preset = this.data.homeworkPresets.find(p => p.id === presetId);
     if (!preset) return false;
     if (subject !== undefined) preset.subject = String(subject).trim();
     if (name !== undefined) preset.name = String(name).trim();
     if (fullName !== undefined) preset.fullName = String(fullName || name).trim();
     if (defaultDesc !== undefined) preset.defaultDesc = String(defaultDesc).trim();
+    this._persistHomeworkPresetsVault();
     this.save('修改作業快捷範本: ' + preset.name);
     return true;
   }
 
   deleteHomeworkPreset(presetId) {
-    if (!this.data.homeworkPresets) return false;
+    if (!this.data.homeworkPresets) this.data.homeworkPresets = this.getHomeworkPresets();
     const found = this.data.homeworkPresets.find(p => p.id === presetId);
     const name = found ? found.name : presetId;
     this.data.homeworkPresets = this.data.homeworkPresets.filter(p => p.id !== presetId);
+    this._persistHomeworkPresetsVault();
     this.save('刪除作業快捷範本: ' + name);
     return true;
   }
 
   resetHomeworkPresets() {
     this.data.homeworkPresets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
+    this._persistHomeworkPresetsVault();
     this.save('恢復預設作業快捷範本');
     return this.data.homeworkPresets;
   }

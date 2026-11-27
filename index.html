@@ -43,7 +43,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Custom Bright Golden Stylesheet -->
-  <link rel="stylesheet" href="styles.css?v=20261126_v41">
+  <link rel="stylesheet" href="styles.css?v=20261127_v43">
 </head>
 <body class="text-slate-800 antialiased selection:bg-amber-300 selection:text-amber-950">
   <!-- 頂部明亮黃金導航列 (Bright Royal Golden Navbar) -->
@@ -4856,8 +4856,8 @@
     </div>
   </div>
   <!-- 核心資料邏輯與介面控制器 (加入版本號確保即時更新防快取) -->
-  <script src="app.js?v=20261126_v41"></script>
-  <script src="ui.js?v=20261126_v41"></script>
+  <script src="app.js?v=20261127_v43"></script>
+  <script src="ui.js?v=20261127_v43"></script>
   <!-- 導師指示：永久全域封鎖右下角任何同步、接收或自動更新通知 -->
   <script>
     (function() {
@@ -4923,6 +4923,69 @@
         var days = ['日', '一', '二', '三', '四', '五', '六'];
         return '星期' + (days[d.getDay()] || '');
       }
+
+      // 聯絡簿平日上課日（自動跳過週六週日）專用輔助函式
+      function isWeekend(dateInput) {
+        var d;
+        if (dateInput instanceof Date) {
+          d = dateInput;
+        } else if (dateInput && typeof dateInput === 'string' && dateInput.includes('-')) {
+          var parts = dateInput.split('-');
+          d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        } else {
+          d = new Date();
+        }
+        var day = d.getDay();
+        return day === 0 || day === 6;
+      }
+
+      function ensureSchoolDay(dateStr, preferNext) {
+        if (preferNext === undefined) preferNext = true;
+        if (!dateStr || typeof dateStr !== 'string') return dateStr;
+        var parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        var day = d.getDay();
+        if (day === 6) { // 週六
+          d.setDate(d.getDate() + (preferNext ? 2 : -1));
+        } else if (day === 0) { // 週日
+          d.setDate(d.getDate() + (preferNext ? 1 : -2));
+        }
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + dd;
+      }
+
+      function getSchoolDeltaDateString(baseDateStr, deltaSchoolDays) {
+        if (!deltaSchoolDays || deltaSchoolDays === 0) {
+          return ensureSchoolDay(baseDateStr, true);
+        }
+        var d;
+        if (baseDateStr && typeof baseDateStr === 'string' && baseDateStr.includes('-')) {
+          var parts = baseDateStr.split('-');
+          d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        } else {
+          d = new Date();
+        }
+        var step = deltaSchoolDays > 0 ? 1 : -1;
+        var remaining = Math.abs(deltaSchoolDays);
+        while (remaining > 0) {
+          d.setDate(d.getDate() + step);
+          var day = d.getDay();
+          if (day !== 0 && day !== 6) {
+            remaining--;
+          }
+        }
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + dd;
+      }
+
+      window.isWeekend = isWeekend;
+      window.ensureSchoolDay = ensureSchoolDay;
+      window.getSchoolDeltaDateString = getSchoolDeltaDateString;
 
       // 1. 早自修與重要提醒獨立編輯邏輯
       window.currentRemindersEditDate = window.currentRemindersEditDate || null;
@@ -5146,6 +5209,251 @@
         saveActiveReminderPresets(presets);
         if (typeof showToast === 'function') showToast("🔄 已成功恢復預設早自修與提醒快捷！", "🔔");
         window.renderReminderPresetButtons();
+      };
+
+      // 1.6 常用作業快捷範本獨立保險箱與自癒管理 (免受系統更新覆蓋，永不丟失)
+      var DEFAULT_HOMEWORK_PRESETS = [
+        { id: 'hw_pre_1', subject: '國語', name: '國習', fullName: '國語習作完成' },
+        { id: 'hw_pre_2', subject: '國語', name: '造詞', fullName: '生字造詞甲乙本' },
+        { id: 'hw_pre_3', subject: '國語', name: '圈詞', fullName: '國語圈詞隨堂本' },
+        { id: 'hw_pre_4', subject: '數學', name: '數習', fullName: '數學習作進度' },
+        { id: 'hw_pre_5', subject: '數學', name: '數練', fullName: '數學隨堂練習本' },
+        { id: 'hw_pre_6', subject: '自然', name: '自習', fullName: '自然習作觀察記錄' },
+        { id: 'hw_pre_7', subject: '社會', name: '社習', fullName: '社會習作重點作業' },
+        { id: 'hw_pre_8', subject: '綜合', name: '聯絡簿', fullName: '家長簽名聯絡簿' }
+      ];
+
+      function getActiveHomeworkPresets() {
+        if (window.KingdomApp && window.KingdomApp.store && typeof window.KingdomApp.store.getHomeworkPresets === 'function') {
+          return window.KingdomApp.store.getHomeworkPresets();
+        }
+        try {
+          var vault = localStorage.getItem('xining_custom_homework_presets');
+          if (vault) {
+            var parsed = JSON.parse(vault);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch (_) {}
+        try {
+          var snapRaw = localStorage.getItem('xining_502_kingdom_snapshots');
+          if (snapRaw) {
+            var snaps = JSON.parse(snapRaw);
+            if (Array.isArray(snaps)) {
+              for (var i = 0; i < snaps.length; i++) {
+                if (snaps[i] && snaps[i].data && Array.isArray(snaps[i].data.homeworkPresets) && snaps[i].data.homeworkPresets.length > 0) {
+                  return snaps[i].data.homeworkPresets;
+                }
+              }
+            }
+          }
+        } catch (_) {}
+        if (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && Array.isArray(window.KingdomApp.store.data.homeworkPresets) && window.KingdomApp.store.data.homeworkPresets.length > 0) {
+          return window.KingdomApp.store.data.homeworkPresets;
+        }
+        return DEFAULT_HOMEWORK_PRESETS;
+      }
+
+      function saveActiveHomeworkPresets(presets) {
+        if (window.KingdomApp && window.KingdomApp.store) {
+          window.KingdomApp.store.data.homeworkPresets = presets;
+          if (typeof window.KingdomApp.store.save === 'function') {
+            window.KingdomApp.store.save('自訂作業快捷範本');
+          }
+        }
+        try {
+          localStorage.setItem('xining_custom_homework_presets', JSON.stringify(presets));
+          localStorage.setItem('xining_custom_homework_presets_updated_at', String(Date.now()));
+        } catch (_) {}
+      }
+
+      window.renderHomeworkPresetButtons = function() {
+        var container = document.getElementById("hwPresetButtonsBar");
+        if (!container) return;
+        var presets = getActiveHomeworkPresets();
+        if (!presets || presets.length === 0) {
+          container.innerHTML = '<span class="text-xs text-slate-400">尚無快捷範本，可點右上角自訂新增</span>';
+          return;
+        }
+        container.innerHTML = presets.map(function(p) {
+          return '<div class="inline-flex items-center rounded-lg bg-amber-100 border border-amber-300 shadow-2xs overflow-hidden group">' +
+            '<button type="button" onclick="applyHomeworkPreset(\'' + p.id + '\')" ' +
+            'class="px-2 py-1 text-amber-950 font-black text-xs hover:bg-amber-200 flex items-center space-x-1 transition" ' +
+            'title="套用【' + safeEscape(p.fullName) + '】 (' + safeEscape(p.subject) + ')">' +
+            '<span class="text-[10px] bg-amber-200 text-amber-900 px-1 rounded font-bold">' + safeEscape(p.subject) + '</span>' +
+            '<span>' + safeEscape(p.name) + '</span>' +
+            '</button>' +
+            '<div class="flex items-center border-l border-amber-200 bg-amber-50">' +
+            '<button type="button" onclick="openEditHwPresetModal(\'' + p.id + '\')" ' +
+            'class="p-1 text-slate-400 hover:text-amber-700 hover:bg-amber-100 transition" title="編輯此作業快捷">✏️</button>' +
+            '<button type="button" onclick="deleteHwPresetPrompt(\'' + p.id + '\')" ' +
+            'class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="刪除此作業快捷">🗑️</button>' +
+            '</div>' +
+            '</div>';
+        }).join('');
+      };
+
+      window.applyHomeworkPreset = function(presetId) {
+        var presets = getActiveHomeworkPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset) return;
+        var titleEl = document.getElementById("newHwTitle");
+        var descEl = document.getElementById("newHwDesc");
+        var subjectEl = document.getElementById("newHwSubject");
+        if (titleEl) titleEl.value = preset.fullName || preset.name;
+        if (descEl && preset.defaultDesc) descEl.value = preset.defaultDesc;
+        if (subjectEl && preset.subject) subjectEl.value = preset.subject;
+        if (typeof showToast === 'function') {
+          showToast('已套用快捷【' + preset.name + '】！', '✨');
+        }
+      };
+
+      window.openAddHwPresetModal = function() {
+        var titleEl = document.getElementById("hwPresetModalTitle");
+        if (titleEl) titleEl.innerHTML = '<span>➕ 新增作業快捷範本</span>';
+        var editIdEl = document.getElementById("editHwPresetId");
+        if (editIdEl) editIdEl.value = "";
+        var nameEl = document.getElementById("presetName");
+        if (nameEl) nameEl.value = "";
+        var fullNameEl = document.getElementById("presetFullName");
+        if (fullNameEl) fullNameEl.value = "";
+        var descEl = document.getElementById("presetDesc");
+        if (descEl) descEl.value = "";
+        var modal = document.getElementById("addHwPresetModal");
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.style.setProperty("display", "flex", "important");
+          modal.style.setProperty("z-index", "100000", "important");
+        }
+      };
+
+      window.openEditHwPresetModal = function(presetId) {
+        var presets = getActiveHomeworkPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset) return;
+        var titleEl = document.getElementById("hwPresetModalTitle");
+        if (titleEl) titleEl.innerHTML = '<span>✏️ 編輯作業快捷範本</span>';
+        var editIdEl = document.getElementById("editHwPresetId");
+        if (editIdEl) editIdEl.value = preset.id;
+        var subjectEl = document.getElementById("presetSubject");
+        if (subjectEl) subjectEl.value = preset.subject || "國語";
+        var nameEl = document.getElementById("presetName");
+        if (nameEl) nameEl.value = preset.name || "";
+        var fullNameEl = document.getElementById("presetFullName");
+        if (fullNameEl) fullNameEl.value = preset.fullName || "";
+        var descEl = document.getElementById("presetDesc");
+        if (descEl) descEl.value = preset.defaultDesc || "";
+        var modal = document.getElementById("addHwPresetModal");
+        if (modal) {
+          modal.classList.remove("hidden");
+          modal.style.setProperty("display", "flex", "important");
+          modal.style.setProperty("z-index", "100000", "important");
+        }
+      };
+
+      window.closeAddHwPresetModal = function() {
+        var modal = document.getElementById("addHwPresetModal");
+        if (modal) {
+          modal.classList.add("hidden");
+          modal.style.removeProperty("display");
+          modal.style.removeProperty("z-index");
+        }
+      };
+
+      window.submitHwPresetForm = function(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        var editId = (document.getElementById("editHwPresetId") ? document.getElementById("editHwPresetId").value : "").trim();
+        var subject = document.getElementById("presetSubject") ? document.getElementById("presetSubject").value : "國語";
+        var name = (document.getElementById("presetName") ? document.getElementById("presetName").value : "").trim();
+        var fullName = (document.getElementById("presetFullName") ? document.getElementById("presetFullName").value : "").trim();
+        var defaultDesc = (document.getElementById("presetDesc") ? document.getElementById("presetDesc").value : "").trim();
+
+        if (!name || !fullName) {
+          alert("請填寫快捷簡稱與完整作業名稱！");
+          return;
+        }
+
+        var presets = getActiveHomeworkPresets();
+        if (editId) {
+          var target = presets.find(function(p) { return p.id === editId; });
+          if (target) {
+            target.subject = subject;
+            target.name = name;
+            target.fullName = fullName;
+            target.defaultDesc = defaultDesc;
+          }
+          if (typeof showToast === 'function') showToast("✅ 已更新作業快捷範本【" + name + "】！", "✨");
+        } else {
+          presets.push({
+            id: "hw_pre_" + Date.now(),
+            subject: subject,
+            name: name,
+            fullName: fullName,
+            defaultDesc: defaultDesc
+          });
+          if (typeof showToast === 'function') showToast("✅ 已新增作業快捷範本【" + name + "】！", "✨");
+        }
+        saveActiveHomeworkPresets(presets);
+        window.closeAddHwPresetModal();
+        window.renderHomeworkPresetButtons();
+      };
+
+      window.deleteHwPresetPrompt = function(presetId) {
+        var presets = getActiveHomeworkPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset) return;
+        if (!confirm("🗑️ 確定要刪除作業快捷【" + preset.name + "】嗎？\n\n完整作業名稱：" + preset.fullName + "\n科目：" + preset.subject)) return;
+        var idx = presets.findIndex(function(p) { return p.id === presetId; });
+        if (idx !== -1) {
+          presets.splice(idx, 1);
+          saveActiveHomeworkPresets(presets);
+        }
+        if (typeof showToast === 'function') showToast("🗑️ 已刪除作業快捷【" + preset.name + "】！", "✨");
+        window.renderHomeworkPresetButtons();
+      };
+
+      window.confirmResetHwPresetsToDefault = function() {
+        if (!confirm("確定要將作業快捷恢復為系統預設值（國習、造詞、數習、數練、自習、社習...）嗎？\n自訂的作業快捷範本將會被重設。")) return;
+        var presets = JSON.parse(JSON.stringify(DEFAULT_HOMEWORK_PRESETS));
+        saveActiveHomeworkPresets(presets);
+        if (typeof showToast === 'function') showToast("🔄 作業快捷已成功恢復為預設範本！", "✨");
+        window.closeAddHwPresetModal();
+        window.renderHomeworkPresetButtons();
+      };
+
+      var _origOpenNewHomeworkModal = window.openNewHomeworkModal;
+      window.openNewHomeworkModal = function(targetDate) {
+        if (typeof _origOpenNewHomeworkModal === 'function') {
+          _origOpenNewHomeworkModal(targetDate);
+        } else {
+          var dateInput = document.getElementById("newHwDueDate");
+          if (dateInput) {
+            if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+              dateInput.value = targetDate;
+            } else if (typeof currentHwFilterDate !== 'undefined' && /^\d{4}-\d{2}-\d{2}$/.test(currentHwFilterDate)) {
+              dateInput.value = currentHwFilterDate;
+            } else {
+              dateInput.value = new Date().toISOString().slice(0, 10);
+            }
+          }
+          var modal = document.getElementById("newHomeworkModal");
+          if (modal) {
+            modal.classList.remove("hidden");
+            modal.style.setProperty("display", "flex", "important");
+            modal.style.setProperty("z-index", "100000", "important");
+          }
+        }
+        if (typeof window.renderHomeworkPresetButtons === 'function') {
+          window.renderHomeworkPresetButtons();
+        }
+      };
+
+      window.closeNewHomeworkModal = function() {
+        var modal = document.getElementById("newHomeworkModal");
+        if (modal) {
+          modal.classList.add("hidden");
+          modal.style.removeProperty("display");
+          modal.style.removeProperty("z-index");
+        }
       };
 
       window.saveRemindersData = function(e) {
@@ -5523,40 +5831,38 @@
         }).join('');
 
         var tabsBarHtml = 
-          '<div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-3 rounded-2xl border-2 border-amber-300 space-y-2.5 shadow-xs">' +
-            '<div class="flex items-center gap-1.5 flex-wrap">' +
-              '<span class="text-xs font-black text-amber-900/90 mr-1 flex items-center space-x-1 shrink-0">' +
+          '<div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-2 sm:p-2.5 rounded-2xl border-2 border-amber-300 flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 shadow-xs">' +
+            '<div class="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">' +
+              '<span class="text-xs font-black text-amber-900/90 mr-0.5 flex items-center space-x-1 shrink-0">' +
                 '<span>📢</span>' +
                 '<span>各項未交統計：</span>' +
               '</span>' +
-              overviewButtonsHtml +
+              '<div class="flex items-center gap-1.5 flex-wrap">' +
+                overviewButtonsHtml +
+              '</div>' +
             '</div>' +
-            (dayHomeworkList.length > 0 ? (
-              '<div class="flex items-center justify-between gap-2.5 flex-wrap pt-2 border-t border-amber-200/80">' +
-                '<div class="flex items-center space-x-2 flex-wrap">' +
-                  '<span class="text-xs sm:text-sm font-black text-amber-950 flex items-center space-x-1">' +
-                    '<span>📋</span>' +
-                    '<span>當日各項作業抽屜：</span>' +
-                  '</span>' +
-                  '<button type="button" onclick="toggleAllHomeworkDrawers()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95 flex items-center space-x-1" title="一鍵切換下方所有作業的四欄名牌看板">' +
-                    '<span>' + (isAnyDrawerOpen ? '📁 一鍵全部上收' : '📑 一鍵全部下拉') + '</span>' +
-                  '</button>' +
-                '</div>' +
-                '<div class="flex items-center space-x-2">' +
-                  '<label for="homeworkDrawerSelect" class="sr-only">選擇作業抽屜</label>' +
-                  '<select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs border border-amber-600 shadow-2xs cursor-pointer transition max-w-[200px] truncate" title="快速定位或展開指定作業">' +
-                    '<option value="">🎯 快速定位作業...</option>' +
-                    optionsHtml +
-                    '<option value="ALL">📑 全部下拉展開</option>' +
-                    '<option value="NONE">📁 全部上收折疊</option>' +
-                  '</select>' +
-                  '<button onclick="openNewHomeworkModal(\'' + filterDate + '\')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">' +
-                    '<span>➕</span>' +
-                    '<span>新增作業</span>' +
-                  '</button>' +
-                '</div>' +
-              '</div>'
-            ) : '') +
+            '<div class="flex items-center space-x-1.5 shrink-0 ml-auto">' +
+              (dayHomeworkList.length > 0 ? (
+                '<span class="text-xs font-black text-amber-950 hidden xl:inline-flex items-center space-x-1 shrink-0">' +
+                  '<span>📋</span>' +
+                  '<span>作業抽屜：</span>' +
+                '</span>' +
+                '<button type="button" onclick="toggleAllHomeworkDrawers()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95 flex items-center space-x-1 shrink-0" title="一鍵切換下方所有作業的四欄名牌看板">' +
+                  '<span>' + (isAnyDrawerOpen ? '📁 一鍵全部上收' : '📑 一鍵全部下拉') + '</span>' +
+                '</button>' +
+                '<label for="homeworkDrawerSelect" class="sr-only">選擇作業抽屜</label>' +
+                '<select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs border border-amber-600 shadow-2xs cursor-pointer transition max-w-[170px] sm:max-w-[210px] truncate shrink-0" title="快速定位或展開指定作業">' +
+                  '<option value="">🎯 快速定位作業...</option>' +
+                  optionsHtml +
+                  '<option value="ALL">📑 全部下拉展開</option>' +
+                  '<option value="NONE">📁 全部上收折疊</option>' +
+                '</select>'
+              ) : '') +
+              '<button onclick="openNewHomeworkModal(\'' + filterDate + '\')" class="px-2.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95 shrink-0">' +
+                '<span>➕</span>' +
+                '<span>新增作業</span>' +
+              '</button>' +
+            '</div>' +
           '</div>';
 
         var cardsHtml = dayHomeworkList.map(function(hw) {

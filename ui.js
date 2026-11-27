@@ -540,7 +540,68 @@ function startMorningClock() {
   clockInterval = setInterval(updateClock, 1000);
 }
 
-let currentContactDate = window.KingdomApp.getTodayDateString();
+// --- 聯絡簿平日上課日（自動跳過週六週日）專用輔助函式 ---
+function isWeekend(dateInput) {
+  let d;
+  if (dateInput instanceof Date) {
+    d = dateInput;
+  } else if (dateInput && typeof dateInput === 'string' && dateInput.includes('-')) {
+    const parts = dateInput.split('-');
+    d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  } else {
+    d = new Date();
+  }
+  const day = d.getDay();
+  return day === 0 || day === 6; // 0: 週日, 6: 週六
+}
+
+function ensureSchoolDay(dateStr, preferNext) {
+  if (preferNext === undefined) preferNext = true;
+  if (!dateStr || typeof dateStr !== 'string') return dateStr;
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  const day = d.getDay();
+  if (day === 6) { // 週六
+    d.setDate(d.getDate() + (preferNext ? 2 : -1));
+  } else if (day === 0) { // 週日
+    d.setDate(d.getDate() + (preferNext ? 1 : -2));
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
+function getSchoolDeltaDateString(baseDateStr, deltaSchoolDays) {
+  if (!deltaSchoolDays || deltaSchoolDays === 0) {
+    return ensureSchoolDay(baseDateStr, true);
+  }
+  let d;
+  if (baseDateStr && typeof baseDateStr === 'string' && baseDateStr.includes('-')) {
+    const parts = baseDateStr.split('-');
+    d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  } else {
+    d = new Date();
+  }
+  const step = deltaSchoolDays > 0 ? 1 : -1;
+  let remaining = Math.abs(deltaSchoolDays);
+  while (remaining > 0) {
+    d.setDate(d.getDate() + step);
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) {
+      remaining--;
+    }
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
+let currentContactDate = (window.KingdomApp && window.KingdomApp.getTodayDateString)
+  ? ensureSchoolDay(window.KingdomApp.getTodayDateString(), true)
+  : ensureSchoolDay(new Date().toISOString().slice(0, 10), true);
 let morningContactDaysMode = '2days'; // '2days' (雙天並排模式) | '3days' (三天並排上下兩欄模式) | '1day' (單天六行模式)
 let morningContactDateCol1 = null; // 第 1 欄日期 (預設今日)
 let morningContactDateCol2 = null; // 第 2 欄日期 (預設明日)
@@ -700,15 +761,16 @@ function renderVerticalContactGrid(items, format = 'vertical-rtl', isProjection 
 }
 
 function initMorningContactDates() {
-  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const rawToday = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const today = ensureSchoolDay(rawToday, true);
   if (!morningContactDateCol1) {
-    morningContactDateCol1 = currentContactDate || today;
+    morningContactDateCol1 = currentContactDate ? ensureSchoolDay(currentContactDate, true) : today;
   }
   if (!morningContactDateCol2) {
-    morningContactDateCol2 = getDeltaDateString(morningContactDateCol1, 1);
+    morningContactDateCol2 = getSchoolDeltaDateString(morningContactDateCol1, 1);
   }
   if (!morningContactDateCol3) {
-    morningContactDateCol3 = getDeltaDateString(morningContactDateCol1, 2);
+    morningContactDateCol3 = getSchoolDeltaDateString(morningContactDateCol1, 2);
   }
 }
 
@@ -719,28 +781,29 @@ function setMorningContactDaysMode(mode) {
 }
 
 function setMorningContactPreset(preset) {
-  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const rawToday = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const today = ensureSchoolDay(rawToday, true);
   if (preset === 'three_days') {
     morningContactDaysMode = '3days';
     morningContactDateCol1 = today;
-    morningContactDateCol2 = getDeltaDateString(today, 1);
-    morningContactDateCol3 = getDeltaDateString(today, 2);
+    morningContactDateCol2 = getSchoolDeltaDateString(today, 1);
+    morningContactDateCol3 = getSchoolDeltaDateString(today, 2);
     currentContactDate = today;
   } else if (preset === 'today_tomorrow') {
     morningContactDaysMode = '2days';
     morningContactDateCol1 = today;
-    morningContactDateCol2 = getDeltaDateString(today, 1);
-    morningContactDateCol3 = getDeltaDateString(today, 2);
+    morningContactDateCol2 = getSchoolDeltaDateString(today, 1);
+    morningContactDateCol3 = getSchoolDeltaDateString(today, 2);
     currentContactDate = today;
   } else if (preset === 'yesterday_today') {
     morningContactDaysMode = '2days';
-    morningContactDateCol1 = getDeltaDateString(today, -1);
+    morningContactDateCol1 = getSchoolDeltaDateString(today, -1);
     morningContactDateCol2 = today;
-    morningContactDateCol3 = getDeltaDateString(today, 1);
+    morningContactDateCol3 = getSchoolDeltaDateString(today, 1);
     currentContactDate = morningContactDateCol1;
   } else if (preset === 'single_day') {
     morningContactDaysMode = '1day';
-    morningContactDateCol1 = currentContactDate || today;
+    morningContactDateCol1 = currentContactDate ? ensureSchoolDay(currentContactDate, true) : today;
   }
   renderMorningBoard();
 }
@@ -748,13 +811,14 @@ function setMorningContactPreset(preset) {
 function changeMorningContactColDate(colIndex, dateVal) {
   if (!dateVal) return;
   initMorningContactDates();
+  const cleanVal = ensureSchoolDay(dateVal, true);
   if (colIndex === 1) {
-    morningContactDateCol1 = dateVal;
-    currentContactDate = dateVal;
+    morningContactDateCol1 = cleanVal;
+    currentContactDate = cleanVal;
   } else if (colIndex === 2) {
-    morningContactDateCol2 = dateVal;
+    morningContactDateCol2 = cleanVal;
   } else if (colIndex === 3) {
-    morningContactDateCol3 = dateVal;
+    morningContactDateCol3 = cleanVal;
   }
   renderMorningBoard();
 }
@@ -762,12 +826,12 @@ function changeMorningContactColDate(colIndex, dateVal) {
 function adjustMorningContactColDate(colIndex, delta) {
   initMorningContactDates();
   if (colIndex === 1) {
-    morningContactDateCol1 = getDeltaDateString(morningContactDateCol1, delta);
+    morningContactDateCol1 = getSchoolDeltaDateString(morningContactDateCol1, delta);
     currentContactDate = morningContactDateCol1;
   } else if (colIndex === 2) {
-    morningContactDateCol2 = getDeltaDateString(morningContactDateCol2, delta);
+    morningContactDateCol2 = getSchoolDeltaDateString(morningContactDateCol2, delta);
   } else if (colIndex === 3) {
-    morningContactDateCol3 = getDeltaDateString(morningContactDateCol3, delta);
+    morningContactDateCol3 = getSchoolDeltaDateString(morningContactDateCol3, delta);
   }
   renderMorningBoard();
 }
@@ -775,36 +839,38 @@ function adjustMorningContactColDate(colIndex, delta) {
 function changeContactDateDelta(delta) {
   initMorningContactDates();
   if (morningContactDaysMode === '3days') {
-    morningContactDateCol1 = getDeltaDateString(morningContactDateCol1, delta);
-    morningContactDateCol2 = getDeltaDateString(morningContactDateCol2, delta);
-    morningContactDateCol3 = getDeltaDateString(morningContactDateCol3, delta);
+    morningContactDateCol1 = getSchoolDeltaDateString(morningContactDateCol1, delta);
+    morningContactDateCol2 = getSchoolDeltaDateString(morningContactDateCol2, delta);
+    morningContactDateCol3 = getSchoolDeltaDateString(morningContactDateCol3, delta);
     currentContactDate = morningContactDateCol1;
   } else if (morningContactDaysMode === '2days') {
-    morningContactDateCol1 = getDeltaDateString(morningContactDateCol1, delta);
-    morningContactDateCol2 = getDeltaDateString(morningContactDateCol2, delta);
+    morningContactDateCol1 = getSchoolDeltaDateString(morningContactDateCol1, delta);
+    morningContactDateCol2 = getSchoolDeltaDateString(morningContactDateCol2, delta);
     currentContactDate = morningContactDateCol1;
   } else {
-    currentContactDate = getDeltaDateString(currentContactDate, delta);
+    currentContactDate = getSchoolDeltaDateString(currentContactDate || window.KingdomApp.getTodayDateString(), delta);
     morningContactDateCol1 = currentContactDate;
   }
   renderMorningBoard();
 }
 
 function changeContactDateToToday() {
-  const today = window.KingdomApp.getTodayDateString();
+  const rawToday = window.KingdomApp.getTodayDateString();
+  const today = ensureSchoolDay(rawToday, true);
   currentContactDate = today;
   morningContactDateCol1 = today;
-  morningContactDateCol2 = getDeltaDateString(today, 1);
-  morningContactDateCol3 = getDeltaDateString(today, 2);
+  morningContactDateCol2 = getSchoolDeltaDateString(today, 1);
+  morningContactDateCol3 = getSchoolDeltaDateString(today, 2);
   renderMorningBoard();
 }
 
 function handleContactDatePickerChange(val) {
   if (val) {
-    currentContactDate = val;
-    morningContactDateCol1 = val;
-    morningContactDateCol2 = getDeltaDateString(val, 1);
-    morningContactDateCol3 = getDeltaDateString(val, 2);
+    const cleanVal = ensureSchoolDay(val, true);
+    currentContactDate = cleanVal;
+    morningContactDateCol1 = cleanVal;
+    morningContactDateCol2 = getSchoolDeltaDateString(cleanVal, 1);
+    morningContactDateCol3 = getSchoolDeltaDateString(cleanVal, 2);
     renderMorningBoard();
   }
 }
@@ -2666,54 +2732,53 @@ function renderHomeworkSummaryBoard() {
 
   const isAnyDrawerOpen = window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.size > 0;
 
-  // 產生「當日作業概況與抽屜導航列」 (包含跨日期各項未交統計 + 當日抽屜下拉選單)
+  // 產生「當日作業概況與抽屜導航列」 (跨日期各項未交統計 與 當日作業抽屜 並在同一行，大幅縮減縱向佔位免滾動滑鼠)
   const tabsBarHtml = `
-    <div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-3 rounded-2xl border-2 border-amber-300 space-y-2.5 shadow-xs">
-      <!-- 🌟 原本各項作業未交人數按鈕列（並排展示跨日期每天未交統計，支援直接點擊催交與確認！） 🌟 -->
-      <div class="flex items-center gap-1.5 flex-wrap">
-        <span class="text-xs font-black text-amber-900/90 mr-1 flex items-center space-x-1 shrink-0">
+    <div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-2 sm:p-2.5 rounded-2xl border-2 border-amber-300 flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 shadow-xs">
+      <!-- 左側：跨日期每天未交統計按鈕列 (緊湊單行並排，點擊直接催交與展開) -->
+      <div class="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+        <span class="text-xs font-black text-amber-900/90 mr-0.5 flex items-center space-x-1 shrink-0">
           <span>📢</span>
           <span>各項未交統計：</span>
         </span>
-        ${pendingButtonsHtml}
+        <div class="flex items-center gap-1.5 flex-wrap">
+          ${pendingButtonsHtml}
+        </div>
       </div>
 
-      ${dayHomeworkList.length > 0 ? `
-        <div class="flex items-center justify-between gap-2.5 flex-wrap pt-2 border-t border-amber-200/80">
-          <div class="flex items-center space-x-2 flex-wrap">
-            <span class="text-xs sm:text-sm font-black text-amber-950 flex items-center space-x-1">
-              <span>📋</span>
-              <span>當日各項作業抽屜：</span>
-            </span>
-            <button type="button" onclick="toggleAllHomeworkDrawers()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95 flex items-center space-x-1" title="一鍵切換下方所有作業的四欄名牌看板">
-              <span>${isAnyDrawerOpen ? '📁 一鍵全部上收' : '📑 一鍵全部下拉'}</span>
-            </button>
-          </div>
-          <div class="flex items-center space-x-2">
-            <label for="homeworkDrawerSelect" class="sr-only">選擇作業抽屜</label>
-            <select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs border border-amber-600 shadow-2xs cursor-pointer transition max-w-[200px] truncate" title="快速定位或展開指定作業">
-              <option value="">🎯 快速定位作業...</option>
-              ${dayHomeworkList.map(h => {
-                let pendingCount = 0;
-                let revisionCount = 0;
-                students.forEach(st => {
-                  const status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
-                  if (status === 'pending') pendingCount++;
-                  else if (status === 'revision') revisionCount++;
-                });
-                const statusText = pendingCount > 0 ? `未交 ${pendingCount}人` : (revisionCount > 0 ? `需訂正 ${revisionCount}人` : '全齊 ✅');
-                return `<option value="${h.id}">[${h.subject || '作業'}] ${h.title}（${statusText}）</option>`;
-              }).join('')}
-              <option value="ALL">📑 全部下拉展開</option>
-              <option value="NONE">📁 全部上收折疊</option>
-            </select>
-            <button onclick="openNewHomeworkModal('${currentHwFilterDate}')" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95">
-              <span>➕</span>
-              <span>新增作業</span>
-            </button>
-          </div>
-        </div>
-      ` : ''}
+      <!-- 右側：當日各項作業抽屜切換與操作列 (並在同一行，免滾動滑鼠) -->
+      <div class="flex items-center space-x-1.5 shrink-0 ml-auto">
+        ${dayHomeworkList.length > 0 ? `
+          <span class="text-xs font-black text-amber-950 hidden xl:inline-flex items-center space-x-1 shrink-0">
+            <span>📋</span>
+            <span>作業抽屜：</span>
+          </span>
+          <button type="button" onclick="toggleAllHomeworkDrawers()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95 flex items-center space-x-1 shrink-0" title="一鍵切換下方所有作業的四欄名牌看板">
+            <span>${isAnyDrawerOpen ? '📁 一鍵全部上收' : '📑 一鍵全部下拉'}</span>
+          </button>
+          <label for="homeworkDrawerSelect" class="sr-only">選擇作業抽屜</label>
+          <select id="homeworkDrawerSelect" onchange="selectSingleHomeworkTab(this.value)" class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs border border-amber-600 shadow-2xs cursor-pointer transition max-w-[170px] sm:max-w-[210px] truncate shrink-0" title="快速定位或展開指定作業">
+            <option value="">🎯 快速定位作業...</option>
+            ${dayHomeworkList.map(h => {
+              let pendingCount = 0;
+              let revisionCount = 0;
+              students.forEach(st => {
+                const status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
+                if (status === 'pending') pendingCount++;
+                else if (status === 'revision') revisionCount++;
+              });
+              const statusText = pendingCount > 0 ? `未交 ${pendingCount}人` : (revisionCount > 0 ? `需訂正 ${revisionCount}人` : '全齊 ✅');
+              return `<option value="${h.id}">[${h.subject || '作業'}] ${h.title}（${statusText}）</option>`;
+            }).join('')}
+            <option value="ALL">📑 全部下拉展開</option>
+            <option value="NONE">📁 全部上收折疊</option>
+          </select>
+        ` : ''}
+        <button onclick="openNewHomeworkModal('${currentHwFilterDate}')" class="px-2.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black border border-amber-500 shadow-2xs flex items-center space-x-1 transition active:scale-95 shrink-0">
+          <span>➕</span>
+          <span>新增作業</span>
+        </button>
+      </div>
     </div>
   `;
 
@@ -3603,8 +3668,18 @@ function deleteHomework(hwId) {
 function renderHomeworkPresetButtons() {
   const container = document.getElementById("hwPresetButtonsBar");
   if (!container) return;
-  const presets = window.KingdomApp.store.data.homeworkPresets || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || [];
-  if (presets.length === 0) {
+  const store = window.KingdomApp && window.KingdomApp.store;
+  let presets = (store && typeof store.getHomeworkPresets === 'function')
+    ? store.getHomeworkPresets()
+    : null;
+  if (!presets || presets.length === 0) {
+    if (typeof getActiveHomeworkPresets === 'function') {
+      presets = getActiveHomeworkPresets();
+    } else {
+      presets = (store && store.data && store.data.homeworkPresets) || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || [];
+    }
+  }
+  if (!presets || presets.length === 0) {
     container.innerHTML = '<span class="text-xs text-slate-400">尚無快捷範本，可點右上角自訂新增</span>';
     return;
   }
@@ -3634,7 +3709,10 @@ function renderHomeworkPresetButtons() {
 }
 
 function applyHomeworkPreset(presetId) {
-  const presets = window.KingdomApp.store.data.homeworkPresets || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || [];
+  const store = window.KingdomApp && window.KingdomApp.store;
+  const presets = (store && typeof store.getHomeworkPresets === 'function')
+    ? store.getHomeworkPresets()
+    : ((store && store.data && store.data.homeworkPresets) || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || []);
   const preset = presets.find(p => p.id === presetId);
   if (!preset) return;
 
@@ -3682,7 +3760,10 @@ function openAddHwPresetModal() {
 }
 
 function openEditHwPresetModal(presetId) {
-  const presets = window.KingdomApp.store.data.homeworkPresets || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || [];
+  const store = window.KingdomApp && window.KingdomApp.store;
+  const presets = (store && typeof store.getHomeworkPresets === 'function')
+    ? store.getHomeworkPresets()
+    : ((store && store.data && store.data.homeworkPresets) || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || []);
   const preset = presets.find(p => p.id === presetId);
   if (!preset) return;
 
@@ -3745,7 +3826,10 @@ function submitNewHwPreset(e) {
 }
 
 function deleteHwPresetPrompt(presetId) {
-  const presets = window.KingdomApp.store.data.homeworkPresets || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || [];
+  const store = window.KingdomApp && window.KingdomApp.store;
+  const presets = (store && typeof store.getHomeworkPresets === 'function')
+    ? store.getHomeworkPresets()
+    : ((store && store.data && store.data.homeworkPresets) || window.KingdomApp.DEFAULT_HOMEWORK_PRESETS || []);
   const preset = presets.find(p => p.id === presetId);
   if (!preset) return;
 
@@ -8666,19 +8750,20 @@ function getWeekdayText(dateStr) {
 }
 
 function getRelativeDayBadge(dateStr) {
-  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const rawToday = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const today = ensureSchoolDay(rawToday, true);
   if (dateStr === today) {
     return `<span class="bg-amber-500 text-amber-950 font-black text-xs px-2.5 py-0.5 rounded-lg shadow-2xs border border-amber-600/50">👑 今日</span>`;
   }
-  const tomorrow = getDeltaDateString(today, 1);
+  const tomorrow = getSchoolDeltaDateString(today, 1);
   if (dateStr === tomorrow) {
     return `<span class="bg-sky-500 text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-2xs border border-sky-600/50">🚀 明日</span>`;
   }
-  const yesterday = getDeltaDateString(today, -1);
+  const yesterday = getSchoolDeltaDateString(today, -1);
   if (dateStr === yesterday) {
     return `<span class="bg-stone-500 text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-2xs border border-stone-600/50">📜 昨日</span>`;
   }
-  const afterTomorrow = getDeltaDateString(today, 2);
+  const afterTomorrow = getSchoolDeltaDateString(today, 2);
   if (dateStr === afterTomorrow) {
     return `<span class="bg-emerald-600 text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-2xs border border-emerald-700/50">✨ 後天</span>`;
   }
@@ -8686,15 +8771,16 @@ function getRelativeDayBadge(dateStr) {
 }
 
 function initContactProjDates() {
-  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const rawToday = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const today = ensureSchoolDay(rawToday, true);
   if (!contactProjDateCol1) {
-    contactProjDateCol1 = currentContactDate || today;
+    contactProjDateCol1 = currentContactDate ? ensureSchoolDay(currentContactDate, true) : today;
   }
   if (!contactProjDateCol2) {
-    contactProjDateCol2 = getDeltaDateString(contactProjDateCol1, 1);
+    contactProjDateCol2 = getSchoolDeltaDateString(contactProjDateCol1, 1);
   }
   if (!contactProjDateCol3) {
-    contactProjDateCol3 = getDeltaDateString(contactProjDateCol1, 2);
+    contactProjDateCol3 = getSchoolDeltaDateString(contactProjDateCol1, 2);
   }
 }
 
@@ -8705,25 +8791,26 @@ function setContactProjDaysMode(mode) {
 }
 
 function setContactProjPreset(preset) {
-  const today = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const rawToday = (window.KingdomApp && window.KingdomApp.getTodayDateString) ? window.KingdomApp.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const today = ensureSchoolDay(rawToday, true);
   if (preset === 'today_tomorrow') {
     contactProjDaysMode = '2days';
     contactProjDateCol1 = today;
-    contactProjDateCol2 = getDeltaDateString(today, 1);
-    contactProjDateCol3 = getDeltaDateString(today, 2);
+    contactProjDateCol2 = getSchoolDeltaDateString(today, 1);
+    contactProjDateCol3 = getSchoolDeltaDateString(today, 2);
   } else if (preset === 'yesterday_today') {
     contactProjDaysMode = '2days';
-    contactProjDateCol1 = getDeltaDateString(today, -1);
+    contactProjDateCol1 = getSchoolDeltaDateString(today, -1);
     contactProjDateCol2 = today;
-    contactProjDateCol3 = getDeltaDateString(today, 1);
+    contactProjDateCol3 = getSchoolDeltaDateString(today, 1);
   } else if (preset === 'three_days') {
     contactProjDaysMode = '3days';
     contactProjDateCol1 = today;
-    contactProjDateCol2 = getDeltaDateString(today, 1);
-    contactProjDateCol3 = getDeltaDateString(today, 2);
+    contactProjDateCol2 = getSchoolDeltaDateString(today, 1);
+    contactProjDateCol3 = getSchoolDeltaDateString(today, 2);
   } else if (preset === 'single_day') {
     contactProjDaysMode = '1day';
-    contactProjDateCol1 = currentContactDate || today;
+    contactProjDateCol1 = currentContactDate ? ensureSchoolDay(currentContactDate, true) : today;
   }
   renderContactProjectionView();
 }
@@ -8731,9 +8818,10 @@ function setContactProjPreset(preset) {
 function changeContactProjColDate(colIndex, dateVal) {
   if (!dateVal) return;
   initContactProjDates();
-  if (colIndex === 1) contactProjDateCol1 = dateVal;
-  else if (colIndex === 2) contactProjDateCol2 = dateVal;
-  else if (colIndex === 3) contactProjDateCol3 = dateVal;
+  const cleanVal = ensureSchoolDay(dateVal, true);
+  if (colIndex === 1) contactProjDateCol1 = cleanVal;
+  else if (colIndex === 2) contactProjDateCol2 = cleanVal;
+  else if (colIndex === 3) contactProjDateCol3 = cleanVal;
   renderContactProjectionView();
 }
 
@@ -8743,7 +8831,7 @@ function adjustContactProjColDate(colIndex, delta) {
   if (colIndex === 2) baseDate = contactProjDateCol2;
   else if (colIndex === 3) baseDate = contactProjDateCol3;
 
-  const newDate = getDeltaDateString(baseDate, delta);
+  const newDate = getSchoolDeltaDateString(baseDate, delta);
   if (colIndex === 1) contactProjDateCol1 = newDate;
   else if (colIndex === 2) contactProjDateCol2 = newDate;
   else if (colIndex === 3) contactProjDateCol3 = newDate;
@@ -14155,6 +14243,9 @@ if (typeof window !== 'undefined') {
     window.changeMorningContactColDate = changeMorningContactColDate;
     window.adjustMorningContactColDate = adjustMorningContactColDate;
     window.renderMorningContactDayColumn = renderMorningContactDayColumn;
+    window.isWeekend = isWeekend;
+    window.ensureSchoolDay = ensureSchoolDay;
+    window.getSchoolDeltaDateString = getSchoolDeltaDateString;
     Object.defineProperty(window, 'morningContactDaysMode', {
       get() { return morningContactDaysMode; },
       set(v) { morningContactDaysMode = v; },
