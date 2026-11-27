@@ -150,6 +150,15 @@ const DEFAULT_SEATING_CHART = [
   null, null, 20, 15, 10,  5
 ];
 
+// 檢查是否為系統初始預設排位 (1~27依直排由右至左順序排列)
+function isDefaultSeatingChart(chart) {
+  if (!Array.isArray(chart) || chart.length !== DEFAULT_SEATING_CHART.length) return false;
+  for (let i = 0; i < DEFAULT_SEATING_CHART.length; i++) {
+    if (chart[i] !== DEFAULT_SEATING_CHART[i]) return false;
+  }
+  return true;
+}
+
 
 // 預設今日聯絡簿資料 (全手動純淨版，作業由導師每日自行填寫發布，系統絕不自動生成任何假作業)
 const DEFAULT_CONTACT_BOOK = {
@@ -346,6 +355,33 @@ const STORAGE_KEY = "xining_kingdom_v3_dashboard";
 const MASTER_ROSTER_BACKUP_20261119 = {"queenPassword":"queen","lateThreshold":"07:40","students":[{"id":1,"seatNo":1,"name":"洪永恩","gender":"M","title":"漱口水發放官","birthday":"0315","points":85,"lifetimePoints":85,"animalType":"dog","petType":"dog","petExp":85,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":2,"seatNo":2,"name":"莊淇勛","gender":"M","title":"晨間小隊長","birthday":"0520","points":160,"lifetimePoints":160,"animalType":"dog","petType":"dog","petExp":160,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":3,"seatNo":3,"name":"黃胤哲","gender":"M","title":"設備掌管官","birthday":"0812","points":210,"lifetimePoints":210,"animalType":"dog","petType":"dog","petExp":210,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":4,"seatNo":4,"name":"吳秉叡","gender":"M","title":"清運小隊長","birthday":"1104","points":65,"lifetimePoints":65,"animalType":"dog","petType":"dog","petExp":65,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":5,"seatNo":5,"name":"王添福","gender":"M","title":"午休巡查官","birthday":"0228","points":130,"lifetimePoints":130,"animalType":"dog","petType":"dog","petExp":130,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":6,"seatNo":6,"name":"王邑丞","gender":"M","title":"清潔指揮官","birthday":"0709","points":520,"lifetimePoints":520,"animalType":"dog","petType":"dog","petExp":520,"secondPetType":"cat","secondPetExp":20,"pets":[{"type":"dog"},{"type":"cat"}]},{"id":7,"seatNo":7,"name":"王識齊","gender":"M","title":"體能大將軍","birthday":"0923","points":95,"lifetimePoints":95,"animalType":"dog","petType":"dog","petExp":95,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":8,"seatNo":8,"name":"陳楷衡","gender":"M","title":"歸位巡查員","birthday":"0416","points":145,"lifetimePoints":145,"animalType":"dog","petType":"dog","petExp":145,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":9,"seatNo":9,"name":"王少謙","gender":"M","title":"回收清理官","birthday":"1205","points":50,"lifetimePoints":50,"animalType":"dog","petType":"dog","petExp":50,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":10,"seatNo":10,"name":"李承翰","gender":"M","title":"掌電小侍衛","birthday":"0630","points":175,"lifetimePoints":175,"animalType":"dog","petType":"dog","petExp":175,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":11,"seatNo":11,"name":"巫律杋","gender":"M","title":"香蕉御廚長","birthday":"0118","points":115,"lifetimePoints":115,"animalType":"dog","petType":"dog","petExp":115,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":12,"seatNo":12,"name":"陳彥廷","gender":"M","title":"值日勤務官","birthday":"1010","points":240,"lifetimePoints":240,"animalType":"dog","petType":"dog","petExp":240,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":13,"seatNo":13,"name":"林詰程","gender":"M","title":"日誌紀錄官","birthday":"0403","points":190,"lifetimePoints":190,"animalType":"dog","petType":"dog","petExp":190,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":14,"seatNo":14,"name":"顏珦菲","gender":"F","title":"清潔指揮官","birthday":"0825","points":155,"lifetimePoints":155,"animalType":"dog","petType":"dog","petExp":155,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":15,"seatNo":15,"name":"王瑜嫣","gender":"F","title":"作業點收官","birthday":"0614","points":535,"lifetimePoints":535,"animalType":"dog","petType":"dog","petExp":535,"secondPetType":"rabbit","secondPetExp":35,"pets":[{"type":"dog"},{"type":"rabbit"}]},{"id":16,"seatNo":16,"name":"李堇夢","gender":"F","title":"體能大將軍","birthday":"0329","points":80,"lifetimePoints":80,"animalType":"dog","petType":"dog","petExp":80,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":17,"seatNo":17,"name":"廖妘熙","gender":"F","title":"潔牙督導官","birthday":"1119","points":125,"lifetimePoints":125,"animalType":"dog","petType":"dog","petExp":125,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":18,"seatNo":18,"name":"方庭妤","gender":"F","title":"餐具小總長","birthday":"0508","points":205,"lifetimePoints":205,"animalType":"dog","petType":"dog","petExp":205,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":19,"seatNo":19,"name":"楊晏熏","gender":"F","title":"訂正審查官","birthday":"0915","points":140,"lifetimePoints":140,"animalType":"dog","petType":"dog","petExp":140,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":20,"seatNo":20,"name":"吳沛岑","gender":"F","title":"清潔指揮官","birthday":"0722","points":165,"lifetimePoints":165,"animalType":"dog","petType":"dog","petExp":165,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":21,"seatNo":21,"name":"林倢希","gender":"F","title":"暖心小小兵","birthday":"0107","points":280,"lifetimePoints":280,"animalType":"dog","petType":"dog","petExp":280,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":22,"seatNo":22,"name":"廖紫婷","gender":"F","title":"公告佈達官","birthday":"1224","points":90,"lifetimePoints":90,"animalType":"dog","petType":"dog","petExp":90,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":23,"seatNo":23,"name":"吳欣菲","gender":"F","title":"秩序執法官","birthday":"0214","points":135,"lifetimePoints":135,"animalType":"dog","petType":"dog","petExp":135,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":24,"seatNo":24,"name":"林詠泓","gender":"F","title":"最高指揮官","birthday":"1002","points":70,"lifetimePoints":70,"animalType":"dog","petType":"dog","petExp":70,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":25,"seatNo":25,"name":"王子芸","gender":"F","title":"小小兵宰相","birthday":"0606","points":225,"lifetimePoints":225,"animalType":"dog","petType":"dog","petExp":225,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":26,"seatNo":26,"name":"梁語倢","gender":"F","title":"香蕉點數官","birthday":"0918","points":110,"lifetimePoints":110,"animalType":"dog","petType":"dog","petExp":110,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]},{"id":27,"seatNo":27,"name":"楊淳閔","gender":"F","title":"公告佈達官","birthday":"0425","points":140,"lifetimePoints":140,"animalType":"dog","petType":"dog","petExp":140,"secondPetType":null,"secondPetExp":0,"pets":[{"type":"dog"}]}],"pointPresets":[{"id":"p1","type":"plus","label":"課堂積極發表","points":2,"icon":"💡"},{"id":"p2","type":"plus","label":"遵守班級常規","points":2,"icon":"🛡️"},{"id":"p3","type":"plus","label":"皇宮整潔認真","points":3,"icon":"🧹"},{"id":"p4","type":"plus","label":"友愛互助同儕","points":3,"icon":"🤝"},{"id":"p5","type":"plus","label":"奏章字跡優良","points":3,"icon":"📜"},{"id":"p6","type":"plus","label":"特殊卓越貢獻","points":5,"icon":"👑"},{"id":"m1","type":"minus","label":"上課分心聊天","points":-1,"icon":"🤐"},{"id":"m2","type":"minus","label":"忘記帶學用品","points":-1,"icon":"🎒"},{"id":"m3","type":"minus","label":"走廊危險奔跑","points":-2,"icon":"🏃"},{"id":"m4","type":"minus","label":"作業未按時交","points":-2,"icon":"⚠️"}],"homeworkPresets":[{"id":"hw_pre_1","subject":"國語","name":"國習","fullName":"國語習作完成"},{"id":"hw_pre_2","subject":"國語","name":"造詞","fullName":"生字造詞甲乙本"},{"id":"hw_pre_3","subject":"國語","name":"圈詞","fullName":"國語圈詞隨堂本"},{"id":"hw_pre_4","subject":"數學","name":"數習","fullName":"數學習作進度"},{"id":"hw_pre_5","subject":"數學","name":"數練","fullName":"數學隨堂練習本"},{"id":"hw_pre_6","subject":"自然","name":"自習","fullName":"自然習作觀察記錄"},{"id":"hw_pre_7","subject":"社會","name":"社習","fullName":"社會習作重點作業"},{"id":"hw_pre_8","subject":"綜合","name":"聯絡簿","fullName":"家長簽名聯絡簿"}],"behaviorReasons":[{"id":"br_ref_1","type":"reflection","label":"上課分心聊私事","text":"上課分心聊私事"},{"id":"br_ref_2","type":"reflection","label":"未帶課堂學用品","text":"未帶課堂學用品"},{"id":"br_ref_3","type":"reflection","label":"未經許可擅離位","text":"未經許可擅離位"},{"id":"br_ref_4","type":"reflection","label":"走廊危險奔跑追逐","text":"走廊危險奔跑追逐"},{"id":"br_ref_5","type":"reflection","label":"對師長同儕禮貌欠佳","text":"對師長同儕禮貌欠佳"},{"id":"br_srv_1","type":"service","label":"超過07:40未打卡","text":"超過07:40未打卡（留班補打掃）"},{"id":"br_srv_2","type":"service","label":"個人座位周遭整潔不佳","text":"個人座位周遭整潔不佳"},{"id":"br_srv_3","type":"service","label":"打掃責任區未落實","text":"打掃責任區未落實"},{"id":"br_srv_4","type":"service","label":"忘記抽屜與置物櫃清空","text":"忘記抽屜與置物櫃清空"},{"id":"br_srv_5","type":"service","label":"公物使用後未歸位","text":"公物使用後未歸位"}],"contactBook":{"date":"2026-11-20","homeworkItems":[],"reminders":[],"queenMotto":"👑 皇后每日聖諭：細心成就卓越，今日的每一筆認真都是明日的榮譽徽章！"},"contactBookHistory":{},"attendance":{},"homework":[],"pointLogs":[],"announcements":[{"id":1,"title":"五年二班班親會將於本週五晚間隆重召開","content":"歡迎全體皇親國戚（各位家長）蒞臨王國議政廳，共同研商小兵成長大計！","date":"2026-11-12","important":true},{"id":2,"title":"下週即將迎來王國期中學力大評量","content":"請全體小兵大臣調養精神、溫故知新，發揮平素所學爭取至高榮譽！","date":"2026-11-10","important":false}],"rewardCards":[{"id":"rc_1","title":"榮譽免死金牌 (免罰卡)","cost":30,"icon":"🛡️","desc":"可抵銷一次未帶學用品或遲到愛班服務登記","category":"special"},{"id":"rc_2","title":"一日皇家座位特權卡","cost":45,"icon":"💺","desc":"可自主挑選一日心儀王位（需經導師核可）","category":"privilege"},{"id":"rc_3","title":"御膳房優先盛飯令","cost":20,"icon":"🍱","desc":"享有當日午餐第一順位盛飯與加菜特權","category":"item"},{"id":"rc_4","title":"御花園特別免差役令","cost":25,"icon":"🧹","desc":"可免除一日外掃或教室值日生職務","category":"privilege"},{"id":"rc_5","title":"宮廷圖書館自由閱覽證","cost":15,"icon":"📚","desc":"午休或早自習可至班級圖書角借閱傳奇秘笈","category":"study"},{"id":"rc_6","title":"國王特赦奏章豁免卷","cost":50,"icon":"📜","desc":"可減免一項指定短篇日常作業（不含段考與作文）","category":"special"}],"rewardRedemptions":[],"behaviorCards":{},"trafficOverrides":{},"seatingLayout":{"rows":5,"cols":6},"seatingChart":[22,21,16,11,6,1,24,23,17,12,7,2,26,25,18,13,8,3,null,27,19,14,9,4,null,null,20,15,10,5],"lastModified":1795175485119,"satietyResetV20261116":true,"petDefaultDogV20261116":true,"seatingColsV20261117":true,"updatedAt":"2026-11-19T13:47:02.078Z","realRosterV20261119":true,"pointActionHistory":[]};
 
 class KingdomStore {
+  // 檢查是否為系統初始預設排位 (1~27依直排由右至左順序排列)
+  isDefaultSeatingChart(chart) {
+    if (!Array.isArray(chart) || chart.length !== DEFAULT_SEATING_CHART.length) return false;
+    for (let i = 0; i < DEFAULT_SEATING_CHART.length; i++) {
+      if (chart[i] !== DEFAULT_SEATING_CHART[i]) return false;
+    }
+    return true;
+  }
+
+  // 座位表獨立保險箱雙向持久化 (Triple-Guard 專屬防護鎖)
+  _persistSeatingVault() {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      if (this.data && this.data.seatingChart) {
+        localStorage.setItem('xining_custom_seating_chart', JSON.stringify(this.data.seatingChart));
+      }
+      if (this.data && this.data.seatingLayout) {
+        localStorage.setItem('xining_custom_seating_layout', JSON.stringify(this.data.seatingLayout));
+      }
+      if (this.data && this.data.seatingUpdatedAt) {
+        localStorage.setItem('xining_custom_seating_updated_at', String(this.data.seatingUpdatedAt));
+      }
+    } catch (e) {
+      console.warn("寫入座位表獨立保險鎖失敗", e);
+    }
+  }
+
   applyMasterRosterBackup() {
     try {
       this.recordLocalSnapshot("載入五年二班電腦主存檔前快照");
@@ -355,6 +391,27 @@ class KingdomStore {
       (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || 
       "queen";
     
+    // 座位表保全：保留老師排定之座位表與格局，絕不覆蓋回初始順序
+    let currentChart = (this.data && Array.isArray(this.data.seatingChart) && !this.isDefaultSeatingChart(this.data.seatingChart)) ? this.data.seatingChart : null;
+    let currentLayout = (this.data && this.data.seatingLayout) ? this.data.seatingLayout : null;
+    let currentSeatTime = (this.data && this.data.seatingUpdatedAt) || 0;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const vChartStr = localStorage.getItem('xining_custom_seating_chart');
+        const vLayoutStr = localStorage.getItem('xining_custom_seating_layout');
+        const vTimeStr = localStorage.getItem('xining_custom_seating_updated_at');
+        if (vChartStr) {
+          const parsedVChart = JSON.parse(vChartStr);
+          const parsedVTime = Number(vTimeStr) || 0;
+          if (parsedVTime >= currentSeatTime || (!currentChart && !this.isDefaultSeatingChart(parsedVChart))) {
+            currentChart = parsedVChart;
+            currentSeatTime = Math.max(currentSeatTime, parsedVTime);
+            if (vLayoutStr) currentLayout = JSON.parse(vLayoutStr);
+          }
+        }
+      } catch (_) {}
+    }
+
     // 核心安全保全：保全現有名冊中超過 27 號的大臣（如導師或手機手動新增之第 28 號大臣）
     const extraStudents = [];
     if (this.data && Array.isArray(this.data.students)) {
@@ -373,6 +430,12 @@ class KingdomStore {
     });
     masterCopy.students.sort((a, b) => (Number(a.seatNo) || 0) - (Number(b.seatNo) || 0));
 
+    if (currentChart) {
+      masterCopy.seatingChart = currentChart;
+      if (currentLayout) masterCopy.seatingLayout = currentLayout;
+      masterCopy.seatingUpdatedAt = currentSeatTime || Date.now();
+    }
+
     masterCopy.lastModified = Math.max(Date.now(), 1795096022078);
     masterCopy.realRosterV20261119 = true;
     if (currentPass && currentPass !== 'queen') {
@@ -385,6 +448,7 @@ class KingdomStore {
         try { localStorage.setItem('xining_custom_queen_password', currentPass); } catch (_) {}
       }
     }
+    this._persistSeatingVault();
     this.saveInternal({ updateTimestamp: true, triggerPush: false });
     return this.data;
   }
@@ -637,8 +701,65 @@ class KingdomStore {
 
     const remoteTime = remote.lastModified || 0;
     const localTime = local.lastModified || 0;
-    const mergedSeatingLayout = (remoteTime >= localTime) ? (remote.seatingLayout || local.seatingLayout) : (local.seatingLayout || remote.seatingLayout);
-    const mergedSeatingChart = (remoteTime >= localTime) ? (remote.seatingChart || local.seatingChart) : (local.seatingChart || remote.seatingChart);
+
+    // 8.5. 座位表獨立時間戳與智能防倒灌融合 (Triple Guard: 獨立時間戳、保險箱雙備份、防預設順序倒灌)
+    const localSeatTime = Number(local.seatingUpdatedAt) || 0;
+    const remoteSeatTime = Number(remote.seatingUpdatedAt) || 0;
+
+    let vaultChart = null;
+    let vaultLayout = null;
+    let vaultTime = 0;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const vChartStr = localStorage.getItem('xining_custom_seating_chart');
+        const vLayoutStr = localStorage.getItem('xining_custom_seating_layout');
+        const vTimeStr = localStorage.getItem('xining_custom_seating_updated_at');
+        if (vChartStr) vaultChart = JSON.parse(vChartStr);
+        if (vLayoutStr) vaultLayout = JSON.parse(vLayoutStr);
+        if (vTimeStr) vaultTime = Number(vTimeStr) || 0;
+      } catch (_) {}
+    }
+
+    const effectiveLocalSeatTime = Math.max(localSeatTime, vaultTime);
+    const effectiveLocalChart = (vaultTime > localSeatTime && vaultChart) ? vaultChart : (local.seatingChart || vaultChart);
+    const effectiveLocalLayout = (vaultTime > localSeatTime && vaultLayout) ? vaultLayout : (local.seatingLayout || vaultLayout);
+
+    const isRemoteChartDefault = this.isDefaultSeatingChart(remote.seatingChart);
+    const isLocalChartDefault = this.isDefaultSeatingChart(effectiveLocalChart);
+
+    let mergedSeatingChart;
+    let mergedSeatingLayout;
+    let mergedSeatingUpdatedAt;
+
+    if (remoteSeatTime > effectiveLocalSeatTime) {
+      // 遠端座位表編輯時間戳明確較新
+      mergedSeatingChart = remote.seatingChart || effectiveLocalChart;
+      mergedSeatingLayout = remote.seatingLayout || effectiveLocalLayout;
+      mergedSeatingUpdatedAt = remoteSeatTime;
+    } else if (effectiveLocalSeatTime > remoteSeatTime) {
+      // 本地座位表編輯時間戳較新，保留本地自訂座位
+      mergedSeatingChart = effectiveLocalChart || remote.seatingChart;
+      mergedSeatingLayout = effectiveLocalLayout || remote.seatingLayout;
+      mergedSeatingUpdatedAt = effectiveLocalSeatTime;
+    } else {
+      // 兩端時間戳相等或皆為 0：防預設順序倒灌保護
+      if (!isLocalChartDefault && isRemoteChartDefault) {
+        // 本地已自訂排座，遠端為未排座的初始預設，嚴格保留本地自訂！
+        mergedSeatingChart = effectiveLocalChart;
+        mergedSeatingLayout = effectiveLocalLayout;
+        mergedSeatingUpdatedAt = effectiveLocalSeatTime || Date.now();
+      } else if (isLocalChartDefault && !isRemoteChartDefault) {
+        // 本地為預設，遠端為已自訂，採用遠端
+        mergedSeatingChart = remote.seatingChart;
+        mergedSeatingLayout = remote.seatingLayout;
+        mergedSeatingUpdatedAt = remoteSeatTime || Date.now();
+      } else {
+        // 兩端皆自訂或皆預設，在缺乏更精確時間戳時，優先保護本地老師已確認之排座
+        mergedSeatingChart = effectiveLocalChart || remote.seatingChart;
+        mergedSeatingLayout = effectiveLocalLayout || remote.seatingLayout;
+        mergedSeatingUpdatedAt = Math.max(effectiveLocalSeatTime, remoteSeatTime);
+      }
+    }
 
     // 9. 皇室公佈欄公告融合 (保留導師真實發布之公告，不被隨意覆蓋)
     let mergedAnnouncements = local.announcements || remote.announcements || [];
@@ -728,6 +849,7 @@ class KingdomStore {
       behaviorCards: mergedBehaviorCards,
       seatingLayout: mergedSeatingLayout,
       seatingChart: mergedSeatingChart,
+      seatingUpdatedAt: mergedSeatingUpdatedAt,
       lastModified: finalLastModified
     };
 
@@ -736,6 +858,14 @@ class KingdomStore {
       mergedData.students.forEach(st => {
         this.syncStudentCards(st, mergedData);
       });
+    }
+
+    if (typeof localStorage !== 'undefined' && mergedSeatingChart) {
+      try {
+        localStorage.setItem('xining_custom_seating_chart', JSON.stringify(mergedSeatingChart));
+        localStorage.setItem('xining_custom_seating_layout', JSON.stringify(mergedSeatingLayout));
+        localStorage.setItem('xining_custom_seating_updated_at', String(mergedSeatingUpdatedAt || Date.now()));
+      } catch (_) {}
     }
 
     return this.normalizeData(mergedData);
@@ -905,6 +1035,7 @@ class KingdomStore {
     while (parsed.seatingChart.length < totalSeats) {
       parsed.seatingChart.push(null);
     }
+    if (!parsed.seatingUpdatedAt) parsed.seatingUpdatedAt = 0;
     if (!parsed.lastModified) parsed.lastModified = 0;
 
     // 確保 27 位大臣全員齊備且動物全面金化與合規
@@ -964,7 +1095,7 @@ class KingdomStore {
 
     // 座位表最右邊第一排校驗遷移 (v20261117: 最右邊為第一排，向左依序為二、三、四排，最左邊兩排皆為第五排)
     if (!parsed.seatingColsV20261117) {
-      if (parsed.seatingChart && (parsed.seatingChart[0] === 1 && parsed.seatingChart[5] === 6)) {
+      if (parsed.seatingChart && (parsed.seatingChart[0] === 1 && parsed.seatingChart[5] === 6 && !parsed.seatingUpdatedAt)) {
         parsed.seatingChart = [...DEFAULT_SEATING_CHART];
       }
       parsed.seatingColsV20261117 = true;
@@ -1045,6 +1176,24 @@ class KingdomStore {
       const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
       if (stored) {
         const parsed = JSON.parse(stored);
+        // 座位表保險鎖回填檢查：若本地保險箱中有自訂排位，且 parsed 裡的排位為預設或缺少，優先使用保險箱
+        if (typeof localStorage !== 'undefined') {
+          try {
+            const vChartStr = localStorage.getItem('xining_custom_seating_chart');
+            const vTimeStr = localStorage.getItem('xining_custom_seating_updated_at');
+            if (vChartStr) {
+              const vChart = JSON.parse(vChartStr);
+              const vTime = Number(vTimeStr) || 0;
+              const pTime = Number(parsed.seatingUpdatedAt) || 0;
+              if (vTime > pTime || (vChart && !this.isDefaultSeatingChart(vChart) && this.isDefaultSeatingChart(parsed.seatingChart))) {
+                parsed.seatingChart = vChart;
+                parsed.seatingUpdatedAt = vTime || Date.now();
+                const vLayoutStr = localStorage.getItem('xining_custom_seating_layout');
+                if (vLayoutStr) parsed.seatingLayout = JSON.parse(vLayoutStr);
+              }
+            }
+          } catch (_) {}
+        }
         const normalized = this.normalizeData(parsed);
         if (normalized) return normalized;
       }
@@ -1053,6 +1202,22 @@ class KingdomStore {
     }
 
     const localSavedPass = (typeof localStorage !== 'undefined' && localStorage.getItem('xining_custom_queen_password')) || "queen";
+    let initChart = [...DEFAULT_SEATING_CHART];
+    let initLayout = { rows: 5, cols: 6 };
+    let initSeatTime = 0;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const vChartStr = localStorage.getItem('xining_custom_seating_chart');
+        const vLayoutStr = localStorage.getItem('xining_custom_seating_layout');
+        const vTimeStr = localStorage.getItem('xining_custom_seating_updated_at');
+        if (vChartStr) {
+          initChart = JSON.parse(vChartStr);
+          initSeatTime = Number(vTimeStr) || Date.now();
+        }
+        if (vLayoutStr) initLayout = JSON.parse(vLayoutStr);
+      } catch (_) {}
+    }
+
     return this.normalizeData({
       queenPassword: localSavedPass,
       lateThreshold: "07:40",
@@ -1063,6 +1228,9 @@ class KingdomStore {
       pointLogs: [],
       pointActionHistory: [],
       announcements: JSON.parse(JSON.stringify(DEFAULT_ANNOUNCEMENTS)),
+      seatingLayout: initLayout,
+      seatingChart: initChart,
+      seatingUpdatedAt: initSeatTime,
       lastModified: 0,
       _isFreshInit: true
     });
@@ -1212,7 +1380,9 @@ class KingdomStore {
       chart = chart.slice(0, total);
     }
     this.data.seatingChart = chart;
-    this.save();
+    this.data.seatingUpdatedAt = Date.now();
+    this._persistSeatingVault();
+    this.save("更新座位表格局");
     return this.data.seatingLayout;
   }
 
@@ -1234,7 +1404,10 @@ class KingdomStore {
     const temp = chart[fromIdx];
     chart[fromIdx] = chart[toIdx];
     chart[toIdx] = temp;
-    this.save();
+    this.data.seatingChart = chart;
+    this.data.seatingUpdatedAt = Date.now();
+    this._persistSeatingVault();
+    this.save("互換席位");
     return true;
   }
 
@@ -1250,7 +1423,10 @@ class KingdomStore {
       }
     }
     chart[idx] = targetSeatNo;
-    this.save();
+    this.data.seatingChart = chart;
+    this.data.seatingUpdatedAt = Date.now();
+    this._persistSeatingVault();
+    this.save("指派座位學生");
     return true;
   }
 
@@ -1269,14 +1445,18 @@ class KingdomStore {
       }
     }
     this.data.seatingChart = newChart;
-    this.save();
+    this.data.seatingUpdatedAt = Date.now();
+    this._persistSeatingVault();
+    this.save("隨機排定座位");
     return newChart;
   }
 
   resetSeatingChart() {
     this.data.seatingLayout = { rows: 5, cols: 6 };
     this.data.seatingChart = [...DEFAULT_SEATING_CHART];
-    this.save();
+    this.data.seatingUpdatedAt = Date.now();
+    this._persistSeatingVault();
+    this.save("重設為預設座位表");
     return this.data.seatingChart;
   }
 
@@ -1284,7 +1464,9 @@ class KingdomStore {
     const layout = this.getSeatingLayout();
     const total = layout.rows * layout.cols;
     this.data.seatingChart = new Array(total).fill(null);
-    this.save();
+    this.data.seatingUpdatedAt = Date.now();
+    this._persistSeatingVault();
+    this.save("清空全班席位");
     return this.data.seatingChart;
   }
 
@@ -1293,24 +1475,28 @@ class KingdomStore {
     const total = layout.rows * layout.cols;
     if (layout.rows === 5 && layout.cols === 6) {
       this.data.seatingChart = [...DEFAULT_SEATING_CHART];
-      this.save();
-      return this.data.seatingChart;
+    } else {
+      const chart = new Array(total).fill(null);
+      const seatNos = this.data.students.map(s => s.seatNo).sort((a, b) => a - b);
+      for (let i = 0; i < total && i < seatNos.length; i++) {
+        chart[i] = seatNos[i];
+      }
+      this.data.seatingChart = chart;
     }
-    const chart = new Array(total).fill(null);
-    const seatNos = this.data.students.map(s => s.seatNo).sort((a, b) => a - b);
-    for (let i = 0; i < total && i < seatNos.length; i++) {
-      chart[i] = seatNos[i];
-    }
-    this.data.seatingChart = chart;
-    this.save();
-    return chart;
+    this.data.seatingUpdatedAt = Date.now();
+    this._persistSeatingVault();
+    this.save("依序排定座位");
+    return this.data.seatingChart;
   }
 
   removeStudentFromSeat(idx) {
     const chart = this.getSeatingChart();
     if (idx >= 0 && idx < chart.length) {
       chart[idx] = null;
-      this.save();
+      this.data.seatingChart = chart;
+      this.data.seatingUpdatedAt = Date.now();
+      this._persistSeatingVault();
+      this.save("將學生移出座位");
       return true;
     }
     return false;
@@ -4721,9 +4907,14 @@ class KingdomCloudSync {
       if (JSON.stringify(remote.behaviorCards || {}) !== JSON.stringify(local.behaviorCards || {})) return true;
     }
 
-    // 11. 座位表格局與排列比對
-    if (remote.seatingChart && local.seatingChart) {
-      if (JSON.stringify(remote.seatingChart) !== JSON.stringify(local.seatingChart)) return true;
+    // 11. 座位表格局與排列比對 (嚴格依據 seatingUpdatedAt 獨立時間戳，絕不因本地已自訂排位而誤判遠端舊預設為更新)
+    const rSeatTime = Number(remote.seatingUpdatedAt) || 0;
+    const lSeatTime = Number(local.seatingUpdatedAt) || 0;
+    if (rSeatTime > lSeatTime) {
+      if (JSON.stringify(remote.seatingChart) !== JSON.stringify(local.seatingChart) ||
+          JSON.stringify(remote.seatingLayout) !== JSON.stringify(local.seatingLayout)) {
+        return true;
+      }
     }
 
     return false;
@@ -4876,7 +5067,8 @@ if (typeof window !== 'undefined') {
     DEFAULT_BEHAVIOR_REASONS,
     DEFAULT_ALARM_PRESETS,
     DEFAULT_REMINDER_PRESETS,
-    DEFAULT_SEATING_CHART
+    DEFAULT_SEATING_CHART,
+    isDefaultSeatingChart
   };
 }
 
@@ -4893,6 +5085,7 @@ if (typeof module !== 'undefined' && module.exports) {
     renderAnimalSVG,
     DEFAULT_STUDENTS_27,
     DEFAULT_SEATING_CHART,
+    isDefaultSeatingChart,
     DEFAULT_CONTACT_BOOK,
     DEFAULT_HOMEWORK_PRESETS,
     DEFAULT_BEHAVIOR_REASONS,

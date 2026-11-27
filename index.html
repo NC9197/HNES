@@ -5356,6 +5356,42 @@
         }
       };
 
+      window.focusAndOpenHomework = function(hwId) {
+        if (!hwId) return;
+        var allHwList = (window.KingdomApp && window.KingdomApp.store && window.KingdomApp.store.data && window.KingdomApp.store.data.homework) || [];
+        var hw = allHwList.find(function(h) { return String(h.id) === String(hwId); });
+        if (!hw) return;
+
+        var targetDate = hw.date || hw.dueDate;
+        if (targetDate && targetDate !== window.currentHwFilterDate) {
+          window.currentHwFilterDate = targetDate;
+          window._lastHwFilterDateTracked = targetDate;
+        }
+
+        if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
+        window.openHomeworkDrawerIds.add(String(hw.id));
+
+        if (typeof renderHomeworkSummaryBoard === 'function') {
+          renderHomeworkSummaryBoard();
+        }
+
+        setTimeout(function() {
+          var el = document.querySelector('[data-hw-card-id="' + hw.id + '"]');
+          if (el && el.scrollIntoView) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.classList.add('ring-4', 'ring-amber-400');
+            setTimeout(function() { el.classList.remove('ring-4', 'ring-amber-400'); }, 1500);
+          }
+        }, 80);
+
+        if (typeof showToast === 'function') {
+          var dParts = (targetDate || '').split('-');
+          var shortDate = dParts.length === 3 ? (parseInt(dParts[1], 10) + '/' + parseInt(dParts[2], 10)) : targetDate;
+          var weekday = (typeof getWeekdayText === 'function') ? getWeekdayText(targetDate).replace('週', '') : '';
+          showToast('🎯 已定位至 (' + shortDate + ')(' + weekday + ')【' + hw.title + '】，可直接在下方看板確認繳交！', "📋");
+        }
+      };
+
       window.toggleHomeworkDrawer = function(hwId, event) {
         if (event && event.stopPropagation) event.stopPropagation();
         if (!window.openHomeworkDrawerIds) window.openHomeworkDrawerIds = new Set();
@@ -5416,37 +5452,45 @@
 
         var dayHomeworkList = allHwList.filter(function(h) { return h.date === filterDate || h.dueDate === filterDate; });
 
-        if (dayHomeworkList.length === 0) {
-          var weekdayNoHw = (typeof getWeekdayText === 'function') ? getWeekdayText(filterDate) : '';
-          var isTodayNoHw = filterDate === todayStr;
-          container.innerHTML = 
-            '<div class="parchment-card p-6 sm:p-8 text-center text-slate-700 font-bold space-y-3.5 rounded-2xl border-2 border-dashed border-amber-300 shadow-2xs">' +
-              '<div class="text-4xl sm:text-5xl drop-shadow-xs">📜</div>' +
-              '<div class="space-y-1">' +
-                '<h3 class="text-base sm:text-lg font-black text-amber-950">' +
-                  filterDate + (weekdayNoHw ? ' (' + weekdayNoHw + ')' : '') + (isTodayNoHw ? ' 【今日】' : '') + ' 尚無登記的作業奏章' +
-                '</h3>' +
-                '<p class="text-xs text-amber-900/70 max-w-md mx-auto">' +
-                  '此日尚未頒布任何回家作業或課堂習作。版面僅專注展示單日內容，避免下拉過長。' +
-                '</p>' +
-              '</div>' +
-              '<div class="flex flex-wrap items-center justify-center gap-2 pt-1">' +
-                '<button onclick="openNewHomeworkModal(\'' + filterDate + '\')" class="btn-royal-gold px-4 py-2 rounded-xl text-xs sm:text-sm font-black shadow flex items-center space-x-1.5 transition active:scale-95">' +
-                  '<span>➕</span>' +
-                  '<span>為【' + filterDate + '】新增作業</span>' +
-                '</button>' +
-                '<button onclick="adjustHomeworkFilterDate(-1)" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95">' +
-                  '◀ 前一天' +
-                '</button>' +
-                '<button onclick="adjustHomeworkFilterDate(1)" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95">' +
-                  '後一天 ▶' +
-                '</button>' +
-                (!isTodayNoHw ? '<button onclick="goToTodayHomework()" class="px-3.5 py-2 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-black shadow-2xs transition active:scale-95">🚩 回到今天</button>' : '') +
-              '</div>' +
-            '</div>';
-          if (typeof renderHomeworkSettlementTable === 'function') renderHomeworkSettlementTable();
-          if (typeof renderContactBookHistoryList === 'function') renderContactBookHistoryList();
-          return;
+        // 1. 全歷史跨日期「每天未交作業催交通計」 (免點選日期慢慢確認，直接一鍵催交與確認繳交情形)
+        var allPendingHwItems = [];
+        allHwList.forEach(function(hw) {
+          var pendingCount = 0;
+          var revisionCount = 0;
+          students.forEach(function(st) {
+            var status = (hw.records && (hw.records[st.id] !== undefined ? hw.records[st.id] : hw.records[st.seatNo])) || 'pending';
+            if (status === 'pending') pendingCount++;
+            else if (status === 'revision') revisionCount++;
+          });
+
+          if (pendingCount > 0) {
+            var dParts = (hw.date || hw.dueDate || '').split('-');
+            var shortDate = dParts.length === 3 ? (parseInt(dParts[1], 10) + '/' + parseInt(dParts[2], 10)) : (hw.date || '今日');
+            var weekday = (typeof getWeekdayText === 'function') ? getWeekdayText(hw.date || hw.dueDate).replace('週', '') : '';
+            allPendingHwItems.push({
+              hw: hw,
+              shortDate: shortDate,
+              weekday: weekday,
+              pendingCount: pendingCount,
+              revisionCount: revisionCount,
+              sortKey: hw.date || hw.dueDate || '9999-99-99'
+            });
+          }
+        });
+
+        allPendingHwItems.sort(function(a, b) { return a.sortKey > b.sortKey ? 1 : -1; });
+
+        var overviewButtonsHtml = '';
+        if (allPendingHwItems.length > 0) {
+          overviewButtonsHtml = allPendingHwItems.map(function(item) {
+            var isFocused = window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.has(String(item.hw.id)) && (filterDate === item.hw.date || filterDate === item.hw.dueDate);
+            return '<button type="button" onclick="focusAndOpenHomework(\'' + item.hw.id + '\')" class="px-2.5 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 border shadow-2xs cursor-pointer active:scale-95 ' + (isFocused ? 'bg-amber-400 text-amber-950 border-amber-500 ring-2 ring-amber-500/50 shadow-xs' : 'bg-white hover:bg-rose-50 text-slate-800 border-rose-300 hover:border-rose-400') + ' group" title="點擊直接切換至 ' + (item.hw.date || '') + ' 並展開【' + item.hw.title + '】進行催交與確認繳交情形">' +
+              '<span class="text-amber-950 font-bold">(' + item.shortDate + ')(' + item.weekday + ')(' + item.hw.title + ')</span>' +
+              '<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-500 text-white shadow-2xs group-hover:bg-rose-600 transition">(' + item.pendingCount + '人)</span>' +
+            '</button>';
+          }).join('');
+        } else {
+          overviewButtonsHtml = '<span class="px-3 py-1 rounded-xl text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center space-x-1 shadow-2xs"><span>✅</span><span>全班目前無任何缺交作業，功課全部齊全！</span></span>';
         }
 
         // 抽屜展開/上收狀態管理：切換日期時做一次預設初始化
@@ -5466,44 +5510,29 @@
 
         var isAnyDrawerOpen = window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.size > 0;
 
-        var tabsBarHtml = '';
-        if (dayHomeworkList.length > 0) {
-          var optionsHtml = dayHomeworkList.map(function(h) {
-            var pendingCount = 0;
-            var revisionCount = 0;
-            students.forEach(function(st) {
-              var status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
-              if (status === 'pending') pendingCount++;
-              else if (status === 'revision') revisionCount++;
-            });
-            var statusText = pendingCount > 0 ? ('未交 ' + pendingCount + '人') : (revisionCount > 0 ? ('需訂正 ' + revisionCount + '人') : '已全齊 ✅');
-            return '<option value="' + h.id + '">[' + (h.subject || '作業') + '] ' + h.title + '（' + statusText + '）</option>';
-          }).join('');
+        var optionsHtml = dayHomeworkList.map(function(h) {
+          var pendingCount = 0;
+          var revisionCount = 0;
+          students.forEach(function(st) {
+            var status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
+            if (status === 'pending') pendingCount++;
+            else if (status === 'revision') revisionCount++;
+          });
+          var statusText = pendingCount > 0 ? ('未交 ' + pendingCount + '人') : (revisionCount > 0 ? ('需訂正 ' + revisionCount + '人') : '已全齊 ✅');
+          return '<option value="' + h.id + '">[' + (h.subject || '作業') + '] ' + h.title + '（' + statusText + '）</option>';
+        }).join('');
 
-          var overviewButtonsHtml = dayHomeworkList.map(function(h) {
-            var isOpen = window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.has(String(h.id));
-            var pendingCount = 0;
-            var revisionCount = 0;
-            students.forEach(function(st) {
-              var status = (h.records && (h.records[st.id] !== undefined ? h.records[st.id] : h.records[st.seatNo])) || 'pending';
-              if (status === 'pending') pendingCount++;
-              else if (status === 'revision') revisionCount++;
-            });
-            var badgeHtml = pendingCount > 0
-              ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-rose-500 text-white shadow-2xs">❌ 未交 ' + pendingCount + '人</span>'
-              : (revisionCount > 0
-                  ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-purple-500 text-white shadow-2xs">⚠️ 訂正 ' + revisionCount + '人</span>'
-                  : '<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-emerald-600 text-white shadow-2xs">✅ 全齊</span>');
-            return '<button type="button" onclick="toggleHomeworkDrawer(\'' + h.id + '\', event)" class="px-2.5 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 border shadow-2xs cursor-pointer active:scale-95 ' + (isOpen ? 'bg-amber-400 text-amber-950 border-amber-500 ring-2 ring-amber-500/50 shadow-xs' : 'bg-white hover:bg-amber-50 text-slate-800 border-amber-300') + '" title="點擊切換下方四欄名牌看板（上收/下拉）">' +
-              '<span>' + (isOpen ? '▲' : '▼') + '</span>' +
-              '<span class="truncate max-w-[130px]">[' + (h.subject || '作業') + '] ' + h.title + '</span>' +
-              badgeHtml +
-            '</button>';
-          }).join('');
-
-          tabsBarHtml = 
-            '<div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-3 rounded-2xl border-2 border-amber-300 space-y-2.5 shadow-xs">' +
-              '<div class="flex items-center justify-between gap-2.5 flex-wrap">' +
+        var tabsBarHtml = 
+          '<div class="bg-gradient-to-r from-amber-100/95 via-yellow-100/95 to-amber-100/95 p-3 rounded-2xl border-2 border-amber-300 space-y-2.5 shadow-xs">' +
+            '<div class="flex items-center gap-1.5 flex-wrap">' +
+              '<span class="text-xs font-black text-amber-900/90 mr-1 flex items-center space-x-1 shrink-0">' +
+                '<span>📢</span>' +
+                '<span>各項未交統計：</span>' +
+              '</span>' +
+              overviewButtonsHtml +
+            '</div>' +
+            (dayHomeworkList.length > 0 ? (
+              '<div class="flex items-center justify-between gap-2.5 flex-wrap pt-2 border-t border-amber-200/80">' +
                 '<div class="flex items-center space-x-2 flex-wrap">' +
                   '<span class="text-xs sm:text-sm font-black text-amber-950 flex items-center space-x-1">' +
                     '<span>📋</span>' +
@@ -5526,15 +5555,9 @@
                     '<span>新增作業</span>' +
                   '</button>' +
                 '</div>' +
-              '</div>' +
-              '<div class="flex items-center gap-1.5 flex-wrap pt-2 border-t border-amber-200/80">' +
-                '<span class="text-xs font-black text-amber-900/90 mr-1 flex items-center space-x-1 shrink-0">' +
-                  '<span>各項未交統計：</span>' +
-                '</span>' +
-                overviewButtonsHtml +
-              '</div>' +
-            '</div>';
-        }
+              '</div>'
+            ) : '') +
+          '</div>';
 
         var cardsHtml = dayHomeworkList.map(function(hw) {
           var isDrawerOpen = window.openHomeworkDrawerIds && window.openHomeworkDrawerIds.has(String(hw.id));
@@ -5623,7 +5646,40 @@
           '</div>';
         }).join('');
 
-        container.innerHTML = tabsBarHtml + cardsHtml;
+        var dayContentHtml = '';
+        if (dayHomeworkList.length === 0) {
+          var weekdayNoHw = (typeof getWeekdayText === 'function') ? getWeekdayText(filterDate) : '';
+          var isTodayNoHw = filterDate === todayStr;
+          dayContentHtml = 
+            '<div class="parchment-card p-6 sm:p-8 text-center text-slate-700 font-bold space-y-3.5 rounded-2xl border-2 border-dashed border-amber-300 shadow-2xs">' +
+              '<div class="text-4xl sm:text-5xl drop-shadow-xs">📜</div>' +
+              '<div class="space-y-1">' +
+                '<h3 class="text-base sm:text-lg font-black text-amber-950">' +
+                  filterDate + (weekdayNoHw ? ' (' + weekdayNoHw + ')' : '') + (isTodayNoHw ? ' 【今日】' : '') + ' 尚無登記的作業奏章' +
+                '</h3>' +
+                '<p class="text-xs text-amber-900/70 max-w-md mx-auto">' +
+                  '此日尚未頒布任何回家作業或課堂習作。您可點選上方「各項未交統計」按鈕快速催交其他日期的缺交作業！' +
+                '</p>' +
+              '</div>' +
+              '<div class="flex flex-wrap items-center justify-center gap-2 pt-1">' +
+                '<button onclick="openNewHomeworkModal(\'' + filterDate + '\')" class="btn-royal-gold px-4 py-2 rounded-xl text-xs sm:text-sm font-black shadow flex items-center space-x-1.5 transition active:scale-95">' +
+                  '<span>➕</span>' +
+                  '<span>為【' + filterDate + '】新增作業</span>' +
+                '</button>' +
+                '<button onclick="adjustHomeworkFilterDate(-1)" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95">' +
+                  '◀ 前一天' +
+                '</button>' +
+                '<button onclick="adjustHomeworkFilterDate(1)" class="px-3 py-2 rounded-xl bg-white hover:bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black shadow-2xs transition active:scale-95">' +
+                  '後一天 ▶' +
+                '</button>' +
+                (!isTodayNoHw ? '<button onclick="goToTodayHomework()" class="px-3.5 py-2 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-black shadow-2xs transition active:scale-95">🚩 回到今天</button>' : '') +
+              '</div>' +
+            '</div>';
+        } else {
+          dayContentHtml = cardsHtml;
+        }
+
+        container.innerHTML = tabsBarHtml + dayContentHtml;
 
         if (typeof renderHomeworkSettlementTable === 'function') renderHomeworkSettlementTable();
         if (typeof renderContactBookHistoryList === 'function') renderContactBookHistoryList();

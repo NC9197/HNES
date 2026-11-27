@@ -318,6 +318,26 @@ function mergeDatasets(base, incoming) {
     });
   }
 
+  // 座位表獨立時間戳與自訂排位保護 (防預設順序倒灌)
+  var inSeatTime = Number(incoming.seatingUpdatedAt) || 0;
+  var baseSeatTime = Number(base.seatingUpdatedAt) || 0;
+  var finalSeatingLayout = base.seatingLayout || incoming.seatingLayout;
+  var finalSeatingChart = base.seatingChart || incoming.seatingChart;
+  var finalSeatingUpdatedAt = Math.max(inSeatTime, baseSeatTime);
+
+  if (inSeatTime > baseSeatTime) {
+    finalSeatingLayout = incoming.seatingLayout || base.seatingLayout;
+    finalSeatingChart = incoming.seatingChart || base.seatingChart;
+    finalSeatingUpdatedAt = inSeatTime;
+  } else if (baseSeatTime > inSeatTime) {
+    finalSeatingLayout = base.seatingLayout || incoming.seatingLayout;
+    finalSeatingChart = base.seatingChart || incoming.seatingChart;
+    finalSeatingUpdatedAt = baseSeatTime;
+  } else {
+    finalSeatingLayout = incoming.seatingLayout || base.seatingLayout;
+    finalSeatingChart = incoming.seatingChart || base.seatingChart;
+  }
+
   return {
     queenPassword: finalPassword,
     lateThreshold: incoming.lateThreshold || base.lateThreshold || "07:40",
@@ -336,8 +356,9 @@ function mergeDatasets(base, incoming) {
     rewardRedemptions: mergedRedemptions,
     behaviorCards: mergedBehaviorCards,
     trafficOverrides: incoming.trafficOverrides || base.trafficOverrides || {},
-    seatingLayout: incoming.seatingLayout || base.seatingLayout,
-    seatingChart: incoming.seatingChart || base.seatingChart,
+    seatingLayout: finalSeatingLayout,
+    seatingChart: finalSeatingChart,
+    seatingUpdatedAt: finalSeatingUpdatedAt,
     cloudRevision: incoming.cloudRevision || base.cloudRevision || 1,
     lastModified: new Date().getTime(),
     realRosterV20261119: true
